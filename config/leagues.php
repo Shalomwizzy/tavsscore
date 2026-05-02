@@ -1,0 +1,83 @@
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| League coverage
+|--------------------------------------------------------------------------
+| API-Football identifies competitions by integer ID. We track:
+|   • the canonical Euro/global IDs we know (top European + UCL/UEL etc.)
+|   • a list of African countries — anything in API-Football tagged with
+|     these as `league.country` is auto-included. This avoids hardcoding
+|     dozens of African league IDs that change between seasons.
+|
+| The Predictions/AutoBlog pipelines also use `top_european` so that the
+| daily-pick selector still leans toward marquee matches when both fire.
+|
+*/
+
+return [
+
+    // Top European + global (UCL/UEL/CONMEBOL/MLS/etc.). These remain the
+    // canonical "top" set for the daily-pick picker.
+    'top_european' => [
+        2,   // UEFA Champions League
+        3,   // UEFA Europa League
+        39,  // Premier League (Eng)
+        40,  // EFL Championship (Eng)
+        45,  // FA Cup (Eng)
+        48,  // EFL Cup (Eng)
+        61,  // Ligue 1 (Fra)
+        66,  // Ligue 2 (Fra)
+        71,  // Brasileirão Série A
+        78,  // Bundesliga (Ger)
+        79,  // 2. Bundesliga (Ger)
+        88,  // Eredivisie (Ned)
+        94,  // Primeira Liga (Por)
+        135, // Serie A (Ita)
+        136, // Serie B (Ita)
+        140, // La Liga (Esp)
+        143, // Copa del Rey (Esp)
+        144, // Belgian Pro League
+        179, // Scottish Premiership
+        203, // Süper Lig (Tur)
+        235, // Russian Premier League
+        253, // MLS (USA)
+        262, // Liga MX (Mex)
+        292, // K League 1 (Kor)
+        307, // Saudi Pro League
+        848, // UEFA Conference League
+    ],
+
+    // Africa-focused expansion. We match by `league.country` rather than
+    // ID so that all NPFL/PSL/Ghana Premier/Botola fixtures auto-include
+    // even if their league ID changes between seasons. Add CAF Champions
+    // League etc. by country = "World" with explicit ID below.
+    'africa_countries' => [
+        'Nigeria',
+        'South Africa',
+        'Ghana',
+        'Egypt',
+        'Morocco',
+        'Tunisia',
+        'Algeria',
+        'Kenya',
+        'Tanzania',
+        'Senegal',
+        'Ivory Coast',
+        'Cameroon',
+        'Zambia',
+        'Uganda',
+        'Ethiopia',
+        'Sudan',
+    ],
+
+    // Pan-African continental competitions. League IDs in API-Football
+    // for international tournaments are stable — keep these explicit.
+    'africa_continental' => [
+        12,  // CAF Champions League
+        20,  // CAF Confederation Cup
+        36,  // Africa Cup of Nations
+        37,  // AFCON Qualification
+    ],
+
+];
