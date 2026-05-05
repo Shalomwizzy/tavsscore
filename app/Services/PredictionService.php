@@ -361,8 +361,9 @@ class PredictionService
     public function upcomingMatches(): EloquentCollection
     {
         $order  = implode(',', $this->leaguePriorityIds());
-        $today  = now()->startOfDay();
-        $cutoff = now()->endOfDay();
+        $tz     = config('app.timezone');
+        $today  = now($tz)->startOfDay();
+        $cutoff = now($tz)->endOfDay();
 
         return FootballMatch::query()
             ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
@@ -455,11 +456,11 @@ class PredictionService
             ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
             ->update(['is_daily_pick' => false, 'pick_rank' => null]);
 
-        // Fetch today's predictions that have genuine AI analysis AND a primary
-        // confidence ≥ 50% — anything weaker isn't worthy of a daily pick.
-        // We include FT/AET/PEN matches so retroactive selection still works
-        // when picks:select ran late or the scheduler missed its window.
+        // Only picks with genuine AI analysis and confidence ≥ 65%.
+        // Draws are excluded — the hardest outcome to predict consistently.
+        // We never backfill to hit a number: 1 quality pick beats 3 bad ones.
         $excludedInSelection = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+        $excludedOutcomes    = ['Competitive Match', 'Draw'];
 
         $candidates = Prediction::query()
             ->with('match')
@@ -467,12 +468,8 @@ class PredictionService
             ->where('analysis', '!=', 'Prediction pending')
             ->whereNotNull('analysis')
             ->whereNotNull('predicted_outcome')
-            ->where('predicted_outcome', '!=', 'Competitive Match')
-            ->where(function ($q) {
-                // Require either AI-set confidence ≥ 50 OR (legacy) a strong
-                // probability gap so old predictions still qualify.
-                $q->where('confidence', '>=', 50)->orWhereNull('confidence');
-            })
+            ->whereNotIn('predicted_outcome', $excludedOutcomes)
+            ->where('confidence', '>=', 65)
             ->whereHas('match', fn ($q) => $q
                 ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
                 ->whereBetween('match_time', [$today, $cutoff])
@@ -484,8 +481,6 @@ class PredictionService
             return new EloquentCollection();
         }
 
-        // Score: prefer AI's stated confidence if available, else fall back to
-        // the probability-gap heuristic.
         $scored = $candidates->map(function (Prediction $p) {
             $hw   = (float) $p->home_win_prob;
             $d    = (float) $p->draw_prob;
@@ -495,23 +490,12 @@ class PredictionService
 
             $probs = [$hw, $d, $aw];
             rsort($probs);
-            $gap   = $probs[0] - $probs[1];
-
-            // Confidence floor for picks: 50pp absolute. Use AI conf if present.
+            $gap    = $probs[0] - $probs[1];
             $aiConf = (int) ($p->confidence ?? 0);
-            if ($aiConf >= 50) {
-                $score = $aiConf;
-            } else {
-                // Legacy gap-based score with goal-line bonus
-                $glBonus  = 0;
-                $glBonus += max(0, $o25  - 60) * 0.5;
-                $glBonus += max(0, 40   - $o25) * 0.3;
-                $glBonus += max(0, $btts - 62) * 0.3;
-                $score = $gap + $glBonus;
-            }
 
-            // Variety bucket — group same primary outcome together so we can
-            // pick across different bet types (e.g. one home win, one over, one BTTS).
+            // Score purely on AI confidence — it already reflects model certainty.
+            // Gap bonus rewards clear favourites on top of a strong confidence.
+            $score   = $aiConf + ($gap * 0.3);
             $tipType = mb_strtolower((string) $p->predicted_outcome);
 
             return [
@@ -522,28 +506,19 @@ class PredictionService
                 'ai_conf'    => $aiConf,
             ];
         })
-        // 50% floor: AI conf >= 50 OR legacy fallback (12pp gap)
-        ->filter(fn ($s) => $s['ai_conf'] >= 50 || $s['gap'] >= 12)
+        ->filter(fn ($s) => $s['ai_conf'] >= 65)
         ->sortByDesc('score');
 
-        // Pick 3 with variety: prefer a different tip type each time
-        $picks    = collect();
-        $used     = [];
+        // Take up to 3, preferring different tip types — but never backfill
+        // with a lower-quality pick just to reach 3. Quality over quantity.
+        $picks = collect();
+        $used  = [];
 
         foreach ($scored as $item) {
             if ($picks->count() >= 3) break;
             if (! in_array($item['tip_type'], $used, true)) {
                 $picks->push($item);
                 $used[] = $item['tip_type'];
-            }
-        }
-
-        // Backfill if < 3 — take highest remaining regardless of type
-        foreach ($scored as $item) {
-            if ($picks->count() >= 3) break;
-            $alreadyIn = $picks->contains(fn ($x) => $x['prediction']->id === $item['prediction']->id);
-            if (! $alreadyIn) {
-                $picks->push($item);
             }
         }
 

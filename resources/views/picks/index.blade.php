@@ -424,7 +424,7 @@ if (! function_exists('stripTip')) {
         </h1>
         <p class="picks-subtitle">
             @if($dateMeta['is_today'])
-                Every day our AI analyses {{ $count > 0 ? $count : "today's" }} matches and surfaces the three predictions it is most confident about. Free, transparent — full track record below.
+                Every day our AI analyses {{ $count > 0 ? $count : "today's" }} matches and surfaces only the predictions it is most confident about (65%+ confidence, no draws). Some days that's 3 picks, some days fewer — quality over quantity.
             @else
                 Browsing our archive — these are the picks we put out on this day, plus the actual results.
             @endif
@@ -534,11 +534,11 @@ if (! function_exists('stripTip')) {
         @if($formatted->isEmpty())
         <div class="picks-empty">
             @if($dateMeta['is_today'])
-                <div class="picks-empty-icon">⏳</div>
-                <div class="picks-empty-title">Picks are being prepared</div>
+                <div class="picks-empty-icon">🔍</div>
+                <div class="picks-empty-title">No high-confidence picks today</div>
                 <p class="picks-empty-desc">
-                    Our AI is still analysing today's matches. Check back after 9 AM —
-                    picks are usually ready within minutes of matches being scheduled.
+                    Our AI reviewed today's matches but none cleared the 65% confidence threshold.
+                    We'd rather show you nothing than a bad tip — check back later as more match data comes in.
                 </p>
             @else
                 <div class="picks-empty-icon">📅</div>

@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
         // Match fetch — every 2 min when live matches exist, every 15 min otherwise.
         // Conserves API-Football quota (free tier = 100 req/day).
         $schedule->command('fetch:matches')
-            ->everyTwoMinutes()
+            ->everyFiveMinutes()
             ->withoutOverlapping()
             ->when(fn () => \App\Models\FootballMatch::whereIn('status', ['1H','HT','2H','ET','BT','P','LIVE'])->exists());
 
