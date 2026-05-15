@@ -73,7 +73,7 @@
         <ul style="font-size:.88rem; color:var(--text-dim); line-height:1.85; padding-left:1.5rem;">
             <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">API-Football</strong> - provides the match data that powers our scores and fixtures. Your visits to TavsScore trigger calls to their API, but we do not pass any personal information to them.</li>
             <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Google AdSense</strong> - serves the advertising on our site. Subject to Google's privacy policy.</li>
-            <li><strong style="color:var(--text);">Groq AI</strong> - processes match information to generate predictions and editorial content. We send only match data (team names, league, date) - never any user information.</li>
+            <li><strong style="color:var(--text);">AI Prediction Engines</strong> - we use third-party AI services to process match information and generate predictions. We send only match data (team names, league, date) — never any user information.</li>
         </ul>
     </div>
 

@@ -39,7 +39,7 @@
                                         <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#374151; line-height:1.65;">
                                             <tr><td style="padding:4px 0;">⭐ <strong>3 best AI-picked bets</strong> from today's matches</td></tr>
                                             <tr><td style="padding:4px 0;">🎯 Confidence % + reasoning for every tip</td></tr>
-                                            <tr><td style="padding:4px 0;">🤝 Triple-validated by <strong>3 independent AIs</strong> (Groq + Gemini + Mistral)</td></tr>
+                                            <tr><td style="padding:4px 0;">🤝 Triple-validated by <strong>3 independent AI engines</strong> — all must agree before any pick is published</td></tr>
                                             <tr><td style="padding:4px 0;">📊 Bookmaker consensus check on every pick</td></tr>
                                             <tr><td style="padding:4px 0;">🇳🇬 Pidgin &amp; 🇰🇪 Swahili translations available on the site</td></tr>
                                             <tr><td style="padding:4px 0;">📜 <strong>Full track record published</strong> - see <a href="{{ url('/stats') }}" style="color:#059669; text-decoration:none; font-weight:600;">accuracy stats</a> publicly, no hiding misses</td></tr>

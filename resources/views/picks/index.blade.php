@@ -858,10 +858,10 @@ if (! function_exists('stripTip')) {
             <div class="faq-item">
                 <div class="faq-q">What model powers the predictions?</div>
                 <div class="faq-a">
-                    A two-stage model: first, Poisson distribution calculates goal probabilities
-                    from each team's recent attack and defence stats. Then a large language model
-                    (LLaMA 70B via Groq) enriches that with knowledge of current form,
-                    head-to-head history, injuries and tactical context.
+                    A two-stage system: first, Poisson distribution calculates goal probabilities
+                    from each team's recent attack and defence stats. Then three independent AI engines
+                    each enrich that with knowledge of current form, head-to-head history, injuries and
+                    tactical context — and must all reach the same conclusion before any tip is published.
                 </div>
             </div>
             <div class="faq-item">

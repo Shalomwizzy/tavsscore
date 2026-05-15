@@ -219,9 +219,9 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Match Predictions</div>
                     <p class="nsc-desc">
-                        Our triple-AI engine (Groq + Gemini + Mistral) independently analyses every upcoming match — team form, head-to-head records,
-                        injury reports, confirmed lineups, real-time news — then all three AIs must agree on the same outcome before
-                        it's published, with a confidence score and full reasoning you can read in plain English.
+                        Our triple-AI engine runs three completely independent analyses on every upcoming match — team form, head-to-head records,
+                        injury reports, confirmed lineups, and real-time news. All three must reach the same conclusion before a prediction
+                        is published, with a confidence score and full reasoning you can read in plain English.
                     </p>
                     <div class="nsc-cta" style="color:#93c5fd;">See All Predictions →</div>
                 </div>
@@ -270,7 +270,7 @@
                     <p class="nsc-desc">
                         The ultimate 10-day AI betting challenge. We start with a fixed stake and attempt to grow it
                         every single day for 10 consecutive days each day's profit rolling into the next bet.
-                        Groq, Gemini, and Mistral all independently analyse every match and must agree on the same pick before it's placed. One loss resets everything.
+                        Three independent AI engines analyse every match separately and must all agree on the same pick before it's placed. One loss resets everything.
                     </p>
                     @if($rollover)
                     <div style="margin-top:.6rem;">
@@ -558,7 +558,7 @@
                     <div style="font-size:.63rem; color:#a5b4fc; font-weight:800; text-transform:uppercase; margin-bottom:.25rem;">Today's Rollover Pick</div>
                     <div style="font-size:.82rem; font-weight:700; color:#fff;">{{ $rolloverPick->groq_verdict }}</div>
                     <div style="font-size:.7rem; color:var(--text-dim); margin-top:.15rem;">Odds: {{ $rolloverPick->implied_odds }} · Stake: ₦{{ number_format($rolloverPick->stake_amount, 0) }}</div>
-                    @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ Groq + Gemini + Mistral all agree on this pick</div>@endif
+                    @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ All 3 AI engines agree on this pick</div>@endif
                 </div>
                 @else
                 <div style="font-size:.78rem; color:var(--text-dim); padding:.4rem 0;">Today's pick is selected at 9:30am each morning.</div>
