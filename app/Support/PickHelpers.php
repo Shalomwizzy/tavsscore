@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\FootballMatch;
 use App\Models\Prediction;
 use Illuminate\Support\Collection;
 
@@ -117,11 +118,21 @@ class PickHelpers
     public static function resolveOutcome(Prediction $p): ?bool
     {
         $match = $p->match;
+        return self::resolveForMatch($match, $p->predicted_outcome);
+    }
+
+    /**
+     * Resolve an arbitrary outcome string against a finished match.
+     * Used by rollover picks which may have a different tip than the
+     * linked prediction's predicted_outcome (e.g. pick was "Over 2.5 Goals"
+     * but the prediction was later updated to "Away Win" by lineup regeneration).
+     */
+    public static function resolveForMatch(?FootballMatch $match, ?string $outcome): ?bool
+    {
         if (! $match || $match->home_score === null || $match->away_score === null) {
             return null;
         }
 
-        $outcome = $p->predicted_outcome;
         if (! $outcome || $outcome === 'Competitive Match') {
             return null;
         }
