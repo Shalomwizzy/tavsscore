@@ -261,11 +261,11 @@
             <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
                 <span class="sb-icon">📬</span> Newsletter
             </a>
-            <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}">
-                <span class="sb-icon">🏆</span> Winners Wall
+            <a href="{{ route('admin.broadcast.index') }}" class="sb-link {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                <span class="sb-icon">📢</span> Broadcast
             </a>
             <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}">
-                <span class="sb-icon">🥇</span> Hall of Fame
+                <span class="sb-icon">🏆</span> Winners Wall
             </a>
             <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}">
                 <span class="sb-icon">⚡</span> Lineup Picks

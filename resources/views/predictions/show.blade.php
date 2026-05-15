@@ -243,7 +243,7 @@
                             @endif
                             @if(array_key_exists('gemini_agrees', $headline))
                             <div class="pp-consensus {{ ($headline['gemini_agrees'] ?? false) ? 'pp-consensus-ok' : 'pp-consensus-warn' }}" style="margin-left:.35rem;">
-                                {{ ($headline['gemini_agrees'] ?? false) ? '🤖🤖 Both AIs agree' : '⚠️ AI #2: ' . ($headline['gemini_tip'] ?? '?') }}
+                                {{ ($headline['gemini_agrees'] ?? false) ? '🤖🤖🤖 All 3 AIs agree' : '⚠️ AIs disagree' }}
                             </div>
                             @endif
                         </div>

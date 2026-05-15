@@ -138,7 +138,8 @@
                     </div>
                     @endif
 
-                    <div style="display:flex; gap:.4rem;">
+                    <div style="display:flex; gap:.4rem; flex-wrap:wrap;">
+                        <a href="{{ route('admin.winners.edit', $win) }}" class="btn-a" style="flex:1; justify-content:center; font-size:.72rem; padding:.35rem .5rem; background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.35); color:#a5b4fc; text-decoration:none; text-align:center;">✏️ Edit</a>
                         <form method="POST" action="{{ route('admin.winners.approve', $win) }}" style="flex:1;">
                             @csrf
                             <button type="submit" class="btn-a btn-green" style="width:100%; justify-content:center; font-size:.72rem; padding:.35rem .5rem;">✅ Approve</button>
@@ -195,11 +196,14 @@
                                style="flex:1; min-width:0; background:var(--bg); border:1px solid var(--border); color:{{ $win->winning_amount ? '#10b981' : 'var(--text)' }}; border-radius:4px; padding:2px 5px; font-size:.65rem; font-weight:{{ $win->winning_amount ? '700' : '400' }};">
                         <button type="submit" style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.25); color:#6ee7b7; border-radius:4px; padding:2px 6px; font-size:.6rem; font-weight:700; cursor:pointer;">✓</button>
                     </form>
-                    <form method="POST" action="{{ route('admin.winners.reject', $win) }}" style="margin-top:.4rem;"
-                          onsubmit="return confirm('Remove this winner?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="btn-a btn-red" style="width:100%; justify-content:center; font-size:.65rem; padding:.25rem .4rem;">Remove</button>
-                    </form>
+                    <div style="display:flex; gap:.3rem; margin-top:.4rem;">
+                        <a href="{{ route('admin.winners.edit', $win) }}" style="flex:1; display:flex; align-items:center; justify-content:center; background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); color:#a5b4fc; border-radius:6px; font-size:.63rem; font-weight:700; padding:.25rem .4rem; text-decoration:none;">✏️ Edit</a>
+                        <form method="POST" action="{{ route('admin.winners.reject', $win) }}" style="flex:1;"
+                              onsubmit="return confirm('Remove this winner?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn-a btn-red" style="width:100%; justify-content:center; font-size:.63rem; padding:.25rem .4rem;">Remove</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             @endforeach

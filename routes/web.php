@@ -114,9 +114,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Winners */
         Route::get('/winners',                        [\App\Http\Controllers\Admin\WinnersAdminController::class, 'index'])->name('winners.index');
+        Route::get('/winners/{winner}/edit',          [\App\Http\Controllers\Admin\WinnersAdminController::class, 'edit'])->name('winners.edit');
+        Route::put('/winners/{winner}',               [\App\Http\Controllers\Admin\WinnersAdminController::class, 'update'])->name('winners.update');
         Route::post('/winners/{winner}/approve',      [\App\Http\Controllers\Admin\WinnersAdminController::class, 'approve'])->name('winners.approve');
         Route::post('/winners/{winner}/amount',       [\App\Http\Controllers\Admin\WinnersAdminController::class, 'updateAmount'])->name('winners.update-amount');
         Route::delete('/winners/{winner}',            [\App\Http\Controllers\Admin\WinnersAdminController::class, 'reject'])->name('winners.reject');
+
+        /* Broadcast */
+        Route::get('/broadcast',      [\App\Http\Controllers\Admin\BroadcastController::class, 'index'])->name('broadcast.index');
+        Route::post('/broadcast/send',[\App\Http\Controllers\Admin\BroadcastController::class, 'send'])->name('broadcast.send');
 
         /* Newsletter */
         Route::get('/newsletter',                       [Admin\NewsletterAdminController::class, 'index'])->name('newsletter.index');
