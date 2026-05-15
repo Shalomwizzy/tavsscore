@@ -332,13 +332,13 @@ class PredictionService
 
         $verdict = null;
         try {
-            $verdict = $this->geminiService->predictionVerdict(
-                match:          $match,
-                groqOutcome:    $groqOutcome,
-                groqConfidence: $groqConfidence,
-                homeStats:      $homeStats,
-                awayStats:      $awayStats,
-                h2h:            $h2h,
+            // Gemini analyses INDEPENDENTLY — it receives only raw stats and H2H,
+            // never Groq's recommendation. We compare their conclusions afterwards.
+            $verdict = $this->geminiService->independentVerdict(
+                match:      $match,
+                homeStats:  $homeStats,
+                awayStats:  $awayStats,
+                h2h:        $h2h,
             );
         } catch (\Throwable) {
             // Gemini failure must never block a prediction
@@ -346,16 +346,30 @@ class PredictionService
 
         if ($verdict === null) return $tips;
 
+        // Agreement = both AIs independently reached the same market conclusion
+        $agree = mb_strtolower(trim($verdict['outcome'])) === mb_strtolower(trim($groqOutcome));
+
         $tips[0]['gemini_tip']    = $verdict['outcome'];
-        $tips[0]['gemini_agrees'] = $verdict['agree'];
+        $tips[0]['gemini_agrees'] = $agree;
         $tips[0]['gemini_conf']   = $verdict['confidence'];
 
-        // When both AIs agree, average their confidences for a more honest score
-        if ($verdict['agree']) {
+        // When both AIs independently agree, average their confidences
+        if ($agree) {
             $tips[0]['confidence'] = (int) round(($groqConfidence + $verdict['confidence']) / 2);
         }
 
         return $tips;
+    }
+
+    /**
+     * Returns true if this prediction should be shown.
+     * false = Gemini explicitly disagreed (hard exclude).
+     * null/missing = Gemini not configured or pre-dual-AI data — still eligible.
+     */
+    private function geminiAgrees(Prediction $p): bool
+    {
+        $tips = is_array($p->tips) ? $p->tips : [];
+        return ($tips[0]['gemini_agrees'] ?? null) !== false;
     }
 
     /**
@@ -627,7 +641,10 @@ class PredictionService
 
             $this->autoResolveCollection($predictions);
 
-            return $predictions->map(fn (Prediction $p): array => $this->formatPrediction($p));
+            return $predictions
+                ->filter(fn (Prediction $p) => $this->geminiAgrees($p))
+                ->values()
+                ->map(fn (Prediction $p): array => $this->formatPrediction($p));
         }
 
         $today = CarbonImmutable::now($tz)->startOfDay();
@@ -653,7 +670,10 @@ class PredictionService
 
         $this->autoResolveCollection($predictions);
 
-        return $predictions->map(fn (Prediction $p): array => $this->formatPrediction($p));
+        return $predictions
+            ->filter(fn (Prediction $p) => $this->geminiAgrees($p))
+            ->values()
+            ->map(fn (Prediction $p): array => $this->formatPrediction($p));
     }
 
     /**

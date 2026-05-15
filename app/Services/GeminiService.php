@@ -160,14 +160,15 @@ PROMPT;
     }
 
     /**
-     * Full-context prediction verdict for daily picks and lineup picks.
-     * Receives Groq's recommendation plus team stats and H2H — same depth
-     * as rolloverVerdict but tuned for regular predictions, not just safe markets.
+     * Completely independent prediction — Gemini receives only the raw match
+     * stats and H2H, with NO knowledge of what Groq said. It produces its own
+     * outcome. The caller then compares this to Groq's tip to determine agreement.
+     *
+     * This is true independent cross-validation: both AIs analyse the same data
+     * separately and we only trust predictions where they reach the same conclusion.
      */
-    public function predictionVerdict(
+    public function independentVerdict(
         FootballMatch $match,
-        string        $groqOutcome,
-        ?int          $groqConfidence,
         array         $homeStats = [],
         array         $awayStats = [],
         array         $h2h = [],
@@ -179,7 +180,7 @@ PROMPT;
         $h2hBlock  = $this->buildH2HBlock($h2h);
 
         $prompt = <<<PROMPT
-You are an expert football betting analyst. Analyse this match independently and decide whether you agree with the primary AI's recommendation.
+You are an expert football analyst. Analyse this match using only the data provided and predict the single most likely betting outcome.
 
 MATCH:   {$match->home_team} vs {$match->away_team}
 LEAGUE:  {$match->league} ({$match->league_country})
@@ -191,22 +192,17 @@ KICKOFF: {$match->match_time?->format('Y-m-d H:i')} UTC
 
 {$h2hBlock}
 
-PRIMARY AI (GROQ) SAYS: {$groqOutcome} (confidence: {$groqConfidence}%)
-
-Your task:
-1. Analyse the fixture using the stats and H2H data above — do NOT blindly follow Groq.
-2. Decide if you AGREE with the recommendation.
-3. Rate your own confidence 0–100%.
-
-Rules:
-- If the data genuinely supports Groq's pick, agree.
-- If you see clear evidence against it (poor recent form, H2H strongly against, etc.), disagree and name your preferred market.
-- Be analytical and honest.
+Instructions:
+- Analyse the data carefully: recent form, goals scored/conceded, H2H record, home/away patterns.
+- Pick the SINGLE most confident outcome from the allowed list below.
+- Only pick an outcome you genuinely believe in — do not guess.
+- Rate your confidence 0–100%.
 
 Respond ONLY with valid JSON (no markdown, no code fences):
-{"agree":true,"outcome":"Home Win","confidence":78}
+{"outcome":"Home Win","confidence":78}
 
-Allowed market labels: Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12), Over 1.5 Goals, Over 2.5 Goals, Under 2.5 Goals, Both Teams Score (GG), No Both Teams Score (NG), Draw No Bet - Home, Draw No Bet - Away
+Allowed outcomes (use EXACT label):
+Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12), Over 1.5 Goals, Over 2.5 Goals, Under 2.5 Goals, Both Teams Score (GG), No Both Teams Score (NG), Draw No Bet - Home, Draw No Bet - Away
 PROMPT;
 
         try {
@@ -214,10 +210,10 @@ PROMPT;
                 ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
                 ->post('https://generativelanguage.googleapis.com/v1beta/models/' . config('services.gemini.model', 'gemini-2.0-flash') . ':generateContent', [
                     'contents'         => [['parts' => [['text' => $prompt]]]],
-                    'generationConfig' => ['temperature' => 0.15, 'maxOutputTokens' => 100],
+                    'generationConfig' => ['temperature' => 0.10, 'maxOutputTokens' => 80],
                 ]);
         } catch (ConnectionException | Throwable $e) {
-            Log::info('Gemini predictionVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
+            Log::info('Gemini independentVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
             return null;
         }
 
@@ -227,12 +223,11 @@ PROMPT;
         $raw  = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $raw);
         $data = json_decode(trim($raw), true);
 
-        if (! is_array($data) || ! isset($data['agree'])) return null;
+        if (! is_array($data) || empty($data['outcome'])) return null;
 
         return [
-            'agree'      => (bool) $data['agree'],
-            'outcome'    => $data['outcome']    ?? $groqOutcome,
-            'confidence' => (int)  ($data['confidence'] ?? $groqConfidence ?? 70),
+            'outcome'    => trim((string) $data['outcome']),
+            'confidence' => (int) ($data['confidence'] ?? 70),
         ];
     }
 }
