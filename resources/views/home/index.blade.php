@@ -147,8 +147,8 @@
             The Smartest Way<br>to Follow <span class="grad">Football</span>
         </h1>
         <p class="hero-desc">
-            Live scores, dual-AI match predictions, daily picks, rollover challenges,
-            and full African football coverage — all updated in real time.
+            Live scores, triple-AI match predictions, daily picks, rollover challenges,
+            and full African football coverage all updated in real time.
         </p>
         <div class="hero-ctas">
             <a href="{{ route('live.index') }}"        class="btn-ts btn-green">⚡ View Live Scores</a>
@@ -202,7 +202,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Live Scores</div>
                     <p class="nsc-desc">
-                        Real-time match scores from 25+ competitions updated every 30 seconds — no refresh needed.
+                        Real-time match scores from 25+ competitions updated every 30 seconds no refresh needed.
                         See live minute-by-minute updates, goals, cards, and substitutions as they happen,
                         grouped by league so you never lose track of your match.
                     </p>
@@ -219,9 +219,9 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Match Predictions</div>
                     <p class="nsc-desc">
-                        Our dual-AI engine (Groq + Gemini) analyses every upcoming match — team form, head-to-head records,
-                        injury reports, confirmed lineups, real-time news, and referee statistics — then selects the strongest market
-                        with a confidence score and full reasoning you can read in plain English.
+                        Our triple-AI engine (Groq + Gemini + Mistral) independently analyses every upcoming match — team form, head-to-head records,
+                        injury reports, confirmed lineups, real-time news — then all three AIs must agree on the same outcome before
+                        it's published, with a confidence score and full reasoning you can read in plain English.
                     </p>
                     <div class="nsc-cta" style="color:#93c5fd;">See All Predictions →</div>
                 </div>
@@ -240,7 +240,7 @@
                     <p class="nsc-desc">
                         Every morning the AI curates the top 3 best-value bets from all of today's fixtures,
                         ranked #1 to #3 by confidence. Pick #1 is the single strongest selection of the day.
-                        Each pick includes the full AI analysis — exactly why it chose that market and what the data says.
+                        Each pick includes the full AI analysis exactly why it chose that market and what the data says.
                     </p>
                     @if($topPick)
                     <div style="background:rgba(245,158,11,.07); border:1px solid rgba(245,158,11,.18); border-radius:9px; padding:.55rem .75rem; margin-top:.65rem; font-size:.78rem;">
@@ -269,8 +269,8 @@
                     <div class="nsc-title">Rollover Challenge</div>
                     <p class="nsc-desc">
                         The ultimate 10-day AI betting challenge. We start with a fixed stake and attempt to grow it
-                        every single day for 10 consecutive days — each day's profit rolling into the next bet.
-                        Both Groq and Gemini must independently agree on the pick before it's placed. One loss resets everything.
+                        every single day for 10 consecutive days each day's profit rolling into the next bet.
+                        Groq, Gemini, and Mistral all independently analyse every match and must agree on the same pick before it's placed. One loss resets everything.
                     </p>
                     @if($rollover)
                     <div style="margin-top:.6rem;">
@@ -325,7 +325,7 @@
                     <p class="nsc-desc">
                         Using Poisson distribution mathematics, we calculate the probability of every possible scoreline
                         for each match and surface the top 3 most likely exact scores.
-                        Instead of just "home win" — we tell you it's most likely to end 2–1, with the probability percentage.
+                        Instead of just "home win"  we tell you it's most likely to end 2–1, with the probability percentage.
                         Perfect for exact score and scorecast markets.
                     </p>
                     <div class="nsc-cta" style="color:#c4b5fd;">See Score Predictions →</div>
@@ -343,7 +343,7 @@
                     <p class="nsc-desc">
                         The only predictions platform with dedicated African football coverage.
                         We follow the NPFL, PSL, Ghana Premier League, Egyptian Premier, CAF Champions League,
-                        AFCON, Botola Pro, FKF Premier, and more — with AI match analysis written in
+                        AFCON, Botola Pro, FKF Premier, and more with AI match analysis written in
                         <strong style="color:#fff;">Pidgin English and Swahili</strong> for local fans.
                     </p>
                     <div class="nsc-cta" style="color:#6ee7b7;">Explore African Football →</div>
@@ -401,7 +401,7 @@
                     <div class="nsc-title">Past Results</div>
                     <p class="nsc-desc">
                         A complete archive of every prediction we've made and how it ended.
-                        Browse by date or league — see the AI's predicted market, the actual final score,
+                        Browse by date or league see the AI's predicted market, the actual final score,
                         and whether the pick was correct. No cherry-picking, no hidden losses — full history, always.
                     </p>
                     @if($recentResults->isNotEmpty())
@@ -429,7 +429,7 @@
                     <p class="nsc-desc">
                         Won money using one of our picks? We want to celebrate with you.
                         Upload a screenshot of your winning bet slip, add your story, and get featured on the platform.
-                        Real wins from real people — every submission is reviewed before going live.
+                        Real wins from real people every submission is reviewed before going live.
                     </p>
                     <div class="nsc-cta" style="color:#fcd34d;">Submit Your Win →</div>
                 </div>
@@ -444,7 +444,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Hall of Fame</div>
                     <p class="nsc-desc">
-                        The leaderboard of top earners — ranked by their single biggest verified win.
+                        The leaderboard of top earners ranked by their single biggest verified win.
                         Every entry is a real bettor who used TavsScore picks and posted their winning slip.
                         Can you make it to the top? Submit a win on the Winners page to claim your spot.
                     </p>
@@ -461,7 +461,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Blog</div>
                     <p class="nsc-desc">
-                        In-depth football analysis articles, match previews, tactical breakdowns, and betting market guides —
+                        In-depth football analysis articles, match previews, tactical breakdowns, and betting market guides
                         written by the TavsScore team with AI assistance. Learn how our prediction models work,
                         which markets have the best value, and get expert insight on the biggest fixtures.
                     </p>
@@ -481,7 +481,7 @@
     <div class="wrap">
         <div class="section-label">Updated live</div>
         <h2 class="section-title">Today's picks at a glance</h2>
-        <p class="section-desc">Real data from our AI engine — refreshed throughout the day.</p>
+        <p class="section-desc">Real data from our AI engine refreshed throughout the day.</p>
 
         <div class="picks-grid">
 
@@ -558,7 +558,7 @@
                     <div style="font-size:.63rem; color:#a5b4fc; font-weight:800; text-transform:uppercase; margin-bottom:.25rem;">Today's Rollover Pick</div>
                     <div style="font-size:.82rem; font-weight:700; color:#fff;">{{ $rolloverPick->groq_verdict }}</div>
                     <div style="font-size:.7rem; color:var(--text-dim); margin-top:.15rem;">Odds: {{ $rolloverPick->implied_odds }} · Stake: ₦{{ number_format($rolloverPick->stake_amount, 0) }}</div>
-                    @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ Groq + Gemini both agree on this pick</div>@endif
+                    @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ Groq + Gemini + Mistral all agree on this pick</div>@endif
                 </div>
                 @else
                 <div style="font-size:.78rem; color:var(--text-dim); padding:.4rem 0;">Today's pick is selected at 9:30am each morning.</div>

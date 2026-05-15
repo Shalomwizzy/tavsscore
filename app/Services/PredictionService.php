@@ -24,11 +24,12 @@ class PredictionService
     private const EXCLUDED_UPCOMING_STATUSES = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
     public function __construct(
-        private readonly GroqService   $groqService,
-        private readonly OddsService   $oddsService,
-        private readonly GeminiService $geminiService,
-        private readonly NewsService   $newsService,
-        private readonly LineupService $lineupService,
+        private readonly GroqService    $groqService,
+        private readonly OddsService    $oddsService,
+        private readonly GeminiService  $geminiService,
+        private readonly MistralService $mistralService,
+        private readonly NewsService    $newsService,
+        private readonly LineupService  $lineupService,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -325,37 +326,74 @@ class PredictionService
         array         $awayStats = [],
         array         $h2h = [],
     ): array {
-        if (empty($tips) || ! $this->geminiService->isConfigured()) return $tips;
+        if (empty($tips)) return $tips;
 
         $groqOutcome    = $tips[0]['market']     ?? '';
         $groqConfidence = (int) ($tips[0]['confidence'] ?? 70);
 
-        $verdict = null;
-        try {
-            // Gemini analyses INDEPENDENTLY — it receives only raw stats and H2H,
-            // never Groq's recommendation. We compare their conclusions afterwards.
-            $verdict = $this->geminiService->independentVerdict(
-                match:      $match,
-                homeStats:  $homeStats,
-                awayStats:  $awayStats,
-                h2h:        $h2h,
-            );
-        } catch (\Throwable) {
-            // Gemini failure must never block a prediction
+        // Groq itself is below 50% — exclude immediately without calling the other AIs
+        if ($groqConfidence < 50) {
+            $tips[0]['gemini_agrees'] = false;
+            return $tips;
         }
 
-        if ($verdict === null) return $tips;
+        // ── Call Gemini independently ─────────────────────────────
+        $geminiVerdict = null;
+        if ($this->geminiService->isConfigured()) {
+            try {
+                $geminiVerdict = $this->geminiService->independentVerdict(
+                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h,
+                );
+            } catch (\Throwable) {}
+        }
 
-        // Agreement = both AIs independently reached the same market conclusion
-        $agree = mb_strtolower(trim($verdict['outcome'])) === mb_strtolower(trim($groqOutcome));
+        // ── Call Mistral independently ────────────────────────────
+        $mistralVerdict = null;
+        if ($this->mistralService->isConfigured()) {
+            try {
+                $mistralVerdict = $this->mistralService->independentVerdict(
+                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h,
+                );
+            } catch (\Throwable) {}
+        }
 
-        $tips[0]['gemini_tip']    = $verdict['outcome'];
-        $tips[0]['gemini_agrees'] = $agree;
-        $tips[0]['gemini_conf']   = $verdict['confidence'];
+        // Any configured AI below 50% confidence → hard exclude
+        if ($geminiVerdict !== null && $geminiVerdict['confidence'] < 50) {
+            $tips[0]['gemini_agrees'] = false;
+            $tips[0]['gemini_tip']    = $geminiVerdict['outcome'];
+            $tips[0]['gemini_conf']   = $geminiVerdict['confidence'];
+            return $tips;
+        }
+        if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 50) {
+            $tips[0]['gemini_agrees'] = false;
+            $tips[0]['mistral_tip']   = $mistralVerdict['outcome'];
+            $tips[0]['mistral_conf']  = $mistralVerdict['confidence'];
+            return $tips;
+        }
 
-        // When both AIs independently agree, average their confidences
-        if ($agree) {
-            $tips[0]['confidence'] = (int) round(($groqConfidence + $verdict['confidence']) / 2);
+        // All configured AIs must independently reach the same outcome as Groq
+        $groqNorm   = mb_strtolower(trim($groqOutcome));
+        $geminiOk   = $geminiVerdict  === null || mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm;
+        $mistralOk  = $mistralVerdict === null || mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm;
+        $allAgree   = $geminiOk && $mistralOk;
+
+        // Store each AI's verdict for display / debugging
+        if ($geminiVerdict !== null) {
+            $tips[0]['gemini_tip']   = $geminiVerdict['outcome'];
+            $tips[0]['gemini_conf']  = $geminiVerdict['confidence'];
+        }
+        if ($mistralVerdict !== null) {
+            $tips[0]['mistral_tip']  = $mistralVerdict['outcome'];
+            $tips[0]['mistral_conf'] = $mistralVerdict['confidence'];
+        }
+        $tips[0]['gemini_agrees'] = $allAgree;
+
+        // When all AIs agree, average all available confidences for an honest score
+        if ($allAgree) {
+            $confs = [$groqConfidence];
+            if ($geminiVerdict)  $confs[] = $geminiVerdict['confidence'];
+            if ($mistralVerdict) $confs[] = $mistralVerdict['confidence'];
+            $tips[0]['confidence'] = (int) round(array_sum($confs) / count($confs));
         }
 
         return $tips;

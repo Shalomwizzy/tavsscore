@@ -45,9 +45,16 @@ return [
     'gemini' => [
         // Optional second-opinion AI. Leave blank to disable.
         // Get a free key: https://aistudio.google.com/app/apikey
-        // gemini-2.5-flash-lite has a generous free tier and is fast.
         'key'   => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-2.5-flash-lite'),
+    ],
+
+    'mistral' => [
+        // Optional third-opinion AI. Leave blank to disable.
+        // Get a free key: https://console.mistral.ai
+        'key'   => env('MISTRAL_API_KEY'),
+        'model' => env('MISTRAL_MODEL', 'mistral-small-latest'),
+        'url'   => env('MISTRAL_API_URL', 'https://api.mistral.ai/v1/chat/completions'),
     ],
 
     'ga' => [

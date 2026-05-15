@@ -12,7 +12,7 @@ class RolloverPick extends Model
         'day_number', 'pick_date',
         'implied_odds', 'stake_amount', 'potential_return',
         'was_correct', 'result_score',
-        'groq_verdict', 'gemini_verdict', 'both_agree',
+        'groq_verdict', 'gemini_verdict', 'mistral_verdict', 'both_agree',
         'status',
     ];
 

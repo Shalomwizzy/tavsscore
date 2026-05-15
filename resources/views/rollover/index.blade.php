@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Rollover Challenge — Day ' . ($challenge ? $challenge->currentDay() - 1 : 0) . ' of 10')
-@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, compounding stakes for maximum returns. Both Groq + Gemini AI validated.')
+@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, compounding stakes for maximum returns. Groq + Gemini + Mistral triple-AI validated.')
 
 @push('styles')
 <style>
@@ -258,8 +258,11 @@
             @if($todayPick->gemini_verdict)
             <span class="rv-ai-badge rv-ai-gemini">🔷 Gemini: {{ $todayPick->gemini_verdict }}</span>
             @endif
+            @if($todayPick->mistral_verdict)
+            <span class="rv-ai-badge rv-ai-gemini">🟠 Mistral: {{ $todayPick->mistral_verdict }}</span>
+            @endif
             @if($todayPick->both_agree)
-            <span class="rv-ai-badge rv-ai-agreed">✓ Both AIs agree</span>
+            <span class="rv-ai-badge rv-ai-agreed">✓ All 3 AIs agree</span>
             @endif
         </div>
 
@@ -297,7 +300,7 @@
 
     {{-- Disclaimer --}}
     <div class="rv-disclaimer">
-        ⚠️ <strong>Rollover is a compounding strategy, not a guarantee.</strong> The AI picks the safest available match using Groq + Gemini cross-validation, but no prediction is certain. Only stake what you can afford to lose. If the pick loses, the challenge resets — this is normal.
+        ⚠️ <strong>Rollover is a compounding strategy, not a guarantee.</strong> The AI picks the safest available match using Groq + Gemini + Mistral triple cross-validation, but no prediction is certain. Only stake what you can afford to lose. If the pick loses, the challenge resets — this is normal.
     </div>
 
     {{-- Challenge history table --}}
@@ -368,8 +371,8 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.75rem;">
             <div style="background:rgba(245,158,11,.05); border:1px solid rgba(245,158,11,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🤖</div>
-                <div style="font-weight:700; color:#fcd34d; font-size:.8rem; margin-bottom:.25rem;">Dual AI Selection</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">Groq and Gemini both independently analyse every available match and must agree before a pick is selected.</div>
+                <div style="font-weight:700; color:#fcd34d; font-size:.8rem; margin-bottom:.25rem;">Triple AI Selection</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">Groq, Gemini, and Mistral all independently analyse every match. All three must agree on the same outcome before a pick is selected.</div>
             </div>
             <div style="background:rgba(16,185,129,.05); border:1px solid rgba(16,185,129,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">📈</div>

@@ -669,7 +669,7 @@ if (! function_exists('stripTip')) {
                                 @endif
                                 @if(array_key_exists('gemini_agrees', $headline))
                                 <div class="pt-consensus {{ ($headline['gemini_agrees'] ?? false) ? 'pt-consensus-ok' : 'pt-consensus-warn' }}" style="margin-left:.35rem;">
-                                    {{ ($headline['gemini_agrees'] ?? false) ? '🤖🤖 Both AIs agree' : '⚠️ AI #2 says ' . ($headline['gemini_tip'] ?? '?') }}
+                                    {{ ($headline['gemini_agrees'] ?? false) ? '🤖🤖🤖 All 3 AIs agree' : '⚠️ AIs disagree' }}
                                 </div>
                                 @endif
                             </div>

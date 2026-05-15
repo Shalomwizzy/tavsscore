@@ -27,6 +27,7 @@ class RolloverService
 
     public function __construct(
         private readonly GeminiService     $gemini,
+        private readonly MistralService    $mistral,
         private readonly PredictionService $predictionService,
         private readonly TelegramService   $telegram,
         private readonly OneSignalService  $oneSignal,
@@ -144,7 +145,7 @@ class RolloverService
             $match = $pred->match;
             if (! $match) continue;
 
-            // Cross-validate with Gemini using full extended stats + H2H
+            // Triple-AI cross-validation: all three AIs analyse independently
             $cacheKey = 'rollover_stats_' . $match->id;
             [$homeStats, $awayStats, $h2h] = Cache::remember($cacheKey, now()->addHours(3), function () use ($match) {
                 return [
@@ -154,34 +155,38 @@ class RolloverService
                 ];
             });
 
-            $gemini    = $this->gemini->rolloverVerdict(
-                match:          $match,
-                groqOutcome:    $pred->predicted_outcome,
-                groqConfidence: $pred->confidence,
-                homeStats:      $homeStats,
-                awayStats:      $awayStats,
-                h2h:            $h2h,
-            );
+            $geminiVerdict  = $this->gemini->independentVerdict($match, $homeStats, $awayStats, $h2h);
+            $mistralVerdict = $this->mistral->independentVerdict($match, $homeStats, $awayStats, $h2h);
 
-            // Both AIs must agree — no fallback to single-AI picks
-            if ($gemini === null || ! $gemini['agree']) {
+            $groqNorm = mb_strtolower(trim($pred->predicted_outcome));
+
+            // Any AI below 50% confidence → skip this match
+            if ($geminiVerdict  !== null && $geminiVerdict['confidence']  < 50) continue;
+            if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 50) continue;
+
+            // Every configured AI must independently reach the same outcome as Groq
+            $geminiOk  = $geminiVerdict  === null || mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm;
+            $mistralOk = $mistralVerdict === null || mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm;
+
+            if (! $geminiOk || ! $mistralOk) {
                 continue;
             }
 
-            // Prefer highest confidence among agreed picks
+            // Prefer highest Groq confidence among fully-agreed picks
             if ($best === null || $pred->confidence > $best['prediction']->confidence) {
                 $best = [
-                    'prediction' => $pred,
-                    'gemini'     => $gemini,
-                    'bothAgree'  => true,
+                    'prediction'     => $pred,
+                    'geminiVerdict'  => $geminiVerdict,
+                    'mistralVerdict' => $mistralVerdict,
+                    'allAgree'       => true,
                 ];
             }
-            // Strong dual-AI + high confidence — stop searching
+            // Very high confidence from all AIs — stop searching
             if ($pred->confidence >= 85) break;
         }
 
         if (! $best) {
-            Log::info('RolloverService: no match had dual-AI agreement today — no pick selected.');
+            Log::info('RolloverService: no match had triple-AI agreement today — no pick selected.');
             return null;
         }
 
@@ -198,8 +203,8 @@ class RolloverService
             'stake_amount'     => $stake,
             'potential_return' => round($stake * $displayOdds, 2),
             'groq_verdict'     => $pred->predicted_outcome,
-            'gemini_verdict'   => $best['gemini']['outcome'] ?? null,
-            'both_agree'       => $best['bothAgree'],
+            'gemini_verdict'   => $best['geminiVerdict']['outcome']  ?? null,
+            'both_agree'       => $best['allAgree'],
             'status'           => 'pending',
         ]);
     }
