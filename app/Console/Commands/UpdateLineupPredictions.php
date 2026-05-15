@@ -23,7 +23,7 @@ class UpdateLineupPredictions extends Command
 
         $matches = FootballMatch::query()
             ->whereBetween('match_time', [$today, $cutoff])
-            ->whereNotIn('status', ['FT', 'AET', 'PEN', 'CANC', 'PST'])
+            ->whereNotIn('status', ['FT', 'AET', 'PEN', 'CANC', 'PST', '1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])
             ->orderBy('match_time')
             ->get();
 

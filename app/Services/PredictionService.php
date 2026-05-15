@@ -185,7 +185,8 @@ class PredictionService
                 );
         }
 
-        $likelyScores = $this->topScorelines($homeXg, $awayXg);
+        [$homeXgScore, $awayXgScore] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
+        $likelyScores = $this->topScorelines($homeXgScore, $awayXgScore);
 
         return Prediction::query()->updateOrCreate(
             ['match_id' => $match->id],
@@ -545,6 +546,7 @@ class PredictionService
 
         // Refine xG with lineup context: more starters = more attacking threat
         [$homeXgFinal, $awayXgFinal] = $this->lineupAdjustedXg($homeXgBase, $awayXgBase, $lineupData);
+        [$homeXgFinal, $awayXgFinal] = $this->h2hXgCalibration($h2h, $homeXgFinal, $awayXgFinal);
 
         $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
         $data['likely_scores'] = $likelyScores;
@@ -1062,37 +1064,11 @@ class PredictionService
      */
     private function lineupAdjustedXg(float $homeXg, float $awayXg, string $lineupText): array
     {
-        // Signals that a key attacking player is out for the home side
-        $homeReducers = ['home.*out', 'home.*injury', 'home.*suspend', 'home.*miss', 'striker.*out', 'forward.*out'];
-        // Signals that a key attacking player is out for the away side
-        $awayReducers = ['away.*out', 'away.*injury', 'away.*suspend', 'away.*miss'];
-        // Signals full-strength attack
-        $homeBoosts   = ['home.*full.*strength', 'home.*all.*available', 'home.*fit'];
-        $awayBoosts   = ['away.*full.*strength', 'away.*all.*available', 'away.*fit'];
+        // Split into home section (first block) and away section (second block)
+        $sections = preg_split('/\n\n+/', trim($lineupText), 2);
 
-        $homeMultiplier = 1.0;
-        $awayMultiplier = 1.0;
-
-        foreach ($homeReducers as $pattern) {
-            if (preg_match("/{$pattern}/i", $lineupText)) {
-                $homeMultiplier = max(0.80, $homeMultiplier - 0.08);
-            }
-        }
-        foreach ($awayReducers as $pattern) {
-            if (preg_match("/{$pattern}/i", $lineupText)) {
-                $awayMultiplier = max(0.80, $awayMultiplier - 0.08);
-            }
-        }
-        foreach ($homeBoosts as $pattern) {
-            if (preg_match("/{$pattern}/i", $lineupText)) {
-                $homeMultiplier = min(1.12, $homeMultiplier + 0.06);
-            }
-        }
-        foreach ($awayBoosts as $pattern) {
-            if (preg_match("/{$pattern}/i", $lineupText)) {
-                $awayMultiplier = min(1.12, $awayMultiplier + 0.06);
-            }
-        }
+        $homeMultiplier = $this->attackMultiplierFromLineupSection($sections[0] ?? '');
+        $awayMultiplier = $this->attackMultiplierFromLineupSection($sections[1] ?? '');
 
         return [
             $this->clampXg($homeXg * $homeMultiplier),
@@ -1100,13 +1076,88 @@ class PredictionService
         ];
     }
 
-    private function topScorelines(float $homeXg, float $awayXg, int $n = 4): array
+    private function attackMultiplierFromLineupSection(string $section): float
+    {
+        if (blank($section)) return 1.0;
+
+        // Lineup format: "Arsenal [4-3-3] Coach: Arteta\nStarters: 1. Raya (G), 11. Saka (F), ..."
+        // Count actual position tags from the starters list
+        $forwards  = preg_match_all('/\(F\)/i', $section, $m) ? count($m[0]) : 0;
+        $defenders = preg_match_all('/\(D\)/i', $section, $m) ? count($m[0]) : 0;
+
+        $multiplier = 1.0;
+
+        // 3+ forwards → attacking intent (4-3-3, 3-4-3)
+        // 1 forward  → defensive / counter setup (4-5-1, 5-4-1)
+        if ($forwards >= 3) {
+            $multiplier += 0.09;
+        } elseif ($forwards === 1) {
+            $multiplier -= 0.08;
+        }
+
+        // 5+ defenders → low-block, likely fewer goals
+        if ($defenders >= 5) {
+            $multiplier -= 0.07;
+        }
+
+        // Formation string adjustment (e.g. [4-3-3] → last number = attackers)
+        if (preg_match('/\[(\d+(?:-\d+)+)\]/', $section, $fm)) {
+            $parts = array_map('intval', explode('-', $fm[1]));
+            $attackLine = (int) end($parts);
+            if ($attackLine >= 3 && $forwards < 3) {
+                $multiplier += 0.05; // formation says 3-up but pos tags say otherwise
+            } elseif ($attackLine === 1 && $forwards > 1) {
+                $multiplier -= 0.04;
+            }
+        }
+
+        return max(0.82, min(1.18, $multiplier));
+    }
+
+    private function h2hXgCalibration(array $h2h, float $homeXg, float $awayXg): array
+    {
+        $results = $h2h['results'] ?? [];
+        if (count($results) < 2) {
+            return [$homeXg, $awayXg]; // Not enough history to bias
+        }
+
+        $totalHome = 0;
+        $totalAway = 0;
+        $count     = 0;
+
+        foreach ($results as $result) {
+            // Format: "15 Mar 2024 (at X): TeamA 2-1 TeamB → TeamA won"
+            if (preg_match('/\s(\d+)-(\d+)\s/', $result, $m)) {
+                $totalHome += (int) $m[1];
+                $totalAway += (int) $m[2];
+                $count++;
+            }
+        }
+
+        if ($count === 0) {
+            return [$homeXg, $awayXg];
+        }
+
+        $h2hHome = $totalHome / $count;
+        $h2hAway = $totalAway / $count;
+
+        // Blend Poisson xG (65%) with H2H historical average (35%)
+        return [
+            $this->clampXg($homeXg * 0.65 + $h2hHome * 0.35),
+            $this->clampXg($awayXg * 0.65 + $h2hAway * 0.35),
+        ];
+    }
+
+    private function topScorelines(float $homeXg, float $awayXg, int $n = 3): array
     {
         $scores = [];
         for ($h = 0; $h <= 5; $h++) {
             for ($a = 0; $a <= 5; $a++) {
-                $p = $this->poisson($homeXg, $h) * $this->poisson($awayXg, $a);
-                $scores["{$h}-{$a}"] = round($p * 100, 1);
+                $p   = $this->poisson($homeXg, $h) * $this->poisson($awayXg, $a);
+                $pct = round($p * 100, 1);
+                if ($pct >= 5.0) { // Only include scores with at least 5% probability
+                    $scores["{$h}-{$a}"] = $pct;
+                }
             }
         }
         arsort($scores);

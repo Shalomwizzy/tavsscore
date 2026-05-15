@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Log;
 class LineupService
 {
     // Lineups are published 60-75 min before kickoff by most clubs.
-    // We check from 3 hours before to 15 minutes after kickoff.
+    // We check from 3 hours before kickoff up to kickoff only — never after.
+    // Sending lineup-based picks after a game has started is useless.
     private const FETCH_WINDOW_MINUTES_BEFORE = 180;
-    private const FETCH_WINDOW_MINUTES_AFTER  = 15;
+    private const FETCH_WINDOW_MINUTES_AFTER  = 0;
 
     public function getLineup(FootballMatch $match): string
     {
