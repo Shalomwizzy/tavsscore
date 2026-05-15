@@ -241,6 +241,16 @@ class TelegramService
         $this->send($msg);
     }
 
+    public function sendWinnerUploadReminder(string $siteUrl): void
+    {
+        $this->send(
+            "🏆 <b>Won with our pick? Show the world!</b>\n\n" .
+            "If you made money from this prediction, come share your winning screenshot on our Winners Wall — it takes 30 seconds, gets you featured, and motivates the whole community! 🙌\n\n" .
+            "👉 <a href=\"{$siteUrl}/winners\">Upload your winnings here</a>\n\n" .
+            "📸 Screenshot of your bet slip or payout is all we need."
+        );
+    }
+
     public function sendDailyResults(array $results, string $siteUrl): void
     {
         if (empty($results)) return;

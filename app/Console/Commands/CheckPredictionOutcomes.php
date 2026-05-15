@@ -88,6 +88,18 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
                     }
 
+                    // Winner upload reminder on every win
+                    $reminderKey = "winner_reminder_pred_{$prediction->id}";
+                    if (! Cache::has($reminderKey)) {
+                        $oneSignal->sendPickOutcome(
+                            title: '🏆 Won? Upload Your Screenshot!',
+                            body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
+                            path:  '/winners',
+                        );
+                        $telegram->sendWinnerUploadReminder($siteUrl);
+                        Cache::put($reminderKey, true, now()->addDays(3));
+                    }
+
                     Cache::put($cacheKey, true, now()->addDays(2));
                 }
             } else {
@@ -158,6 +170,18 @@ class CheckPredictionOutcomes extends Command
                     body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$actualScore} — we called the exact score! 🤖",
                     path:  '/correct-score',
                 );
+
+                // Winner upload reminder
+                $reminderKey = "winner_reminder_score_{$prediction->id}";
+                if (! Cache::has($reminderKey)) {
+                    $oneSignal->sendPickOutcome(
+                        title: '🏆 Won? Upload Your Screenshot!',
+                        body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
+                        path:  '/winners',
+                    );
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    Cache::put($reminderKey, true, now()->addDays(3));
+                }
             } else {
                 $oneSignal->sendPickOutcome(
                     title: '😔 Correct Score — Not This Time',

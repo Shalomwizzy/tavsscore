@@ -292,6 +292,20 @@ class RolloverService
                     league:  $league,
                 );
 
+                // Winner upload reminder on every rollover win
+                if ($newStatus === 'won') {
+                    $reminderKey = "winner_reminder_rollover_{$pick->id}";
+                    if (! Cache::has($reminderKey)) {
+                        $this->oneSignal->sendPickOutcome(
+                            title: '🏆 Won? Upload Your Screenshot!',
+                            body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
+                            path:  '/winners',
+                        );
+                        $this->telegram->sendWinnerUploadReminder($siteUrl);
+                        Cache::put($reminderKey, true, now()->addDays(3));
+                    }
+                }
+
                 Cache::put($cacheKey, true, now()->addDays(3));
             }
         }

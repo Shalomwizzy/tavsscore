@@ -54,4 +54,40 @@ class RolloverAdminController extends Controller
         $pick->update(['status' => 'void', 'was_correct' => null]);
         return back()->with('success', 'Pick voided.');
     }
+
+    public function overridePick(Request $request, RolloverPick $pick): RedirectResponse
+    {
+        $request->validate([
+            'status'       => ['required', 'in:won,lost,pending,void'],
+            'result_score' => ['nullable', 'string', 'max:10', 'regex:/^\d+-\d+$/'],
+        ]);
+
+        $newStatus   = $request->input('status');
+        $resultScore = $request->input('result_score') ?: $pick->result_score;
+
+        $wasCorrect = match ($newStatus) {
+            'won'   => true,
+            'lost'  => false,
+            default => null,
+        };
+
+        $pick->update([
+            'status'       => $newStatus,
+            'was_correct'  => $wasCorrect,
+            'result_score' => $resultScore,
+        ]);
+
+        $challenge = $pick->challenge;
+        if ($challenge) {
+            if ($newStatus === 'won') {
+                $challenge->update(['status' => $pick->day_number >= 10 ? 'complete' : 'active']);
+            } elseif ($newStatus === 'lost') {
+                $challenge->update(['status' => 'complete']);
+            } elseif (in_array($newStatus, ['pending', 'void'], true) && $pick->day_number < 10) {
+                $challenge->update(['status' => 'active']);
+            }
+        }
+
+        return back()->with('success', "Day {$pick->day_number} overridden → {$newStatus}.");
+    }
 }

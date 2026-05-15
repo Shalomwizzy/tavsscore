@@ -116,12 +116,41 @@
                         @endif
                     </td>
                     <td>
-                        @if($rp->status === 'pending')
-                        <form method="POST" action="{{ route('admin.rollover.void-pick', $rp) }}" onsubmit="return confirm('Void this pick?');">
-                            @csrf @method('POST')
-                            <button type="submit" class="btn-a btn-red" style="padding:2px 8px; font-size:.68rem;">Void</button>
-                        </form>
-                        @endif
+                        <div style="display:flex; gap:.3rem; align-items:center; flex-wrap:wrap;">
+                            {{-- Quick void for pending --}}
+                            @if($rp->status === 'pending')
+                            <form method="POST" action="{{ route('admin.rollover.void-pick', $rp) }}" onsubmit="return confirm('Void this pick?');">
+                                @csrf
+                                <button type="submit" class="btn-a btn-red" style="padding:2px 8px; font-size:.67rem;">Void</button>
+                            </form>
+                            @endif
+                            {{-- Override button — all picks --}}
+                            <button onclick="toggleOverride('override-{{ $rp->id }}')"
+                                    style="background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.35); color:#fcd34d; border-radius:5px; padding:2px 8px; font-size:.67rem; font-weight:700; cursor:pointer;">
+                                ✏️ Override
+                            </button>
+                        </div>
+                        {{-- Override form (hidden by default) --}}
+                        <div id="override-{{ $rp->id }}" style="display:none; margin-top:.5rem; background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.2); border-radius:8px; padding:.65rem;">
+                            <form method="POST" action="{{ route('admin.rollover.override-pick', $rp) }}"
+                                  onsubmit="return confirm('Override pick #{{ $rp->day_number }} status? This also updates the challenge status.');">
+                                @csrf
+                                <div style="font-size:.68rem; color:#fcd34d; font-weight:700; margin-bottom:.4rem;">Override Day {{ $rp->day_number }}</div>
+                                <div style="display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.4rem;">
+                                    <select name="status" style="background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:3px 6px; font-size:.7rem; flex:1;">
+                                        @foreach(['won' => '✅ Won', 'lost' => '❌ Lost', 'pending' => '⏳ Pending', 'void' => '⬜ Void'] as $val => $lbl)
+                                            <option value="{{ $val }}" {{ $rp->status === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" name="result_score" value="{{ $rp->result_score }}" placeholder="Score e.g. 2-1"
+                                           pattern="\d+-\d+"
+                                           style="background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:3px 6px; font-size:.7rem; width:80px;">
+                                </div>
+                                <button type="submit" style="background:rgba(245,158,11,.2); border:1px solid rgba(245,158,11,.4); color:#fcd34d; border-radius:5px; padding:3px 12px; font-size:.7rem; font-weight:700; cursor:pointer; width:100%;">
+                                    Save Override
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @endforeach
@@ -204,4 +233,10 @@
 </div>
 @endif
 
+<script>
+function toggleOverride(id) {
+    var el = document.getElementById(id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
 @endsection

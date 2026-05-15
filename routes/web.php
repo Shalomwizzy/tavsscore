@@ -111,6 +111,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/rollover/new-challenge',       [\App\Http\Controllers\Admin\RolloverAdminController::class, 'newChallenge'])->name('rollover.new-challenge');
         Route::post('/rollover/select-pick',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'selectPick'])->name('rollover.select-pick');
         Route::post('/rollover/{pick}/void',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'voidPick'])->name('rollover.void-pick');
+        Route::post('/rollover/{pick}/override',     [\App\Http\Controllers\Admin\RolloverAdminController::class, 'overridePick'])->name('rollover.override-pick');
 
         /* Winners */
         Route::get('/winners',                        [\App\Http\Controllers\Admin\WinnersAdminController::class, 'index'])->name('winners.index');
