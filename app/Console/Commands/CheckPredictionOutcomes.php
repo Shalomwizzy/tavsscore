@@ -23,7 +23,9 @@ class CheckPredictionOutcomes extends Command
     {
         $days  = (int) $this->option('days');
         $since = now()->subDays($days)->startOfDay();
+        $siteUrl = config('app.url');
 
+        // ── 1. Daily picks + lineup picks ────────────────────────────────────
         $pending = Prediction::query()
             ->with('match')
             ->whereNull('was_correct')
@@ -35,11 +37,6 @@ class CheckPredictionOutcomes extends Command
                 ->where('match_time', '>=', $since)
             )
             ->get();
-
-        if ($pending->isEmpty()) {
-            $this->info('No pending outcomes to resolve.');
-            return self::SUCCESS;
-        }
 
         $resolved = 0;
 
@@ -64,12 +61,10 @@ class CheckPredictionOutcomes extends Command
             $prediction->update(['was_correct' => $wasCorrect]);
             $resolved++;
 
-            $score = (int) $match->home_score . '-' . (int) $match->away_score;
+            $score      = (int) $match->home_score . '-' . (int) $match->away_score;
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
             $league     = $match->league ?? '';
-
-            $siteUrl  = config('app.url');
-            $cacheKey = "outcome_notified_{$prediction->id}";
+            $cacheKey   = "outcome_notified_{$prediction->id}";
 
             if ($wasCorrect) {
                 $this->line("  ✅  {$matchLabel} → {$prediction->predicted_outcome} ({$score})");
@@ -84,7 +79,7 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                     }
 
-                    if ($prediction->is_lineup_pick ?? false) {
+                    if ($prediction->has_lineup) {
                         $oneSignal->sendPickOutcome(
                             title: '⚡ Lineup Pick WON! 🎯',
                             body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$prediction->predicted_outcome} ✅",
@@ -108,7 +103,7 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendWrongPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                     }
 
-                    if ($prediction->is_lineup_pick ?? false) {
+                    if ($prediction->has_lineup) {
                         $oneSignal->sendPickOutcome(
                             title: '😔 Lineup Pick Lost',
                             body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Football isn't always fair — we rise again 💪",
@@ -125,7 +120,58 @@ class CheckPredictionOutcomes extends Command
         $this->info("Resolved {$resolved} predictions.");
         Log::info("CheckPredictionOutcomes: resolved {$resolved} predictions.");
 
-        // Also settle any pending rollover picks whose matches have finished
+        // ── 2. Correct score outcomes ─────────────────────────────────────────
+        $scorePredictions = Prediction::query()
+            ->with('match')
+            ->whereNotNull('likely_scores')
+            ->whereHas('match', fn ($q) => $q
+                ->whereIn('status', self::FINISHED_STATUSES)
+                ->whereNotNull('home_score')
+                ->whereNotNull('away_score')
+                ->where('match_time', '>=', $since)
+            )
+            ->get()
+            ->filter(fn ($p) => ! empty($p->likely_scores));
+
+        foreach ($scorePredictions as $prediction) {
+            $match = $prediction->match;
+            if (! $match) continue;
+
+            $cacheKey = "correct_score_notified_{$prediction->id}";
+            if (Cache::has($cacheKey)) continue;
+
+            $actualScore   = (int) $match->home_score . '-' . (int) $match->away_score;
+            $league        = $match->league ?? '';
+            $matchLabel    = "{$match->home_team} vs {$match->away_team}";
+            $likelyScores  = is_array($prediction->likely_scores) ? $prediction->likely_scores : [];
+            $predictedList = collect($likelyScores)->pluck('score')->filter()->implode(', ');
+            $won           = collect($likelyScores)->pluck('score')->contains($actualScore);
+
+            $this->line($won
+                ? "  🎯  {$matchLabel} correct score {$actualScore} — HIT!"
+                : "  ❌  {$matchLabel} correct score {$actualScore} — missed (predicted: {$predictedList})"
+            );
+
+            if ($won) {
+                $oneSignal->sendPickOutcome(
+                    title: '🎯 Correct Score — NAILED IT! 🔥',
+                    body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$actualScore} — we called the exact score! 🤖",
+                    path:  '/correct-score',
+                );
+            } else {
+                $oneSignal->sendPickOutcome(
+                    title: '😔 Correct Score — Not This Time',
+                    body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$actualScore}. Our picks: {$predictedList}",
+                    path:  '/correct-score',
+                );
+            }
+
+            $telegram->sendCorrectScoreOutcome($matchLabel, $predictedList, $actualScore, $won, $siteUrl, $league);
+
+            Cache::put($cacheKey, true, now()->addDays(2));
+        }
+
+        // ── 3. Rollover picks ─────────────────────────────────────────────────
         $rollover->checkPendingPicks();
 
         return self::SUCCESS;

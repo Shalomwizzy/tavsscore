@@ -84,6 +84,38 @@ class TelegramService
         $this->send(implode("\n", $lines));
     }
 
+    public function sendCorrectScoreOutcome(
+        string $match,
+        string $predictedScores,
+        string $actualScore,
+        bool   $won,
+        string $siteUrl,
+        string $league = ''
+    ): void {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+
+        if ($won) {
+            $msg = "🎯🔥 <b>CORRECT SCORE — NAILED IT!</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$actualScore}</b>\n"
+                . "Our predictions included: <b>{$predictedScores}</b> ✅\n\n"
+                . "The AI called the exact scoreline! 🤖🎯\n"
+                . "🔗 <a href=\"{$siteUrl}/correct-score\">See correct score predictions</a>";
+        } else {
+            $msg = "😔 <b>Correct Score — Not This Time</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$actualScore}</b>\n"
+                . "Our predictions: <b>{$predictedScores}</b> ❌\n\n"
+                . "Correct scores are the hardest to predict in football 🙏\n"
+                . "We keep analysing to get closer every day 💪\n"
+                . "🔗 <a href=\"{$siteUrl}/correct-score\">See correct score predictions</a>";
+        }
+
+        $this->send($msg);
+    }
+
     public function sendCorrectScores(array $predictions, string $siteUrl): void
     {
         if (empty($predictions)) return;
