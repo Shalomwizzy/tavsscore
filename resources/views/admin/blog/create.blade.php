@@ -32,7 +32,7 @@
                     <div class="form-group" style="margin-bottom:0">
                         <label class="form-label" for="slug">
                             Slug
-                            <span style="font-size:.68rem; font-weight:400; color:var(--dim); margin-left:.4rem;">auto-generated — edit if needed</span>
+                            <span style="font-size:.68rem; font-weight:400; color:var(--dim); margin-left:.4rem;">auto-generated - edit if needed</span>
                         </label>
                         <div style="display:flex; align-items:center; gap:.5rem;">
                             <span style="font-size:.78rem; color:var(--dim); white-space:nowrap; flex-shrink:0;">tavsscore.com/blog/</span>
@@ -44,7 +44,7 @@
 
                 <div class="a-card">
                     <div class="form-group">
-                        <label class="form-label" for="excerpt">Excerpt <span style="font-size:.68rem; font-weight:400; color:var(--dim);">— shown on cards and used as meta description</span></label>
+                        <label class="form-label" for="excerpt">Excerpt <span style="font-size:.68rem; font-weight:400; color:var(--dim);">- shown on cards and used as meta description</span></label>
                         <textarea id="excerpt" name="excerpt" class="form-textarea" style="min-height:72px;"
                                   placeholder="1–2 sentences summarising the article. 130–160 characters is ideal for SEO.">{{ old('excerpt') }}</textarea>
                         <div class="form-hint" id="excerpt-count"></div>
@@ -148,7 +148,7 @@ document.getElementById('content').addEventListener('input', function() {
 document.getElementById('excerpt').addEventListener('input', function() {
     var n = this.value.length;
     var el = document.getElementById('excerpt-count');
-    el.textContent = n + ' chars' + (n < 130 ? ' — add more for best SEO' : n > 160 ? ' — slightly long' : ' — perfect');
+    el.textContent = n + ' chars' + (n < 130 ? ' - add more for best SEO' : n > 160 ? ' - slightly long' : ' - perfect');
     el.style.color = n >= 130 && n <= 160 ? '#6ee7b7' : 'var(--dim)';
 });
 </script>

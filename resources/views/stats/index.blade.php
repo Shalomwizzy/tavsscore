@@ -2,7 +2,7 @@
 
 @section('title', 'Prediction Accuracy & Track Record | TavsScore')
 @section('meta_description', 'Full transparency: see exactly how accurate TavsScore football predictions are. Win rates by outcome type, by league, and weekly trend.')
-@section('og_title', 'TavsScore Prediction Accuracy — Full Track Record')
+@section('og_title', 'TavsScore Prediction Accuracy - Full Track Record')
 
 @push('styles')
 <style>
@@ -167,7 +167,7 @@
     <div class="stats-empty-title">Building our track record</div>
     <p class="stats-empty-desc">
         Results will appear here once today's daily picks are resolved.<br>
-        Check back after matches finish — the system updates automatically every 5 minutes.
+        Check back after matches finish - the system updates automatically every 5 minutes.
     </p>
     <a href="{{ route('picks.index') }}" class="btn-ts btn-green" style="display:inline-flex; margin-top:1.25rem;">View Today's Picks →</a>
 </div>
@@ -190,7 +190,7 @@
 <div class="period-block" data-period="{{ $key }}" style="{{ $key !== '7d' ? 'display:none' : '' }}">
     <div class="big-stats">
         <div class="big-tile highlight">
-            <div class="big-num {{ $cls }}">{{ $pct !== null ? $pct.'%' : '—' }}</div>
+            <div class="big-num {{ $cls }}">{{ $pct !== null ? $pct.'%' : '-' }}</div>
             <div class="big-lbl">Accuracy</div>
         </div>
         <div class="big-tile">
@@ -234,7 +234,7 @@
                 </div>
             </div>
             <div class="outcome-right">
-                <div class="outcome-pct {{ $cls }}">{{ $pct !== null ? $pct.'%' : '—' }}</div>
+                <div class="outcome-pct {{ $cls }}">{{ $pct !== null ? $pct.'%' : '-' }}</div>
                 <div class="outcome-raw">{{ $stat['correct'] }}/{{ $stat['total'] }}</div>
             </div>
         </div>
@@ -245,7 +245,7 @@
 {{-- ── Weekly chart ── --}}
 <section class="s-section">
     <div class="section-label">Trend</div>
-    <h2 class="section-title" style="font-size:1.2rem;">Weekly accuracy — last 8 weeks</h2>
+    <h2 class="section-title" style="font-size:1.2rem;">Weekly accuracy - last 8 weeks</h2>
     <div class="week-chart">
         @php $maxPct = $weekly->max('pct') ?: 100; @endphp
         @foreach($weekly as $week)
@@ -255,7 +255,7 @@
             $wCls    = $week['pct'] >= 60 ? 'pct-good' : ($week['pct'] >= 45 ? 'pct-ok' : ($week['pct'] !== null ? 'pct-low' : 'pct-none'));
         @endphp
         <div class="week-col">
-            <span class="week-pct {{ $wCls }}">{{ $week['pct'] !== null ? $week['pct'].'%' : '—' }}</span>
+            <span class="week-pct {{ $wCls }}">{{ $week['pct'] !== null ? $week['pct'].'%' : '-' }}</span>
             <div class="week-bar-wrap">
                 <div class="week-bar {{ $noData ? 'no-data' : '' }}"
                      style="height:{{ $noData ? '20px' : $barH.'%' }}"
@@ -274,7 +274,7 @@
     <div class="section-label">Honesty Check</div>
     <h2 class="section-title" style="font-size:1.2rem;">Which markets actually hit?</h2>
     <p style="font-size:.82rem; color:var(--text-dim); line-height:1.6; margin-bottom:1rem;">
-        Tracking accuracy by bet type — so you know which markets to trust.
+        Tracking accuracy by bet type - so you know which markets to trust.
         We never hide misses.
     </p>
     <div class="cat-grid">
@@ -285,7 +285,7 @@
         @endphp
         <div class="cat-card">
             <div class="cat-name">{{ $category }}</div>
-            <div class="cat-pct {{ $cls }}">{{ $pct !== null ? $pct.'%' : '—' }}</div>
+            <div class="cat-pct {{ $cls }}">{{ $pct !== null ? $pct.'%' : '-' }}</div>
             <div class="cat-counts">
                 <span style="color:#6ee7b7;">{{ $stat['correct'] }} won</span>
                 · <span style="color:#fca5a5;">{{ $stat['wrong'] }} lost</span>
@@ -328,7 +328,7 @@
                 <td style="text-align:right; color:var(--text-dim); font-variant-numeric:tabular-nums;">{{ $bucket['total'] }}</td>
                 <td style="text-align:right; color:#6ee7b7; font-variant-numeric:tabular-nums;">{{ $bucket['correct'] }}</td>
                 <td style="text-align:right; font-weight:800; font-variant-numeric:tabular-nums;" class="{{ $cls }}">
-                    {{ $pct !== null ? $pct.'%' : '—' }}
+                    {{ $pct !== null ? $pct.'%' : '-' }}
                 </td>
                 <td style="width:160px;">
                     <div class="cat-bar" style="margin:0;"><div class="cat-bar-fill" style="width:{{ $pct ?? 0 }}%; background:{{ $pct >= 60 ? '#10b981' : ($pct >= 45 ? '#f59e0b' : '#ef4444') }};"></div></div>
@@ -365,7 +365,7 @@
                 <td style="text-align:right; color:#6ee7b7; font-weight:700;">{{ $stat['correct'] }}</td>
                 <td style="text-align:right; color:var(--text-dim);">{{ $stat['total'] }}</td>
                 <td style="text-align:right;">
-                    <span class="pct-pill {{ $pillCls }}">{{ $pct !== null ? $pct.'%' : '—' }}</span>
+                    <span class="pct-pill {{ $pillCls }}">{{ $pct !== null ? $pct.'%' : '-' }}</span>
                 </td>
             </tr>
             @endforeach
@@ -397,7 +397,7 @@
 {{-- ── Disclaimer ── --}}
 <div style="padding:1.25rem 1.5rem; background:var(--card); border:1px solid var(--border); border-radius:12px; font-size:.78rem; color:var(--text-dim); line-height:1.75; margin-top:2rem;">
     <strong style="color:var(--text);">About these stats:</strong>
-    Accuracy is measured on our daily picks only — the 3 highest-confidence predictions each day.
+    Accuracy is measured on our daily picks only - the 3 highest-confidence predictions each day.
     Past performance is not a guarantee of future results.
     These predictions are for entertainment purposes only.
 </div>

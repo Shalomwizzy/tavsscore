@@ -21,13 +21,13 @@ class NewsletterWelcome extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🎉 Welcome to TavsScore — your daily picks start tomorrow',
+            subject: '🎉 Welcome to TavsScore - your daily picks start tomorrow',
         );
     }
 
     public function content(): Content
     {
-        // Pull a sample of today's picks if any — gives subscribers an instant
+        // Pull a sample of today's picks if any - gives subscribers an instant
         // taste of what they signed up for.
         $today  = now('Africa/Lagos')->startOfDay();
         $cutoff = now('Africa/Lagos')->endOfDay();

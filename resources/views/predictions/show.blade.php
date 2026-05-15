@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @php
-    $title = $match->home_team . ' vs ' . $match->away_team . ' — Prediction & AI Analysis';
+    $title = $match->home_team . ' vs ' . $match->away_team . ' - Prediction & AI Analysis';
     $desc  = 'Win/Draw/Loss probabilities, Over 2.5 & BTTS lines, and a full AI breakdown for ' . $match->home_team . ' vs ' . $match->away_team . ' (' . \App\Support\LeagueCoverage::formatName($match->league, $match->league_country) . ').';
 @endphp
 
@@ -178,7 +178,7 @@
                 <div class="pp-verdict">
                     <div>
                         <div class="pp-verdict-label">📊 Our Prediction</div>
-                        <div class="pp-verdict-value">{{ $pred->predicted_outcome ?? '—' }}</div>
+                        <div class="pp-verdict-value">{{ $pred->predicted_outcome ?? '-' }}</div>
                     </div>
                     <div class="pp-conf">{{ $confidencePct }}% confidence</div>
                 </div>
@@ -201,8 +201,8 @@
                     $bttsClass = $btts >= 60 ? 'gl-yes' : ($btts <= 40 ? 'gl-no' : 'gl-mid');
                 @endphp
                 <div class="pp-glchips">
-                    <span class="pp-glchip {{ $o25Class }}">Over 2.5 — {{ number_format($o25,0) }}%</span>
-                    <span class="pp-glchip {{ $bttsClass }}">BTTS — {{ number_format($btts,0) }}%</span>
+                    <span class="pp-glchip {{ $o25Class }}">Over 2.5 - {{ number_format($o25,0) }}%</span>
+                    <span class="pp-glchip {{ $bttsClass }}">BTTS - {{ number_format($btts,0) }}%</span>
                 </div>
 
                 @if($pred->was_correct === true)
@@ -227,9 +227,9 @@
                     <div class="pp-headline-row">
                         <div style="min-width:0; flex:1;">
                             <div class="pp-headline-market">
-                                {{ $headline['market'] ?? '—' }}
+                                {{ $headline['market'] ?? '-' }}
                                 @unless($hVerifiable)
-                                <span class="pp-tip-info" title="Corners/cards aren't auto-verified — informational only">ℹ️ Info</span>
+                                <span class="pp-tip-info" title="Corners/cards aren't auto-verified - informational only">ℹ️ Info</span>
                                 @endunless
                             </div>
                             @if(!empty($headline['rationale']))
@@ -238,7 +238,7 @@
                             @if(array_key_exists('market_implied', $headline))
                             <div class="pp-consensus {{ ($headline['market_agrees'] ?? false) ? 'pp-consensus-ok' : 'pp-consensus-warn' }}">
                                 {{ ($headline['market_agrees'] ?? false) ? '🤝 Bookmakers agree' : '⚠️ Market disagrees' }}
-                                <span style="opacity:.78;">— bookies say {{ $headline['market_implied'] }}%</span>
+                                <span style="opacity:.78;">- bookies say {{ $headline['market_implied'] }}%</span>
                             </div>
                             @endif
                             @if(array_key_exists('gemini_agrees', $headline))
@@ -263,7 +263,7 @@
                     <div class="pp-tip-row" style="margin-top:.55rem;">
                         <div style="min-width:0; flex:1;">
                             <div class="pp-tip-market">
-                                {{ $rec['market'] ?? '—' }}
+                                {{ $rec['market'] ?? '-' }}
                                 @unless($verifiable)<span class="pp-tip-info" title="Informational only">ℹ️</span>@endunless
                             </div>
                             @if(!empty($rec['rationale']))

@@ -32,7 +32,7 @@ if (! function_exists('stripTip')) {
 @section('title', ($dateMeta['is_today'] ? "Today's Best Football Picks – {$date}" : "Football Picks Archive – {$dateMeta['pretty']}") . " | TavsScore")
 @section('meta_description', $dateMeta['is_today']
     ? "Free daily football picks for {$date}. AI-analysed from 50+ matches across the Premier League, Champions League, La Liga, Bundesliga and more."
-    : "Browse our football picks archive — see what we predicted on {$dateMeta['pretty']} and how each pick turned out. Full transparency, free forever.")
+    : "Browse our football picks archive - see what we predicted on {$dateMeta['pretty']} and how each pick turned out. Full transparency, free forever.")
 @section('og_title', ($dateMeta['is_today'] ? "Today's Best 3 Football Picks" : "Football Picks – {$dateMeta['pretty']}"))
 @section('og_description', "Free daily football picks selected by AI from top European leagues.")
 @section('canonical', $dateMeta['is_today'] ? url('/picks') : url('/picks?date=' . $dateMeta['iso']))
@@ -424,9 +424,9 @@ if (! function_exists('stripTip')) {
         </h1>
         <p class="picks-subtitle">
             @if($dateMeta['is_today'])
-                Every day our AI analyses {{ $count > 0 ? $count : "today's" }} matches and surfaces only the predictions it is most confident about (65%+ confidence, no draws). Some days that's 3 picks, some days fewer — quality over quantity.
+                Every day our AI analyses {{ $count > 0 ? $count : "today's" }} matches and surfaces only the predictions it is most confident about (65%+ confidence, no draws). Some days that's 3 picks, some days fewer - quality over quantity.
             @else
-                Browsing our archive — these are the picks we put out on this day, plus the actual results.
+                Browsing our archive - these are the picks we put out on this day, plus the actual results.
             @endif
         </p>
         <div class="picks-meta">
@@ -479,13 +479,13 @@ if (! function_exists('stripTip')) {
                 <span style="font-size:1.4rem;">🔥</span>
                 <div>
                     <div><span class="streak-num">{{ $streak['count'] }}</span> wins in a row</div>
-                    <div style="font-size:.7rem; opacity:.78; margin-top:2px;">Hot streak — last {{ $streak['count'] }} settled picks all hit.</div>
+                    <div style="font-size:.7rem; opacity:.78; margin-top:2px;">Hot streak - last {{ $streak['count'] }} settled picks all hit.</div>
                 </div>
             @else
                 <span style="font-size:1.4rem;">📉</span>
                 <div>
                     <div><span class="streak-num">{{ $streak['count'] }}</span> misses in a row</div>
-                    <div style="font-size:.7rem; opacity:.78; margin-top:2px;">Variance happens — every model has cold spells.</div>
+                    <div style="font-size:.7rem; opacity:.78; margin-top:2px;">Variance happens - every model has cold spells.</div>
                 </div>
             @endif
             @if($streak['best'] > 0)
@@ -538,7 +538,7 @@ if (! function_exists('stripTip')) {
                 <div class="picks-empty-title">No high-confidence picks today</div>
                 <p class="picks-empty-desc">
                     Our AI reviewed today's matches but none cleared the 65% confidence threshold.
-                    We'd rather show you nothing than a bad tip — check back later as more match data comes in.
+                    We'd rather show you nothing than a bad tip - check back later as more match data comes in.
                 </p>
             @else
                 <div class="picks-empty-icon">📅</div>
@@ -591,7 +591,7 @@ if (! function_exists('stripTip')) {
                                     @endif
                                 </span>
                             @elseif(in_array($pick['match']['status'], ['FT','AET','PEN']))
-                                <strong style="color:#fff; font-variant-numeric:tabular-nums;">{{ $pick['live_score'] ?? $pick['actual_score'] ?? '—' }}</strong>
+                                <strong style="color:#fff; font-variant-numeric:tabular-nums;">{{ $pick['live_score'] ?? $pick['actual_score'] ?? '-' }}</strong>
                                 <span style="color:var(--text-dim); margin-left:.3rem;">FT</span>
                             @else
                                 KO {{ $pick['match']['time'] }}
@@ -650,9 +650,9 @@ if (! function_exists('stripTip')) {
                         <div class="pt-headline-row">
                             <div style="min-width:0; flex:1;">
                                 <div class="pt-headline-market">
-                                    {{ $headline['market'] ?? '—' }}
+                                    {{ $headline['market'] ?? '-' }}
                                     @unless($hVerifiable)
-                                    <span class="pt-info" title="Corners/cards aren't auto-verified — informational only">ℹ️</span>
+                                    <span class="pt-info" title="Corners/cards aren't auto-verified - informational only">ℹ️</span>
                                     @endunless
                                 </div>
                                 <div class="pt-band" style="color:{{ $band['color'] }};">
@@ -664,7 +664,7 @@ if (! function_exists('stripTip')) {
                                 @if(array_key_exists('market_implied', $headline))
                                 <div class="pt-consensus {{ ($headline['market_agrees'] ?? false) ? 'pt-consensus-ok' : 'pt-consensus-warn' }}">
                                     {{ ($headline['market_agrees'] ?? false) ? '🤝 Bookmakers agree' : '⚠️ Market disagrees' }}
-                                    <span style="opacity:.78;">— bookies say {{ $headline['market_implied'] }}%</span>
+                                    <span style="opacity:.78;">- bookies say {{ $headline['market_implied'] }}%</span>
                                 </div>
                                 @endif
                                 @if(array_key_exists('gemini_agrees', $headline))
@@ -701,7 +701,7 @@ if (! function_exists('stripTip')) {
                             <div class="pt-row">
                                 <div style="min-width:0;">
                                     <div class="pt-market">
-                                        {{ $alt['market'] ?? '—' }}
+                                        {{ $alt['market'] ?? '-' }}
                                         @unless($aVerifiable)<span class="pt-info" title="Informational only">ℹ️</span>@endunless
                                     </div>
                                     @if(!empty($alt['rationale']))
@@ -726,13 +726,15 @@ if (! function_exists('stripTip')) {
                      data-pred-id="{{ $pick['id'] }}"
                      data-en="{{ $pick['analysis'] }}"
                      data-pidgin="{{ $pick['analysis_pidgin'] }}"
-                     data-swahili="{{ $pick['analysis_swahili'] }}">
+                     data-swahili="{{ $pick['analysis_swahili'] }}"
+                     data-french="{{ $pick['analysis_french'] ?? '' }}">
                     <div class="pick-analysis-header">
                         🤖 <span>AI Analysis</span>
                         <div class="lang-toggle" role="group" aria-label="Analysis language">
                             <button type="button" class="lang-btn active" data-lang="en">🇬🇧 EN</button>
                             <button type="button" class="lang-btn" data-lang="pidgin">🇳🇬 Pidgin</button>
                             <button type="button" class="lang-btn" data-lang="swahili">🇰🇪 Swahili</button>
+                            <button type="button" class="lang-btn" data-lang="french">🇫🇷 French</button>
                         </div>
                     </div>
                     @if(!blank($bodyText))
@@ -750,9 +752,30 @@ if (! function_exists('stripTip')) {
                 </div>
                 @endif
 
-                <div class="pick-card-footer">
+                @if(!empty($pick['likely_scores']))
+                <div style="padding:0 1.75rem; margin-bottom:.75rem; font-size:.72rem; color:var(--text-dim);">
+                    🎯 Likely scores:
+                    @foreach($pick['likely_scores'] as $s)
+                        <span style="background:rgba(255,255,255,.07); border-radius:4px; padding:1px 7px; margin-left:3px; color:var(--text);">
+                            {{ $s['score'] }} <span style="opacity:.6;">({{ $s['pct'] }}%)</span>
+                        </span>
+                    @endforeach
+                </div>
+                @endif
+
+                <div class="pick-card-footer" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
                     <span>📊 Based on form, H2H &amp; tactical analysis</span>
-                    <span style="color:rgba(255,255,255,.3);">For entertainment only</span>
+                    @php
+                        $waMatchLabel = ($pick['match']['home_team'] ?? '') . ' vs ' . ($pick['match']['away_team'] ?? '');
+                        $waTip = $pick['pick_label'] ?? $pick['predicted_outcome'] ?? '';
+                        $waConf = isset($pick['confidence']) ? " ({$pick['confidence']}%)" : '';
+                        $waMsg = urlencode("⭐ TavsScore Daily Pick\n{$waMatchLabel}\nTip: {$waTip}{$waConf}\n🔗 " . url('/picks'));
+                    @endphp
+                    <a href="https://wa.me/?text={{ $waMsg }}" target="_blank" rel="noopener"
+                       style="display:inline-flex;align-items:center;gap:.3rem;background:#25D366;color:#fff;font-size:.65rem;font-weight:700;padding:4px 10px;border-radius:999px;text-decoration:none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.534 5.845L.055 23.454l5.742-1.505A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.372l-.36-.214-3.71.972.989-3.615-.234-.371A9.818 9.818 0 012.182 12C2.182 6.575 6.575 2.182 12 2.182c5.424 0 9.818 4.393 9.818 9.818 0 5.424-4.394 9.818-9.818 9.818z"/></svg>
+                        Share on WhatsApp
+                    </a>
                 </div>
             </article>
 
@@ -776,7 +799,7 @@ if (! function_exists('stripTip')) {
             <strong style="color:var(--text);">Important:</strong>
             These predictions are generated by a statistical AI model for entertainment purposes only.
             They are <strong style="color:var(--text);">not</strong> financial advice, betting tips, or guaranteed outcomes.
-            Football is unpredictable — no model predicts results with certainty.
+            Football is unpredictable - no model predicts results with certainty.
             Please gamble responsibly. If gambling is causing you harm, visit
             <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style="color:#93c5fd;">BeGambleAware.org</a>.
         </div>
@@ -826,7 +849,7 @@ if (! function_exists('stripTip')) {
             <div class="faq-item">
                 <div class="faq-q">How are the 3 picks chosen each day?</div>
                 <div class="faq-a">
-                    Our system analyses every match from top European leagues — Premier League,
+                    Our system analyses every match from top European leagues - Premier League,
                     Champions League, La Liga, Bundesliga, Serie A, Ligue 1 and more. It scores
                     each prediction by the margin of confidence between the likely outcome and
                     the next most probable one, then selects the top 3 with variety.
@@ -845,14 +868,14 @@ if (! function_exists('stripTip')) {
                 <div class="faq-q">Why do you show when picks are wrong?</div>
                 <div class="faq-a">
                     Because transparency is the only honest thing to do. Every prediction site
-                    has losing days — the ones that hide results are the ones you should not trust.
+                    has losing days - the ones that hide results are the ones you should not trust.
                     We show wins and losses equally so you can judge for yourself.
                 </div>
             </div>
             <div class="faq-item">
                 <div class="faq-q">Is this free? Will it ever cost money?</div>
                 <div class="faq-a">
-                    Yes — free, forever. TavsScore is supported by advertising.
+                    Yes - free, forever. TavsScore is supported by advertising.
                     We will never charge for predictions, lock picks behind a paywall,
                     or promise accuracy for money. If you see any site doing that,
                     treat it with extreme caution.

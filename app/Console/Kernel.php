@@ -12,10 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Match fetch — every 2 min when live matches exist, every 15 min otherwise.
-        // Conserves API-Football quota (free tier = 100 req/day).
+        // Live matches: every minute for near-real-time goal alerts.
+        // No live matches: every 15 min to conserve API quota.
         $schedule->command('fetch:matches')
-            ->everyFiveMinutes()
+            ->everyMinute()
             ->withoutOverlapping()
             ->when(fn () => \App\Models\FootballMatch::whereIn('status', ['1H','HT','2H','ET','BT','P','LIVE'])->exists());
 
@@ -28,9 +28,24 @@ class Kernel extends ConsoleKernel
         $schedule->command('predictions:check-outcomes')->everyFiveMinutes()->withoutOverlapping();
         // Reset daily picks at midnight Lagos (Africa/Lagos = WAT, UTC+1).
         // The selector also re-runs at 06:00 in case morning fixtures load late.
+        // Picks: select at midnight + retry at 06:00 for late-loading fixtures
         $schedule->command('picks:select --force')->dailyAt('00:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('06:00')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('blog:auto-post')->dailyAt('08:00')->timezone('Africa/Lagos');
+
+        // Notify subscribers at 08:00 when people are awake (not midnight)
+        $schedule->command('picks:notify')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+
+        // Re-predict daily pick matches the moment their confirmed lineup drops
+        // Runs every minute (same as live fetch) — only fires Groq when lineup is new
+        $schedule->command('picks:update-lineups')->everyMinute()->withoutOverlapping();
+
+        // Select today's rollover pick at 09:30 Lagos (after daily picks at 09:00)
+        $schedule->command('rollover:select')->dailyAt('09:30')->timezone('Africa/Lagos')->withoutOverlapping();
+
+        // Post today's pick results to Telegram at 23:00 Lagos
+        $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();
+
+        $schedule->command('blog:auto-post')->dailyAt('08:30')->timezone('Africa/Lagos');
 
         // Newsletter — send today's 3 picks at 09:00 Lagos to confirmed subscribers
         $schedule->command('newsletter:send-daily')->dailyAt('09:00')->timezone('Africa/Lagos')->withoutOverlapping();

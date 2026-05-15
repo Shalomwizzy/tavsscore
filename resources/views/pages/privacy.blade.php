@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Privacy Policy — TavsScore')
+@section('title', 'Privacy Policy - TavsScore')
 @section('meta_description', 'How TavsScore collects and uses data. We keep it simple: we do not sell your information, we do not build profiles, and we tell you exactly what we do collect and why.')
 @section('canonical', route('privacy'))
 
@@ -31,14 +31,14 @@
             When you visit TavsScore, our server logs basic technical information automatically: your anonymised IP address, the page you visited, the browser and operating system you are using, and the time of your visit. This is standard for any website and helps us diagnose issues and understand how the site is being used in aggregate.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We may also use analytics tools to understand which pages are popular and how people navigate the site. This data is always aggregated — we look at trends, not individuals.
+            We may also use analytics tools to understand which pages are popular and how people navigate the site. This data is always aggregated - we look at trends, not individuals.
         </p>
     </div>
 
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Cookies</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            TavsScore uses a small number of cookies. Some are essential — for example, the cookie that remembers your session if you are logged in, and the CSRF token that keeps form submissions secure. You cannot turn these off without breaking the site.
+            TavsScore uses a small number of cookies. Some are essential - for example, the cookie that remembers your session if you are logged in, and the CSRF token that keeps form submissions secure. You cannot turn these off without breaking the site.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
             We also use non-essential cookies for advertising (see the section below) and analytics. You can decline these through your browser settings at any time. Most browsers let you block third-party cookies entirely, which is the easiest way to opt out if that is what you prefer.
@@ -71,9 +71,9 @@
             To run TavsScore we rely on a few external services. Each has its own privacy practices.
         </p>
         <ul style="font-size:.88rem; color:var(--text-dim); line-height:1.85; padding-left:1.5rem;">
-            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">API-Football</strong> — provides the match data that powers our scores and fixtures. Your visits to TavsScore trigger calls to their API, but we do not pass any personal information to them.</li>
-            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Google AdSense</strong> — serves the advertising on our site. Subject to Google's privacy policy.</li>
-            <li><strong style="color:var(--text);">Groq AI</strong> — processes match information to generate predictions and editorial content. We send only match data (team names, league, date) — never any user information.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">API-Football</strong> - provides the match data that powers our scores and fixtures. Your visits to TavsScore trigger calls to their API, but we do not pass any personal information to them.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Google AdSense</strong> - serves the advertising on our site. Subject to Google's privacy policy.</li>
+            <li><strong style="color:var(--text);">Groq AI</strong> - processes match information to generate predictions and editorial content. We send only match data (team names, league, date) - never any user information.</li>
         </ul>
     </div>
 

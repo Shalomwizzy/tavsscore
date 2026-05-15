@@ -34,7 +34,7 @@
                                 $headline  = $pick['tips'][0] ?? null;
                                 $confPct   = $headline ? (int) ($headline['confidence'] ?? 0) : (int) ($pick['confidence_pct'] ?? 0);
                                 $band      = \App\Support\PickHelpers::confidenceBand($confPct);
-                                $marketLbl = $headline['market'] ?? $pick['pick_label'] ?? '—';
+                                $marketLbl = $headline['market'] ?? $pick['pick_label'] ?? '-';
                                 $reasons   = $pick['reasons'] ?? [];
                                 $rationale = $headline['rationale'] ?? null;
                             @endphp
@@ -133,11 +133,11 @@
                                             @if($y['home_score'] !== null && $y['away_score'] !== null)
                                                 <span style="color:#6b7280;">({{ $y['home_score'] }}–{{ $y['away_score'] }})</span>
                                             @endif
-                                            <span style="color:#6b7280;"> — picked {{ $y['outcome'] }}</span>
+                                            <span style="color:#6b7280;"> - picked {{ $y['outcome'] }}</span>
                                         </div>
                                         @endforeach
                                         <div style="margin-top:10px; font-size:11px; color:#92400e;">
-                                            We publish every result — wins and misses. <a href="{{ url('/stats') }}" style="color:#92400e; font-weight:600;">See full track record →</a>
+                                            We publish every result - wins and misses. <a href="{{ url('/stats') }}" style="color:#92400e; font-weight:600;">See full track record →</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -149,7 +149,7 @@
                     {{-- Footer --}}
                     <tr>
                         <td style="padding:18px 30px; background:#f9fafb; color:#6b7280; font-size:12px; text-align:center; line-height:1.7; border-top:1px solid #e5e7eb;">
-                            <strong style="color:#374151;">For entertainment only.</strong> Football has variance — even high-confidence picks lose. Don't bet money you can't afford to lose.<br>
+                            <strong style="color:#374151;">For entertainment only.</strong> Football has variance - even high-confidence picks lose. Don't bet money you can't afford to lose.<br>
                             <a href="{{ $unsubscribeUrl }}" style="color:#9ca3af; text-decoration:underline;">Unsubscribe</a> ·
                             <a href="{{ url('/') }}" style="color:#9ca3af; text-decoration:underline;">tavsscore.com</a>
                         </td>

@@ -201,7 +201,7 @@ $jsonLd = json_encode([
         {{-- CTA --}}
         <div style="margin:2rem 0; padding:1.25rem; background:var(--green-dim); border:1px solid var(--green-border); border-radius:10px; text-align:center;">
             <div style="font-size:.9rem; font-weight:700; color:#fff; margin-bottom:.4rem;">⚽ Follow the action live</div>
-            <p style="font-size:.78rem; color:var(--text-dim); margin-bottom:.875rem;">Real-time scores, AI predictions and more — all free on TavsScore.</p>
+            <p style="font-size:.78rem; color:var(--text-dim); margin-bottom:.875rem;">Real-time scores, AI predictions and more - all free on TavsScore.</p>
             <div style="display:flex; justify-content:center; gap:.5rem; flex-wrap:wrap;">
                 <a href="{{ route('live.index') }}" class="btn-ts btn-green" style="font-size:.78rem; padding:.42rem .9rem;">🔴 Live Scores</a>
                 <a href="{{ route('predictions.index') }}" class="btn-ts btn-outline" style="font-size:.78rem; padding:.42rem .9rem;">📊 Predictions</a>

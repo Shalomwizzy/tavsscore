@@ -3,7 +3,7 @@
 @section('title', ($dateMeta['is_today'] ? 'Match Predictions Today' : 'Predictions for ' . $dateMeta['pretty']) . ' | TavsScore AI Football Tips')
 @section('meta_description', $dateMeta['is_today']
     ? 'Free AI-powered football match predictions for Premier League, Champions League, La Liga, Serie A, Bundesliga and more. Win/Draw/Loss probabilities updated daily.'
-    : "TavsScore predictions archive — see what we predicted on {$dateMeta['pretty']} and how each one turned out.")
+    : "TavsScore predictions archive - see what we predicted on {$dateMeta['pretty']} and how each one turned out.")
 @section('canonical', $dateMeta['is_today'] ? url('/predictions') : url('/predictions?date=' . $dateMeta['iso']))
 
 @push('styles')
@@ -294,7 +294,7 @@
                 @if($dateMeta['is_today'])
                     Win / Draw / Loss · Over 2.5 Goals · BTTS · Poisson model + AI · Top leagues first
                 @else
-                    Browsing predictions archive — see what we predicted on this day and how each one turned out.
+                    Browsing predictions archive - see what we predicted on this day and how each one turned out.
                 @endif
             </p>
         </div>
@@ -435,7 +435,7 @@
     function formatLeague(league, country) {
         league  = String(league  || '').trim();
         country = String(country || '').trim();
-        if (!league)  return country || '—';
+        if (!league)  return country || '-';
         var lower = country.toLowerCase();
         if (!country || lower === 'world' || lower === 'unknown') return league;
         return country + ' · ' + league;
@@ -570,7 +570,7 @@
             var alts = p.tips.slice(1);
             var hConfClass = tipConfClass(head.confidence || 0);
             var headInfoBadge = (head.verifiable === false)
-                ? ' <span class="tip-info" title="Informational — corners/cards aren\'t auto-verified">ℹ️</span>'
+                ? ' <span class="tip-info" title="Informational - corners/cards aren\'t auto-verified">ℹ️</span>'
                 : '';
             tipsHtml = '<div class="tips-block">'
                 +'<div class="tip-headline">'
@@ -603,7 +603,7 @@
             tipsHtml += '</div>';
         }
 
-        /* Analysis box wrapping — wrap with data-* attrs for the language toggle partial */
+        /* Analysis box wrapping - wrap with data-* attrs for the language toggle partial */
         var langToggleBtns = isAi
             ? '<div class="lang-toggle" role="group" aria-label="Analysis language">'
                 +'<button type="button" class="lang-btn active" data-lang="en">🇬🇧 EN</button>'
@@ -650,7 +650,7 @@
 
         /* Share text */
         var shareText = esc(m.home_team||'?') + ' vs ' + esc(m.away_team||'?')
-            + ' — ' + verdict
+            + ' - ' + verdict
             + ' (' + (p.confidence || 'MEDIUM') + ' confidence)'
             + ' | TavsScore.com/picks';
         var shareBtnId = 'sb-' + (p.id || Math.random());
@@ -754,7 +754,7 @@
         .finally(function(){ setGenerating(false); });
     }
 
-    /* Load predictions — auto-generate if empty */
+    /* Load predictions - auto-generate if empty */
     window.loadPredictions = function () {
         showState('loading');
         elCount.textContent = '';

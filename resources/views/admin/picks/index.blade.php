@@ -20,11 +20,70 @@
     </div>
 </div>
 
+{{-- Lineup Confirmed Picks - shown at top so it's always visible --}}
+@php $leaderLineup = \App\Models\Prediction::with('match')
+    ->where('has_lineup', true)
+    ->whereNotNull('confidence')
+    ->whereNotNull('predicted_outcome')
+    ->where('predicted_outcome', '!=', 'Competitive Match')
+    ->whereHas('match', fn ($q) => $q->whereDate('match_time', now('Africa/Lagos')->toDateString()))
+    ->orderByDesc('confidence')
+    ->limit(10)
+    ->get(); @endphp
+
+<div class="a-card" style="margin-bottom:1.25rem; border-color:rgba(16,185,129,.3);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem;">
+        <span style="font-weight:700; font-size:.9rem; color:#fff;">⚡ Lineup Confirmed Picks Today <span style="background:rgba(16,185,129,.2);color:#6ee7b7;font-size:.65rem;padding:1px 8px;border-radius:999px;margin-left:.4rem;">{{ $leaderLineup->count() }}</span></span>
+        <a href="{{ route('lineup-picks.index') }}" target="_blank" style="font-size:.72rem; color:#6ee7b7; text-decoration:none;">↗ Public page</a>
+    </div>
+    @if($leaderLineup->isEmpty())
+        <p style="font-size:.78rem; color:var(--dim); text-align:center; padding:.75rem 0;">
+            No lineup-confirmed predictions yet. They appear once clubs publish their starting 11 (~75 min before kickoff).
+        </p>
+    @else
+    <div style="overflow-x:auto;">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>Match</th>
+                    <th>League</th>
+                    <th>Tip</th>
+                    <th>Confidence</th>
+                    <th>Likely Score</th>
+                    <th>Kickoff (Lagos)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($leaderLineup as $pick)
+                @php $m = $pick->match; $topScore = is_array($pick->likely_scores) ? ($pick->likely_scores[0] ?? null) : null; @endphp
+                <tr>
+                    <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $m?->home_team }} vs {{ $m?->away_team }}</td>
+                    <td style="color:var(--dim); font-size:.74rem;">{{ $m?->league }}</td>
+                    <td style="color:#6ee7b7; font-weight:700;">{{ $pick->predicted_outcome }}</td>
+                    <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
+                    <td>
+                        @if($topScore)
+                            <span style="background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);padding:1px 8px;border-radius:4px;font-weight:700;font-size:.74rem;">
+                                {{ $topScore['score'] }} ({{ $topScore['pct'] }}%)
+                            </span>
+                        @else
+                            <span style="color:var(--dim);">-</span>
+                        @endif
+                    </td>
+                    <td style="color:var(--dim); font-size:.74rem;">{{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
 {{-- Summary strip --}}
 <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(245,158,11,.04));border-color:rgba(245,158,11,.25);">
         <span class="stat-val" style="color:#fcd34d;">
-            @if($accuracy !== null){{ $accuracy }}%@else—@endif
+            @if($accuracy !== null){{ $accuracy }}%@else-@endif
         </span>
         <span class="stat-lbl">⭐ All-time accuracy</span>
     </div>
@@ -85,10 +144,10 @@
                     <td style="color:var(--dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}
                     </td>
-                    <td style="color:#93c5fd; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '—' }}</td>
-                    <td style="font-weight:700; color:#6ee7b7;">{{ $pick->predicted_outcome ? number_format(\App\Support\PickHelpers::confidencePct($pick), 0) : '—' }}%</td>
+                    <td style="color:#93c5fd; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '-' }}</td>
+                    <td style="font-weight:700; color:#6ee7b7;">{{ $pick->predicted_outcome ? number_format(\App\Support\PickHelpers::confidencePct($pick), 0) : '-' }}%</td>
                     <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
-                        {{ $m?->match_time?->format('H:i') ?? '—' }}
+                        {{ $m?->match_time?->format('H:i') ?? '-' }}
                     </td>
                     <td>
                         @if($pick->was_correct === true)
@@ -149,8 +208,8 @@
                                     <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                                 @endif
                             </td>
-                            <td style="color:#93c5fd; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '—' }}</td>
-                            <td style="color:var(--dim);">{{ $pick->predicted_outcome ? number_format(\App\Support\PickHelpers::confidencePct($pick), 0) : '—' }}%</td>
+                            <td style="color:#93c5fd; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '-' }}</td>
+                            <td style="color:var(--dim);">{{ $pick->predicted_outcome ? number_format(\App\Support\PickHelpers::confidencePct($pick), 0) : '-' }}%</td>
                             <td style="text-align:right;">
                                 @if($pick->was_correct === true)
                                     <span class="badge badge-green">✓</span>
@@ -167,6 +226,62 @@
             </div>
         </div>
         @endforeach
+    @endif
+</div>
+
+{{-- Lineup Confirmed Picks --}}
+<div class="a-card" style="margin-top:1.25rem; margin-bottom:1.25rem; border-color:rgba(16,185,129,.3);">
+    <div class="page-hd" style="margin-bottom:.875rem;">
+        <span style="font-weight:700; font-size:.9rem; color:#fff;">⚡ Lineup Confirmed Picks - Today</span>
+        <a href="{{ route('lineup-picks.index') }}" target="_blank" style="font-size:.72rem; color:#6ee7b7; text-decoration:none;">↗ Public page</a>
+    </div>
+
+    @if($lineupPicks->isEmpty())
+        <div style="text-align:center; padding:1.25rem; color:var(--dim); font-size:.82rem;">
+            No lineup-confirmed predictions yet today. They appear once clubs publish the official starting 11 (~75 min before kickoff).
+        </div>
+    @else
+    <div style="overflow-x:auto;">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>Match</th>
+                    <th>League</th>
+                    <th>Tip</th>
+                    <th>Confidence</th>
+                    <th>Kickoff (Lagos)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($lineupPicks as $pick)
+                @php $m = $pick->match; @endphp
+                <tr>
+                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
+                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    </td>
+                    <td style="color:var(--dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ $m?->league }}
+                    </td>
+                    <td style="color:#6ee7b7; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '-' }}</td>
+                    <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
+                    <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
+                        {{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') ?? '-' }}
+                    </td>
+                    <td>
+                        @if($m && in_array($m->status, ['FT','AET','PEN']))
+                            <span class="badge badge-gray">FT {{ $m->home_score }}–{{ $m->away_score }}</span>
+                        @elseif($m && in_array($m->status, ['1H','HT','2H','ET','BT','P']))
+                            <span class="badge" style="background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);">🔴 LIVE</span>
+                        @else
+                            <span class="badge badge-green">⚡ Lineup Set</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
     @endif
 </div>
 

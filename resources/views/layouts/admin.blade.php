@@ -261,16 +261,36 @@
             <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
                 <span class="sb-icon">📬</span> Newsletter
             </a>
+            <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}">
+                <span class="sb-icon">🏆</span> Winners Wall
+            </a>
+            <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}">
+                <span class="sb-icon">🥇</span> Hall of Fame
+            </a>
+            <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}">
+                <span class="sb-icon">⚡</span> Lineup Picks
+            </a>
+            <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}">
+                <span class="sb-icon">🎯</span> Correct Score
+            </a>
+            <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}">
+                <span class="sb-icon">🔄</span> Rollover
+            </a>
+
+            <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}">
+                <span class="sb-icon">📊</span> Stats
+            </a>
+
+            <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                <span class="sb-icon">⚙️</span> Settings
+            </a>
 
             <div class="sb-section-label">Site</div>
-            <a href="{{ route('stats.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">📊</span> Stats Page
+            <a href="{{ route('home.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">🌐</span> View Site
             </a>
             <a href="{{ route('picks.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">↗</span> Public Picks
-            </a>
-            <a href="{{ route('home.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">🌐</span> View Site
             </a>
             <a href="{{ route('blog.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">📰</span> View Blog

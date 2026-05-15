@@ -27,9 +27,12 @@ class Prediction extends Model
         'analysis',
         'analysis_pidgin',
         'analysis_swahili',
+        'analysis_french',
+        'likely_scores',
         'is_daily_pick',
         'pick_rank',
         'was_correct',
+        'has_lineup',
     ];
 
     protected $casts = [
@@ -45,6 +48,8 @@ class Prediction extends Model
         'is_daily_pick'  => 'boolean',
         'pick_rank'      => 'integer',
         'was_correct'    => 'boolean',
+        'has_lineup'     => 'boolean',
+        'likely_scores'  => 'array',
         'created_at'     => 'datetime',
     ];
 

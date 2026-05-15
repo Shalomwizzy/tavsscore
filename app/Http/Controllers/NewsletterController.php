@@ -13,12 +13,12 @@ use Illuminate\View\View;
 class NewsletterController extends Controller
 {
     /**
-     * Subscribe — single opt-in. Auto-confirms the email and immediately fires
+     * Subscribe - single opt-in. Auto-confirms the email and immediately fires
      * a welcome email listing benefits + sample of what's coming.
      */
     public function subscribe(Request $request): RedirectResponse
     {
-        // Honeypot — bots fill the hidden "website" field
+        // Honeypot - bots fill the hidden "website" field
         if (! blank($request->input('website'))) {
             return back()->with('newsletter_status', 'Thanks!');
         }
@@ -34,12 +34,12 @@ class NewsletterController extends Controller
         $existing = NewsletterSubscriber::where('email', $email)->first();
 
         if ($existing && $existing->isConfirmed()) {
-            return back()->with('newsletter_status', "You're already subscribed — tomorrow's picks are on the way!");
+            return back()->with('newsletter_status', "You're already subscribed - tomorrow's picks are on the way!");
         }
 
         $tokens = NewsletterSubscriber::freshTokens();
         $payload = [
-            // Auto-confirm — no email-link verification step
+            // Auto-confirm - no email-link verification step
             'confirmed_at'      => now(),
             'confirm_token'     => null,
             'unsubscribe_token' => $existing->unsubscribe_token ?? $tokens['unsubscribe_token'],
@@ -55,7 +55,7 @@ class NewsletterController extends Controller
             $subscriber = NewsletterSubscriber::create(['email' => $email] + $payload);
         }
 
-        // Welcome email (silent failure — subscription still succeeded)
+        // Welcome email (silent failure - subscription still succeeded)
         try {
             Mail::to($email)->send(new NewsletterWelcome($subscriber));
         } catch (\Throwable $e) {
@@ -69,20 +69,20 @@ class NewsletterController extends Controller
     }
 
     /**
-     * Legacy confirm route — kept for any old confirmation links still in flight.
+     * Legacy confirm route - kept for any old confirmation links still in flight.
      * New signups don't need this since they're auto-confirmed.
      */
     public function confirm(string $token): View
     {
         $sub = NewsletterSubscriber::where('confirm_token', $token)->first();
 
-        // If a token matched, confirm — handles older links from before single opt-in
+        // If a token matched, confirm - handles older links from before single opt-in
         if ($sub && ! $sub->confirmed_at) {
             $sub->update(['confirmed_at' => now(), 'confirm_token' => null]);
             return view('newsletter.confirmed', ['ok' => true, 'email' => $sub->email]);
         }
 
-        // Token not found OR already used — still render success since most
+        // Token not found OR already used - still render success since most
         // hits on this URL are now stale links from auto-confirmed users
         return view('newsletter.confirmed', [
             'ok'      => $sub !== null,
@@ -92,7 +92,7 @@ class NewsletterController extends Controller
     }
 
     /**
-     * One-click unsubscribe — token in URL.
+     * One-click unsubscribe - token in URL.
      */
     public function unsubscribe(string $token): View
     {

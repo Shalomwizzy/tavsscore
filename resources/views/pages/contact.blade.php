@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Contact Us | TavsScore')
-@section('meta_description', 'Get in touch with the TavsScore team — send us feedback, questions, or partnership enquiries about our football live scores and predictions platform.')
+@section('meta_description', 'Get in touch with the TavsScore team - send us feedback, questions, or partnership enquiries about our football live scores and predictions platform.')
 @section('canonical', route('contact'))
 
 @push('styles')

@@ -18,7 +18,7 @@
 <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(245,158,11,.04));border-color:rgba(245,158,11,.25);">
         <span class="stat-val" style="color:#fcd34d;">
-            @if($stats['accuracy_7d'] !== null){{ $stats['accuracy_7d'] }}%@else—@endif
+            @if($stats['accuracy_7d'] !== null){{ $stats['accuracy_7d'] }}%@else-@endif
         </span>
         <span class="stat-lbl">⭐ 7-day accuracy</span>
     </div>
@@ -36,7 +36,7 @@
     </div>
     <div class="stat-card">
         <span class="stat-val">
-            @if($stats['accuracy_all'] !== null){{ $stats['accuracy_all'] }}%@else—@endif
+            @if($stats['accuracy_all'] !== null){{ $stats['accuracy_all'] }}%@else-@endif
         </span>
         <span class="stat-lbl">📈 All-time accuracy</span>
     </div>

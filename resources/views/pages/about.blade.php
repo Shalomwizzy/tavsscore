@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'About TavsScore — Why We Built This')
+@section('title', 'About TavsScore - Why We Built This')
 @section('meta_description', 'TavsScore was built by a football fan who was tired of bloated score apps. Here is the story behind the platform, how our predictions work, and why we think football deserves better tools.')
 @section('canonical', route('about'))
 
@@ -18,7 +18,7 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Why we built this</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Most football apps are either a nightmare to load, buried in pop-ups, or give you scores three minutes late. We got frustrated with that. So we built TavsScore — fast, clean live scores with actual useful predictions, and real football writing that is not just copied from a press release.
+            Most football apps are either a nightmare to load, buried in pop-ups, or give you scores three minutes late. We got frustrated with that. So we built TavsScore - fast, clean live scores with actual useful predictions, and real football writing that is not just copied from a press release.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
             The name comes from the founder's handle. There is no corporate team behind this, no VC funding, no boardroom. Just a love of the game and a belief that football fans deserve better tools.
@@ -44,7 +44,7 @@
             The first stage is a Poisson probability model that calculates expected goals for both sides based on their recent attack and defensive records. This gives us statistically grounded baseline probabilities for the result, plus goal-line markets like Over 2.5 and both teams to score.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            The second stage sends each match to a large language model that has deep knowledge of team form, head-to-head history, squad strength, and match stakes. It overrides the baseline when the statistical model does not have enough data — for example when a title contender faces a relegation side, the AI knows that gap is bigger than average numbers suggest. The result is predictions that feel like they were written by someone who actually watches the game.
+            The second stage sends each match to a large language model that has deep knowledge of team form, head-to-head history, squad strength, and match stakes. It overrides the baseline when the statistical model does not have enough data - for example when a title contender faces a relegation side, the AI knows that gap is bigger than average numbers suggest. The result is predictions that feel like they were written by someone who actually watches the game.
         </p>
     </div>
 
@@ -61,7 +61,7 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">A word on predictions and gambling</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            Our predictions are for entertainment and informational purposes only. We are not a betting tipster service and nothing on this site should be used as the basis for placing bets. Football is famously unpredictable — that is part of what makes it brilliant. Use our predictions to enjoy the game more, not to risk money.
+            Our predictions are for entertainment and informational purposes only. We are not a betting tipster service and nothing on this site should be used as the basis for placing bets. Football is famously unpredictable - that is part of what makes it brilliant. Use our predictions to enjoy the game more, not to risk money.
         </p>
     </div>
 

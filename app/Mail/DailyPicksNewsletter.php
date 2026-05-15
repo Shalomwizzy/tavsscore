@@ -28,7 +28,7 @@ class DailyPicksNewsletter extends Mailable
         $tag = $highestConf >= 75 ? 'High Confidence' : ($highestConf >= 60 ? 'Smart Picks' : 'Daily Picks');
 
         return new Envelope(
-            subject: "🔥 Today's 3 Best Football Picks ({$tag}) — {$this->dateLabel}",
+            subject: "🔥 Today's 3 Best Football Picks ({$tag}) - {$this->dateLabel}",
         );
     }
 

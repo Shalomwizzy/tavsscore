@@ -24,9 +24,11 @@ class PredictionService
     private const EXCLUDED_UPCOMING_STATUSES = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
     public function __construct(
-        private readonly GroqService $groqService,
-        private readonly OddsService $oddsService,
+        private readonly GroqService   $groqService,
+        private readonly OddsService   $oddsService,
         private readonly GeminiService $geminiService,
+        private readonly NewsService   $newsService,
+        private readonly LineupService $lineupService,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -44,12 +46,19 @@ class PredictionService
 
     public function generateForMatch(FootballMatch $match): Prediction
     {
-        // ── Poisson baseline (goal-line stats) ────────────────────
-        $homeStats = $this->teamStats($match->home_team, $match->match_time, $match->id);
-        $awayStats = $this->teamStats($match->away_team, $match->match_time, $match->id);
+        // ── Extended stats (powers both Poisson and the AI prompt) ──
+        $homeStats = $this->extendedTeamStats($match->home_team, $match->match_time, $match->id);
+        $awayStats = $this->extendedTeamStats($match->away_team, $match->match_time, $match->id);
         $homeXg    = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
         $awayXg    = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
         $poisson   = $this->poissonProbabilities($homeXg, $awayXg);
+
+        // ── H2H history ───────────────────────────────────────────
+        $h2h = $this->headToHead($match->home_team, $match->away_team, $match->match_time, $match->id);
+
+        // ── Form guides (simple W/L/D for frontend) ───────────────
+        $homeForm = $this->formGuide($match->home_team, $match->match_time, $match->id);
+        $awayForm = $this->formGuide($match->away_team, $match->match_time, $match->id);
 
         // ── Check for existing good prediction ────────────────────
         $existing      = Prediction::query()->where('match_id', $match->id)->first();
@@ -59,8 +68,6 @@ class PredictionService
             && $existing->analysis !== 'Prediction pending';
 
         if ($hasAiAnalysis) {
-            // We already have a full AI analysis — keep it. Don't burn another
-            // Groq call. Just refresh the primary verdict from existing probs.
             $tips = is_array($existing->tips) ? $existing->tips : [];
             if (! empty($tips)) {
                 $primaryOutcome    = $tips[0]['market'];
@@ -84,6 +91,8 @@ class PredictionService
                     (float) ($existing->over_25_prob ?? $poisson['over_25']),
                     (float) ($existing->over_35_prob ?? $poisson['over_35']),
                     (float) ($existing->btts_prob    ?? $poisson['btts']),
+                    (float) ($poisson['home_clean_sheet'] ?? 0),
+                    (float) ($poisson['away_clean_sheet'] ?? 0),
                 );
             }
             return Prediction::query()->updateOrCreate(
@@ -95,8 +104,24 @@ class PredictionService
             );
         }
 
-        // ── Call Groq ─────────────────────────────────────────────
-        $groq = $this->groqService->getPrediction($match, $poisson);
+        // ── Fetch news (multi-source: Google + BBC + Sky + ESPN) ──
+        $homeNews     = $this->newsService->getFullContext($match->home_team);
+        $awayNews     = $this->newsService->getFullContext($match->away_team);
+        $matchPreview = $this->newsService->getMatchPreview($match->home_team, $match->away_team, $match->league ?? '');
+
+        // ── Fetch confirmed lineup if within kickoff window ───────
+        $lineupData = $this->lineupService->getLineup($match);
+
+        // ── Call Groq with full context ───────────────────────────
+        $groq = $this->groqService->getPrediction(
+            $match, $poisson,
+            $homeStats, $awayStats,
+            $homeForm, $awayForm,
+            $homeNews, $awayNews,
+            $lineupData,
+            $h2h,
+            $matchPreview,
+        );
 
         // Respect 30 RPM: 2.1 s between calls
         usleep(2_100_000);
@@ -128,7 +153,11 @@ class PredictionService
         // so /picks never goes empty when the LLM hiccups. We only fill in if
         // empty — never PAD a 1-tip Groq response with filler alternatives.
         if (empty($tips)) {
-            $tips = $this->tipsFromProbabilities($homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts);
+            $tips = $this->tipsFromProbabilities(
+                $homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts,
+                (float) ($poisson['home_clean_sheet'] ?? 0),
+                (float) ($poisson['away_clean_sheet'] ?? 0),
+            );
         }
 
         // Bookmaker consensus check — annotate each tip with whether the
@@ -149,8 +178,14 @@ class PredictionService
             $primaryOutcome    = $this->verdict($homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts);
             $primaryConfidence = $primaryOutcome === 'Competitive Match'
                 ? null
-                : $this->confidenceForOutcome($primaryOutcome, $homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts);
+                : $this->confidenceForOutcome(
+                    $primaryOutcome, $homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts,
+                    (float) ($poisson['home_clean_sheet'] ?? 0),
+                    (float) ($poisson['away_clean_sheet'] ?? 0),
+                );
         }
+
+        $likelyScores = $this->topScorelines($homeXg, $awayXg);
 
         return Prediction::query()->updateOrCreate(
             ['match_id' => $match->id],
@@ -166,38 +201,49 @@ class PredictionService
                 'tips'              => $tips,
                 'confidence'        => $primaryConfidence,
                 'analysis'          => $analysis,
+                'likely_scores'     => $likelyScores,
             ]
         );
     }
 
     /**
      * Generate market tips directly from Poisson probabilities — used as a
-     * fallback when Groq returns nothing or fewer than 3 tips. Only emits
-     * tips that pass the 50% confidence floor.
-     *
-     * Limited to verifiable markets (1X2, double-chance, goal lines, BTTS).
-     * No corners/cards/HT here — Poisson can't predict those.
+     * fallback when Groq returns nothing. Emits tips that pass the 50% floor.
+     * Corners/HT/handicap are AI-only markets — Poisson can't derive those.
      */
     private function tipsFromProbabilities(
         float $hw, float $d, float $aw,
-        float $over15, float $over25, float $over35, float $btts
+        float $over15, float $over25, float $over35, float $btts,
+        float $homeClean = 0.0, float $awayClean = 0.0
     ): array {
         $candidates = [
-            ['market' => 'Home Win',             'confidence' => (int) round($hw),         'rationale' => 'Strongest 1X2 probability'],
-            ['market' => 'Draw',                 'confidence' => (int) round($d),          'rationale' => 'Strongest 1X2 probability'],
-            ['market' => 'Away Win',             'confidence' => (int) round($aw),         'rationale' => 'Strongest 1X2 probability'],
-            ['market' => 'Home or Draw (1X)',    'confidence' => (int) round($hw + $d),    'rationale' => 'Double chance from Poisson'],
-            ['market' => 'Draw or Away (X2)',    'confidence' => (int) round($d + $aw),    'rationale' => 'Double chance from Poisson'],
-            ['market' => 'Home or Away (12)',    'confidence' => (int) round($hw + $aw),   'rationale' => 'Double chance from Poisson'],
-            ['market' => 'Over 1.5 Goals',       'confidence' => (int) round($over15),     'rationale' => 'Goal-line projection'],
-            ['market' => 'Under 1.5 Goals',      'confidence' => (int) round(100 - $over15),'rationale' => 'Goal-line projection'],
-            ['market' => 'Over 2.5 Goals',       'confidence' => (int) round($over25),     'rationale' => 'Goal-line projection'],
-            ['market' => 'Under 2.5 Goals',      'confidence' => (int) round(100 - $over25),'rationale' => 'Goal-line projection'],
-            ['market' => 'Over 3.5 Goals',       'confidence' => (int) round($over35),     'rationale' => 'Goal-line projection'],
-            ['market' => 'Under 3.5 Goals',      'confidence' => (int) round(100 - $over35),'rationale' => 'Goal-line projection'],
-            ['market' => 'Both Teams Score',     'confidence' => (int) round($btts),       'rationale' => 'BTTS Poisson estimate'],
-            ['market' => 'No Both Teams Score',  'confidence' => (int) round(100 - $btts), 'rationale' => 'BTTS Poisson estimate'],
+            ['market' => 'Home Win',            'confidence' => (int) round($hw),           'rationale' => 'Strongest 1X2 probability'],
+            ['market' => 'Draw',                'confidence' => (int) round($d),            'rationale' => 'Strongest 1X2 probability'],
+            ['market' => 'Away Win',            'confidence' => (int) round($aw),           'rationale' => 'Strongest 1X2 probability'],
+            ['market' => 'Home or Draw (1X)',   'confidence' => (int) round($hw + $d),      'rationale' => 'Double chance from Poisson'],
+            ['market' => 'Draw or Away (X2)',   'confidence' => (int) round($d + $aw),      'rationale' => 'Double chance from Poisson'],
+            ['market' => 'Home or Away (12)',   'confidence' => (int) round($hw + $aw),     'rationale' => 'Double chance from Poisson'],
+            ['market' => 'Draw No Bet - Home',  'confidence' => (int) round($hw),           'rationale' => 'DNB home — draw refunds stake'],
+            ['market' => 'Draw No Bet - Away',  'confidence' => (int) round($aw),           'rationale' => 'DNB away — draw refunds stake'],
+            ['market' => 'Over 1.5 Goals',      'confidence' => (int) round($over15),       'rationale' => 'Goal-line projection'],
+            ['market' => 'Under 1.5 Goals',     'confidence' => (int) round(100 - $over15), 'rationale' => 'Goal-line projection'],
+            ['market' => 'Over 2.5 Goals',      'confidence' => (int) round($over25),       'rationale' => 'Goal-line projection'],
+            ['market' => 'Under 2.5 Goals',     'confidence' => (int) round(100 - $over25), 'rationale' => 'Goal-line projection'],
+            ['market' => 'Over 3.5 Goals',      'confidence' => (int) round($over35),       'rationale' => 'Goal-line projection'],
+            ['market' => 'Under 3.5 Goals',     'confidence' => (int) round(100 - $over35), 'rationale' => 'Goal-line projection'],
+            ['market' => 'Both Teams Score',    'confidence' => (int) round($btts),         'rationale' => 'BTTS Poisson estimate'],
+            ['market' => 'No Both Teams Score', 'confidence' => (int) round(100 - $btts),   'rationale' => 'BTTS Poisson estimate'],
         ];
+
+        // Clean sheet markets: P(away=0) = home clean sheet, P(home=0) = away clean sheet
+        if ($homeClean > 0) {
+            $candidates[] = ['market' => 'Home Clean Sheet',       'confidence' => (int) round($homeClean), 'rationale' => 'Poisson P(away scores 0)'];
+            $candidates[] = ['market' => 'Away Team NOT to Score', 'confidence' => (int) round($homeClean), 'rationale' => 'Poisson P(away scores 0)'];
+        }
+        if ($awayClean > 0) {
+            $candidates[] = ['market' => 'Away Clean Sheet',       'confidence' => (int) round($awayClean), 'rationale' => 'Poisson P(home scores 0)'];
+            $candidates[] = ['market' => 'Home Team NOT to Score', 'confidence' => (int) round($awayClean), 'rationale' => 'Poisson P(home scores 0)'];
+        }
 
         $candidates = array_values(array_filter($candidates, fn ($c) => $c['confidence'] >= 50 && $c['confidence'] <= 95));
         usort($candidates, fn ($a, $b) => $b['confidence'] <=> $a['confidence']);
@@ -218,27 +264,19 @@ class PredictionService
     private function marketCategory(string $market): string
     {
         return match (true) {
-            in_array($market, ['Home Win', 'Draw', 'Away Win'], true) => '1x2',
-            str_contains($market, '(1X)'), str_contains($market, '(X2)'), str_contains($market, '(12)') => 'double_chance',
-            str_contains($market, 'Goals') => 'goals',
-            str_contains($market, 'Both Teams Score') => 'btts',
-            default => 'other',
+            in_array($market, ['Home Win', 'Draw', 'Away Win'], true)                                            => '1x2',
+            str_contains($market, 'Draw No Bet')                                                                 => 'dnb',
+            str_contains($market, '(1X)') || str_contains($market, '(X2)') || str_contains($market, '(12)')    => 'double_chance',
+            str_contains($market, 'Goals')                                                                       => 'goals',
+            str_contains($market, 'Both Teams Score') || str_contains($market, 'BTTS')                          => 'btts',
+            str_contains($market, 'Clean Sheet') || str_contains($market, 'Win to Nil')                         => 'clean_sheet',
+            str_contains($market, 'NOT to Score') || str_contains($market, 'Team to Score')                     => 'team_score',
+            str_contains($market, 'Corner')                                                                      => 'corners',
+            str_contains($market, 'Win Either Half')                                                             => 'win_either_half',
+            str_contains($market, 'Asian Handicap') || str_contains($market, 'Handicap')                        => 'handicap',
+            str_contains($market, 'Half') || str_contains($market, ' HT')                                       => 'halftime',
+            default                                                                                              => 'other',
         };
-    }
-
-    /**
-     * Merge AI-supplied tips with fallback tips, dedup by market, keep AI ones first.
-     */
-    private function mergeTips(array $primary, array $secondary): array
-    {
-        $seen = array_map(fn ($t) => $t['market'] ?? '', $primary);
-        foreach ($secondary as $t) {
-            if (count($primary) >= 5) break;
-            if (in_array($t['market'], $seen, true)) continue;
-            $primary[] = $t;
-            $seen[]    = $t['market'];
-        }
-        return $primary;
     }
 
     /**
@@ -262,7 +300,7 @@ class PredictionService
         $market = null;
         try {
             $market = $this->oddsService->impliedProbabilities($match);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Odds endpoint failure shouldn't block predictions
         }
 
@@ -290,7 +328,7 @@ class PredictionService
         $geminiTip = null;
         try {
             $geminiTip = $this->geminiService->headlineTip($match);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Gemini failure shouldn't block predictions
         }
 
@@ -329,29 +367,197 @@ class PredictionService
 
     /**
      * Confidence (%) of a non-AI verdict — derived directly from probabilities.
+     * homeClean = P(away scores 0), awayClean = P(home scores 0).
      */
     private function confidenceForOutcome(
         string $outcome,
         float $hw, float $d, float $aw,
-        float $over15, float $over25, float $over35, float $btts
+        float $over15, float $over25, float $over35, float $btts,
+        float $homeClean = 0.0, float $awayClean = 0.0
     ): int {
-        return (int) round(match ($outcome) {
-            'Home Win'             => $hw,
-            'Draw'                 => $d,
-            'Away Win'             => $aw,
-            'Over 1.5 Goals'       => $over15,
-            'Under 1.5 Goals'      => 100 - $over15,
-            'Over 2.5 Goals'       => $over25,
-            'Under 2.5 Goals'      => 100 - $over25,
-            'Over 3.5 Goals'       => $over35,
-            'Under 3.5 Goals'      => 100 - $over35,
-            'Both Teams Score'     => $btts,
-            'No Both Teams Score'  => 100 - $btts,
-            'Home or Draw (1X)'    => $hw + $d,
-            'Draw or Away (X2)'    => $d  + $aw,
-            'Home or Away (12)'    => $hw + $aw,
-            default                => 50,
+        return (int) round(match (true) {
+            $outcome === 'Home Win'                                            => $hw,
+            $outcome === 'Draw'                                                => $d,
+            $outcome === 'Away Win'                                            => $aw,
+            $outcome === 'Over 1.5 Goals'                                      => $over15,
+            $outcome === 'Under 1.5 Goals'                                     => 100 - $over15,
+            $outcome === 'Over 2.5 Goals'                                      => $over25,
+            $outcome === 'Under 2.5 Goals'                                     => 100 - $over25,
+            $outcome === 'Over 3.5 Goals'                                      => $over35,
+            $outcome === 'Under 3.5 Goals'                                     => 100 - $over35,
+            in_array($outcome, ['Both Teams Score', 'Both Teams Score (GG)'], true)      => $btts,
+            in_array($outcome, ['No Both Teams Score', 'No Both Teams Score (NG)'], true) => 100 - $btts,
+            $outcome === 'Home or Draw (1X)'                                   => $hw + $d,
+            $outcome === 'Draw or Away (X2)'                                   => $d  + $aw,
+            $outcome === 'Home or Away (12)'                                   => $hw + $aw,
+            // Draw No Bet: removes draw — home/away win probability is the confidence
+            $outcome === 'Draw No Bet - Home'                                  => $hw,
+            $outcome === 'Draw No Bet - Away'                                  => $aw,
+            // Clean sheet: P(opponent scores 0)
+            $outcome === 'Home Clean Sheet'                                    => $homeClean ?: round($hw * 0.65),
+            $outcome === 'Away Clean Sheet'                                    => $awayClean ?: round($aw * 0.65),
+            // Win to nil: need both a win AND a clean sheet
+            $outcome === 'Home Win to Nil'                                     => $homeClean > 0 ? round(min($hw, $homeClean) * 0.95) : round($hw * 0.55),
+            $outcome === 'Away Win to Nil'                                     => $awayClean > 0 ? round(min($aw, $awayClean) * 0.95) : round($aw * 0.55),
+            // Team NOT to score: P(that team scores 0)
+            // Home NOT to score = P(home=0) = awayClean
+            // Away NOT to score = P(away=0) = homeClean
+            $outcome === 'Home Team NOT to Score'                              => $awayClean ?: round(100 - $hw - ($btts * 0.5)),
+            $outcome === 'Away Team NOT to Score'                              => $homeClean ?: round(100 - $aw - ($btts * 0.5)),
+            // Team to score: complement of NOT to score
+            $outcome === 'Home Team to Score'                                  => $awayClean > 0 ? round(100 - $awayClean) : round($hw + $btts * 0.4),
+            $outcome === 'Away Team to Score'                                  => $homeClean > 0 ? round(100 - $homeClean) : round($aw + $btts * 0.4),
+            // Corners / HT / Handicap / Win Either Half: AI provides these; default to 55 as neutral above-baseline
+            str_contains($outcome, 'Corner')                                   => 55,
+            str_contains($outcome, 'Win Either Half')                          => round(max($hw, $aw) * 0.85),
+            str_contains($outcome, 'Asian Handicap') || str_contains($outcome, 'Handicap') => round(max($hw, $aw) * 0.9),
+            str_contains($outcome, 'Half') || str_contains($outcome, ' HT')    => 55,
+            default                                                            => 50,
         });
+    }
+
+    /**
+     * Calculate historical win rate per market type using resolved predictions.
+     * Returns a multiplier per outcome: >1.0 = boost, <1.0 = penalise.
+     * Requires at least 5 resolved samples per market to apply — fewer means
+     * the data is too thin to trust, so we default to 1.0 (neutral).
+     */
+    private function getMarketAccuracyWeights(): array
+    {
+        $resolved = Prediction::query()
+            ->whereNotNull('was_correct')
+            ->whereNotNull('predicted_outcome')
+            ->where('created_at', '>=', now()->subDays(90))
+            ->get(['predicted_outcome', 'was_correct']);
+
+        if ($resolved->count() < 10) {
+            return [];
+        }
+
+        $weights = [];
+
+        foreach ($resolved->groupBy('predicted_outcome') as $market => $preds) {
+            $total = $preds->count();
+            if ($total < 5) continue;
+
+            $winRate = $preds->where('was_correct', true)->count() / $total;
+
+            // Map win rate to a multiplier:
+            // 70%+ accuracy  → 1.25 boost (strongly prefer this market)
+            // 55-70%         → 1.10 slight boost
+            // 45-55%         → 1.00 neutral
+            // 35-45%         → 0.85 slight penalty
+            // <35%           → 0.70 strong penalty (avoid this market)
+            $weights[$market] = match (true) {
+                $winRate >= 0.70 => 1.25,
+                $winRate >= 0.55 => 1.10,
+                $winRate >= 0.45 => 1.00,
+                $winRate >= 0.35 => 0.85,
+                default          => 0.70,
+            };
+        }
+
+        return $weights;
+    }
+
+    /**
+     * Re-run Groq prediction for a daily pick match once its confirmed lineup
+     * is available. Only fires once per match per day (cache-gated).
+     * Returns true if the prediction was updated, false if skipped.
+     */
+    public function regenerateWithLineup(FootballMatch $match): bool
+    {
+        $cacheKey = "lineup_repredicted_{$match->id}";
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            return false;
+        }
+
+        $lineupData = $this->lineupService->getLineup($match);
+        if (blank($lineupData)) {
+            return false;
+        }
+
+        $existing = Prediction::query()->where('match_id', $match->id)->first();
+
+        $homeStats    = $this->extendedTeamStats($match->home_team, $match->match_time, $match->id);
+        $awayStats    = $this->extendedTeamStats($match->away_team, $match->match_time, $match->id);
+        $homeForm     = $this->formGuide($match->home_team, $match->match_time, $match->id);
+        $awayForm     = $this->formGuide($match->away_team, $match->match_time, $match->id);
+        $homeNews     = $this->newsService->getFullContext($match->home_team);
+        $awayNews     = $this->newsService->getFullContext($match->away_team);
+        $matchPreview = $this->newsService->getMatchPreview($match->home_team, $match->away_team, $match->league ?? '');
+        $h2h          = $this->headToHead($match->home_team, $match->away_team, $match->match_time, $match->id);
+
+        // Build Poisson baseline — use existing probabilities if available, otherwise compute fresh
+        if ($existing) {
+            $poisson = [
+                'home_win' => (float) ($existing->home_win_prob ?? 33),
+                'draw'     => (float) ($existing->draw_prob     ?? 33),
+                'away_win' => (float) ($existing->away_win_prob ?? 34),
+                'over_15'  => (float) ($existing->over_15_prob  ?? 70),
+                'over_25'  => (float) ($existing->over_25_prob  ?? 50),
+                'over_35'  => (float) ($existing->over_35_prob  ?? 30),
+                'btts'     => (float) ($existing->btts_prob     ?? 45),
+            ];
+        } else {
+            $homeXg  = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
+            $awayXg  = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
+            $poisson = $this->poissonProbabilities($homeXg, $awayXg);
+        }
+
+        $groq = $this->groqService->getPrediction(
+            $match, $poisson,
+            $homeStats, $awayStats,
+            $homeForm, $awayForm,
+            $homeNews, $awayNews,
+            $lineupData,
+            $h2h,
+            $matchPreview,
+        );
+
+        if (! $groq) {
+            return false;
+        }
+
+        usleep(2_100_000);
+
+        $tips = $this->annotateWithMarketConsensus($groq['tips'] ?? [], $match);
+        $tips = $this->annotateWithGeminiConsensus($tips, $match);
+
+        $primaryOutcome = ! empty($tips) ? $tips[0]['market']     : ($groq['predicted_outcome'] ?? $existing?->predicted_outcome ?? 'Competitive Match');
+        $primaryConf    = ! empty($tips) ? $tips[0]['confidence'] : ($existing?->confidence ?? null);
+
+        $data = [
+            'home_win_prob'     => $groq['home_win'],
+            'draw_prob'         => $groq['draw'],
+            'away_win_prob'     => $groq['away_win'],
+            'over_25_prob'      => $groq['over_25'],
+            'btts_prob'         => $groq['btts'],
+            'predicted_outcome' => $primaryOutcome,
+            'tips'              => $tips,
+            'confidence'        => $primaryConf,
+            'analysis'          => $groq['analysis'],
+            'has_lineup'        => true,
+        ];
+
+        $homeXgBase = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
+        $awayXgBase = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
+
+        // Refine xG with lineup context: more starters = more attacking threat
+        [$homeXgFinal, $awayXgFinal] = $this->lineupAdjustedXg($homeXgBase, $awayXgBase, $lineupData);
+
+        $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
+        $data['likely_scores'] = $likelyScores;
+
+        if ($existing) {
+            $existing->update($data);
+        } else {
+            Prediction::create(array_merge(['match_id' => $match->id], $data));
+        }
+
+        \Illuminate\Support\Facades\Cache::put($cacheKey, true, now()->endOfDay());
+
+        return true;
     }
 
     /**
@@ -481,27 +687,32 @@ class PredictionService
             return new EloquentCollection();
         }
 
-        $scored = $candidates->map(function (Prediction $p) {
-            $hw   = (float) $p->home_win_prob;
-            $d    = (float) $p->draw_prob;
-            $aw   = (float) $p->away_win_prob;
-            $o25  = (float) ($p->over_25_prob ?? 50);
-            $btts = (float) ($p->btts_prob    ?? 50);
+        $accuracyWeights = $this->getMarketAccuracyWeights();
+
+        $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights) {
+            $hw  = (float) $p->home_win_prob;
+            $d   = (float) $p->draw_prob;
+            $aw  = (float) $p->away_win_prob;
 
             $probs = [$hw, $d, $aw];
             rsort($probs);
             $gap    = $probs[0] - $probs[1];
             $aiConf = (int) ($p->confidence ?? 0);
 
-            // Score purely on AI confidence — it already reflects model certainty.
-            // Gap bonus rewards clear favourites on top of a strong confidence.
-            $score   = $aiConf + ($gap * 0.3);
-            $tipType = mb_strtolower((string) $p->predicted_outcome);
+            // Base score: AI confidence + gap bonus for clear favourites
+            $score = $aiConf + ($gap * 0.3);
+
+            // Apply historical accuracy multiplier for this market type.
+            // If Over 2.5 Goals has only landed 45% historically, its score
+            // is penalised. If Home Win lands 68%, it gets a boost.
+            $outcome  = (string) $p->predicted_outcome;
+            $accuracy = $accuracyWeights[$outcome] ?? 1.0;
+            $score    = $score * $accuracy;
 
             return [
                 'prediction' => $p,
                 'score'      => $score,
-                'tip_type'   => $tipType,
+                'tip_type'   => mb_strtolower($outcome),
                 'gap'        => $gap,
                 'ai_conf'    => $aiConf,
             ];
@@ -612,14 +823,20 @@ class PredictionService
         $dPct   = round($d  / $tot * 100, 1);
         $awPct  = round(100 - $hwPct - $dPct, 1);
 
+        // Clean sheet: probability away team scores 0 (home clean sheet) and vice versa
+        $homeClean = round($this->poisson($awayXg, 0) * 100, 1); // away scores 0 = home clean sheet
+        $awayClean = round($this->poisson($homeXg, 0) * 100, 1); // home scores 0 = away clean sheet
+
         return [
-            'home_win' => $hwPct,
-            'draw'     => $dPct,
-            'away_win' => $awPct,
-            'over_15'  => round($o15 / $tot * 100, 1),
-            'over_25'  => round($o25 / $tot * 100, 1),
-            'over_35'  => round($o35 / $tot * 100, 1),
-            'btts'     => round($btts / $tot * 100, 1),
+            'home_win'         => $hwPct,
+            'draw'             => $dPct,
+            'away_win'         => $awPct,
+            'over_15'          => round($o15  / $tot * 100, 1),
+            'over_25'          => round($o25  / $tot * 100, 1),
+            'over_35'          => round($o35  / $tot * 100, 1),
+            'btts'             => round($btts / $tot * 100, 1),
+            'home_clean_sheet' => $homeClean,
+            'away_clean_sheet' => $awayClean,
         ];
     }
 
@@ -649,12 +866,11 @@ class PredictionService
         float $btts
     ): string {
         $candidates = [
-            // 1X2 (single outcome)
+            // 1X2
             'Home Win'        => $hw - 33.3,
-            'Draw'            => $d  - 33.3,
             'Away Win'        => $aw - 33.3,
 
-            // Goal-line markets
+            // Goal-line
             'Over 1.5 Goals'  => $over15 - 50,
             'Under 1.5 Goals' => 50 - $over15,
             'Over 2.5 Goals'  => $over25 - 50,
@@ -663,20 +879,23 @@ class PredictionService
             'Under 3.5 Goals' => 50 - $over35,
 
             // BTTS
-            'Both Teams Score'    => $btts - 50,
-            'No Both Teams Score' => 50 - $btts,
+            'Both Teams Score (GG)'    => $btts - 50,
+            'No Both Teams Score (NG)' => 50 - $btts,
 
-            // Double-chance (safer, lower max edge)
+            // Double-chance
             'Home or Draw (1X)' => ($hw + $d)  - 66.7,
             'Draw or Away (X2)' => ($d  + $aw) - 66.7,
             'Home or Away (12)' => ($hw + $aw) - 66.7,
+
+            // Draw No Bet (removes draw, treated as 2-way 50% baseline)
+            'Draw No Bet - Home' => $hw - 50,
+            'Draw No Bet - Away' => $aw - 50,
         ];
 
         arsort($candidates);
         $top  = array_key_first($candidates);
         $edge = $candidates[$top];
 
-        // Need at least 8pp edge over baseline to call it a tip
         return $edge >= 8 ? $top : 'Competitive Match';
     }
 
@@ -684,25 +903,139 @@ class PredictionService
     //  Team stats helpers
     // ──────────────────────────────────────────────────────────────
 
-    private function teamStats(string $team, CarbonInterface $before, int $excludedMatchId): array
+    /**
+     * Full extended stats for a team over the last RECENT_MATCH_LIMIT matches.
+     * Returns everything we need for both Poisson (goals_scored, goals_conceded,
+     * matches_played) and the AI prompt (rates, splits, detailed form).
+     */
+    public function extendedTeamStats(string $team, CarbonInterface $before, int $excludedMatchId): array
     {
         $matches = FootballMatch::query()
             ->where('id', '!=', $excludedMatchId)
             ->whereIn('status', self::COMPLETED_STATUSES)
             ->where('match_time', '<', $before)
-            ->whereNotNull('home_score')->whereNotNull('away_score')
+            ->whereNotNull('home_score')
+            ->whereNotNull('away_score')
             ->where(fn ($q) => $q->where('home_team', $team)->orWhere('away_team', $team))
             ->latest('match_time')
             ->limit(self::RECENT_MATCH_LIMIT)
             ->get();
 
-        $scored = $conceded = 0;
+        $wins = $draws = $losses = 0;
+        $cleanSheets = $failedToScore = $bttsCount = $over25Count = 0;
+        $scored = $conceded = $htScored = $htConceded = 0;
+        $homeMatches = $awayMatches = 0;
+        $homeScored  = $homeConceded = $awayScored = $awayConceded = 0;
+        $formDetailed = [];
+
         foreach ($matches as $m) {
-            if ($m->home_team === $team) { $scored += (int) $m->home_score; $conceded += (int) $m->away_score; }
-            else                         { $scored += (int) $m->away_score; $conceded += (int) $m->home_score; }
+            $isHome = $m->home_team === $team;
+            $gf     = $isHome ? (int) $m->home_score : (int) $m->away_score;
+            $ga     = $isHome ? (int) $m->away_score : (int) $m->home_score;
+            $htGf   = $isHome ? (int) ($m->home_score_ht ?? 0) : (int) ($m->away_score_ht ?? 0);
+            $htGa   = $isHome ? (int) ($m->away_score_ht ?? 0) : (int) ($m->home_score_ht ?? 0);
+
+            $scored    += $gf; $conceded  += $ga;
+            $htScored  += $htGf; $htConceded += $htGa;
+
+            if ($gf > $ga)       $wins++;
+            elseif ($gf === $ga) $draws++;
+            else                 $losses++;
+
+            if ($ga === 0)            $cleanSheets++;
+            if ($gf === 0)            $failedToScore++;
+            if ($gf >= 1 && $ga >= 1) $bttsCount++;
+            if ($gf + $ga >= 3)       $over25Count++;
+
+            if ($isHome) { $homeMatches++; $homeScored += $gf;  $homeConceded += $ga; }
+            else         { $awayMatches++; $awayScored += $gf;  $awayConceded += $ga; }
+
+            $result   = $gf > $ga ? 'W' : ($gf < $ga ? 'L' : 'D');
+            $opponent = $isHome ? $m->away_team : $m->home_team;
+            $venue    = $isHome ? 'H' : 'A';
+            $date     = $m->match_time?->format('d M');
+            $formDetailed[] = "{$result}({$gf}-{$ga}) {$venue} {$date} vs {$opponent}";
         }
 
-        return ['matches_played' => $matches->count(), 'goals_scored' => $scored, 'goals_conceded' => $conceded];
+        $n = max(1, $matches->count());
+
+        return [
+            // Backward-compatible for attackStrength/defenseWeakness
+            'matches_played' => $matches->count(),
+            'goals_scored'   => $scored,
+            'goals_conceded' => $conceded,
+            // Extended
+            'wins'           => $wins,
+            'draws'          => $draws,
+            'losses'         => $losses,
+            'clean_sheets'   => $cleanSheets,
+            'failed_to_score'=> $failedToScore,
+            'btts_count'     => $bttsCount,
+            'over25_count'   => $over25Count,
+            'ht_scored'      => $htScored,
+            'ht_conceded'    => $htConceded,
+            'home_matches'   => $homeMatches,
+            'home_scored'    => $homeScored,
+            'home_conceded'  => $homeConceded,
+            'away_matches'   => $awayMatches,
+            'away_scored'    => $awayScored,
+            'away_conceded'  => $awayConceded,
+            'form_detailed'  => $formDetailed, // newest first
+            'gpg'            => round($scored  / $n, 2),
+            'cpg'            => round($conceded / $n, 2),
+            'ht_gpg'         => round($htScored   / $n, 2),
+            'ht_cpg'         => round($htConceded  / $n, 2),
+        ];
+    }
+
+    /**
+     * Last 6 H2H meetings between these two sides, with outcomes from the
+     * perspective of the home team in the UPCOMING match.
+     */
+    public function headToHead(string $homeTeam, string $awayTeam, CarbonInterface $before, int $excludedMatchId): array
+    {
+        $matches = FootballMatch::query()
+            ->where('id', '!=', $excludedMatchId)
+            ->whereIn('status', self::COMPLETED_STATUSES)
+            ->where('match_time', '<', $before)
+            ->whereNotNull('home_score')
+            ->whereNotNull('away_score')
+            ->where(fn ($q) => $q
+                ->where(fn ($w) => $w->where('home_team', $homeTeam)->where('away_team', $awayTeam))
+                ->orWhere(fn ($w) => $w->where('home_team', $awayTeam)->where('away_team', $homeTeam))
+            )
+            ->latest('match_time')
+            ->limit(6)
+            ->get();
+
+        if ($matches->isEmpty()) {
+            return ['results' => [], 'home_wins' => 0, 'draws' => 0, 'away_wins' => 0, 'total' => 0];
+        }
+
+        $results  = [];
+        $homeWins = $draws = $awayWins = 0;
+
+        foreach ($matches as $m) {
+            $flipped = ($m->home_team !== $homeTeam);
+            $hScore  = (int) ($flipped ? $m->away_score : $m->home_score);
+            $aScore  = (int) ($flipped ? $m->home_score : $m->away_score);
+            $date    = $m->match_time?->format('d M Y');
+            $venue   = $flipped ? "at {$awayTeam}" : "at {$homeTeam}";
+
+            if ($hScore > $aScore)       { $homeWins++; $res = "{$homeTeam} won"; }
+            elseif ($hScore === $aScore) { $draws++;    $res = 'Draw'; }
+            else                         { $awayWins++; $res = "{$awayTeam} won"; }
+
+            $results[] = "{$date} ({$venue}): {$homeTeam} {$hScore}-{$aScore} {$awayTeam} → {$res}";
+        }
+
+        return [
+            'results'   => $results,
+            'home_wins' => $homeWins,
+            'draws'     => $draws,
+            'away_wins' => $awayWins,
+            'total'     => $matches->count(),
+        ];
     }
 
     private function attackStrength(array $s): float
@@ -718,6 +1051,71 @@ class PredictionService
     private function clampXg(float $xg): float
     {
         return round(min(self::MAX_XG, max(self::MIN_XG, $xg)), 3);
+    }
+
+    /**
+     * Adjust xG values based on confirmed lineup text.
+     * If the lineup mentions many key starters (e.g. 11 names found) the base
+     * xG is used as-is. A partial lineup (injuries/rotations mentioned) nudges
+     * xG slightly down. This keeps the Poisson probabilities realistic once
+     * the actual starting XI is known rather than relying purely on season stats.
+     */
+    private function lineupAdjustedXg(float $homeXg, float $awayXg, string $lineupText): array
+    {
+        // Signals that a key attacking player is out for the home side
+        $homeReducers = ['home.*out', 'home.*injury', 'home.*suspend', 'home.*miss', 'striker.*out', 'forward.*out'];
+        // Signals that a key attacking player is out for the away side
+        $awayReducers = ['away.*out', 'away.*injury', 'away.*suspend', 'away.*miss'];
+        // Signals full-strength attack
+        $homeBoosts   = ['home.*full.*strength', 'home.*all.*available', 'home.*fit'];
+        $awayBoosts   = ['away.*full.*strength', 'away.*all.*available', 'away.*fit'];
+
+        $homeMultiplier = 1.0;
+        $awayMultiplier = 1.0;
+
+        foreach ($homeReducers as $pattern) {
+            if (preg_match("/{$pattern}/i", $lineupText)) {
+                $homeMultiplier = max(0.80, $homeMultiplier - 0.08);
+            }
+        }
+        foreach ($awayReducers as $pattern) {
+            if (preg_match("/{$pattern}/i", $lineupText)) {
+                $awayMultiplier = max(0.80, $awayMultiplier - 0.08);
+            }
+        }
+        foreach ($homeBoosts as $pattern) {
+            if (preg_match("/{$pattern}/i", $lineupText)) {
+                $homeMultiplier = min(1.12, $homeMultiplier + 0.06);
+            }
+        }
+        foreach ($awayBoosts as $pattern) {
+            if (preg_match("/{$pattern}/i", $lineupText)) {
+                $awayMultiplier = min(1.12, $awayMultiplier + 0.06);
+            }
+        }
+
+        return [
+            $this->clampXg($homeXg * $homeMultiplier),
+            $this->clampXg($awayXg * $awayMultiplier),
+        ];
+    }
+
+    private function topScorelines(float $homeXg, float $awayXg, int $n = 4): array
+    {
+        $scores = [];
+        for ($h = 0; $h <= 5; $h++) {
+            for ($a = 0; $a <= 5; $a++) {
+                $p = $this->poisson($homeXg, $h) * $this->poisson($awayXg, $a);
+                $scores["{$h}-{$a}"] = round($p * 100, 1);
+            }
+        }
+        arsort($scores);
+        $top = array_slice($scores, 0, $n, true);
+        return array_map(
+            fn ($score, $pct) => ['score' => $score, 'pct' => $pct],
+            array_keys($top),
+            array_values($top)
+        );
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -774,6 +1172,8 @@ class PredictionService
             'analysis'          => $p->analysis,
             'analysis_pidgin'   => $p->analysis_pidgin,
             'analysis_swahili'  => $p->analysis_swahili,
+            'analysis_french'   => $p->analysis_french,
+            'likely_scores'     => is_array($p->likely_scores) ? $p->likely_scores : [],
             'home_form'         => $homeForm,
             'away_form'         => $awayForm,
             'created_at'        => $p->created_at?->toIso8601String(),

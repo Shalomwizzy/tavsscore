@@ -75,7 +75,7 @@
                         {{ number_format($pred->btts_prob ?? 0, 1) }}%
                     </td>
                     <td style="color:#93c5fd; font-size:.75rem; font-weight:700; white-space:nowrap;">
-                        {{ $pred->predicted_outcome ?? '—' }}
+                        {{ $pred->predicted_outcome ?? '-' }}
                     </td>
                     <td>
                         @if($pred->was_correct === true)
@@ -83,7 +83,7 @@
                         @elseif($pred->was_correct === false)
                             <span class="badge badge-red">✗ Loss</span>
                         @else
-                            <span style="color:var(--dim); font-size:.72rem;">—</span>
+                            <span style="color:var(--dim); font-size:.72rem;">-</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.72rem; white-space:nowrap;">{{ $pred->created_at->format('M d H:i') }}</td>

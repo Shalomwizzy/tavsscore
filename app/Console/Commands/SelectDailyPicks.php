@@ -44,17 +44,18 @@ class SelectDailyPicks extends Command
 
         foreach ($picks as $p) {
             $match = $p->match;
+            $label = $p->pick_rank === 1 ? '👑 Pick of the Day' : "Pick #{$p->pick_rank}";
             $this->line(sprintf(
                 '  #%d  %s vs %s  →  %s  (%s)',
                 $p->pick_rank,
                 $match?->home_team ?? '?',
                 $match?->away_team ?? '?',
                 $p->predicted_outcome,
-                $p->pick_rank === 1 ? '👑 Pick of the Day' : "Pick #{$p->pick_rank}"
+                $label
             ));
         }
 
-        $this->info("✅ {$picks->count()} daily picks selected.");
+        $this->info("✅ {$picks->count()} daily picks selected. Notification will fire at 08:00 Lagos.");
 
         return self::SUCCESS;
     }

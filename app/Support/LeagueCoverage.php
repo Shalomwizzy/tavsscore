@@ -17,7 +17,7 @@ class LeagueCoverage
         $country = trim((string) $country);
 
         if ($league === '') {
-            return $country !== '' ? $country : '—';
+            return $country !== '' ? $country : '-';
         }
 
         if ($country === '' || strtolower($country) === 'world' || strtolower($country) === 'unknown') {
@@ -28,7 +28,7 @@ class LeagueCoverage
     }
 
     /**
-     * IDs we treat as "top European / global" — used to order the daily-pick selector.
+     * IDs we treat as "top European / global" - used to order the daily-pick selector.
      */
     public static function topEuropean(): array
     {

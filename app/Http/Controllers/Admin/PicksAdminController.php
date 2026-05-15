@@ -41,7 +41,17 @@ class PicksAdminController extends Controller
         $correctAll = $resolvedAll->where('was_correct', true)->count();
         $accuracy   = $totalAll > 0 ? round($correctAll / $totalAll * 100, 1) : null;
 
-        return view('admin.picks.index', compact('today', 'history', 'totalAll', 'correctAll', 'accuracy'));
+        $lineupPicks = Prediction::with('match')
+            ->where('has_lineup', true)
+            ->whereNotNull('confidence')
+            ->whereNotNull('predicted_outcome')
+            ->where('predicted_outcome', '!=', 'Competitive Match')
+            ->whereHas('match', fn ($q) => $q->whereDate('match_time', now($tz)->toDateString()))
+            ->orderByDesc('confidence')
+            ->limit(10)
+            ->get();
+
+        return view('admin.picks.index', compact('today', 'history', 'totalAll', 'correctAll', 'accuracy', 'lineupPicks'));
     }
 
     public function refresh(): RedirectResponse

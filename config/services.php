@@ -58,4 +58,14 @@ return [
         'client' => env('ADSENSE_CLIENT'),
     ],
 
+    'onesignal' => [
+        'app_id'       => env('ONESIGNAL_APP_ID'),
+        'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),
+    ],
+
+    'telegram' => [
+        'bot_token'  => env('TELEGRAM_BOT_TOKEN', ''),
+        'channel_id' => env('TELEGRAM_CHANNEL_ID', ''),
+    ],
+
 ];

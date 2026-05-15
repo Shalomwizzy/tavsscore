@@ -32,7 +32,7 @@ class SendNewsletter extends Command
             ->get();
 
         if ($picks->isEmpty()) {
-            $this->warn('No daily picks for today — newsletter not sent.');
+            $this->warn('No daily picks for today - newsletter not sent.');
             return self::SUCCESS;
         }
 
@@ -61,7 +61,7 @@ class SendNewsletter extends Command
         $subscribers = NewsletterSubscriber::query()->active()->get();
 
         if ($subscribers->isEmpty()) {
-            $this->info('No confirmed subscribers — nothing to send.');
+            $this->info('No confirmed subscribers - nothing to send.');
             return self::SUCCESS;
         }
 

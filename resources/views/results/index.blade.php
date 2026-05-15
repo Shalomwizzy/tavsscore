@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Results | TavsScore')
-@section('meta_description', 'Track record of every TavsScore daily pick over the last 14 days — match score, our prediction, and whether it was correct.')
+@section('meta_description', 'Track record of every TavsScore daily pick over the last 14 days - match score, our prediction, and whether it was correct.')
 @section('canonical', url('/results'))
 
 @push('styles')
@@ -49,13 +49,13 @@
 <div class="wrap">
     <header class="res-hero">
         <h1 class="res-title">📜 Results Archive</h1>
-        <p class="res-sub">Every daily pick from the last 14 days — verified, with the actual match score next to our prediction.</p>
+        <p class="res-sub">Every daily pick from the last 14 days - verified, with the actual match score next to our prediction.</p>
     </header>
 
     <div class="res-summary">
         <div class="res-tile">
             <div class="res-tile-val" style="color:#fcd34d;">
-                @if($summary['accuracy'] !== null){{ $summary['accuracy'] }}%@else—@endif
+                @if($summary['accuracy'] !== null){{ $summary['accuracy'] }}%@else-@endif
             </div>
             <div class="res-tile-lbl">⭐ 14-day accuracy</div>
         </div>

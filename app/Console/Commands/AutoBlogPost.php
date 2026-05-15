@@ -58,7 +58,7 @@ class AutoBlogPost extends Command
             ->orderBy('match_time')->limit(10)->get();
 
         if ($matches->isEmpty()) {
-            $this->warn('No top-league matches today — skipping auto-post.');
+            $this->warn('No top-league matches today - skipping auto-post.');
             return self::SUCCESS;
         }
 
@@ -79,11 +79,11 @@ class AutoBlogPost extends Command
                     'messages'        => [
                         [
                             'role'    => 'system',
-                            'content' => 'You are a senior football journalist writing for TavsScore, a respected football statistics platform. Write with authority, passion, and deep tactical knowledge. Your articles must read like genuine editorial journalism — specific, insightful, and engaging for football fans who follow the game closely. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences.',
+                            'content' => 'You are a senior football journalist writing for TavsScore, a respected football statistics platform. Write with authority, passion, and deep tactical knowledge. Your articles must read like genuine editorial journalism - specific, insightful, and engaging for football fans who follow the game closely. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences.',
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "Write a comprehensive football match preview article for {$dateStr}.\n\nMatches: {$matchList}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- 600-800 words total\n- Open with a compelling introduction about the day's football\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key players, tactical insight, prediction\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a brief wrap-up paragraph\n- Write as if the reader follows the game seriously — no condescending explanations\n- Specific details: league positions if you know them, goal scorers' form, tactical matchups",
+                            'content' => "Write a comprehensive football match preview article for {$dateStr}.\n\nMatches: {$matchList}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- 600-800 words total\n- Open with a compelling introduction about the day's football\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key players, tactical insight, prediction\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a brief wrap-up paragraph\n- Write as if the reader follows the game seriously - no condescending explanations\n- Specific details: league positions if you know them, goal scorers' form, tactical matchups",
                         ],
                     ],
                 ]);

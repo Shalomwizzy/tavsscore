@@ -3,8 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\Prediction;
+use App\Services\OneSignalService;
+use App\Services\RolloverService;
+use App\Services\TelegramService;
 use App\Support\PickHelpers;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class CheckPredictionOutcomes extends Command
@@ -15,7 +19,7 @@ class CheckPredictionOutcomes extends Command
 
     private const FINISHED_STATUSES = ['FT', 'AET', 'PEN'];
 
-    public function handle(): int
+    public function handle(OneSignalService $oneSignal, TelegramService $telegram, RolloverService $rollover): int
     {
         $days  = (int) $this->option('days');
         $since = now()->subDays($days)->startOfDay();
@@ -60,25 +64,59 @@ class CheckPredictionOutcomes extends Command
             $prediction->update(['was_correct' => $wasCorrect]);
             $resolved++;
 
+            $score = (int) $match->home_score . '-' . (int) $match->away_score;
+            $matchLabel = "{$match->home_team} vs {$match->away_team}";
+
+            $siteUrl  = config('app.url');
+            $cacheKey = "outcome_notified_{$prediction->id}";
+
             if ($wasCorrect) {
-                $this->line(sprintf(
-                    '  ✅  %s vs %s  →  %s  (%d–%d)',
-                    $match->home_team, $match->away_team,
-                    $prediction->predicted_outcome,
-                    (int) $match->home_score, (int) $match->away_score
-                ));
+                $this->line("  ✅  {$matchLabel} → {$prediction->predicted_outcome} ({$score})");
+
+                if (! Cache::has($cacheKey)) {
+                    if ($prediction->is_daily_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '✅ We Got It Right!',
+                            body:  "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score} — Tap for today's picks.",
+                            path:  '/picks',
+                        );
+                        $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl);
+                    }
+
+                    if ($prediction->is_lineup_pick ?? false) {
+                        $oneSignal->sendPickOutcome(
+                            title: '⚡ Lineup Pick Won!',
+                            body:  "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score}.",
+                            path:  '/lineup-picks',
+                        );
+                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl);
+                    }
+
+                    Cache::put($cacheKey, true, now()->addDays(2));
+                }
             } else {
-                $this->line(sprintf(
-                    '  ❌  %s vs %s  →  predicted %s, actual %d–%d',
-                    $match->home_team, $match->away_team,
-                    $prediction->predicted_outcome,
-                    (int) $match->home_score, (int) $match->away_score
-                ));
+                $this->line("  ❌  {$matchLabel} → predicted {$prediction->predicted_outcome}, actual {$score}");
+
+                if (! Cache::has($cacheKey)) {
+                    if ($prediction->is_lineup_pick ?? false) {
+                        $oneSignal->sendPickOutcome(
+                            title: '❌ Lineup Pick Lost',
+                            body:  "{$matchLabel} ended {$score}. We go again 💪",
+                            path:  '/lineup-picks',
+                        );
+                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl);
+                    }
+
+                    Cache::put($cacheKey, true, now()->addDays(2));
+                }
             }
         }
 
         $this->info("Resolved {$resolved} predictions.");
         Log::info("CheckPredictionOutcomes: resolved {$resolved} predictions.");
+
+        // Also settle any pending rollover picks whose matches have finished
+        $rollover->checkPendingPicks();
 
         return self::SUCCESS;
     }

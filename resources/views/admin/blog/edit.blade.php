@@ -44,7 +44,7 @@
 
                 <div class="a-card">
                     <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label" for="excerpt">Excerpt <span style="font-size:.68rem; font-weight:400; color:var(--dim);">— shown on cards and used as meta description</span></label>
+                        <label class="form-label" for="excerpt">Excerpt <span style="font-size:.68rem; font-weight:400; color:var(--dim);">- shown on cards and used as meta description</span></label>
                         <textarea id="excerpt" name="excerpt" class="form-textarea" style="min-height:72px;"
                                   placeholder="130–160 characters is ideal for SEO…">{{ old('excerpt', $blog->excerpt) }}</textarea>
                         <div class="form-hint" id="excerpt-count"></div>
@@ -163,7 +163,7 @@ function previewFile(input) {
     function countChars() {
         var n = excerpt.value.length;
         var el = document.getElementById('excerpt-count');
-        el.textContent = n + ' chars' + (n < 130 ? ' — add more for SEO' : n > 160 ? ' — slightly long' : ' — perfect');
+        el.textContent = n + ' chars' + (n < 130 ? ' - add more for SEO' : n > 160 ? ' - slightly long' : ' - perfect');
         el.style.color = n >= 130 && n <= 160 ? '#6ee7b7' : 'var(--dim)';
     }
 

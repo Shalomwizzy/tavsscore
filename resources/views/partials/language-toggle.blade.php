@@ -11,6 +11,7 @@
            <button class="lang-btn active" data-lang="en">🇬🇧 EN</button>
            <button class="lang-btn"        data-lang="pidgin">🇳🇬 Pidgin</button>
            <button class="lang-btn"        data-lang="swahili">🇰🇪 Swahili</button>
+           <button class="lang-btn"        data-lang="french">🇫🇷 French</button>
          </div>
          <div data-role="body">…</div>
          <div data-role="tip">…</div>   (optional)
@@ -25,7 +26,7 @@
     window.__tsLangToggleBound = true;
 
     var CSRF   = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
-    var LABELS = { 'en': '🇬🇧 EN', 'pidgin': '🇳🇬 Pidgin', 'swahili': '🇰🇪 Swahili' };
+    var LABELS = { 'en': '🇬🇧 EN', 'pidgin': '🇳🇬 Pidgin', 'swahili': '🇰🇪 Swahili', 'french': '🇫🇷 French' };
 
     function splitTip(text) {
         if (!text) return { body: '', tip: '' };
@@ -65,7 +66,7 @@
         });
     }
 
-    // Single document-level click listener — covers both server-rendered and
+    // Single document-level click listener - covers both server-rendered and
     // dynamically-rendered (fetch-injected) cards
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest && e.target.closest('.lang-btn');
@@ -93,7 +94,7 @@
                     b.disabled = false;
                     b.textContent = LABELS[b.getAttribute('data-lang')] || b.textContent;
                 });
-                alert('Translation failed — try again in a moment.');
+                alert('Translation failed - try again in a moment.');
             });
     });
 }());

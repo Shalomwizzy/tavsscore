@@ -1,0 +1,50 @@
+{
+    "name": "TavsScore",
+    "short_name": "TavsScore",
+    "description": "Football live scores, AI predictions and daily picks",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f1923",
+    "theme_color": "#10b981",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-192.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Daily Picks",
+            "short_name": "Picks",
+            "url": "/picks",
+            "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+        },
+        {
+            "name": "Live Scores",
+            "short_name": "Live",
+            "url": "/live",
+            "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+        },
+        {
+            "name": "Predictions",
+            "short_name": "Tips",
+            "url": "/predictions",
+            "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+        }
+    ],
+    "categories": ["sports", "news"],
+    "lang": "en",
+    "serviceworker": {
+        "src": "/sw.js",
+        "scope": "/"
+    }
+}

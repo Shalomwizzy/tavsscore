@@ -79,10 +79,10 @@
                             <span class="badge badge-gray">⏳ Pending</span>
                         @endif
                     </td>
-                    <td style="color:var(--dim); font-size:.74rem;">{{ $sub->source ?? '—' }}</td>
+                    <td style="color:var(--dim); font-size:.74rem;">{{ $sub->source ?? '-' }}</td>
                     <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">{{ $sub->created_at?->format('M d, H:i') }}</td>
                     <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
-                        {{ $sub->last_sent_at?->format('M d, H:i') ?? '—' }}
+                        {{ $sub->last_sent_at?->format('M d, H:i') ?? '-' }}
                     </td>
                     <td>
                         <form method="POST" action="{{ route('admin.newsletter.destroy', $sub) }}"
@@ -113,7 +113,7 @@
     <strong>ℹ️ How it works:</strong>
     Newsletter goes out automatically every day at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">09:00 Lagos</code> via the <code>newsletter:send-daily</code> command (scheduled).
     Subscribers must double-opt-in via email before they receive anything. Each email has a one-click unsubscribe link.
-    CSV exports include all data, no anonymisation — handle accordingly under GDPR.
+    CSV exports include all data, no anonymisation - handle accordingly under GDPR.
 </div>
 
 @endsection

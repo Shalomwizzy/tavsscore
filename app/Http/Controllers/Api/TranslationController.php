@@ -20,11 +20,15 @@ class TranslationController extends Controller
     public function translate(Request $request, int $predictionId): JsonResponse
     {
         $request->validate([
-            'lang' => 'required|in:pidgin,swahili',
+            'lang' => 'required|in:pidgin,swahili,french',
         ]);
 
         $lang = $request->string('lang')->toString();
-        $col  = $lang === 'pidgin' ? 'analysis_pidgin' : 'analysis_swahili';
+        $col  = match($lang) {
+            'pidgin'  => 'analysis_pidgin',
+            'swahili' => 'analysis_swahili',
+            'french'  => 'analysis_french',
+        };
 
         $pred = Prediction::query()->findOrFail($predictionId);
 

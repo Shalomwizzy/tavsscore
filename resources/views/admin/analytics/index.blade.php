@@ -83,7 +83,7 @@
             <span class="an-num">{{ number_format($row->hits) }}<span style="color:var(--dim); font-weight:600; margin-left:.4rem;">/ {{ number_format($row->uniques) }}</span></span>
         </div>
         @empty
-        <div style="padding:1.5rem; text-align:center; color:var(--dim); font-size:.8rem;">No data yet — visit the public site to populate this.</div>
+        <div style="padding:1.5rem; text-align:center; color:var(--dim); font-size:.8rem;">No data yet - visit the public site to populate this.</div>
         @endforelse
     </div>
 
@@ -123,7 +123,7 @@
     We never store raw IP addresses. Each visit is hashed with the app key,
     the User-Agent string is stored to detect bots, and country comes from Cloudflare's <code>CF-IPCountry</code> header if available.
     @if(config('services.ga.id'))
-    <strong>Google Analytics</strong> ({{ config('services.ga.id') }}) is also enabled — open the GA dashboard above for richer behavioural reports.
+    <strong>Google Analytics</strong> ({{ config('services.ga.id') }}) is also enabled - open the GA dashboard above for richer behavioural reports.
     @else
     Set <code>GA_MEASUREMENT_ID</code> in <code>.env</code> to also enable Google Analytics.
     @endif

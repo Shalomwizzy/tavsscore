@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'African Football — NPFL, PSL, CAF Champions League & AFCON | TavsScore')
+@section('title', 'African Football - NPFL, PSL, CAF Champions League & AFCON | TavsScore')
 @section('meta_description', 'Live scores, fixtures and AI predictions across Nigerian Professional Football League, South Africa PSL, Ghana Premier, CAF Champions League, AFCON and every major African competition. Analysis available in Pidgin and Swahili.')
 @section('canonical', url('/africa'))
 
@@ -45,10 +45,10 @@
 <div class="wrap">
     <header class="af-hero">
         <div class="af-eyebrow">🌍 African Football Coverage</div>
-        <h1 class="af-title">NPFL, PSL, CAF & AFCON — All in One Place</h1>
+        <h1 class="af-title">NPFL, PSL, CAF & AFCON - All in One Place</h1>
         <p class="af-sub">
             Real-time scores, predictions and AI match analysis across every major African competition.
-            Tap any tip to read the breakdown in <strong style="color:#fcd34d;">English, 🇳🇬 Pidgin or 🇰🇪 Swahili</strong> —
+            Tap any tip to read the breakdown in <strong style="color:#fcd34d;">English, 🇳🇬 Pidgin or 🇰🇪 Swahili</strong> -
             translated by our AI, free for everyone.
         </p>
     </header>
@@ -168,7 +168,7 @@
     <div class="af-cta">
         <div>
             <div style="font-size:.7rem; font-weight:800; color:rgba(252,211,77,.78); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem;">First in Africa</div>
-            <div style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.3rem;">⭐ Today's Best 3 Picks — in your language</div>
+            <div style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.3rem;">⭐ Today's Best 3 Picks - in your language</div>
             <div style="font-size:.78rem; color:var(--text-dim); line-height:1.6; max-width:380px;">
                 Our AI picks the 3 most confident bets from today's matches and translates the analysis into Pidgin and Swahili on demand. No subscriptions.
             </div>

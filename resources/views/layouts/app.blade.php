@@ -7,13 +7,20 @@
     <title>@yield('title', 'TavsScore | Football Live Scores & AI Predictions')</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#10b981">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TavsScore">
     <meta name="description" content="@yield('meta_description', 'TavsScore delivers real-time football live scores, AI-powered match predictions and football news covering Premier League, Champions League, La Liga, Serie A, Bundesliga and more.')">
 
     {{-- Open Graph --}}
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="TavsScore">
     <meta property="og:title"       content="@yield('og_title', 'TavsScore | Football Live Scores & AI Predictions')">
-    <meta property="og:description" content="@yield('og_description', 'Real-time football live scores, AI-powered match predictions and football news — all free on TavsScore.')">
+    <meta property="og:description" content="@yield('og_description', 'Real-time football live scores, AI-powered match predictions and football news - all free on TavsScore.')">
     @hasSection('og_image')
     <meta property="og:image"       content="@yield('og_image')">
     @endif
@@ -221,16 +228,7 @@
             100% { box-shadow: 0 0 0 0   rgba(239,68,68,0); }
         }
 
-        .nav-toggle {
-            display: none;
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 6px 9px;
-            color: var(--text);
-            cursor: pointer;
-            line-height: 1;
-        }
+        .nav-toggle { display: none; }
 
         /* ── Page shell ── */
         .page-shell {
@@ -400,7 +398,7 @@
             color: var(--text-muted);
         }
 
-        /* ── Footer newsletter — compact pill style ── */
+        /* ── Footer newsletter - compact pill style ── */
         .footer-nl {
             max-width: 640px;
             margin: 0 auto 1.75rem;
@@ -493,26 +491,10 @@
             .footer-nl-status { text-align: center; }
         }
 
-        /* ── Mobile nav ── */
-        @media (max-width: 600px) {
+        /* ── Mobile nav — handled by drawer in navbar.blade.php ── */
+        @media (max-width: 860px) {
             .nav-toggle { display: flex; }
-
-            .nav-links {
-                display: none;
-                position: absolute;
-                top: 56px;
-                left: 0;
-                right: 0;
-                flex-direction: column;
-                gap: .25rem;
-                padding: .75rem;
-                background: rgba(8,13,26,.98);
-                border-bottom: 1px solid var(--border);
-            }
-
-            .nav-links.open { display: flex; }
-
-            .nav-pill { width: 100%; justify-content: center; padding: .6rem; }
+            .nav-links  { display: none !important; }
         }
     </style>
 
@@ -521,12 +503,37 @@
 <body>
 <div class="page-shell">
     @include('layouts.navbar')
+
+    {{-- Disclaimer banner --}}
+    <div id="disclaimer-bar" style="background:linear-gradient(90deg,rgba(245,158,11,.13),rgba(245,158,11,.07));border-bottom:1px solid rgba(245,158,11,.25);padding:.55rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+        <p style="margin:0;font-size:.72rem;color:#fbbf24;line-height:1.6;flex:1;min-width:200px;">
+            ⚠️ <strong>No prediction is guaranteed.</strong>
+            If AI tips <strong>Over 2.5 Goals</strong>, consider playing the safer <strong>Over 1.5 Goals</strong> instead.
+            Always gamble responsibly - only stake what you can afford to lose.
+        </p>
+        <button onclick="dismissDisclaimer()" aria-label="Dismiss"
+            style="background:none;border:1px solid rgba(245,158,11,.35);color:#fbbf24;border-radius:6px;padding:3px 10px;font-size:.7rem;cursor:pointer;flex-shrink:0;white-space:nowrap;">
+            Got it ✕
+        </button>
+    </div>
+    <script>
+        (function(){
+            if(localStorage.getItem('ts_disclaimer_dismissed')==='1'){
+                document.getElementById('disclaimer-bar').style.display='none';
+            }
+        })();
+        function dismissDisclaimer(){
+            localStorage.setItem('ts_disclaimer_dismissed','1');
+            document.getElementById('disclaimer-bar').style.display='none';
+        }
+    </script>
+
     <main class="page-main">
         @yield('content')
     </main>
     <footer class="ts-footer">
         <div class="wrap">
-            {{-- Footer newsletter — compact, single row, distinct design from /picks --}}
+            {{-- Footer newsletter - compact, single row, distinct design from /picks --}}
             <div class="footer-nl">
                 <div class="footer-nl-text">
                     <div class="footer-nl-label">📬 Get tomorrow's 3 picks free</div>
@@ -555,6 +562,28 @@
                 </form>
                 @endif
             </div>
+            {{-- Social links --}}
+            @if($telegramUrl || $twitterUrl)
+            <div style="display:flex; justify-content:center; gap:1rem; margin-bottom:.85rem;">
+                @if($telegramUrl)
+                <a href="{{ $telegramUrl }}" target="_blank" rel="noopener noreferrer"
+                   title="Join us on Telegram"
+                   style="display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:var(--text-muted); text-decoration:none; font-size:.75rem; font-weight:600; padding:.4rem .85rem; border-radius:20px; transition:background 140ms;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                    Telegram
+                </a>
+                @endif
+                @if($twitterUrl)
+                <a href="{{ $twitterUrl }}" target="_blank" rel="noopener noreferrer"
+                   title="Follow us on X (Twitter)"
+                   style="display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:var(--text-muted); text-decoration:none; font-size:.75rem; font-weight:600; padding:.4rem .85rem; border-radius:20px; transition:background 140ms;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    Follow on X
+                </a>
+                @endif
+            </div>
+            @endif
+
             <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem 1.25rem; margin-bottom:.6rem;">
                 <a href="{{ route('about') }}"   style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">About</a>
                 <a href="{{ route('blog.index') }}" style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Blog</a>
@@ -563,11 +592,13 @@
                 <a href="{{ route('contact') }}" style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Contact</a>
             </div>
             <div>⚽ &copy; {{ date('Y') }} TavsScore &mdash; Real-Time Football Scores &amp; AI Predictions</div>
-            <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football. For entertainment purposes only — not for betting.</div>
+            <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football. For entertainment purposes only - not for betting.</div>
         </div>
     </footer>
 </div>
 @stack('scripts')
+
+@include('layouts.telegram-popup')
 
 {{-- Cookie consent banner (required for Google AdSense) --}}
 <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
@@ -606,5 +637,32 @@ function declineCookies() {
     document.getElementById('cookie-banner').style.display = 'none';
 }
 </script>
+    {{-- OneSignal Push Notifications + PWA Service Worker --}}
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+                appId: "c53acaeb-7e53-4028-9ccc-18d26d70652a",
+                notifyButton: { enable: true },
+                promptOptions: {
+                    slidedown: {
+                        prompts: [{
+                            type: 'push',
+                            autoPrompt: true,
+                            text: {
+                                actionMessage: 'Get daily picks and live score alerts!',
+                                acceptButton: 'Allow',
+                                cancelButton: 'Not now',
+                            },
+                            delay: { pageViews: 1, timeDelay: 3 },
+                        }]
+                    }
+                }
+            });
+        });
+
+        // OneSignal handles its own service worker — do not register a competing sw.js
+    </script>
 </body>
 </html>
