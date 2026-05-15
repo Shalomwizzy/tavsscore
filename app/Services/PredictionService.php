@@ -164,11 +164,7 @@ class PredictionService
         // market agrees. AI tips that disagree by >15pp with bookmakers get
         // flagged; users see "⚠️ market disagrees" badge.
         $tips = $this->annotateWithMarketConsensus($tips, $match);
-
-        // Optional: Gemini as second-opinion AI on the headline tip. Only fires
-        // when GEMINI_API_KEY is set. Marks the tip "🤝 Cross-validated" when
-        // both AIs agree, or "⚠️ AI disagrees" when they don't.
-        $tips = $this->annotateWithGeminiConsensus($tips, $match);
+        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h);
 
         // Primary outcome = the strongest tip
         if (! empty($tips)) {
@@ -322,25 +318,42 @@ class PredictionService
      * Cross-validate the headline tip against Gemini. Skips silently if Gemini
      * isn't configured.
      */
-    private function annotateWithGeminiConsensus(array $tips, FootballMatch $match): array
-    {
+    private function annotateWithGeminiConsensus(
+        array         $tips,
+        FootballMatch $match,
+        array         $homeStats = [],
+        array         $awayStats = [],
+        array         $h2h = [],
+    ): array {
         if (empty($tips) || ! $this->geminiService->isConfigured()) return $tips;
 
-        $geminiTip = null;
+        $groqOutcome    = $tips[0]['market']     ?? '';
+        $groqConfidence = (int) ($tips[0]['confidence'] ?? 70);
+
+        $verdict = null;
         try {
-            $geminiTip = $this->geminiService->headlineTip($match);
+            $verdict = $this->geminiService->predictionVerdict(
+                match:          $match,
+                groqOutcome:    $groqOutcome,
+                groqConfidence: $groqConfidence,
+                homeStats:      $homeStats,
+                awayStats:      $awayStats,
+                h2h:            $h2h,
+            );
         } catch (\Throwable) {
-            // Gemini failure shouldn't block predictions
+            // Gemini failure must never block a prediction
         }
 
-        if ($geminiTip === null) return $tips;
+        if ($verdict === null) return $tips;
 
-        // Compare normalized strings — Gemini sometimes returns variants
-        $geminiNorm = mb_strtolower(trim($geminiTip));
-        $headlineNorm = mb_strtolower(trim($tips[0]['market'] ?? ''));
+        $tips[0]['gemini_tip']    = $verdict['outcome'];
+        $tips[0]['gemini_agrees'] = $verdict['agree'];
+        $tips[0]['gemini_conf']   = $verdict['confidence'];
 
-        $tips[0]['gemini_tip'] = $geminiTip;
-        $tips[0]['gemini_agrees'] = $geminiNorm === $headlineNorm;
+        // When both AIs agree, average their confidences for a more honest score
+        if ($verdict['agree']) {
+            $tips[0]['confidence'] = (int) round(($groqConfidence + $verdict['confidence']) / 2);
+        }
 
         return $tips;
     }
@@ -523,7 +536,7 @@ class PredictionService
         usleep(2_100_000);
 
         $tips = $this->annotateWithMarketConsensus($groq['tips'] ?? [], $match);
-        $tips = $this->annotateWithGeminiConsensus($tips, $match);
+        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h);
 
         $primaryOutcome = ! empty($tips) ? $tips[0]['market']     : ($groq['predicted_outcome'] ?? $existing?->predicted_outcome ?? 'Competitive Match');
         $primaryConf    = ! empty($tips) ? $tips[0]['confidence'] : ($existing?->confidence ?? null);
@@ -704,9 +717,14 @@ class PredictionService
             // Base score: AI confidence + gap bonus for clear favourites
             $score = $aiConf + ($gap * 0.3);
 
+            // Dual-AI agreement bonus — if Groq and Gemini both analysed with
+            // full stats and agreed, this is a stronger signal
+            $tips = is_array($p->tips) ? $p->tips : [];
+            if (! empty($tips[0]['gemini_agrees'])) {
+                $score += 10;
+            }
+
             // Apply historical accuracy multiplier for this market type.
-            // If Over 2.5 Goals has only landed 45% historically, its score
-            // is penalised. If Home Win lands 68%, it gets a boost.
             $outcome  = (string) $p->predicted_outcome;
             $accuracy = $accuracyWeights[$outcome] ?? 1.0;
             $score    = $score * $accuracy;

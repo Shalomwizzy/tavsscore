@@ -159,55 +159,80 @@ PROMPT;
         return implode("\n", $lines);
     }
 
-    public function headlineTip(FootballMatch $match): ?string
-    {
+    /**
+     * Full-context prediction verdict for daily picks and lineup picks.
+     * Receives Groq's recommendation plus team stats and H2H — same depth
+     * as rolloverVerdict but tuned for regular predictions, not just safe markets.
+     */
+    public function predictionVerdict(
+        FootballMatch $match,
+        string        $groqOutcome,
+        ?int          $groqConfidence,
+        array         $homeStats = [],
+        array         $awayStats = [],
+        array         $h2h = [],
+    ): ?array {
         if (! $this->isConfigured()) return null;
 
+        $homeBlock = $this->buildStatsBlock($match->home_team, $homeStats);
+        $awayBlock = $this->buildStatsBlock($match->away_team, $awayStats);
+        $h2hBlock  = $this->buildH2HBlock($h2h);
+
         $prompt = <<<PROMPT
-You are a senior football analyst. Given the fixture below, name the SINGLE bet market you'd most confidently recommend.
+You are an expert football betting analyst. Analyse this match independently and decide whether you agree with the primary AI's recommendation.
 
-Match: {$match->home_team} vs {$match->away_team}
-League: {$match->league} ({$match->league_country})
+MATCH:   {$match->home_team} vs {$match->away_team}
+LEAGUE:  {$match->league} ({$match->league_country})
+KICKOFF: {$match->match_time?->format('Y-m-d H:i')} UTC
 
-Choose ONE from this exact list (return ONLY the chosen string, nothing else):
-- Home Win
-- Draw
-- Away Win
-- Home or Draw (1X)
-- Draw or Away (X2)
-- Home or Away (12)
-- Over 1.5 Goals
-- Over 2.5 Goals
-- Over 3.5 Goals
-- Under 2.5 Goals
-- Both Teams Score (GG)
-- No Both Teams Score (NG)
-- Home -1 Handicap
-- Away +1 Handicap
+{$homeBlock}
 
-Output ONLY the market label, no quotes, no explanation.
+{$awayBlock}
+
+{$h2hBlock}
+
+PRIMARY AI (GROQ) SAYS: {$groqOutcome} (confidence: {$groqConfidence}%)
+
+Your task:
+1. Analyse the fixture using the stats and H2H data above — do NOT blindly follow Groq.
+2. Decide if you AGREE with the recommendation.
+3. Rate your own confidence 0–100%.
+
+Rules:
+- If the data genuinely supports Groq's pick, agree.
+- If you see clear evidence against it (poor recent form, H2H strongly against, etc.), disagree and name your preferred market.
+- Be analytical and honest.
+
+Respond ONLY with valid JSON (no markdown, no code fences):
+{"agree":true,"outcome":"Home Win","confidence":78}
+
+Allowed market labels: Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12), Over 1.5 Goals, Over 2.5 Goals, Under 2.5 Goals, Both Teams Score (GG), No Both Teams Score (NG), Draw No Bet - Home, Draw No Bet - Away
 PROMPT;
 
         try {
-            $response = Http::timeout(20)
+            $response = Http::timeout(25)
                 ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
                 ->post('https://generativelanguage.googleapis.com/v1beta/models/' . config('services.gemini.model', 'gemini-2.0-flash') . ':generateContent', [
-                    'contents' => [['parts' => [['text' => $prompt]]]],
-                    'generationConfig' => [
-                        'temperature' => 0.2,
-                        'maxOutputTokens' => 30,
-                    ],
+                    'contents'         => [['parts' => [['text' => $prompt]]]],
+                    'generationConfig' => ['temperature' => 0.15, 'maxOutputTokens' => 100],
                 ]);
         } catch (ConnectionException | Throwable $e) {
-            Log::info('Gemini request failed', ['match' => $match->id, 'error' => $e->getMessage()]);
+            Log::info('Gemini predictionVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
             return null;
         }
 
         if ($response->failed()) return null;
 
-        $text = trim((string) data_get($response->json(), 'candidates.0.content.parts.0.text'));
-        $text = trim($text, "\"' \n\r\t");
+        $raw  = trim((string) data_get($response->json(), 'candidates.0.content.parts.0.text'));
+        $raw  = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $raw);
+        $data = json_decode(trim($raw), true);
 
-        return $text === '' ? null : $text;
+        if (! is_array($data) || ! isset($data['agree'])) return null;
+
+        return [
+            'agree'      => (bool) $data['agree'],
+            'outcome'    => $data['outcome']    ?? $groqOutcome,
+            'confidence' => (int)  ($data['confidence'] ?? $groqConfidence ?? 70),
+        ];
     }
 }
