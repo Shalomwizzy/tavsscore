@@ -705,6 +705,15 @@ class PredictionService
         $accuracyWeights = $this->getMarketAccuracyWeights();
 
         $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights) {
+            $tips         = is_array($p->tips) ? $p->tips : [];
+            $geminiAgrees = $tips[0]['gemini_agrees'] ?? null;
+
+            // Hard exclude: Gemini analysed with full stats and explicitly disagreed.
+            // null means Gemini wasn't configured or tip pre-dates dual-AI — still eligible.
+            if ($geminiAgrees === false) {
+                return null;
+            }
+
             $hw  = (float) $p->home_win_prob;
             $d   = (float) $p->draw_prob;
             $aw  = (float) $p->away_win_prob;
@@ -714,15 +723,7 @@ class PredictionService
             $gap    = $probs[0] - $probs[1];
             $aiConf = (int) ($p->confidence ?? 0);
 
-            // Base score: AI confidence + gap bonus for clear favourites
             $score = $aiConf + ($gap * 0.3);
-
-            // Dual-AI agreement bonus — if Groq and Gemini both analysed with
-            // full stats and agreed, this is a stronger signal
-            $tips = is_array($p->tips) ? $p->tips : [];
-            if (! empty($tips[0]['gemini_agrees'])) {
-                $score += 10;
-            }
 
             // Apply historical accuracy multiplier for this market type.
             $outcome  = (string) $p->predicted_outcome;
@@ -737,7 +738,7 @@ class PredictionService
                 'ai_conf'    => $aiConf,
             ];
         })
-        ->filter(fn ($s) => $s['ai_conf'] >= 65)
+        ->filter(fn ($s) => $s !== null && $s['ai_conf'] >= 65)
         ->sortByDesc('score');
 
         // Take up to 3, preferring different tip types — but never backfill

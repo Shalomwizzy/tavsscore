@@ -42,6 +42,16 @@ class UpdateLineupPredictions extends Command
                 $outcome    = $prediction?->predicted_outcome ?? '-';
                 $conf       = $prediction?->confidence ?? 0;
 
+                // Only promote as a lineup pick if both AIs agreed.
+                // gemini_agrees === null means Gemini not configured — still include.
+                $tips         = is_array($prediction?->tips) ? $prediction->tips : [];
+                $geminiAgrees = $tips[0]['gemini_agrees'] ?? null;
+
+                if ($geminiAgrees === false) {
+                    $this->line("  ⛔ {$match->home_team} vs {$match->away_team} — AIs disagree, skipping lineup pick.");
+                    continue;
+                }
+
                 $this->info("⚡ {$match->home_team} vs {$match->away_team} → {$outcome} ({$conf}%)");
                 $updated[]       = "{$match->home_team} vs {$match->away_team}: {$outcome}";
                 $telegramPicks[] = [

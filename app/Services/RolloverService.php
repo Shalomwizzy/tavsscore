@@ -138,8 +138,7 @@ class RolloverService
             ->limit(20)
             ->get();
 
-        $best      = null;
-        $bestNoAgreement = null; // fallback if no dual-AI match found
+        $best = null;
 
         foreach ($candidates as $pred) {
             $match = $pred->match;
@@ -164,36 +163,25 @@ class RolloverService
                 h2h:            $h2h,
             );
 
-            $bothAgree = $gemini !== null && $gemini['agree'];
-
-            if ($bothAgree) {
-                // Prefer highest confidence among agreed picks
-                if ($best === null || $pred->confidence > $best['prediction']->confidence) {
-                    $best = [
-                        'prediction' => $pred,
-                        'gemini'     => $gemini,
-                        'bothAgree'  => true,
-                    ];
-                }
-                // Strong dual-AI + high confidence — stop searching
-                if ($pred->confidence >= 85) break;
-            } else {
-                // Keep the highest-confidence candidate as fallback
-                if ($bestNoAgreement === null || $pred->confidence > $bestNoAgreement['prediction']->confidence) {
-                    $bestNoAgreement = [
-                        'prediction' => $pred,
-                        'gemini'     => $gemini,
-                        'bothAgree'  => false,
-                    ];
-                }
+            // Both AIs must agree — no fallback to single-AI picks
+            if ($gemini === null || ! $gemini['agree']) {
+                continue;
             }
+
+            // Prefer highest confidence among agreed picks
+            if ($best === null || $pred->confidence > $best['prediction']->confidence) {
+                $best = [
+                    'prediction' => $pred,
+                    'gemini'     => $gemini,
+                    'bothAgree'  => true,
+                ];
+            }
+            // Strong dual-AI + high confidence — stop searching
+            if ($pred->confidence >= 85) break;
         }
 
-        // Prefer dual-AI agreed pick; fall back to highest confidence if none agree
-        $best = $best ?? $bestNoAgreement;
-
         if (! $best) {
-            Log::info('RolloverService: no suitable pick found today.');
+            Log::info('RolloverService: no match had dual-AI agreement today — no pick selected.');
             return null;
         }
 
