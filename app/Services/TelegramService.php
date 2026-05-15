@@ -112,11 +112,28 @@ class TelegramService
     {
         $leagueLine = $league ? "🏆 {$league}\n" : '';
 
-        $message = "✅ <b>We Got It Right!</b>\n\n"
+        $message = "🔥 <b>BANG ON! We nailed it!</b> ✅\n\n"
             . "{$leagueLine}"
-            . "<b>{$match}</b>\n"
-            . "Final score: {$score}\n"
-            . "Our tip: <b>{$outcome}</b> ✓\n\n"
+            . "⚽ <b>{$match}</b>\n"
+            . "Final score: <b>{$score}</b>\n"
+            . "Our tip: <b>{$outcome}</b> — correct! 🎯\n\n"
+            . "Keep trusting the AI picks 💡\n"
+            . "🔗 <a href=\"{$siteUrl}/picks\">See today's picks</a>";
+
+        $this->send($message);
+    }
+
+    public function sendWrongPick(string $match, string $outcome, string $score, string $siteUrl, string $league = ''): void
+    {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+
+        $message = "😔 <b>This one didn't go our way</b>\n\n"
+            . "{$leagueLine}"
+            . "⚽ <b>{$match}</b>\n"
+            . "Final score: <b>{$score}</b>\n"
+            . "Our tip: <b>{$outcome}</b> ❌\n\n"
+            . "Football is unpredictable — that's what makes it beautiful 🙏\n"
+            . "We analyse every game carefully and we'll come back stronger tomorrow 💪\n"
             . "🔗 <a href=\"{$siteUrl}/picks\">See today's picks</a>";
 
         $this->send($message);
@@ -137,20 +154,23 @@ class TelegramService
         $leagueLine = $league ? "🏆 {$league}\n" : '';
 
         if ($won) {
-            $msg = "🎉 <b>ROLLOVER DAY {$day} — WON!</b>\n\n"
+            $msg = "🎉🔥 <b>ROLLOVER DAY {$day} — WON!</b> 💰\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Our tip: <b>{$tip}</b> ✅\n\n"
-                . "💰 Stake: " . number_format($stake, 0) . " → Return: <b>" . number_format($returns, 0) . "</b>\n\n"
-                . "🔗 <a href=\"{$siteUrl}/rollover\">See rollover progress</a>";
+                . "💸 Stake: <b>" . number_format($stake, 0) . "</b>\n"
+                . "💰 Return: <b>" . number_format($returns, 0) . "</b>\n\n"
+                . "The pot keeps growing! Stay locked in 🔒\n"
+                . "🔗 <a href=\"{$siteUrl}/rollover\">Track the rollover challenge</a>";
         } else {
-            $msg = "😔 <b>ROLLOVER DAY {$day} — LOST</b>\n\n"
+            $msg = "😔 <b>ROLLOVER DAY {$day} — Lost</b>\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Our tip: <b>{$tip}</b> ❌\n\n"
-                . "We go again 💪 A new challenge starts soon.\n\n"
+                . "Football isn't always fair — we gave it our best shot 🙏\n"
+                . "A fresh challenge starts soon. Stay with us, we rise again 💪\n"
                 . "🔗 <a href=\"{$siteUrl}/rollover\">See rollover</a>";
         }
 
@@ -168,19 +188,21 @@ class TelegramService
         $leagueLine = $league ? "🏆 {$league}\n" : '';
 
         if ($won) {
-            $msg = "✅ <b>Lineup Pick — WON!</b>\n\n"
+            $msg = "⚡🎯 <b>Lineup Pick — WON!</b> 🔥\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Tip: <b>{$tip}</b> ✅\n\n"
+                . "Lineups don't lie — the AI read this one perfectly 🤖💡\n"
                 . "🔗 <a href=\"{$siteUrl}/lineup-picks\">See lineup picks</a>";
         } else {
-            $msg = "❌ <b>Lineup Pick — Lost</b>\n\n"
+            $msg = "😔 <b>Lineup Pick — Lost</b>\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Tip: <b>{$tip}</b> ❌\n\n"
-                . "Better luck next time 💪\n"
+                . "Even with lineup data, football can surprise us 🤷\n"
+                . "We keep analysing, keep improving 💪\n"
                 . "🔗 <a href=\"{$siteUrl}/lineup-picks\">See lineup picks</a>";
         }
 

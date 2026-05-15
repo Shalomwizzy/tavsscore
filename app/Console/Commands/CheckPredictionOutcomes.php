@@ -77,8 +77,8 @@ class CheckPredictionOutcomes extends Command
                 if (! Cache::has($cacheKey)) {
                     if ($prediction->is_daily_pick) {
                         $oneSignal->sendPickOutcome(
-                            title: '✅ We Got It Right!',
-                            body:  ($league ? "{$league} | " : '') . "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score} — Tap for today's picks.",
+                            title: '🔥 We Nailed It! Pick Won!',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$prediction->predicted_outcome} ✅ Check your returns!",
                             path:  '/picks',
                         );
                         $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
@@ -86,8 +86,8 @@ class CheckPredictionOutcomes extends Command
 
                     if ($prediction->is_lineup_pick ?? false) {
                         $oneSignal->sendPickOutcome(
-                            title: '⚡ Lineup Pick Won!',
-                            body:  ($league ? "{$league} | " : '') . "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score}.",
+                            title: '⚡ Lineup Pick WON! 🎯',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$prediction->predicted_outcome} ✅",
                             path:  '/lineup-picks',
                         );
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
@@ -99,10 +99,19 @@ class CheckPredictionOutcomes extends Command
                 $this->line("  ❌  {$matchLabel} → predicted {$prediction->predicted_outcome}, actual {$score}");
 
                 if (! Cache::has($cacheKey)) {
+                    if ($prediction->is_daily_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '😔 Pick Lost — We Go Again',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Football can surprise anyone — back tomorrow 💪",
+                            path:  '/picks',
+                        );
+                        $telegram->sendWrongPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
+                    }
+
                     if ($prediction->is_lineup_pick ?? false) {
                         $oneSignal->sendPickOutcome(
-                            title: '❌ Lineup Pick Lost',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. We go again 💪",
+                            title: '😔 Lineup Pick Lost',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Football isn't always fair — we rise again 💪",
                             path:  '/lineup-picks',
                         );
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl, $league);

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Prediction;
 use App\Models\RolloverChallenge;
 use App\Models\RolloverPick;
+use App\Support\PickHelpers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -222,7 +223,7 @@ class RolloverService
     public function checkPendingPicks(): void
     {
         $pending = RolloverPick::query()
-            ->with(['match', 'challenge'])
+            ->with(['match', 'challenge', 'prediction'])
             ->where('status', 'pending')
             ->get();
 
@@ -232,10 +233,23 @@ class RolloverService
                 continue;
             }
 
-            $prediction = Prediction::query()->where('match_id', $match->id)->first();
-            $wasCorrect = $prediction?->was_correct;
+            // Use the linked prediction; fall back to any prediction for this match
+            $prediction = $pick->prediction
+                ?? Prediction::query()->where('match_id', $match->id)->first();
 
-            if ($wasCorrect === null) continue;
+            // Resolve outcome directly if not yet settled
+            $wasCorrect = $prediction?->was_correct;
+            if ($wasCorrect === null && $prediction !== null) {
+                $wasCorrect = PickHelpers::resolveOutcome($prediction);
+                if ($wasCorrect !== null) {
+                    $prediction->update(['was_correct' => $wasCorrect]);
+                }
+            }
+
+            if ($wasCorrect === null) {
+                Log::info("RolloverService: pick {$pick->id} — outcome still unresolvable, skipping.");
+                continue;
+            }
 
             $score   = "{$match->home_score}-{$match->away_score}";
             $newStatus = $wasCorrect ? 'won' : 'lost';
@@ -266,14 +280,14 @@ class RolloverService
 
                 if ($newStatus === 'won') {
                     $this->oneSignal->sendPickOutcome(
-                        title: "🎉 Rollover Day {$pick->day_number} WON!",
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$tip} ✅ Tap to see your returns.",
+                        title: "🔥 Rollover Day {$pick->day_number} WON! 💰",
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$tip} ✅ The pot grows! Tap to track your returns.",
                         path:  '/rollover',
                     );
                 } else {
                     $this->oneSignal->sendPickOutcome(
-                        title: "😔 Rollover Day {$pick->day_number} Lost",
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — We go again 💪",
+                        title: "😔 Rollover Day {$pick->day_number} — Lost",
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — Football can be cruel. Fresh challenge coming soon 💪",
                         path:  '/rollover',
                     );
                 }
