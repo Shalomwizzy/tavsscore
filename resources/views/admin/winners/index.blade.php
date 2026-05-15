@@ -164,7 +164,7 @@
         @if($approved->isEmpty())
             <p style="font-size:.78rem; color:var(--dim);">No approved winners yet.</p>
         @else
-        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.6rem;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:.6rem;">
             @foreach($approved as $win)
             @php $aurls = $win->screenshot_urls; @endphp
             <div style="background:var(--surface); border:1px solid rgba(16,185,129,.2); border-radius:10px; overflow:hidden;">
@@ -230,7 +230,7 @@
                     <th>Platform</th>
                     <th>Amount</th>
                     <th>Status</th>
-                    <th></th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -262,11 +262,15 @@
                         @endif
                     </td>
                     <td>
-                        <form method="POST" action="{{ route('admin.winners.reject', $s) }}"
-                              onsubmit="return confirm('Delete this submission permanently?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" style="background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:#fca5a5; border-radius:5px; padding:2px 10px; font-size:.65rem; font-weight:700; cursor:pointer;">Delete</button>
-                        </form>
+                        <div style="display:flex; gap:.35rem; align-items:center;">
+                            <a href="{{ route('admin.winners.edit', $s) }}"
+                               style="background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.35); color:#a5b4fc; border-radius:5px; padding:2px 10px; font-size:.65rem; font-weight:700; text-decoration:none; white-space:nowrap;">✏️ Edit</a>
+                            <form method="POST" action="{{ route('admin.winners.reject', $s) }}"
+                                  onsubmit="return confirm('Delete this submission permanently?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" style="background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:#fca5a5; border-radius:5px; padding:2px 10px; font-size:.65rem; font-weight:700; cursor:pointer;">Delete</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @endforeach
