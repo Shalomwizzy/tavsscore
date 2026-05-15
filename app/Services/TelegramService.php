@@ -74,7 +74,9 @@ class TelegramService
         $lines = ["⚡ <b>Lineup Confirmed - Picks Updated!</b>\n"];
 
         foreach ($picks as $pick) {
-            $lines[] = "• <b>{$pick['match']}</b>: {$pick['tip']} ({$pick['confidence']}%)";
+            $league  = $pick['league'] ?? '';
+            $prefix  = $league ? "🏆 {$league}\n   " : '';
+            $lines[] = "• {$prefix}<b>{$pick['match']}</b>: {$pick['tip']} ({$pick['confidence']}%)";
         }
 
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/lineup-picks\">See analysis</a>";
@@ -106,9 +108,12 @@ class TelegramService
         $this->send(implode("\n", $lines));
     }
 
-    public function sendCorrectPick(string $match, string $outcome, string $score, string $siteUrl): void
+    public function sendCorrectPick(string $match, string $outcome, string $score, string $siteUrl, string $league = ''): void
     {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+
         $message = "✅ <b>We Got It Right!</b>\n\n"
+            . "{$leagueLine}"
             . "<b>{$match}</b>\n"
             . "Final score: {$score}\n"
             . "Our tip: <b>{$outcome}</b> ✓\n\n"
@@ -125,12 +130,15 @@ class TelegramService
         int    $day,
         float  $stake,
         float  $returns,
-        string $siteUrl
+        string $siteUrl,
+        string $league = ''
     ): void {
         $won = $status === 'won';
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
 
         if ($won) {
             $msg = "🎉 <b>ROLLOVER DAY {$day} — WON!</b>\n\n"
+                . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Our tip: <b>{$tip}</b> ✅\n\n"
@@ -138,6 +146,7 @@ class TelegramService
                 . "🔗 <a href=\"{$siteUrl}/rollover\">See rollover progress</a>";
         } else {
             $msg = "😔 <b>ROLLOVER DAY {$day} — LOST</b>\n\n"
+                . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Our tip: <b>{$tip}</b> ❌\n\n"
@@ -153,16 +162,21 @@ class TelegramService
         string $tip,
         string $score,
         bool   $won,
-        string $siteUrl
+        string $siteUrl,
+        string $league = ''
     ): void {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+
         if ($won) {
             $msg = "✅ <b>Lineup Pick — WON!</b>\n\n"
+                . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Tip: <b>{$tip}</b> ✅\n\n"
                 . "🔗 <a href=\"{$siteUrl}/lineup-picks\">See lineup picks</a>";
         } else {
             $msg = "❌ <b>Lineup Pick — Lost</b>\n\n"
+                . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final: <b>{$score}</b>\n"
                 . "Tip: <b>{$tip}</b> ❌\n\n"
@@ -184,10 +198,11 @@ class TelegramService
         $lines  = ["{$emoji} <b>Today's Pick Results</b>\n"];
 
         foreach ($results as $r) {
-            $tick  = $r['correct'] ? '✅' : '❌';
-            $score = $r['score'] ? " [{$r['score']}]" : '';
-            $conf  = $r['confidence'] ? " ({$r['confidence']}%)" : '';
-            $lines[] = "{$tick} <b>{$r['match']}</b>{$score}\n   Tip: {$r['tip']}{$conf}";
+            $tick    = $r['correct'] ? '✅' : '❌';
+            $score   = $r['score'] ? " [{$r['score']}]" : '';
+            $conf    = $r['confidence'] ? " ({$r['confidence']}%)" : '';
+            $league  = isset($r['league']) && $r['league'] ? "🏆 {$r['league']}\n   " : '';
+            $lines[] = "{$tick} {$league}<b>{$r['match']}</b>{$score}\n   Tip: {$r['tip']}{$conf}";
         }
 
         $lines[] = "\n📊 <b>{$correct}/{$total}</b> picks correct today";

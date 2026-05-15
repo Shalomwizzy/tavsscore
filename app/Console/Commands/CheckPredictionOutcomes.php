@@ -66,6 +66,7 @@ class CheckPredictionOutcomes extends Command
 
             $score = (int) $match->home_score . '-' . (int) $match->away_score;
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
+            $league     = $match->league ?? '';
 
             $siteUrl  = config('app.url');
             $cacheKey = "outcome_notified_{$prediction->id}";
@@ -77,19 +78,19 @@ class CheckPredictionOutcomes extends Command
                     if ($prediction->is_daily_pick) {
                         $oneSignal->sendPickOutcome(
                             title: '✅ We Got It Right!',
-                            body:  "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score} — Tap for today's picks.",
+                            body:  ($league ? "{$league} | " : '') . "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score} — Tap for today's picks.",
                             path:  '/picks',
                         );
-                        $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl);
+                        $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                     }
 
                     if ($prediction->is_lineup_pick ?? false) {
                         $oneSignal->sendPickOutcome(
                             title: '⚡ Lineup Pick Won!',
-                            body:  "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score}.",
+                            body:  ($league ? "{$league} | " : '') . "{$prediction->predicted_outcome} ✅ {$matchLabel} ended {$score}.",
                             path:  '/lineup-picks',
                         );
-                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl);
+                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
                     }
 
                     Cache::put($cacheKey, true, now()->addDays(2));
@@ -101,10 +102,10 @@ class CheckPredictionOutcomes extends Command
                     if ($prediction->is_lineup_pick ?? false) {
                         $oneSignal->sendPickOutcome(
                             title: '❌ Lineup Pick Lost',
-                            body:  "{$matchLabel} ended {$score}. We go again 💪",
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. We go again 💪",
                             path:  '/lineup-picks',
                         );
-                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl);
+                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl, $league);
                     }
 
                     Cache::put($cacheKey, true, now()->addDays(2));

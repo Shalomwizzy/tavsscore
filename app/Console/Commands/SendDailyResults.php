@@ -42,6 +42,7 @@ class SendDailyResults extends Command
 
             return [
                 'match'      => "{$match->home_team} vs {$match->away_team}",
+                'league'     => $match->league ?? '',
                 'tip'        => $p->predicted_outcome ?? '',
                 'confidence' => $p->confidence ?? '',
                 'correct'    => $p->was_correct,

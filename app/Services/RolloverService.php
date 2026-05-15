@@ -262,17 +262,18 @@ class RolloverService
                 $matchLabel = "{$match->home_team} vs {$match->away_team}";
                 $tip        = $pick->groq_verdict ?? $pick->gemini_verdict ?? '—';
                 $siteUrl    = config('app.url');
+                $league     = $match->league ?? '';
 
                 if ($newStatus === 'won') {
                     $this->oneSignal->sendPickOutcome(
                         title: "🎉 Rollover Day {$pick->day_number} WON!",
-                        body:  "{$matchLabel} {$score} — {$tip} ✅ Tap to see your returns.",
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$tip} ✅ Tap to see your returns.",
                         path:  '/rollover',
                     );
                 } else {
                     $this->oneSignal->sendPickOutcome(
                         title: "😔 Rollover Day {$pick->day_number} Lost",
-                        body:  "{$matchLabel} {$score} — We go again 💪",
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — We go again 💪",
                         path:  '/rollover',
                     );
                 }
@@ -286,6 +287,7 @@ class RolloverService
                     stake:   (float) $pick->stake_amount,
                     returns: (float) $pick->potential_return,
                     siteUrl: $siteUrl,
+                    league:  $league,
                 );
 
                 Cache::put($cacheKey, true, now()->addDays(3));

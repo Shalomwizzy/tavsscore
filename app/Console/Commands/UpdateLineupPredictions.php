@@ -46,6 +46,7 @@ class UpdateLineupPredictions extends Command
                 $updated[]       = "{$match->home_team} vs {$match->away_team}: {$outcome}";
                 $telegramPicks[] = [
                     'match'      => "{$match->home_team} vs {$match->away_team}",
+                    'league'     => $match->league ?? '',
                     'tip'        => $outcome,
                     'confidence' => $conf,
                 ];
