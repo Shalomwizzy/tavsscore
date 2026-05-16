@@ -316,26 +316,26 @@ class CheckPredictionOutcomes extends Command
                 $prediction->update(['over25_notified' => true]);
             }
 
-            // Team 3+
+            // Team 3+ NO — wins when the named team scores fewer than 3
             if ($prediction->is_team3plus_pick && ! $prediction->team3plus_notified) {
-                $label = $prediction->team3plus_label ?? 'Home';
-                $won   = $label === 'Home' ? $home >= 3 : $away >= 3;
+                $label    = $prediction->team3plus_label ?? 'Home';
                 $teamName = $label === 'Home' ? $match->home_team : $match->away_team;
+                $won      = $label === 'Home' ? $home < 3 : $away < 3;
 
                 $this->line($won
-                    ? "  🎯✅  {$matchLabel} {$score} — {$teamName} scored 3+ HIT"
-                    : "  🎯❌  {$matchLabel} {$score} — {$teamName} scored 3+ missed");
+                    ? "  🚫✅  {$matchLabel} {$score} — {$teamName} did NOT score 3+ (NO hit)"
+                    : "  🚫❌  {$matchLabel} {$score} — {$teamName} scored 3+, NO missed");
 
                 if ($won) {
                     $oneSignal->sendPickOutcome(
-                        title: '🎯 Team 3+ Goals — WON! 🔥',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} delivered 3+ goals! ✅",
+                        title: '🚫 Team 3+ NO — Won! 🔥',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} stayed under 3 goals! ✅",
                         path:  '/team-3-plus',
                     );
                 } else {
                     $oneSignal->sendPickOutcome(
-                        title: '😔 Team 3+ — Didn\'t Quite Get There',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} fell short. We learn 💪",
+                        title: '😔 Team 3+ NO — Didn\'t Land',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} hit 3+. We recalibrate 💪",
                         path:  '/team-3-plus',
                     );
                 }

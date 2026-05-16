@@ -411,18 +411,18 @@ class TelegramService
     {
         $leagueLine = $league ? "🏆 {$league}\n" : '';
         if ($won) {
-            $msg = "🎯✅ <b>TEAM 3+ GOALS — WON!</b>\n\n"
+            $msg = "🚫✅ <b>TEAM 3+ NO — WON!</b>\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final score: <b>{$score}</b>\n\n"
-                . "{$team} scored 3 or more — exactly as predicted! 🔥💰\n\n"
+                . "{$team} did NOT score 3+ — exactly as predicted! 🔥💰\n\n"
                 . "🔗 <a href=\"{$siteUrl}/team-3-plus\">See all Team 3+ picks</a>";
         } else {
-            $msg = "🎯❌ <b>Team 3+ Goals — Didn't Land</b>\n\n"
+            $msg = "🚫❌ <b>Team 3+ NO — Missed</b>\n\n"
                 . "{$leagueLine}"
                 . "⚽ <b>{$match}</b>\n"
                 . "Final score: <b>{$score}</b>\n\n"
-                . "{$team} couldn't get to 3 this time. We'll find the next one 💪\n\n"
+                . "{$team} managed to score 3+ this time. We recalibrate 💪\n\n"
                 . "🔗 <a href=\"{$siteUrl}/team-3-plus\">See picks</a>";
         }
         $this->send($msg);
@@ -463,14 +463,14 @@ class TelegramService
     public function sendTeam3PlusPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) return;
-        $lines = ["🎯 <b>Today's Team to Score 3+ Goals Picks</b>\n"];
+        $lines = ["🚫 <b>Today's Team 3+ Goals — NO Picks</b>\n"];
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '🎯';
+            $rank   = $i === 0 ? '👑' : '🚫';
             $match  = $pick['match'] ?? '';
+            $team   = $pick['team'] ?? '';
             $prob   = $pick['prob'] ?? '';
-            $label  = $pick['label'] ?? '';
             $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>{$label} Team — 3+ Goals YES</b> ({$prob}% probability)";
+            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>{$team} — 3+ Goals NO</b> (only {$prob}% chance they score 3+)";
         }
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/team-3-plus\">See full analysis</a>";
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";

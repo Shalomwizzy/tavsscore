@@ -1032,9 +1032,10 @@ class PredictionService
 
     /**
      * Select up to 5 "A Team to Score 3+ Goals" picks for today.
-     * Picks the team (home or away) with the highest Poisson P(goals ≥ 3),
-     * requiring ≥35% — roughly the top 20–25% of all fixture profiles.
-     * Stored with team3plus_label = 'Home' or 'Away'.
+     * For the "A Team to Score 3+" YES/NO market, we predict NO on the team
+     * with the lowest Poisson P(goals ≥ 3) — i.e. the team we are most confident
+     * will NOT score 3 goals. We require that team's probability ≤ 8%.
+     * Stored with team3plus_label = 'Home' or 'Away' (the team we predict NO on).
      */
     public function selectTeam3PlusPicks(): EloquentCollection
     {
@@ -1052,10 +1053,8 @@ class PredictionService
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
             ->where('analysis', '!=', 'Prediction pending')
             ->whereNotNull('analysis')
-            ->where(fn ($q) => $q
-                ->where('home_3plus_prob', '>=', 35)
-                ->orWhere('away_3plus_prob', '>=', 35)
-            )
+            ->whereNotNull('home_3plus_prob')
+            ->whereNotNull('away_3plus_prob')
             ->whereHas('match', fn ($q) => $q
                 ->whereBetween('match_time', [$today, $cutoff])
                 ->whereNotIn('status', $excluded)
@@ -1064,9 +1063,13 @@ class PredictionService
             ->map(function (Prediction $p) {
                 $home3 = (float) ($p->home_3plus_prob ?? 0);
                 $away3 = (float) ($p->away_3plus_prob ?? 0);
-                return ['prediction' => $p, 'prob' => max($home3, $away3), 'label' => $home3 >= $away3 ? 'Home' : 'Away'];
+                // Pick the team with the LOWER 3+ probability — we predict NO on them
+                $label = $home3 <= $away3 ? 'Home' : 'Away';
+                $prob  = min($home3, $away3);
+                return ['prediction' => $p, 'prob' => $prob, 'label' => $label];
             })
-            ->sortByDesc('prob')
+            ->filter(fn ($item) => $item['prob'] <= 8.0)   // must be very unlikely to score 3+
+            ->sortBy('prob')   // ascending: lowest prob = most confident NO
             ->take(5)
             ->values();
 

@@ -40,7 +40,7 @@ class Team3PlusAdminController extends Controller
         $correct  = $resolved->filter(function ($p) {
             if (! $p->match) return false;
             $label = $p->team3plus_label ?? 'Home';
-            return $label === 'Home' ? (int)$p->match->home_score >= 3 : (int)$p->match->away_score >= 3;
+            return $label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3;
         })->count();
         $accuracy = $total > 0 ? round($correct / $total * 100, 1) : null;
 

@@ -187,14 +187,18 @@ class NotifyDailyPicks extends Command
                 $t3Lines = $team3Picks->map(function ($p) {
                     $match = $p->match;
                     if (! $match) return null;
-                    $prob  = round($p->team3plus_label === 'Home' ? $p->home_3plus_prob : $p->away_3plus_prob);
-                    return "{$match->home_team} vs {$match->away_team}: {$p->team3plus_label} 3+ ({$prob}%)";
+                    $label    = $p->team3plus_label ?? 'Home';
+                    $teamName = $label === 'Home' ? $match->home_team : $match->away_team;
+                    $prob     = round($label === 'Home' ? $p->home_3plus_prob : $p->away_3plus_prob);
+                    return "{$match->home_team} vs {$match->away_team}: {$teamName} 3+ NO ({$prob}%)";
                 })->filter()->values();
 
-                $oneSignal->sendMatchAlert(title: '🎯 Today\'s Team to Score 3+ Picks Are Live!', message: $t3Lines->implode(' | ') . ' — Tap for analysis', path: '/team-3-plus');
+                $oneSignal->sendMatchAlert(title: '🚫 Today\'s Team 3+ NO Picks Are Live!', message: $t3Lines->implode(' | ') . ' — Tap for analysis', path: '/team-3-plus');
                 $telegram->sendTeam3PlusPicks($team3Picks->map(function ($p) {
                     if (! $p->match) return null;
-                    return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => $p->match->league ?? '', 'prob' => round($p->team3plus_label === 'Home' ? $p->home_3plus_prob : $p->away_3plus_prob), 'label' => $p->team3plus_label ?? 'A Team'];
+                    $label    = $p->team3plus_label ?? 'Home';
+                    $teamName = $label === 'Home' ? $p->match->home_team : $p->match->away_team;
+                    return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => $p->match->league ?? '', 'team' => $teamName, 'prob' => round($label === 'Home' ? $p->home_3plus_prob : $p->away_3plus_prob)];
                 })->filter()->values()->toArray(), $url);
                 $this->info("Team 3+ picks sent: {$team3Picks->count()}");
             } else {

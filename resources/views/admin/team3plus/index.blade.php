@@ -63,18 +63,24 @@
                     <th>#</th>
                     <th>Match</th>
                     <th>League</th>
-                    <th>Predicted Team</th>
-                    <th>Home 3+</th>
-                    <th>Away 3+</th>
+                    <th>NO Team</th>
+                    <th>Their 3+ Prob</th>
+                    <th>Other 3+ Prob</th>
                     <th>Kickoff (Lagos)</th>
                     <th>Result</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($todayPicks as $pick)
-                @php $m = $pick->match; $label = $pick->team3plus_label ?? 'Home'; @endphp
+                @php
+                    $m = $pick->match;
+                    $label = $pick->team3plus_label ?? 'Home';
+                    $noTeam = $label === 'Home' ? ($m?->home_team ?? '?') : ($m?->away_team ?? '?');
+                    $noProb = $label === 'Home' ? $pick->home_3plus_prob : $pick->away_3plus_prob;
+                    $otherProb = $label === 'Home' ? $pick->away_3plus_prob : $pick->home_3plus_prob;
+                @endphp
                 <tr>
-                    <td style="font-weight:800; color:#fca5a5;">🎯 #{{ $pick->team3plus_rank }}</td>
+                    <td style="font-weight:800; color:#fca5a5;">🚫 #{{ $pick->team3plus_rank }}</td>
                     <td style="color:#fff; font-weight:600; white-space:nowrap;">
                         {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
@@ -85,16 +91,16 @@
                         {{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}
                     </td>
                     <td style="font-weight:700; color:#fca5a5; white-space:nowrap;">
-                        {{ $label }}: {{ $label === 'Home' ? ($m?->home_team ?? '?') : ($m?->away_team ?? '?') }}
+                        🚫 {{ $noTeam }} (NO)
                     </td>
-                    <td style="font-weight:700; color:#fca5a5;">{{ $pick->home_3plus_prob ? round($pick->home_3plus_prob) . '%' : '-' }}</td>
-                    <td style="font-weight:700; color:#fca5a5;">{{ $pick->away_3plus_prob ? round($pick->away_3plus_prob) . '%' : '-' }}</td>
+                    <td style="font-weight:700; color:#6ee7b7;">{{ $noProb ? round($noProb) . '%' : '-' }}</td>
+                    <td style="font-weight:700; color:var(--dim);">{{ $otherProb ? round($otherProb) . '%' : '-' }}</td>
                     <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
                         {{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') ?? '-' }}
                     </td>
                     <td>
                         @if($pick->team3plus_notified && $m && in_array($m->status, ['FT','AET','PEN']))
-                            @php $won = $label === 'Home' ? (int)$m->home_score >= 3 : (int)$m->away_score >= 3; @endphp
+                            @php $won = $label === 'Home' ? (int)$m->home_score < 3 : (int)$m->away_score < 3; @endphp
                             @if($won) <span class="badge badge-green">✓ Won</span>
                             @else <span class="badge badge-red">✗ Lost</span> @endif
                         @elseif($m && in_array($m->status, ['1H','HT','2H','ET','BT','P','LIVE']))
@@ -128,7 +134,11 @@
                 <table class="a-table" style="font-size:.78rem;">
                     <tbody>
                         @foreach($dayPicks as $pick)
-                        @php $m = $pick->match; $label = $pick->team3plus_label ?? 'Home'; @endphp
+                        @php
+                            $m = $pick->match;
+                            $label = $pick->team3plus_label ?? 'Home';
+                            $noTeam = $label === 'Home' ? ($m?->home_team ?? '?') : ($m?->away_team ?? '?');
+                        @endphp
                         <tr>
                             <td style="width:50px; font-weight:700; color:#fca5a5;">#{{ $pick->team3plus_rank }}</td>
                             <td style="color:#fff; font-weight:600; white-space:nowrap;">
@@ -137,10 +147,10 @@
                                     <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                                 @endif
                             </td>
-                            <td style="color:#fca5a5; font-weight:700;">{{ $label }} 3+</td>
+                            <td style="color:#fca5a5; font-weight:700;">🚫 {{ $noTeam }} NO</td>
                             <td style="text-align:right;">
                                 @if($pick->team3plus_notified && $m && in_array($m->status, ['FT','AET','PEN']))
-                                    @php $w = $label === 'Home' ? (int)$m->home_score >= 3 : (int)$m->away_score >= 3; @endphp
+                                    @php $w = $label === 'Home' ? (int)$m->home_score < 3 : (int)$m->away_score < 3; @endphp
                                     @if($w) <span class="badge badge-green">✓</span>
                                     @else <span class="badge badge-red">✗</span> @endif
                                 @else <span class="badge badge-gray">⏳</span> @endif
@@ -156,11 +166,12 @@
 </div>
 
 <div style="margin-top:1.25rem; padding:.875rem 1rem; border-radius:8px; background:rgba(220,38,38,.07); border:1px solid rgba(220,38,38,.18); font-size:.74rem; color:#fca5a5;">
-    <strong>ℹ️ How Team 3+ picks work:</strong>
+    <strong>ℹ️ How Team 3+ NO picks work:</strong>
     Auto-select at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">05:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>.
-    Requires <strong>max(home_3plus_prob, away_3plus_prob) ≥ 35%</strong> from Poisson model.
+    We pick the team with the <strong>lowest 3+ probability</strong> (≤ 8%) and predict NO on them.
+    A pick wins when <strong>that team scores fewer than 3 goals</strong>.
     Outcomes resolve via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">predictions:check-outcomes</code>:
-    Home label = home_score ≥ 3, Away label = away_score ≥ 3.
+    Home label = home_score &lt; 3 wins, Away label = away_score &lt; 3 wins.
 </div>
 
 @endsection

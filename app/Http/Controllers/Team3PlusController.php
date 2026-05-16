@@ -44,8 +44,8 @@ class Team3PlusController extends Controller
 
         $correct = $recentPicks->filter(function ($p) {
             if (! $p->match) return false;
-            $label = $p->team3plus_label;
-            return $label === 'Home' ? (int)$p->match->home_score >= 3 : (int)$p->match->away_score >= 3;
+            $label = $p->team3plus_label ?? 'Home';
+            return $label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3;
         })->count();
         $total   = $recentPicks->count();
         $accuracy = [
@@ -63,7 +63,7 @@ class Team3PlusController extends Controller
             if (! in_array($p->match?->status, ['FT', 'AET', 'PEN'], true)) continue;
             if ($p->match?->home_score === null) continue;
             $label = $p->team3plus_label ?? 'Home';
-            $won   = $label === 'Home' ? (int)$p->match->home_score >= 3 : (int)$p->match->away_score >= 3;
+            $won   = $label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3;
             if ($p->was_correct === null) {
                 $p->update(['was_correct' => $won]);
                 $p->was_correct = $won;
@@ -77,31 +77,32 @@ class Team3PlusController extends Controller
             && $p->analysis !== GroqService::FALLBACK_ANALYSIS
             && $p->analysis !== 'Prediction pending';
 
-        $label   = $p->team3plus_label ?? 'Home';
-        $prob    = $label === 'Home' ? (float)($p->home_3plus_prob ?? 0) : (float)($p->away_3plus_prob ?? 0);
-        $isFt    = in_array($p->match?->status, ['FT', 'AET', 'PEN'], true);
-        $isLive  = in_array($p->match?->status, ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'], true);
-        $won     = $isFt ? ($label === 'Home' ? (int)$p->match->home_score >= 3 : (int)$p->match->away_score >= 3) : null;
+        $label    = $p->team3plus_label ?? 'Home';
+        $home3    = (float)($p->home_3plus_prob ?? 0);
+        $away3    = (float)($p->away_3plus_prob ?? 0);
+        $prob     = $label === 'Home' ? $home3 : $away3;   // the named team's 3+ prob (low = confident NO)
+        $teamName = $label === 'Home' ? ($p->match?->home_team ?? 'Home') : ($p->match?->away_team ?? 'Away');
+        $isFt     = in_array($p->match?->status, ['FT', 'AET', 'PEN'], true);
+        $isLive   = in_array($p->match?->status, ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'], true);
+        $won      = $isFt ? ($label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3) : null;
 
         $liveScore = null;
         if (($isLive || $isFt) && $p->match && $p->match->home_score !== null) {
             $liveScore = $p->match->home_score . '–' . ($p->match->away_score ?? 0);
         }
 
-        $teamName = $label === 'Home' ? ($p->match?->home_team ?? 'Home') : ($p->match?->away_team ?? 'Away');
-
         return [
             'id'          => $p->id,
             'rank'        => $p->team3plus_rank,
             'label'       => $label,
             'team_name'   => $teamName,
-            'prob'        => round($prob),
+            'prob'        => round($prob, 1),   // named team's 3+ prob (low = confident NO)
             'analysis'    => $p->analysis,
             'is_ai'       => $isAi,
             'was_correct' => $won,
             'live_score'  => $liveScore,
-            'home_3plus'  => round((float)($p->home_3plus_prob ?? 0)),
-            'away_3plus'  => round((float)($p->away_3plus_prob ?? 0)),
+            'home_3plus'  => round($home3, 1),
+            'away_3plus'  => round($away3, 1),
             'over25_prob' => round((float)($p->over_25_prob ?? 0)),
             'match' => [
                 'home'       => $p->match?->home_team ?? 'Home',

@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', "Team to Score 3+ Goals Picks – Daily AI Picks | TavsScore")
-@section('meta_description', 'Free daily "A Team to Score 3 or More Goals" predictions. Our Poisson model identifies matches where a team has 35%+ chance of scoring a hat-trick of goals. YES/NO picks daily.')
-@section('og_title', "Team to Score 3+ Goals — Daily Picks")
-@section('og_description', 'AI picks for the "A Team to Score 3+ Goals" YES/NO market. Poisson-derived probability for each team. 5 picks every day from TavsScore.')
+@section('title', "Team to Score 3+ Goals — NO Picks | Daily AI Picks | TavsScore")
+@section('meta_description', 'Free daily "A Team to Score 3 or More Goals — NO" predictions. Our Poisson model identifies the team most unlikely to score 3+ goals and we bet NO. 5 picks every day.')
+@section('og_title', "Team 3+ Goals NO Picks — Daily AI Predictions")
+@section('og_description', 'AI picks for the "A Team to Score 3+ Goals" YES/NO market. We predict NO on the team our model is most confident will NOT score 3. 5 picks every day from TavsScore.')
 @section('og_image', asset('images/og-team3plus.jpg'))
 @section('canonical', url('/team-3-plus'))
 
@@ -29,7 +29,7 @@
     .pick-card.result-win  { border-color:rgba(16,185,129,.35); }
     .pick-card.result-loss { border-color:rgba(239,68,68,.3); }
     .pick-card-top { padding:1.5rem 1.75rem 0; }
-    .pick-card-rank { display:inline-flex; align-items:center; gap:.4rem; padding:3px 10px; border-radius:999px; font-size:.7rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; margin-bottom:1.1rem; }
+    .pick-card-rank { display:inline-flex; align-items:center; gap:.4rem; padding:3px 10px; border-radius:999px; font-size:.7rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; margin-bottom:1rem; }
     .rank-1 { background:rgba(220,38,38,.15); border:1px solid rgba(220,38,38,.3); color:#fca5a5; }
     .rank-other { background:rgba(107,114,128,.1); border:1px solid rgba(107,114,128,.2); color:#9ca3af; }
     .pick-league-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
@@ -38,7 +38,7 @@
     .pick-match-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
     .pick-team { font-size:1.2rem; font-weight:800; color:#fff; line-height:1.2; flex:1; }
     .pick-team.away { text-align:right; }
-    .pick-team.highlighted { color:#ef4444; }
+    .pick-team.no-team { color:#ef4444; }
     .pick-vs { font-size:.78rem; font-weight:800; color:var(--text-dim); padding:0 .5rem; flex-shrink:0; }
     .pick-callout { background:linear-gradient(135deg,rgba(220,38,38,.12) 0%,rgba(220,38,38,.06) 100%); border:1px solid rgba(220,38,38,.25); border-radius:10px; padding:1.1rem 1.4rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
     .pick-callout.callout-win  { background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(16,185,129,.05)); border-color:rgba(16,185,129,.3); }
@@ -76,13 +76,13 @@
 
 <section class="picks-hero">
     <div class="wrap">
-        <div class="picks-eyebrow">🎯 Team 3+ Goals</div>
-        <h1 class="picks-title">Team to Score <span class="accent">3+ Goals</span></h1>
+        <div class="picks-eyebrow">🚫 Team 3+ Goals — NO</div>
+        <h1 class="picks-title">A Team to Score 3+ Goals — <span class="accent">NO</span></h1>
         <p class="picks-subtitle">
-            The "<strong style="color:var(--text);">A Team to Score 3 or More Goals</strong>" market — predict YES when our model gives a team 35%+ probability of scoring a hat-trick of goals. Available at most bookmakers.
+            We predict <strong style="color:var(--text);">NO</strong> on the team our model is most confident will <em>not</em> score 3 or more goals. The highlighted team is the one we are saying NO on. Available at most bookmakers.
         </p>
         <div class="picks-meta">
-            <span class="picks-badge badge-red">🎯 YES / NO Market</span>
+            <span class="picks-badge badge-red">🚫 NO Picks Only</span>
             <span class="picks-badge badge-free">🔓 Free Forever</span>
         </div>
     </div>
@@ -93,17 +93,17 @@
 
         <div class="market-info">
             <p>
-                <strong>What is this market?</strong> "A Team to Score 3+ Goals" (also written "Either Team Over 2.5") is a bet that at least one team in the match will score 3 or more goals. The highlighted team name on each card is the team our model gives the highest probability to. Available at Bet365, William Hill, 1xBet, and most other major bookmakers under <em>Match Goals → Either Team to Score 3+</em>.
+                <strong>What is this market?</strong> "A Team to Score 3 or More Goals" is a YES/NO market available at Bet365, William Hill, 1xBet, and most major bookmakers under <em>Match Goals → A Team to Score 3+</em>. For each match you can bet on a <em>specific team</em> — YES they will score 3+, or NO they won't. <strong>We only predict NO</strong> — on the team our Poisson model is most confident will stay under 3 goals.
             </p>
         </div>
 
         @if($accuracy['total'] > 0)
         <div class="accuracy-strip">
             <div style="display:flex; align-items:center; gap:1.1rem;">
-                @php $pct = $accuracy['pct']; $cls = $pct >= 45 ? 'good' : ($pct >= 35 ? 'ok' : 'low'); @endphp
+                @php $pct = $accuracy['pct']; $cls = $pct >= 75 ? 'good' : ($pct >= 60 ? 'ok' : 'low'); @endphp
                 <div class="accuracy-pct {{ $cls }}">{{ $pct }}%</div>
                 <div class="accuracy-label">
-                    <strong>7-Day Team 3+ Accuracy</strong>
+                    <strong>7-Day Team 3+ NO Accuracy</strong>
                     {{ $accuracy['correct'] }}/{{ $accuracy['total'] }} picks landed
                 </div>
             </div>
@@ -116,15 +116,15 @@
                 $resultClass  = $pick['was_correct'] === true ? 'result-win' : ($pick['was_correct'] === false ? 'result-loss' : '');
                 $calloutClass = $pick['was_correct'] === true ? 'callout-win' : ($pick['was_correct'] === false ? 'callout-loss' : '');
                 $rankClass    = $pick['rank'] == 1 ? 'rank-1' : 'rank-other';
-                $rankLabel    = $pick['rank'] == 1 ? '👑 Best Pick' : '🎯 Pick #' . $pick['rank'];
-                $isHomeTeam   = $pick['label'] === 'Home';
+                $rankLabel    = $pick['rank'] == 1 ? '👑 Best Pick' : '🚫 Pick #' . $pick['rank'];
+                $isHome       = $pick['label'] === 'Home';
             @endphp
             <div class="pick-card {{ $resultClass }}">
                 <div class="pick-card-top">
 
                     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem;">
                         <span class="pick-card-rank {{ $rankClass }}">{{ $rankLabel }}</span>
-                        <span style="display:inline-flex; align-items:center; gap:.35rem; padding:3px 10px; border-radius:999px; font-size:.67rem; font-weight:700; background:rgba(220,38,38,.09); border:1px solid rgba(220,38,38,.2); color:#fca5a5; text-transform:uppercase; letter-spacing:.04em;">YES: {{ $pick['team_name'] }} 3+</span>
+                        <span style="display:inline-flex; align-items:center; gap:.35rem; padding:3px 10px; border-radius:999px; font-size:.67rem; font-weight:700; background:rgba(220,38,38,.09); border:1px solid rgba(220,38,38,.2); color:#fca5a5; text-transform:uppercase; letter-spacing:.04em;">NO: {{ $pick['team_name'] }} 3+</span>
                     </div>
 
                     <div class="pick-league-row">
@@ -145,16 +145,17 @@
                         </span>
                     </div>
 
+                    {{-- The NO team is highlighted in red --}}
                     <div class="pick-match-row">
-                        <div class="pick-team {{ $isHomeTeam ? 'highlighted' : '' }}">{{ $pick['match']['home'] }}</div>
+                        <div class="pick-team {{ $isHome ? 'no-team' : '' }}">{{ $pick['match']['home'] }}</div>
                         <div class="pick-vs">vs</div>
-                        <div class="pick-team away {{ !$isHomeTeam ? 'highlighted' : '' }}">{{ $pick['match']['away'] }}</div>
+                        <div class="pick-team away {{ !$isHome ? 'no-team' : '' }}">{{ $pick['match']['away'] }}</div>
                     </div>
 
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>
-                            <div class="pick-callout-label">Our prediction — {{ $pick['label'] }} team</div>
-                            <div class="pick-callout-value">🎯 {{ $pick['team_name'] }}: 3+ Goals — YES</div>
+                            <div class="pick-callout-label">Our prediction</div>
+                            <div class="pick-callout-value">🚫 {{ $pick['team_name'] }}: 3+ Goals — NO</div>
                         </div>
                         <div style="text-align:right;">
                             @if($pick['was_correct'] === true)
@@ -162,7 +163,7 @@
                             @elseif($pick['was_correct'] === false)
                                 <span class="result-badge result-loss-badge">❌ Lost</span>
                             @else
-                                <div style="font-size:.7rem; color:rgba(252,165,165,.6); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.2rem;">Probability</div>
+                                <div style="font-size:.7rem; color:rgba(252,165,165,.6); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.2rem;">3+ Probability</div>
                                 <div style="font-size:1.4rem; font-weight:900; color:#fca5a5;">{{ $pick['prob'] }}%</div>
                             @endif
                         </div>
@@ -171,17 +172,17 @@
 
                 {{-- Per-team 3+ probability bars --}}
                 <div style="padding:0 1.75rem; margin-bottom:1.25rem;">
-                    <div style="font-size:.68rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem;">3+ Goals probability per team</div>
+                    <div style="font-size:.68rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem;">3+ Goals probability per team (lower = better for NO)</div>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem;">
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Str::limit($pick['match']['home'], 12) }} 3+</div>
-                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['home_3plus'], 100) }}%; background:#ef4444;"></div></div>
-                            <div style="font-size:.72rem; font-weight:800; color:#fca5a5;">{{ $pick['home_3plus'] }}%</div>
+                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['home_3plus'], 100) }}%; background:{{ $isHome ? '#ef4444' : '#6b7280' }};"></div></div>
+                            <div style="font-size:.72rem; font-weight:800; color:{{ $isHome ? '#fca5a5' : '#9ca3af' }};">{{ $pick['home_3plus'] }}%</div>
                         </div>
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Str::limit($pick['match']['away'], 12) }} 3+</div>
-                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['away_3plus'], 100) }}%; background:#ef4444;"></div></div>
-                            <div style="font-size:.72rem; font-weight:800; color:#fca5a5;">{{ $pick['away_3plus'] }}%</div>
+                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['away_3plus'], 100) }}%; background:{{ !$isHome ? '#ef4444' : '#6b7280' }};"></div></div>
+                            <div style="font-size:.72rem; font-weight:800; color:{{ !$isHome ? '#fca5a5' : '#9ca3af' }};">{{ $pick['away_3plus'] }}%</div>
                         </div>
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem;">Over 2.5</div>
@@ -199,32 +200,32 @@
                 @endif
 
                 <div class="pick-card-footer">
-                    <span style="font-size:.7rem; color:var(--text-dim);">🎯 {{ $pick['team_name'] }} has {{ $pick['prob'] }}% chance of scoring 3+ goals</span>
+                    <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} has only {{ $pick['prob'] }}% chance of scoring 3+ goals — we predict NO</span>
                 </div>
             </div>
             @empty
             <div class="empty-state">
-                <div style="font-size:2.5rem; margin-bottom:1rem;">🎯</div>
-                <h3>No Team 3+ Picks Yet Today</h3>
-                <p>We require at least 35% probability of a team scoring 3 or more goals. This is a high bar — not every day produces qualifying matches. Check back after 08:00 Lagos time.</p>
+                <div style="font-size:2.5rem; margin-bottom:1rem;">🚫</div>
+                <h3>No Team 3+ NO Picks Yet Today</h3>
+                <p>We require a team's 3+ probability to be ≤8% before we predict NO. Not every day produces qualifying matches. Check back after 06:00 Lagos time.</p>
             </div>
             @endforelse
         </div>
 
         <div class="how-it-works">
-            <div class="hiw-title">How Team 3+ Picks Work</div>
+            <div class="hiw-title">How Team 3+ NO Picks Work</div>
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Poisson model computes per-team goal probability</strong> — from each team's xG, we calculate the exact probability of that team scoring 3 or more goals independently.</div>
+                    <div class="hiw-text"><strong>Poisson model gives each team a 3+ probability</strong> — from attacking xG we calculate the exact probability of each team scoring 3 or more goals in this match.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>35% minimum probability</strong> — roughly the top 20-25% of fixtures by attacking potential. The highlighted team name shows which team we're predicting to fire.</div>
+                    <div class="hiw-text"><strong>We pick the team most unlikely to score 3+</strong> — if a team's probability is ≤8%, we are highly confident and publish the NO pick. The highlighted team name is the one we're saying NO on.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>YES / NO answer</strong> — we always predict YES. If neither team reaches 35%, no pick is published for that day. Quality over quantity — always.</div>
+                    <div class="hiw-text"><strong>We win if that team scores 0, 1 or 2 goals</strong> — the pick is resolved when the match finishes. A score of 3+ by the named team means we lose; anything under 3 means we win.</div>
                 </div>
             </div>
         </div>
@@ -235,8 +236,8 @@
 <div class="wrap" style="padding-bottom:2rem;">
     <div style="text-align:center; font-size:.7rem; color:var(--text-dim); line-height:1.75; padding:.875rem 1rem; border-top:1px solid var(--border); margin-top:2rem;">
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
-        Team 3+ Goal picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
-        This is a high-risk market — please gamble responsibly.
+        Team 3+ NO picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
+        Please gamble responsibly.
     </div>
 </div>
 
