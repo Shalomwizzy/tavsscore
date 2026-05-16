@@ -169,9 +169,12 @@ class CheckPredictionOutcomes extends Command
         Log::info("CheckPredictionOutcomes: resolved {$resolved} predictions.");
 
         // ── 2. Correct score outcomes ─────────────────────────────────────────
-        // IMPORTANT: we gate on the DB column `correct_score_notified` (not just
-        // cache) so that cache:clear during a deploy never re-fires notifications
-        // for matches that have already been reported.
+        // Two-layer guard:
+        //  (a) correct_score_notified DB flag — survives cache:clear and deploys
+        //  (b) 26-hour match_time window — structurally prevents re-firing old
+        //      records that have correct_score_notified=false after a fresh migration
+        $scoreSince = now()->subHours(26);
+
         $scorePredictions = Prediction::query()
             ->with('match')
             ->whereNotNull('likely_scores')
@@ -180,7 +183,7 @@ class CheckPredictionOutcomes extends Command
                 ->whereIn('status', self::FINISHED_STATUSES)
                 ->whereNotNull('home_score')
                 ->whereNotNull('away_score')
-                ->where('match_time', '>=', $since)
+                ->where('match_time', '>=', $scoreSince)
             )
             ->get()
             ->filter(fn ($p) => ! empty($p->likely_scores));

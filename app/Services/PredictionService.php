@@ -780,9 +780,8 @@ class PredictionService
         }
 
         $accuracyWeights = $this->getMarketAccuracyWeights();
-        $leagueWeights   = $this->calibration->leagueWeightsMap();
 
-        $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights, $leagueWeights, $coldMarkets) {
+        $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights, $coldMarkets) {
             $tips         = is_array($p->tips) ? $p->tips : [];
             $geminiAgrees = $tips[0]['gemini_agrees'] ?? null;
 
@@ -801,6 +800,9 @@ class PredictionService
             $gap    = $probs[0] - $probs[1];
             $aiConf = (int) ($p->confidence ?? 0);
 
+            // Base score: AI confidence + probability separation gap.
+            // League is deliberately NOT a factor — the highest-confidence pick
+            // wins regardless of which country or division it comes from.
             $score = $aiConf + ($gap * 0.3);
 
             // Apply historical accuracy multiplier for this market type.
@@ -808,16 +810,8 @@ class PredictionService
             $accuracy = $accuracyWeights[$outcome] ?? 1.0;
             $score    = $score * $accuracy;
 
-            // Apply league reliability multiplier — leagues with poor historical
-            // accuracy get down-weighted so their picks rank lower than equivalent
-            // picks from higher-reliability leagues.
-            $leagueKey    = ($p->match?->league ?? '') . '||' . ($p->match?->league_country ?? '');
-            $leagueWeight = $leagueWeights[$leagueKey] ?? 1.0;
-            $score        = $score * $leagueWeight;
-
-            // Cold-market penalty: extra down-weight when a market has been in a
-            // losing streak (< 40% win rate over last 14 days). Stacks with the
-            // 90-day market accuracy weight so cold streaks compound the penalty.
+            // Cold-market penalty: down-weight when this market type has been
+            // in a losing streak (< 40% win rate over last 14 days).
             if (in_array($outcome, $coldMarkets, true)) {
                 $score *= 0.60;
             }
