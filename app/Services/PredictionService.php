@@ -30,7 +30,6 @@ class PredictionService
         private readonly MistralService           $mistralService,
         private readonly NewsService              $newsService,
         private readonly LineupService            $lineupService,
-        private readonly CalibrationService       $calibration,
         private readonly AdaptiveThresholdService $adaptive,
     ) {}
 
@@ -210,6 +209,8 @@ class PredictionService
                 'over_25_prob'      => $over25,
                 'over_35_prob'      => $over35,
                 'btts_prob'         => $btts,
+                'home_3plus_prob'   => $poisson['home_3plus'],
+                'away_3plus_prob'   => $poisson['away_3plus'],
                 'predicted_outcome' => $primaryOutcome,
                 'tips'              => $tips,
                 'confidence'        => $primaryConfidence,
@@ -948,6 +949,141 @@ class PredictionService
     }
 
     /**
+     * Select up to 5 Over 1.5 Goals picks for today.
+     * Gates on a very high Poisson probability (≥82%) — at that level the
+     * signal is robust regardless of what the AI named as its primary outcome.
+     */
+    public function selectOver15Picks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        Prediction::query()
+            ->where('is_over15_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_over15_pick' => false, 'over15_rank' => null]);
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereNotNull('over_15_prob')
+            ->where('over_15_prob', '>=', 82)
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->orderByDesc('over_15_prob')
+            ->limit(5)
+            ->get();
+
+        $candidates->each(function (Prediction $p, int $idx) {
+            $p->update(['is_over15_pick' => true, 'over15_rank' => $idx + 1]);
+        });
+
+        return new EloquentCollection($candidates->all());
+    }
+
+    /**
+     * Select up to 5 Over 2.5 Goals picks for today.
+     * Uses Poisson over_25_prob ≥65% — meaningful edge over the ~53% base rate.
+     * Gemini must not have explicitly disagreed on a goal-heavy outcome.
+     */
+    public function selectOver25Picks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        Prediction::query()
+            ->where('is_over25_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_over25_pick' => false, 'over25_rank' => null]);
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereNotNull('over_25_prob')
+            ->where('over_25_prob', '>=', 65)
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->filter(function (Prediction $p): bool {
+                $tips = is_array($p->tips) ? $p->tips : [];
+                // Exclude only when Gemini explicitly disagreed — null means unconfigured, still eligible
+                return ($tips[0]['gemini_agrees'] ?? null) !== false;
+            })
+            ->sortByDesc('over_25_prob')
+            ->take(5)
+            ->values();
+
+        $candidates->each(function (Prediction $p, int $idx) {
+            $p->update(['is_over25_pick' => true, 'over25_rank' => $idx + 1]);
+        });
+
+        return new EloquentCollection($candidates->all());
+    }
+
+    /**
+     * Select up to 5 "A Team to Score 3+ Goals" picks for today.
+     * Picks the team (home or away) with the highest Poisson P(goals ≥ 3),
+     * requiring ≥35% — roughly the top 20–25% of all fixture profiles.
+     * Stored with team3plus_label = 'Home' or 'Away'.
+     */
+    public function selectTeam3PlusPicks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        Prediction::query()
+            ->where('is_team3plus_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_team3plus_pick' => false, 'team3plus_rank' => null, 'team3plus_label' => null]);
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->where(fn ($q) => $q
+                ->where('home_3plus_prob', '>=', 35)
+                ->orWhere('away_3plus_prob', '>=', 35)
+            )
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->map(function (Prediction $p) {
+                $home3 = (float) ($p->home_3plus_prob ?? 0);
+                $away3 = (float) ($p->away_3plus_prob ?? 0);
+                return ['prediction' => $p, 'prob' => max($home3, $away3), 'label' => $home3 >= $away3 ? 'Home' : 'Away'];
+            })
+            ->sortByDesc('prob')
+            ->take(5)
+            ->values();
+
+        $candidates->each(function (array $item, int $idx) {
+            $item['prediction']->update([
+                'is_team3plus_pick' => true,
+                'team3plus_rank'    => $idx + 1,
+                'team3plus_label'   => $item['label'],
+            ]);
+        });
+
+        return $candidates->map(fn ($i) => $i['prediction'])->pipe(
+            fn ($col) => new EloquentCollection($col->all())
+        );
+    }
+
+    /**
      * Settle any finished predictions that the scheduler hasn't resolved yet.
      * Runs inline so API responses always include up-to-date was_correct values.
      */
@@ -1002,7 +1138,7 @@ class PredictionService
 
     private function poissonProbabilities(float $homeXg, float $awayXg): array
     {
-        $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = 0.0;
+        $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = $h3p = $a3p = 0.0;
 
         for ($h = 0; $h <= self::MAX_GOALS_GRID; $h++) {
             $ph = $this->poisson($homeXg, $h);
@@ -1013,10 +1149,12 @@ class PredictionService
                 elseif ($h === $a) { $d  += $p; }
                 else          { $aw += $p; }
                 $g = $h + $a;
-                if ($g >= 2) { $o15 += $p; }
-                if ($g >= 3) { $o25 += $p; }
-                if ($g >= 4) { $o35 += $p; }
+                if ($g >= 2)  { $o15 += $p; }
+                if ($g >= 3)  { $o25 += $p; }
+                if ($g >= 4)  { $o35 += $p; }
                 if ($h >= 1 && $a >= 1) { $btts += $p; }
+                if ($h >= 3)  { $h3p += $p; }
+                if ($a >= 3)  { $a3p += $p; }
             }
         }
 
@@ -1038,6 +1176,8 @@ class PredictionService
             'btts'             => round($btts / $tot * 100, 1),
             'home_clean_sheet' => $homeClean,
             'away_clean_sheet' => $awayClean,
+            'home_3plus'       => round($h3p  / $tot * 100, 1),
+            'away_3plus'       => round($a3p  / $tot * 100, 1),
         ];
     }
 

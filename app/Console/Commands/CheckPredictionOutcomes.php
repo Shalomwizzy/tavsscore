@@ -236,7 +236,115 @@ class CheckPredictionOutcomes extends Command
             $prediction->update(['correct_score_notified' => true]);
         }
 
-        // ── 3. Rollover picks ─────────────────────────────────────────────────
+        // ── 3. Over 1.5 / Over 2.5 / Team 3+ outcomes ───────────────────────
+        // Each pick type resolves independently from was_correct (which tracks the
+        // primary AI outcome, not the goals threshold). Uses a 26-hour window and
+        // a DB-persisted notified flag so deploys can never re-fire old results.
+        $goalsSince = now()->subHours(26);
+
+        $goalsFinished = Prediction::query()
+            ->with('match')
+            ->where(fn ($q) => $q
+                ->where('is_over15_pick', true)
+                ->orWhere('is_over25_pick', true)
+                ->orWhere('is_team3plus_pick', true)
+            )
+            ->whereHas('match', fn ($q) => $q
+                ->whereIn('status', self::FINISHED_STATUSES)
+                ->whereNotNull('home_score')
+                ->whereNotNull('away_score')
+                ->where('match_time', '>=', $goalsSince)
+            )
+            ->get();
+
+        foreach ($goalsFinished as $prediction) {
+            $match = $prediction->match;
+            if (! $match) continue;
+
+            $home  = (int) $match->home_score;
+            $away  = (int) $match->away_score;
+            $total = $home + $away;
+            $score = "{$home}-{$away}";
+            $matchLabel = "{$match->home_team} vs {$match->away_team}";
+            $league     = $match->league ?? '';
+
+            // Over 1.5
+            if ($prediction->is_over15_pick && ! $prediction->over15_notified) {
+                $won = $total >= 2;
+                $this->line($won
+                    ? "  ⚽✅  {$matchLabel} {$score} — Over 1.5 HIT"
+                    : "  ⚽❌  {$matchLabel} {$score} — Over 1.5 missed");
+
+                if ($won) {
+                    $oneSignal->sendPickOutcome(
+                        title: '⚽ Over 1.5 Goals — WON! 💰',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — goals delivered! ✅",
+                        path:  '/over-1-5',
+                    );
+                } else {
+                    $oneSignal->sendPickOutcome(
+                        title: '😔 Over 1.5 — Low Scoring Game',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. We go again 💪",
+                        path:  '/over-1-5',
+                    );
+                }
+                $telegram->sendOver15Outcome($matchLabel, $score, $won, $siteUrl, $league);
+                $prediction->update(['over15_notified' => true]);
+            }
+
+            // Over 2.5
+            if ($prediction->is_over25_pick && ! $prediction->over25_notified) {
+                $won = $total >= 3;
+                $this->line($won
+                    ? "  🔥✅  {$matchLabel} {$score} — Over 2.5 HIT"
+                    : "  🔥❌  {$matchLabel} {$score} — Over 2.5 missed");
+
+                if ($won) {
+                    $oneSignal->sendPickOutcome(
+                        title: '🔥 Over 2.5 Goals — WON! 💰',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — goals galore! ✅",
+                        path:  '/over-2-5',
+                    );
+                } else {
+                    $oneSignal->sendPickOutcome(
+                        title: '😔 Over 2.5 — Tight Game',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. AI recalibrates 💪",
+                        path:  '/over-2-5',
+                    );
+                }
+                $telegram->sendOver25Outcome($matchLabel, $score, $won, $siteUrl, $league);
+                $prediction->update(['over25_notified' => true]);
+            }
+
+            // Team 3+
+            if ($prediction->is_team3plus_pick && ! $prediction->team3plus_notified) {
+                $label = $prediction->team3plus_label ?? 'Home';
+                $won   = $label === 'Home' ? $home >= 3 : $away >= 3;
+                $teamName = $label === 'Home' ? $match->home_team : $match->away_team;
+
+                $this->line($won
+                    ? "  🎯✅  {$matchLabel} {$score} — {$teamName} scored 3+ HIT"
+                    : "  🎯❌  {$matchLabel} {$score} — {$teamName} scored 3+ missed");
+
+                if ($won) {
+                    $oneSignal->sendPickOutcome(
+                        title: '🎯 Team 3+ Goals — WON! 🔥',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} delivered 3+ goals! ✅",
+                        path:  '/team-3-plus',
+                    );
+                } else {
+                    $oneSignal->sendPickOutcome(
+                        title: '😔 Team 3+ — Didn\'t Quite Get There',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} fell short. We learn 💪",
+                        path:  '/team-3-plus',
+                    );
+                }
+                $telegram->sendTeam3PlusOutcome($matchLabel, $teamName, $score, $won, $siteUrl, $league);
+                $prediction->update(['team3plus_notified' => true]);
+            }
+        }
+
+        // ── 4. Rollover picks ─────────────────────────────────────────────────
         $rollover->checkPendingPicks();
 
         return self::SUCCESS;

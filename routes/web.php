@@ -5,7 +5,10 @@ use App\Http\Controllers\AfricaController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CorrectScoreController;
 use App\Http\Controllers\HallOfFameController;
+use App\Http\Controllers\Over15PicksController;
+use App\Http\Controllers\Over25PicksController;
 use App\Http\Controllers\RolloverController;
+use App\Http\Controllers\Team3PlusController;
 use App\Http\Controllers\WinnersController;
 use App\Http\Controllers\DailyPickController;
 use App\Http\Controllers\DrawPicksController;
@@ -32,6 +35,9 @@ Route::get('/draw-picks',   [DrawPicksController::class,  'index'])->name('draw-
 Route::get('/gg-picks',     [GGPicksController::class,   'index'])->name('gg-picks.index');
 Route::get('/lineup-picks',  [LineupPicksController::class, 'index'])->name('lineup-picks.index');
 Route::get('/correct-score', [CorrectScoreController::class, 'index'])->name('correct-score.index');
+Route::get('/over-1-5',     [Over15PicksController::class,  'index'])->name('over15-picks.index');
+Route::get('/over-2-5',     [Over25PicksController::class,  'index'])->name('over25-picks.index');
+Route::get('/team-3-plus',  [Team3PlusController::class,    'index'])->name('team3plus-picks.index');
 Route::get('/rollover',           [RolloverController::class, 'index'])->name('rollover.index');
 Route::get('/rollover/{date}',    [RolloverController::class, 'show'])->name('rollover.show')->where('date', '\d{4}-\d{2}-\d{2}');
 Route::get('/stats',        [StatsController::class, 'index'])->name('stats.index');
@@ -125,6 +131,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Correct Score */
         Route::get('/correct-score', [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'index'])->name('correct-score.index');
+
+        /* Over 1.5 Picks */
+        Route::get('/over15',          [\App\Http\Controllers\Admin\Over15AdminController::class, 'index'])->name('over15.index');
+        Route::post('/over15/refresh', [\App\Http\Controllers\Admin\Over15AdminController::class, 'refresh'])->name('over15.refresh');
+
+        /* Over 2.5 Picks */
+        Route::get('/over25',          [\App\Http\Controllers\Admin\Over25AdminController::class, 'index'])->name('over25.index');
+        Route::post('/over25/refresh', [\App\Http\Controllers\Admin\Over25AdminController::class, 'refresh'])->name('over25.refresh');
+
+        /* Team 3+ Picks */
+        Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');
+        Route::post('/team3plus/refresh', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'refresh'])->name('team3plus.refresh');
 
         /* Rollover */
         Route::get('/rollover',                      [\App\Http\Controllers\Admin\RolloverAdminController::class, 'index'])->name('rollover.index');

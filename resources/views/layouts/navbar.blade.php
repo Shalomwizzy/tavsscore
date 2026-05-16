@@ -23,7 +23,7 @@
                class="nav-pill {{ request()->routeIs('predictions.*') ? 'active' : '' }}">Predictions</a>
 
             {{-- Picks dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
+            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     ⭐ Picks
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -52,6 +52,19 @@
                     <a href="{{ route('correct-score.index') }}" class="nav-drop-item {{ request()->routeIs('correct-score.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🎯</span>
                         <span><span class="ndi-label">Correct Score</span><span class="ndi-sub">Poisson score predictions</span></span>
+                    </a>
+                    <div class="nav-drop-divider"></div>
+                    <a href="{{ route('over15-picks.index') }}" class="nav-drop-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">⚽</span>
+                        <span><span class="ndi-label">Over 1.5 Goals</span><span class="ndi-sub">5 daily picks</span></span>
+                    </a>
+                    <a href="{{ route('over25-picks.index') }}" class="nav-drop-item {{ request()->routeIs('over25-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🔥</span>
+                        <span><span class="ndi-label">Over 2.5 Goals</span><span class="ndi-sub">5 daily picks</span></span>
+                    </a>
+                    <a href="{{ route('team3plus-picks.index') }}" class="nav-drop-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🎯</span>
+                        <span><span class="ndi-label">Team 3+ Goals</span><span class="ndi-sub">A team to score 3+</span></span>
                     </a>
                 </div>
             </div>
@@ -197,6 +210,27 @@
             <span class="di-text">
                 Correct Score
                 <small>Exact score predictions</small>
+            </span>
+        </a>
+        <a href="{{ route('over15-picks.index') }}" class="drawer-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">⚽</span>
+            <span class="di-text">
+                Over 1.5 Goals
+                <small>5 daily picks</small>
+            </span>
+        </a>
+        <a href="{{ route('over25-picks.index') }}" class="drawer-item {{ request()->routeIs('over25-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🔥</span>
+            <span class="di-text">
+                Over 2.5 Goals
+                <small>5 daily picks</small>
+            </span>
+        </a>
+        <a href="{{ route('team3plus-picks.index') }}" class="drawer-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🎯</span>
+            <span class="di-text">
+                Team 3+ Goals
+                <small>A team to score 3+</small>
             </span>
         </a>
 
