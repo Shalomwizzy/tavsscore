@@ -318,6 +318,8 @@
     left: 50%;
     transform: translateX(-50%);
     min-width: 220px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
     background: #0e1525;
     border: 1px solid rgba(255,255,255,.1);
     border-radius: 12px;

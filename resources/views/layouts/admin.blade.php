@@ -279,6 +279,15 @@
             <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}">
                 <span class="sb-icon">🎯</span> Correct Score
             </a>
+            <a href="{{ route('admin.over15.index') }}" class="sb-link {{ request()->routeIs('admin.over15.*') ? 'active' : '' }}">
+                <span class="sb-icon">⚽</span> Over 1.5 Picks
+            </a>
+            <a href="{{ route('admin.over25.index') }}" class="sb-link {{ request()->routeIs('admin.over25.*') ? 'active' : '' }}">
+                <span class="sb-icon">🔥</span> Over 2.5 Picks
+            </a>
+            <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}">
+                <span class="sb-icon">🚫</span> Team 3+ NO
+            </a>
             <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}">
                 <span class="sb-icon">🔄</span> Rollover
             </a>
@@ -307,6 +316,15 @@
             </a>
             <a href="{{ route('gg-picks.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">↗</span> Public GG Picks
+            </a>
+            <a href="{{ route('over15-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Over 1.5
+            </a>
+            <a href="{{ route('over25-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Over 2.5
+            </a>
+            <a href="{{ route('team3plus-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Team 3+
             </a>
             <a href="{{ route('blog.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">📰</span> View Blog

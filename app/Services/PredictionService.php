@@ -742,20 +742,7 @@ class PredictionService
         $today  = now('Africa/Lagos')->startOfDay();
         $cutoff = now('Africa/Lagos')->endOfDay();
 
-        // Clear all is_daily_pick rows whose underlying match falls in today's
-        // window — match_time is the source of truth for which day a pick
-        // belongs to, regardless of when the prediction was created. This
-        // prevents duplicate pick_rank values when a previous day's pick had
-        // a match_time that crossed midnight.
-        Prediction::query()
-            ->where('is_daily_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_daily_pick' => false, 'pick_rank' => null]);
-
-        // Only picks with genuine AI analysis above the learned confidence threshold.
-        // The threshold is computed by AdaptiveThresholdService from 90-day history:
-        // it rises when the system underperforms and settles at the lowest band
-        // that has historically been profitable (≥52% win rate).
+        // Fetch candidates BEFORE clearing so existing picks survive if nothing qualifies.
         $minConfidence       = $this->adaptive->minimumConfidenceThreshold();
         $coldMarkets         = $this->adaptive->coldMarkets();
         $excludedInSelection = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
@@ -777,8 +764,17 @@ class PredictionService
             ->get();
 
         if ($candidates->isEmpty()) {
-            return new EloquentCollection();
+            return Prediction::query()
+                ->where('is_daily_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('pick_rank')->get();
         }
+
+        // Clear existing today's picks now that we know new ones are available.
+        Prediction::query()
+            ->where('is_daily_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_daily_pick' => false, 'pick_rank' => null]);
 
         $accuracyWeights = $this->getMarketAccuracyWeights();
 
@@ -860,15 +856,8 @@ class PredictionService
      */
     public function selectDrawPicks(): EloquentCollection
     {
-        $today  = now('Africa/Lagos')->startOfDay();
-        $cutoff = now('Africa/Lagos')->endOfDay();
-
-        // Clear today's existing draw picks
-        Prediction::query()
-            ->where('is_draw_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_draw_pick' => false, 'draw_rank' => null]);
-
+        $today    = now('Africa/Lagos')->startOfDay();
+        $cutoff   = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
         $candidates = Prediction::query()
@@ -886,12 +875,23 @@ class PredictionService
             ->get()
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
-                // Only picks where all configured AIs explicitly agreed
                 return ($tips[0]['gemini_agrees'] ?? null) === true;
             })
             ->sortByDesc('confidence')
             ->take(5)
             ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_draw_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('draw_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_draw_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_draw_pick' => false, 'draw_rank' => null]);
 
         $candidates->each(function (Prediction $p, int $idx) {
             $p->update(['is_draw_pick' => true, 'draw_rank' => $idx + 1]);
@@ -906,18 +906,10 @@ class PredictionService
      */
     public function selectGGPicks(): EloquentCollection
     {
-        $today  = now('Africa/Lagos')->startOfDay();
-        $cutoff = now('Africa/Lagos')->endOfDay();
-
-        // Clear today's existing GG picks
-        Prediction::query()
-            ->where('is_gg_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_gg_pick' => false, 'gg_rank' => null]);
-
+        $today    = now('Africa/Lagos')->startOfDay();
+        $cutoff   = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        // "Both Teams Score" is the market label Groq uses; accept both forms
         $ggOutcomes = ['Both Teams Score', 'Both Teams Score (GG)'];
 
         $candidates = Prediction::query()
@@ -941,6 +933,18 @@ class PredictionService
             ->take(5)
             ->values();
 
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_gg_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('gg_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_gg_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_gg_pick' => false, 'gg_rank' => null]);
+
         $candidates->each(function (Prediction $p, int $idx) {
             $p->update(['is_gg_pick' => true, 'gg_rank' => $idx + 1]);
         });
@@ -959,11 +963,7 @@ class PredictionService
         $cutoff = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        Prediction::query()
-            ->where('is_over15_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_over15_pick' => false, 'over15_rank' => null]);
-
+        // Fetch candidates BEFORE clearing so existing picks survive if nothing qualifies.
         $candidates = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
@@ -978,6 +978,18 @@ class PredictionService
             ->orderByDesc('over_15_prob')
             ->limit(5)
             ->get();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_over15_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('over15_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_over15_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_over15_pick' => false, 'over15_rank' => null]);
 
         $candidates->each(function (Prediction $p, int $idx) {
             $p->update(['is_over15_pick' => true, 'over15_rank' => $idx + 1]);
@@ -997,11 +1009,7 @@ class PredictionService
         $cutoff = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        Prediction::query()
-            ->where('is_over25_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_over25_pick' => false, 'over25_rank' => null]);
-
+        // Fetch candidates BEFORE clearing so existing picks survive if nothing qualifies.
         $candidates = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
@@ -1016,12 +1024,23 @@ class PredictionService
             ->get()
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
-                // Exclude only when Gemini explicitly disagreed — null means unconfigured, still eligible
                 return ($tips[0]['gemini_agrees'] ?? null) !== false;
             })
             ->sortByDesc('over_25_prob')
             ->take(5)
             ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_over25_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('over25_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_over25_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_over25_pick' => false, 'over25_rank' => null]);
 
         $candidates->each(function (Prediction $p, int $idx) {
             $p->update(['is_over25_pick' => true, 'over25_rank' => $idx + 1]);
@@ -1043,11 +1062,7 @@ class PredictionService
         $cutoff = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        Prediction::query()
-            ->where('is_team3plus_pick', true)
-            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-            ->update(['is_team3plus_pick' => false, 'team3plus_rank' => null, 'team3plus_label' => null]);
-
+        // Fetch candidates BEFORE clearing so existing picks survive if nothing qualifies.
         $candidates = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
@@ -1063,15 +1078,26 @@ class PredictionService
             ->map(function (Prediction $p) {
                 $home3 = (float) ($p->home_3plus_prob ?? 0);
                 $away3 = (float) ($p->away_3plus_prob ?? 0);
-                // Pick the team with the LOWER 3+ probability — we predict NO on them
                 $label = $home3 <= $away3 ? 'Home' : 'Away';
                 $prob  = min($home3, $away3);
                 return ['prediction' => $p, 'prob' => $prob, 'label' => $label];
             })
-            ->filter(fn ($item) => $item['prob'] <= 8.0)   // must be very unlikely to score 3+
-            ->sortBy('prob')   // ascending: lowest prob = most confident NO
+            ->filter(fn ($item) => $item['prob'] <= 8.0)
+            ->sortBy('prob')
             ->take(5)
             ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_team3plus_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('team3plus_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_team3plus_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_team3plus_pick' => false, 'team3plus_rank' => null, 'team3plus_label' => null]);
 
         $candidates->each(function (array $item, int $idx) {
             $item['prediction']->update([
