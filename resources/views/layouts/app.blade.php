@@ -7,7 +7,7 @@
     <title>@yield('title', 'TavsScore | Football Live Scores & AI Predictions')</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.svg') }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="#10b981">
     <meta name="mobile-web-app-capable" content="yes">
@@ -392,11 +392,106 @@
         /* ── Footer ── */
         .ts-footer {
             border-top: 1px solid var(--border);
-            padding: 1.5rem 0 1.25rem;
+            padding: 2rem 0 1.25rem;
             text-align: center;
             font-size: .75rem;
             color: var(--text-muted);
         }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1.5rem 2rem;
+            text-align: left;
+            margin: 0 auto 1.75rem;
+            max-width: 860px;
+        }
+        .footer-col-title {
+            font-size: .68rem; font-weight: 800; color: var(--text);
+            text-transform: uppercase; letter-spacing: .07em;
+            margin-bottom: .7rem;
+        }
+        .footer-col a {
+            display: block; font-size: .78rem; color: var(--text-dim);
+            text-decoration: none; margin-bottom: .38rem; line-height: 1.5;
+            transition: color 120ms;
+        }
+        .footer-col a:hover { color: #fff; }
+        .footer-install-strip {
+            max-width: 640px; margin: 0 auto 1.75rem;
+            padding: 1rem 1.25rem;
+            background: rgba(16,185,129,.05);
+            border: 1px solid rgba(16,185,129,.15);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: .75rem; text-align: left;
+        }
+        .fi-label { font-size: .88rem; font-weight: 800; color: #fff; line-height: 1.3; }
+        .fi-sub   { font-size: .72rem; color: var(--text-dim); margin-top: .15rem; }
+        .fi-btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .45rem 1rem; border-radius: 9px;
+            background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
+            color: #6ee7b7; font-size: .78rem; font-weight: 700;
+            cursor: pointer; white-space: nowrap; text-decoration: none;
+            transition: background 140ms;
+        }
+        .fi-btn:hover { background: rgba(16,185,129,.22); }
+        /* Install guide modal */
+        #install-modal {
+            display: none; position: fixed; inset: 0; z-index: 9998;
+            background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; padding: 1rem;
+        }
+        #install-modal.open { display: flex; }
+        .install-box {
+            background: #111927; border: 1px solid var(--border);
+            border-radius: 18px; width: 100%; max-width: 480px;
+            padding: 1.75rem; position: relative; max-height: 90vh; overflow-y: auto;
+        }
+        .install-close {
+            position: absolute; top: .9rem; right: 1rem;
+            background: none; border: none; color: var(--text-dim);
+            font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 .25rem;
+        }
+        .install-close:hover { color: #fff; }
+        .install-tabs { display: flex; gap: .5rem; margin-bottom: 1.25rem; }
+        .itab {
+            flex: 1; padding: .4rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text-dim); font-size: .78rem; font-weight: 700;
+            cursor: pointer; text-align: center; transition: all 120ms;
+        }
+        .itab.active { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+        .install-panel { display: none; }
+        .install-panel.active { display: block; }
+        .install-step {
+            display: flex; gap: .75rem; align-items: flex-start;
+            margin-bottom: .9rem;
+        }
+        .is-num {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
+            color: #6ee7b7; font-size: .72rem; font-weight: 900;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .is-text { font-size: .83rem; color: var(--text-dim); line-height: 1.6; }
+        .is-text strong { color: var(--text); }
+        .is-img { font-size: 1.1rem; }
+        .notif-box {
+            margin-top: 1.25rem; padding: 1rem;
+            background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.2);
+            border-radius: 10px;
+        }
+        .notif-box-title { font-size: .82rem; font-weight: 800; color: #93c5fd; margin-bottom: .5rem; }
+        .notif-box-text  { font-size: .78rem; color: var(--text-dim); line-height: 1.6; }
+        .notif-allow-btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            margin-top: .75rem; padding: .45rem 1rem; border-radius: 8px;
+            background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.3);
+            color: #93c5fd; font-size: .78rem; font-weight: 700;
+            cursor: pointer;
+        }
+        .notif-allow-btn:hover { background: rgba(59,130,246,.22); }
 
         /* ── Footer newsletter - compact pill style ── */
         .footer-nl {
@@ -489,6 +584,10 @@
             .footer-nl-form { width: 100%; }
             .footer-nl-input { flex: 1; min-width: 0; width: auto; }
             .footer-nl-status { text-align: center; }
+            .footer-grid { grid-template-columns: 1fr 1fr !important; text-align: left; }
+        }
+        @media (max-width: 440px) {
+            .footer-grid { grid-template-columns: 1fr !important; }
         }
 
         /* ── Mobile nav — handled by drawer in navbar.blade.php ── */
@@ -533,6 +632,55 @@
     </main>
     <footer class="ts-footer">
         <div class="wrap">
+
+            {{-- Link grid --}}
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-col-title">Picks</div>
+                    <a href="{{ route('picks.index') }}">⭐ Daily Picks</a>
+                    <a href="{{ route('draw-picks.index') }}">🤝 Draw Picks</a>
+                    <a href="{{ route('gg-picks.index') }}">⚽ GG Picks</a>
+                    <a href="{{ route('lineup-picks.index') }}">⚡ Lineup Picks</a>
+                    <a href="{{ route('rollover.index') }}">🔄 Rollover</a>
+                    <a href="{{ route('correct-score.index') }}">🎯 Correct Score</a>
+                </div>
+                <div class="footer-col">
+                    <div class="footer-col-title">Scores</div>
+                    <a href="{{ route('live.index') }}">🔴 Live Scores</a>
+                    <a href="{{ route('predictions.index') }}">🤖 Predictions</a>
+                    <a href="{{ route('africa.index') }}">🌍 Africa</a>
+                    <a href="{{ route('results.index') }}">📜 Results</a>
+                    <a href="{{ route('stats.index') }}">📊 Stats</a>
+                </div>
+                <div class="footer-col">
+                    <div class="footer-col-title">Community</div>
+                    <a href="{{ route('winners.index') }}">🏆 Submit a Win</a>
+                    <a href="{{ route('hall-of-fame.index') }}">🥇 Hall of Fame</a>
+                    <a href="{{ route('blog.index') }}">📝 Blog</a>
+                    @if($telegramUrl)
+                    <a href="{{ $telegramUrl }}" target="_blank" rel="noopener">✈️ Telegram Channel</a>
+                    @endif
+                </div>
+                <div class="footer-col">
+                    <div class="footer-col-title">TavsScore</div>
+                    <a href="{{ route('home.index') }}">Home</a>
+                    <a href="{{ route('about') }}">About</a>
+                    <a href="{{ route('contact') }}">Contact</a>
+                    <a href="{{ route('privacy') }}">Privacy Policy</a>
+                    <a href="{{ route('terms') }}">Terms of Service</a>
+                    <a href="javascript:void(0)" onclick="openInstallGuide()" style="color:#6ee7b7;">📲 Install App</a>
+                </div>
+            </div>
+
+            {{-- Install app strip --}}
+            <div class="footer-install-strip">
+                <div>
+                    <div class="fi-label">📲 Add TavsScore to your home screen</div>
+                    <div class="fi-sub">Works like an app — free picks, live scores &amp; notifications</div>
+                </div>
+                <button class="fi-btn" onclick="openInstallGuide()">How to install →</button>
+            </div>
+
             {{-- Footer newsletter - compact, single row, distinct design from /picks --}}
             <div class="footer-nl">
                 <div class="footer-nl-text">
@@ -584,17 +732,85 @@
             </div>
             @endif
 
-            <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem 1.25rem; margin-bottom:.6rem;">
-                <a href="{{ route('about') }}"   style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">About</a>
-                <a href="{{ route('blog.index') }}" style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Blog</a>
-                <a href="{{ route('privacy') }}" style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Privacy Policy</a>
-                <a href="{{ route('terms') }}"   style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Terms of Service</a>
-                <a href="{{ route('contact') }}" style="color:var(--text-muted); text-decoration:none; font-size:.72rem;">Contact</a>
-            </div>
             <div>⚽ &copy; {{ date('Y') }} TavsScore &mdash; Real-Time Football Scores &amp; AI Predictions</div>
-            <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football. For entertainment purposes only - not for betting.</div>
+            <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football.</div>
+            <div style="font-size:.65rem; color:var(--text-muted); margin-top:.4rem; line-height:1.6;">
+                🔞 18+ only &middot; For entertainment purposes only &middot; Not financial or betting advice &middot; Never stake money you cannot afford to lose.
+                <a href="{{ route('terms') }}" style="color:inherit; text-decoration:underline; margin-left:.3rem;">Terms</a> &middot;
+                <a href="{{ route('privacy') }}" style="color:inherit; text-decoration:underline;">Privacy</a>
+            </div>
         </div>
     </footer>
+
+    {{-- Install guide modal --}}
+    <div id="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-modal-title" onclick="if(event.target===this)closeInstallGuide()">
+        <div class="install-box">
+            <button class="install-close" onclick="closeInstallGuide()" aria-label="Close">&times;</button>
+            <h2 id="install-modal-title" style="font-size:1.1rem; font-weight:900; color:#fff; margin-bottom:.3rem;">📲 Get TavsScore on Your Phone</h2>
+            <p style="font-size:.8rem; color:var(--text-dim); margin-bottom:1.1rem; line-height:1.6;">Add us to your home screen for instant access — free picks and live scores one tap away. No app store needed.</p>
+
+            <div class="install-tabs">
+                <button class="itab active" onclick="switchTab('ios',this)">iPhone / Safari</button>
+                <button class="itab" onclick="switchTab('android',this)">Android / Chrome</button>
+            </div>
+
+            {{-- iOS steps --}}
+            <div class="install-panel active" id="panel-ios">
+                <div class="install-step">
+                    <div class="is-num">1</div>
+                    <div class="is-text">Open <strong>tavsscore.com</strong> in <strong>Safari</strong> on your iPhone or iPad. (Must be Safari — Chrome on iPhone can't install.)</div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">2</div>
+                    <div class="is-text">Tap the <strong>Share button</strong> at the bottom of your screen — it looks like a box with an arrow pointing up <span class="is-img">⬆️</span></div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">3</div>
+                    <div class="is-text">Scroll down in the share sheet and tap <strong>"Add to Home Screen"</strong> <span class="is-img">➕</span></div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">4</div>
+                    <div class="is-text">Tap <strong>"Add"</strong> in the top-right corner. TavsScore will appear on your home screen like a native app.</div>
+                </div>
+
+                <div class="notif-box" style="margin-top:1.1rem;">
+                    <div class="notif-box-title">🔔 Enable Push Notifications</div>
+                    <div class="notif-box-text">
+                        On iPhone, notifications only work after you've added the site to your home screen. Open the app from your home screen, then tap "Allow" when the notification prompt appears — or tap the bell icon in the bottom-right corner of the page.
+                    </div>
+                </div>
+            </div>
+
+            {{-- Android steps --}}
+            <div class="install-panel" id="panel-android">
+                <div class="install-step">
+                    <div class="is-num">1</div>
+                    <div class="is-text">Open <strong>tavsscore.com</strong> in <strong>Chrome</strong> on your Android phone.</div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">2</div>
+                    <div class="is-text">Tap the <strong>three dots menu</strong> (⋮) in the top-right corner of Chrome.</div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">3</div>
+                    <div class="is-text">Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong> — you may see an install banner pop up at the bottom of the screen automatically.</div>
+                </div>
+                <div class="install-step">
+                    <div class="is-num">4</div>
+                    <div class="is-text">Tap <strong>"Install"</strong> or <strong>"Add"</strong>. TavsScore launches in full-screen just like a native app.</div>
+                </div>
+
+                <div class="notif-box" style="margin-top:1.1rem;">
+                    <div class="notif-box-title">🔔 Enable Push Notifications</div>
+                    <div class="notif-box-text">
+                        After installing, open TavsScore and tap "Allow" when prompted. You'll get daily pick alerts, live goal notifications, and outcome results pushed straight to your phone.
+                        <br><br>Already dismissed it? Tap the bell icon <strong>🔔</strong> at the bottom-right of any page to re-enable.
+                    </div>
+                    <button class="notif-allow-btn" onclick="requestPushPermission()">🔔 Enable Notifications Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @stack('scripts')
 
@@ -637,6 +853,35 @@ function declineCookies() {
     document.getElementById('cookie-banner').style.display = 'none';
 }
 </script>
+    <script>
+    function openInstallGuide() {
+        document.getElementById('install-modal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        // Auto-detect device for default tab
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (!isIOS) switchTab('android', document.querySelector('.itab:last-child'));
+    }
+    function closeInstallGuide() {
+        document.getElementById('install-modal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.install-panel').forEach(function(p){ p.classList.remove('active'); });
+        document.querySelectorAll('.itab').forEach(function(t){ t.classList.remove('active'); });
+        document.getElementById('panel-' + tab).classList.add('active');
+        btn.classList.add('active');
+    }
+    function requestPushPermission() {
+        if (window.OneSignalDeferred) {
+            window.OneSignalDeferred.push(function(OneSignal) {
+                OneSignal.Slidedown.promptPush();
+            });
+        }
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeInstallGuide();
+    });
+    </script>
     {{-- OneSignal Push Notifications + PWA Service Worker --}}
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>

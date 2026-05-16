@@ -17,21 +17,23 @@ class PicksAdminController extends Controller
 
     public function index(): View
     {
-        $tz = config('app.timezone');
+        $tz    = config('app.timezone');
+        $today = now($tz)->startOfDay();
+        $end   = now($tz)->endOfDay();
 
-        $today = Prediction::with('match')
+        $todayPicks = Prediction::with('match')
             ->where('is_daily_pick', true)
-            ->whereDate('created_at', now($tz)->toDateString())
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $end]))
             ->orderBy('pick_rank')
             ->get();
 
         $history = Prediction::with('match')
             ->where('is_daily_pick', true)
-            ->where('created_at', '<', now($tz)->startOfDay())
+            ->whereHas('match', fn ($q) => $q->where('match_time', '<', $today))
             ->orderByDesc('created_at')
             ->limit(30)
             ->get()
-            ->groupBy(fn ($p) => $p->created_at->format('Y-m-d'));
+            ->groupBy(fn ($p) => $p->match?->match_time?->format('Y-m-d') ?? $p->created_at->format('Y-m-d'));
 
         $resolvedAll = Prediction::where('is_daily_pick', true)
             ->whereNotNull('was_correct')
@@ -46,12 +48,42 @@ class PicksAdminController extends Controller
             ->whereNotNull('confidence')
             ->whereNotNull('predicted_outcome')
             ->where('predicted_outcome', '!=', 'Competitive Match')
-            ->whereHas('match', fn ($q) => $q->whereDate('match_time', now($tz)->toDateString()))
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $end]))
             ->orderByDesc('confidence')
             ->limit(10)
             ->get();
 
-        return view('admin.picks.index', compact('today', 'history', 'totalAll', 'correctAll', 'accuracy', 'lineupPicks'));
+        $drawPicks = Prediction::with('match')
+            ->where('is_draw_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $end]))
+            ->orderBy('draw_rank')
+            ->get();
+
+        $ggPicks = Prediction::with('match')
+            ->where('is_gg_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $end]))
+            ->orderBy('gg_rank')
+            ->get();
+
+        // Draw accuracy
+        $drawResolved = Prediction::where('is_draw_pick', true)->whereNotNull('was_correct')->get(['was_correct']);
+        $drawAccuracy = $drawResolved->count() > 0
+            ? round($drawResolved->where('was_correct', true)->count() / $drawResolved->count() * 100, 1)
+            : null;
+
+        // GG accuracy
+        $ggResolved  = Prediction::where('is_gg_pick', true)->whereNotNull('was_correct')->get(['was_correct']);
+        $ggAccuracy  = $ggResolved->count() > 0
+            ? round($ggResolved->where('was_correct', true)->count() / $ggResolved->count() * 100, 1)
+            : null;
+
+        // Keep blade variable name consistent with existing template
+        $today = $todayPicks;
+
+        return view('admin.picks.index', compact(
+            'today', 'history', 'totalAll', 'correctAll', 'accuracy',
+            'lineupPicks', 'drawPicks', 'ggPicks', 'drawAccuracy', 'ggAccuracy',
+        ));
     }
 
     public function refresh(): RedirectResponse
@@ -60,6 +92,22 @@ class PicksAdminController extends Controller
 
         return redirect()->route('admin.picks')
             ->with('success', "Re-selected {$picks->count()} daily picks.");
+    }
+
+    public function refreshDraw(): RedirectResponse
+    {
+        $picks = $this->predictionService->selectDrawPicks();
+
+        return redirect()->route('admin.picks')
+            ->with('success', "Re-selected {$picks->count()} draw picks.");
+    }
+
+    public function refreshGG(): RedirectResponse
+    {
+        $picks = $this->predictionService->selectGGPicks();
+
+        return redirect()->route('admin.picks')
+            ->with('success', "Re-selected {$picks->count()} GG picks.");
     }
 
     public function recheck(): RedirectResponse

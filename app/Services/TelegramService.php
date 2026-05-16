@@ -251,6 +251,88 @@ class TelegramService
         );
     }
 
+    public function sendDrawOutcome(string $match, string $score, bool $won, string $siteUrl, string $league = ''): void
+    {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+        if ($won) {
+            $msg = "🤝✅ <b>DRAW PICK — WON!</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$score}</b>\n\n"
+                . "Both teams shared the points exactly as we predicted! 💰\n\n"
+                . "🔗 <a href=\"{$siteUrl}/draw-picks\">See all draw picks</a>";
+        } else {
+            $msg = "🤝❌ <b>Draw Pick — Didn't Land</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$score}</b>\n\n"
+                . "No draw this time. The AI will find the next one 💪\n\n"
+                . "🔗 <a href=\"{$siteUrl}/draw-picks\">See draw picks</a>";
+        }
+        $this->send($msg);
+    }
+
+    public function sendGGOutcome(string $match, string $score, bool $won, string $siteUrl, string $league = ''): void
+    {
+        $leagueLine = $league ? "🏆 {$league}\n" : '';
+        if ($won) {
+            $msg = "⚽✅ <b>GG PICK — WON!</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$score}</b>\n\n"
+                . "Both teams found the net! GG confirmed! 🔥💰\n\n"
+                . "🔗 <a href=\"{$siteUrl}/gg-picks\">See all GG picks</a>";
+        } else {
+            $msg = "⚽❌ <b>GG Pick — Didn't Land</b>\n\n"
+                . "{$leagueLine}"
+                . "⚽ <b>{$match}</b>\n"
+                . "Final score: <b>{$score}</b>\n\n"
+                . "Not both teams scored this time. We'll get the next one 💪\n\n"
+                . "🔗 <a href=\"{$siteUrl}/gg-picks\">See GG picks</a>";
+        }
+        $this->send($msg);
+    }
+
+    public function sendDrawPicks(array $picks, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+
+        $lines = ["🤝 <b>Today's Draw Picks — Triple AI Agreed</b>\n"];
+
+        foreach ($picks as $i => $pick) {
+            $rank   = $i === 0 ? '👑' : '⚖️';
+            $match  = $pick['match'] ?? '';
+            $conf   = $pick['confidence'] ?? '';
+            $league = $pick['league'] ?? '';
+            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Draw</b> ({$conf}% confidence)";
+        }
+
+        $lines[] = "\n🔗 <a href=\"{$siteUrl}/draw-picks\">See full analysis</a>";
+        $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
+
+        $this->send(implode("\n", $lines));
+    }
+
+    public function sendGGPicks(array $picks, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+
+        $lines = ["⚽ <b>Today's GG Picks — Both Teams to Score</b>\n"];
+
+        foreach ($picks as $i => $pick) {
+            $rank   = $i === 0 ? '👑' : '⚽';
+            $match  = $pick['match'] ?? '';
+            $conf   = $pick['confidence'] ?? '';
+            $league = $pick['league'] ?? '';
+            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Both Teams Score</b> ({$conf}% confidence)";
+        }
+
+        $lines[] = "\n🔗 <a href=\"{$siteUrl}/gg-picks\">See full analysis</a>";
+        $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
+
+        $this->send(implode("\n", $lines));
+    }
+
     public function sendDailyResults(array $results, string $siteUrl): void
     {
         if (empty($results)) return;

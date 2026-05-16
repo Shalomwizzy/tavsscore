@@ -24,12 +24,14 @@ class PredictionService
     private const EXCLUDED_UPCOMING_STATUSES = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
     public function __construct(
-        private readonly GroqService    $groqService,
-        private readonly OddsService    $oddsService,
-        private readonly GeminiService  $geminiService,
-        private readonly MistralService $mistralService,
-        private readonly NewsService    $newsService,
-        private readonly LineupService  $lineupService,
+        private readonly GroqService              $groqService,
+        private readonly OddsService              $oddsService,
+        private readonly GeminiService            $geminiService,
+        private readonly MistralService           $mistralService,
+        private readonly NewsService              $newsService,
+        private readonly LineupService            $lineupService,
+        private readonly CalibrationService       $calibration,
+        private readonly AdaptiveThresholdService $adaptive,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -96,13 +98,16 @@ class PredictionService
                     (float) ($poisson['away_clean_sheet'] ?? 0),
                 );
             }
-            return Prediction::query()->updateOrCreate(
-                ['match_id' => $match->id],
-                [
-                    'predicted_outcome' => $primaryOutcome,
-                    'confidence'        => $primaryConfidence,
-                ]
-            );
+
+            // Backfill opening_odds if not already stored (no extra API call — OddsService caches)
+            $updates = ['predicted_outcome' => $primaryOutcome, 'confidence' => $primaryConfidence];
+            if ($existing->opening_odds === null && in_array((int) $match->league_id, LeagueCoverage::topEuropean(), true)) {
+                try {
+                    $updates['opening_odds'] = $this->oddsService->impliedProbabilities($match);
+                } catch (\Throwable) {}
+            }
+
+            return Prediction::query()->updateOrCreate(['match_id' => $match->id], $updates);
         }
 
         // ── Fetch news (multi-source: Google + BBC + Sky + ESPN) ──
@@ -167,6 +172,16 @@ class PredictionService
         $tips = $this->annotateWithMarketConsensus($tips, $match);
         $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h);
 
+        // Snapshot bookmaker implied probabilities at prediction time.
+        // Cached by OddsService, so no extra API call if annotateWithMarketConsensus
+        // already fetched them. Stored as opening_odds for CLV / movement tracking.
+        $openingOdds = null;
+        if (in_array((int) $match->league_id, LeagueCoverage::topEuropean(), true)) {
+            try {
+                $openingOdds = $this->oddsService->impliedProbabilities($match);
+            } catch (\Throwable) {}
+        }
+
         // Primary outcome = the strongest tip
         if (! empty($tips)) {
             $primaryOutcome    = $tips[0]['market'];
@@ -200,6 +215,7 @@ class PredictionService
                 'confidence'        => $primaryConfidence,
                 'analysis'          => $analysis,
                 'likely_scores'     => $likelyScores,
+                'opening_odds'      => $openingOdds,
             ]
         );
     }
@@ -735,9 +751,12 @@ class PredictionService
             ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
             ->update(['is_daily_pick' => false, 'pick_rank' => null]);
 
-        // Only picks with genuine AI analysis and confidence ≥ 65%.
-        // Draws are excluded — the hardest outcome to predict consistently.
-        // We never backfill to hit a number: 1 quality pick beats 3 bad ones.
+        // Only picks with genuine AI analysis above the learned confidence threshold.
+        // The threshold is computed by AdaptiveThresholdService from 90-day history:
+        // it rises when the system underperforms and settles at the lowest band
+        // that has historically been profitable (≥52% win rate).
+        $minConfidence       = $this->adaptive->minimumConfidenceThreshold();
+        $coldMarkets         = $this->adaptive->coldMarkets();
         $excludedInSelection = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
         $excludedOutcomes    = ['Competitive Match', 'Draw'];
 
@@ -748,7 +767,7 @@ class PredictionService
             ->whereNotNull('analysis')
             ->whereNotNull('predicted_outcome')
             ->whereNotIn('predicted_outcome', $excludedOutcomes)
-            ->where('confidence', '>=', 65)
+            ->where('confidence', '>=', $minConfidence)
             ->whereHas('match', fn ($q) => $q
                 ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
                 ->whereBetween('match_time', [$today, $cutoff])
@@ -761,8 +780,9 @@ class PredictionService
         }
 
         $accuracyWeights = $this->getMarketAccuracyWeights();
+        $leagueWeights   = $this->calibration->leagueWeightsMap();
 
-        $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights) {
+        $scored = $candidates->map(function (Prediction $p) use ($accuracyWeights, $leagueWeights, $coldMarkets) {
             $tips         = is_array($p->tips) ? $p->tips : [];
             $geminiAgrees = $tips[0]['gemini_agrees'] ?? null;
 
@@ -788,6 +808,20 @@ class PredictionService
             $accuracy = $accuracyWeights[$outcome] ?? 1.0;
             $score    = $score * $accuracy;
 
+            // Apply league reliability multiplier — leagues with poor historical
+            // accuracy get down-weighted so their picks rank lower than equivalent
+            // picks from higher-reliability leagues.
+            $leagueKey    = ($p->match?->league ?? '') . '||' . ($p->match?->league_country ?? '');
+            $leagueWeight = $leagueWeights[$leagueKey] ?? 1.0;
+            $score        = $score * $leagueWeight;
+
+            // Cold-market penalty: extra down-weight when a market has been in a
+            // losing streak (< 40% win rate over last 14 days). Stacks with the
+            // 90-day market accuracy weight so cold streaks compound the penalty.
+            if (in_array($outcome, $coldMarkets, true)) {
+                $score *= 0.60;
+            }
+
             return [
                 'prediction' => $p,
                 'score'      => $score,
@@ -796,7 +830,7 @@ class PredictionService
                 'ai_conf'    => $aiConf,
             ];
         })
-        ->filter(fn ($s) => $s !== null && $s['ai_conf'] >= 65)
+        ->filter(fn ($s) => $s !== null && $s['ai_conf'] >= $minConfidence)
         ->sortByDesc('score');
 
         // Take up to 3, preferring different tip types — but never backfill
@@ -823,6 +857,100 @@ class PredictionService
         return $picks->map(fn ($item) => $item['prediction'])->values()->pipe(
             fn ($col) => new EloquentCollection($col->all())
         );
+    }
+
+    /**
+     * Select up to 5 predictions for today where all 3 AIs independently agree
+     * on "Draw" as the primary outcome. Stored as is_draw_pick / draw_rank.
+     */
+    public function selectDrawPicks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+
+        // Clear today's existing draw picks
+        Prediction::query()
+            ->where('is_draw_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_draw_pick' => false, 'draw_rank' => null]);
+
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->where('predicted_outcome', 'Draw')
+            ->where('confidence', '>=', 60)
+            ->whereHas('match', fn ($q) => $q
+                ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->filter(function (Prediction $p): bool {
+                $tips = is_array($p->tips) ? $p->tips : [];
+                // Only picks where all configured AIs explicitly agreed
+                return ($tips[0]['gemini_agrees'] ?? null) === true;
+            })
+            ->sortByDesc('confidence')
+            ->take(5)
+            ->values();
+
+        $candidates->each(function (Prediction $p, int $idx) {
+            $p->update(['is_draw_pick' => true, 'draw_rank' => $idx + 1]);
+        });
+
+        return new EloquentCollection($candidates->all());
+    }
+
+    /**
+     * Select up to 5 predictions for today where all 3 AIs independently agree
+     * on "Both Teams Score" (GG) as the primary outcome.
+     */
+    public function selectGGPicks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+
+        // Clear today's existing GG picks
+        Prediction::query()
+            ->where('is_gg_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_gg_pick' => false, 'gg_rank' => null]);
+
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        // "Both Teams Score" is the market label Groq uses; accept both forms
+        $ggOutcomes = ['Both Teams Score', 'Both Teams Score (GG)'];
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereIn('predicted_outcome', $ggOutcomes)
+            ->where('confidence', '>=', 60)
+            ->whereHas('match', fn ($q) => $q
+                ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->filter(function (Prediction $p): bool {
+                $tips = is_array($p->tips) ? $p->tips : [];
+                return ($tips[0]['gemini_agrees'] ?? null) === true;
+            })
+            ->sortByDesc('confidence')
+            ->take(5)
+            ->values();
+
+        $candidates->each(function (Prediction $p, int $idx) {
+            $p->update(['is_gg_pick' => true, 'gg_rank' => $idx + 1]);
+        });
+
+        return new EloquentCollection($candidates->all());
     }
 
     /**

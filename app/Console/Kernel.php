@@ -39,6 +39,12 @@ class Kernel extends ConsoleKernel
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new
         $schedule->command('picks:update-lineups')->everyMinute()->withoutOverlapping();
 
+        // Fetch near-closing bookmaker odds at 10:00 and 14:00 Lagos.
+        // Runs after most European morning kickoffs have odds settled, and again
+        // before afternoon/evening fixtures to capture late-market drift.
+        $schedule->command('picks:fetch-closing-odds')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:fetch-closing-odds')->dailyAt('14:00')->timezone('Africa/Lagos')->withoutOverlapping();
+
         // Select today's rollover pick at 09:30 Lagos (after daily picks at 09:00)
         $schedule->command('rollover:select')->dailyAt('09:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
@@ -46,6 +52,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         $schedule->command('blog:auto-post')->dailyAt('08:30')->timezone('Africa/Lagos');
+
+        // Monthly calibration snapshot — runs on the 1st at 02:00 Lagos.
+        // Builds up the public Track Record timeline that proves system improvement.
+        $schedule->command('calibration:snapshot')->monthlyOn(1, '02:00')->timezone('Africa/Lagos');
 
         // Newsletter — send today's 3 picks at 09:00 Lagos to confirmed subscribers
         $schedule->command('newsletter:send-daily')->dailyAt('09:00')->timezone('Africa/Lagos')->withoutOverlapping();

@@ -25,7 +25,7 @@ class WinnersController extends Controller
             'username'         => ['required', 'string', 'max:60'],
             'email'            => ['required', 'email', 'max:150'],
             'screenshots'      => ['required', 'array', 'min:1', 'max:5'],
-            'screenshots.*'    => ['image', 'max:5120'],
+            'screenshots.*'    => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'pick_description' => ['nullable', 'string', 'max:255'],
             'match_details'    => ['nullable', 'string', 'max:255'],
             'platform'         => ['nullable', 'string', 'max:60'],
@@ -35,7 +35,7 @@ class WinnersController extends Controller
 
         $paths = [];
         foreach ($request->file('screenshots') as $file) {
-            $ext      = $file->getClientOriginalExtension() ?: 'jpg';
+            $ext      = $file->extension() ?: 'jpg';
             $filename = Str::uuid() . '.' . $ext;
             $file->move(public_path('images/winners'), $filename);
             $paths[] = 'images/winners/' . $filename;

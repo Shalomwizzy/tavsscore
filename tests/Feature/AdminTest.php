@@ -47,6 +47,16 @@ class AdminTest extends TestCase
         $this->get('/admin/correct-score')->assertRedirect('/admin/login');
     }
 
+    public function test_admin_draw_picks_redirects_guests(): void
+    {
+        $this->get('/admin/draw-picks')->assertRedirect('/admin/login');
+    }
+
+    public function test_admin_gg_picks_redirects_guests(): void
+    {
+        $this->get('/admin/gg-picks')->assertRedirect('/admin/login');
+    }
+
     public function test_admin_stats_redirects_guests(): void
     {
         $this->get('/admin/stats')->assertRedirect('/admin/login');

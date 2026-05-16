@@ -672,6 +672,24 @@ if (! function_exists('stripTip')) {
                                     {{ ($headline['gemini_agrees'] ?? false) ? '🤖🤖🤖 All 3 AIs agree' : '⚠️ AIs disagree' }}
                                 </div>
                                 @endif
+                                @if(!empty($pick['historical_pct']))
+                                <div class="pt-consensus" style="margin-left:.35rem;color:rgba(180,180,210,.85);">
+                                    📊 Historically {{ $pick['historical_pct'] }}% correct at this confidence level
+                                </div>
+                                @endif
+                                @if(!empty($pick['odds_movement']))
+                                @php $mov = $pick['odds_movement']; @endphp
+                                <div class="pt-consensus {{ $mov['direction'] === 'with' ? 'pt-consensus-ok' : ($mov['direction'] === 'against' ? 'pt-consensus-warn' : '') }}" style="margin-left:.35rem;">
+                                    @if($mov['direction'] === 'with')
+                                        📈 Market drifting with this pick
+                                    @elseif($mov['direction'] === 'against')
+                                        📉 Market drifting against this pick
+                                    @else
+                                        ➡️ Market holding steady
+                                    @endif
+                                    <span style="opacity:.72;">({{ $mov['delta'] > 0 ? '+' : '' }}{{ $mov['delta'] }}pp since prediction)</span>
+                                </div>
+                                @endif
                             </div>
                             <span class="pt-headline-pill {{ $hClass }}">{{ $hConf }}%</span>
                         </div>
@@ -886,5 +904,14 @@ if (! function_exists('stripTip')) {
 </section>
 
 @include('partials.language-toggle')
+
+<div class="wrap" style="padding-bottom:2rem;">
+    <div style="text-align:center; font-size:.7rem; color:var(--text-dim); line-height:1.75; padding:.875rem 1rem; border-top:1px solid var(--border); margin-top:2rem;">
+        🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
+        These picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
+        AI predictions are never guaranteed. Past accuracy is not a guarantee of future results.
+        Please gamble responsibly — never stake money you cannot afford to lose.
+    </div>
+</div>
 
 @endsection

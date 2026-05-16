@@ -25,7 +25,6 @@ Route::get('/matches/live', [MatchController::class, 'live']);
 Route::get('/matches/today', [MatchController::class, 'today']);
 Route::get('/matches/finished', [MatchController::class, 'finished']);
 Route::get('/predictions', [PredictionController::class, 'index']);
-Route::post('/predictions/generate', [PredictionController::class, 'generate']);
 Route::get('/predictions/{match_id}', [PredictionController::class, 'show'])->whereNumber('match_id');
 // Translation endpoints — rate-limited to protect Groq spend
 Route::middleware('throttle:30,1')->group(function () {

@@ -8,8 +8,11 @@ use App\Http\Controllers\HallOfFameController;
 use App\Http\Controllers\RolloverController;
 use App\Http\Controllers\WinnersController;
 use App\Http\Controllers\DailyPickController;
+use App\Http\Controllers\DrawPicksController;
+use App\Http\Controllers\GGPicksController;
 use App\Http\Controllers\LineupPicksController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\TrackRecordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LiveScoreController;
 use App\Http\Controllers\NewsletterController;
@@ -25,11 +28,14 @@ Route::get('/live',        [LiveScoreController::class, 'index'])->name('live.in
 Route::get('/predictions',         [PredictionPageController::class, 'index'])->name('predictions.index');
 Route::get('/predictions/{slug}',  [PredictionPageController::class, 'show'])->name('predictions.show')->where('slug', '[A-Za-z0-9-]+');
 Route::get('/picks',        [DailyPickController::class, 'index'])->name('picks.index');
+Route::get('/draw-picks',   [DrawPicksController::class,  'index'])->name('draw-picks.index');
+Route::get('/gg-picks',     [GGPicksController::class,   'index'])->name('gg-picks.index');
 Route::get('/lineup-picks',  [LineupPicksController::class, 'index'])->name('lineup-picks.index');
 Route::get('/correct-score', [CorrectScoreController::class, 'index'])->name('correct-score.index');
 Route::get('/rollover',           [RolloverController::class, 'index'])->name('rollover.index');
 Route::get('/rollover/{date}',    [RolloverController::class, 'show'])->name('rollover.show')->where('date', '\d{4}-\d{2}-\d{2}');
-Route::get('/stats',       [StatsController::class, 'index'])->name('stats.index');
+Route::get('/stats',        [StatsController::class, 'index'])->name('stats.index');
+Route::get('/track-record', [TrackRecordController::class, 'index'])->name('track-record.index');
 Route::get('/results',     [ResultsController::class, 'index'])->name('results.index');
 Route::get('/africa',      [AfricaController::class, 'index'])->name('africa.index');
 
@@ -94,11 +100,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Daily Picks */
         Route::get('/picks',          [Admin\PicksAdminController::class, 'index'])->name('picks');
-        Route::post('/picks/refresh', [Admin\PicksAdminController::class, 'refresh'])->name('picks.refresh');
-        Route::post('/picks/recheck', [Admin\PicksAdminController::class, 'recheck'])->name('picks.recheck');
+        Route::post('/picks/refresh',      [Admin\PicksAdminController::class, 'refresh'])->name('picks.refresh');
+        Route::post('/picks/refresh-draw', [Admin\PicksAdminController::class, 'refreshDraw'])->name('picks.refresh-draw');
+        Route::post('/picks/refresh-gg',   [Admin\PicksAdminController::class, 'refreshGG'])->name('picks.refresh-gg');
+        Route::post('/picks/recheck',      [Admin\PicksAdminController::class, 'recheck'])->name('picks.recheck');
 
         /* Stats */
         Route::get('/stats', [\App\Http\Controllers\Admin\StatsAdminController::class, 'index'])->name('stats.index');
+
+        /* AI Learning — self-calibration dashboard */
+        Route::get('/ai-learning',      [Admin\AILearningController::class, 'index'])->name('ai-learning.index');
+        Route::post('/ai-learning/recalibrate', [Admin\AILearningController::class, 'recalibrate'])->name('ai-learning.recalibrate');
+
+        /* Draw Picks */
+        Route::get('/draw-picks',          [Admin\DrawPicksAdminController::class, 'index'])->name('draw-picks.index');
+        Route::post('/draw-picks/refresh', [Admin\DrawPicksAdminController::class, 'refresh'])->name('draw-picks.refresh');
+
+        /* GG Picks */
+        Route::get('/gg-picks',          [Admin\GGPicksAdminController::class, 'index'])->name('gg-picks.index');
+        Route::post('/gg-picks/refresh', [Admin\GGPicksAdminController::class, 'refresh'])->name('gg-picks.refresh');
 
         /* Lineup Picks */
         Route::get('/lineup-picks', [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'index'])->name('lineup-picks.index');

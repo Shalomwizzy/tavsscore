@@ -11,13 +11,14 @@ class SelectDailyPicks extends Command
 {
     protected $signature = 'picks:select {--force : Re-select even if picks exist today}';
 
-    protected $description = 'Score today\'s AI predictions and mark the top 3 as daily picks.';
+    protected $description = 'Score today\'s AI predictions and mark the top 3 as daily picks, plus Draw and GG picks.';
 
     public function handle(PredictionService $service): int
     {
         $today  = CarbonImmutable::now(config('app.timezone'));
         $cutoff = $today->endOfDay();
 
+        // ── Daily picks ────────────────────────────────────────────
         if (! $this->option('force')) {
             $existing = Prediction::query()
                 ->where('is_daily_pick', true)
@@ -29,17 +30,63 @@ class SelectDailyPicks extends Command
 
             if ($existing >= 3) {
                 $this->info("Daily picks already selected ({$existing} picks). Use --force to re-run.");
-                return self::SUCCESS;
+            } else {
+                $this->runDailyPicks($service);
             }
+        } else {
+            $this->runDailyPicks($service);
         }
 
+        // ── Draw picks ─────────────────────────────────────────────
+        $this->info('Selecting Draw picks…');
+        $drawPicks = $service->selectDrawPicks();
+        if ($drawPicks->isEmpty()) {
+            $this->warn('No qualifying Draw picks today.');
+        } else {
+            foreach ($drawPicks as $p) {
+                $match = $p->match;
+                $this->line(sprintf(
+                    '  🤝 Draw #%d  %s vs %s  (%s%%)',
+                    $p->draw_rank,
+                    $match?->home_team ?? '?',
+                    $match?->away_team ?? '?',
+                    $p->confidence,
+                ));
+            }
+            $this->info("✅ {$drawPicks->count()} Draw picks selected.");
+        }
+
+        // ── GG picks ───────────────────────────────────────────────
+        $this->info('Selecting GG picks…');
+        $ggPicks = $service->selectGGPicks();
+        if ($ggPicks->isEmpty()) {
+            $this->warn('No qualifying GG picks today.');
+        } else {
+            foreach ($ggPicks as $p) {
+                $match = $p->match;
+                $this->line(sprintf(
+                    '  ⚽ GG #%d  %s vs %s  (%s%%)',
+                    $p->gg_rank,
+                    $match?->home_team ?? '?',
+                    $match?->away_team ?? '?',
+                    $p->confidence,
+                ));
+            }
+            $this->info("✅ {$ggPicks->count()} GG picks selected.");
+        }
+
+        return self::SUCCESS;
+    }
+
+    private function runDailyPicks(PredictionService $service): void
+    {
         $this->info('Selecting daily picks…');
 
         $picks = $service->selectDailyPicks();
 
         if ($picks->isEmpty()) {
             $this->warn('No qualifying predictions found. Run predictions:generate first.');
-            return self::SUCCESS;
+            return;
         }
 
         foreach ($picks as $p) {
@@ -56,7 +103,5 @@ class SelectDailyPicks extends Command
         }
 
         $this->info("✅ {$picks->count()} daily picks selected. Notification will fire at 08:00 Lagos.");
-
-        return self::SUCCESS;
     }
 }

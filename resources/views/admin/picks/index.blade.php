@@ -14,9 +14,21 @@
         <form method="POST" action="{{ route('admin.picks.refresh') }}"
               onsubmit="return confirm('Re-select today\'s 3 picks? This overwrites the current selection.');">
             @csrf
-            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">⭐ Re-select Today</button>
+            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">⭐ Re-select Daily</button>
         </form>
-        <a href="{{ route('picks.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+        <form method="POST" action="{{ route('admin.picks.refresh-draw') }}"
+              onsubmit="return confirm('Re-select today\'s draw picks?');">
+            @csrf
+            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#92400e,#78350f);color:#fcd34d;">🤝 Re-select Draw</button>
+        </form>
+        <form method="POST" action="{{ route('admin.picks.refresh-gg') }}"
+              onsubmit="return confirm('Re-select today\'s GG picks?');">
+            @csrf
+            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#064e3b,#065f46);color:#6ee7b7;">⚽ Re-select GG</button>
+        </form>
+        <a href="{{ route('picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Daily Picks</a>
+        <a href="{{ route('draw-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Draw Picks</a>
+        <a href="{{ route('gg-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ GG Picks</a>
     </div>
 </div>
 
@@ -80,24 +92,32 @@
 </div>
 
 {{-- Summary strip --}}
-<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:1.25rem;">
+<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(245,158,11,.04));border-color:rgba(245,158,11,.25);">
         <span class="stat-val" style="color:#fcd34d;">
             @if($accuracy !== null){{ $accuracy }}%@else-@endif
         </span>
-        <span class="stat-lbl">⭐ All-time accuracy</span>
+        <span class="stat-lbl">⭐ Daily accuracy</span>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.07),rgba(245,158,11,.02));border-color:rgba(245,158,11,.15);">
+        <span class="stat-val" style="color:#fcd34d;">
+            @if($drawAccuracy !== null){{ $drawAccuracy }}%@else-@endif
+        </span>
+        <span class="stat-lbl">🤝 Draw accuracy</span>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.07),rgba(16,185,129,.02));border-color:rgba(16,185,129,.15);">
+        <span class="stat-val" style="color:#6ee7b7;">
+            @if($ggAccuracy !== null){{ $ggAccuracy }}%@else-@endif
+        </span>
+        <span class="stat-lbl">⚽ GG accuracy</span>
     </div>
     <div class="stat-card">
         <span class="stat-val" style="color:#6ee7b7;">{{ $correctAll }}</span>
-        <span class="stat-lbl">✓ Total correct</span>
+        <span class="stat-lbl">✓ Daily correct</span>
     </div>
     <div class="stat-card">
         <span class="stat-val" style="color:#fca5a5;">{{ $totalAll - $correctAll }}</span>
-        <span class="stat-lbl">✗ Total wrong</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-val">{{ $totalAll }}</span>
-        <span class="stat-lbl">🎯 Picks resolved</span>
+        <span class="stat-lbl">✗ Daily wrong</span>
     </div>
 </div>
 
@@ -285,11 +305,163 @@
     @endif
 </div>
 
+{{-- Draw Picks Today --}}
+<div class="a-card" style="margin-top:1.25rem; border-color:rgba(245,158,11,.25);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; flex-wrap:wrap; gap:.5rem;">
+        <span style="font-weight:700; font-size:.9rem; color:#fff;">
+            🤝 Draw Picks Today
+            <span style="background:rgba(245,158,11,.15);color:#fcd34d;font-size:.65rem;padding:1px 8px;border-radius:999px;margin-left:.4rem;">{{ $drawPicks->count() }}/5</span>
+        </span>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            @if($drawAccuracy !== null)
+            <span style="font-size:.72rem; color:#fcd34d;">All-time: {{ $drawAccuracy }}%</span>
+            @endif
+            <a href="{{ route('draw-picks.index') }}" target="_blank" style="font-size:.72rem; color:#fcd34d; text-decoration:none;">↗ Public page</a>
+        </div>
+    </div>
+
+    @if($drawPicks->isEmpty())
+        <div style="text-align:center; padding:1.25rem; color:var(--dim); font-size:.82rem;">
+            No draw picks selected today. Click "Re-select Draw" above to run the selection now.
+        </div>
+    @else
+    <div style="overflow-x:auto;">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Match</th>
+                    <th>League</th>
+                    <th>Confidence</th>
+                    <th>Kickoff</th>
+                    <th>Triple AI</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($drawPicks as $pick)
+                @php $m = $pick->match; $tips = is_array($pick->tips) ? $pick->tips : []; @endphp
+                <tr>
+                    <td style="font-weight:800; color:#fcd34d;">🤝 #{{ $pick->draw_rank }}</td>
+                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
+                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                        @if($m && in_array($m->status, ['FT','AET','PEN']))
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                        @endif
+                    </td>
+                    <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}
+                    </td>
+                    <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
+                    <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
+                        {{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') ?? '-' }}
+                    </td>
+                    <td>
+                        @if(($tips[0]['gemini_agrees'] ?? null) === true)
+                            <span class="badge badge-green">✅ All 3 agreed</span>
+                        @else
+                            <span class="badge badge-gray">—</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($pick->was_correct === true)
+                            <span class="badge badge-green">✓ Won</span>
+                        @elseif($pick->was_correct === false)
+                            <span class="badge badge-red">✗ Lost</span>
+                        @else
+                            <span class="badge badge-gray">⏳ Pending</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
+{{-- GG Picks Today --}}
+<div class="a-card" style="margin-top:1.25rem; border-color:rgba(16,185,129,.25);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.875rem; flex-wrap:wrap; gap:.5rem;">
+        <span style="font-weight:700; font-size:.9rem; color:#fff;">
+            ⚽ GG Picks Today
+            <span style="background:rgba(16,185,129,.15);color:#6ee7b7;font-size:.65rem;padding:1px 8px;border-radius:999px;margin-left:.4rem;">{{ $ggPicks->count() }}/5</span>
+        </span>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            @if($ggAccuracy !== null)
+            <span style="font-size:.72rem; color:#6ee7b7;">All-time: {{ $ggAccuracy }}%</span>
+            @endif
+            <a href="{{ route('gg-picks.index') }}" target="_blank" style="font-size:.72rem; color:#6ee7b7; text-decoration:none;">↗ Public page</a>
+        </div>
+    </div>
+
+    @if($ggPicks->isEmpty())
+        <div style="text-align:center; padding:1.25rem; color:var(--dim); font-size:.82rem;">
+            No GG picks selected today. Click "Re-select GG" above to run the selection now.
+        </div>
+    @else
+    <div style="overflow-x:auto;">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Match</th>
+                    <th>League</th>
+                    <th>BTTS %</th>
+                    <th>Confidence</th>
+                    <th>Kickoff</th>
+                    <th>Triple AI</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($ggPicks as $pick)
+                @php $m = $pick->match; $tips = is_array($pick->tips) ? $pick->tips : []; @endphp
+                <tr>
+                    <td style="font-weight:800; color:#6ee7b7;">⚽ #{{ $pick->gg_rank }}</td>
+                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
+                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                        @if($m && in_array($m->status, ['FT','AET','PEN']))
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                        @endif
+                    </td>
+                    <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}
+                    </td>
+                    <td style="color:#6ee7b7; font-weight:700;">{{ $pick->btts_prob ? round($pick->btts_prob) . '%' : '-' }}</td>
+                    <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
+                    <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
+                        {{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') ?? '-' }}
+                    </td>
+                    <td>
+                        @if(($tips[0]['gemini_agrees'] ?? null) === true)
+                            <span class="badge badge-green">✅ All 3 agreed</span>
+                        @else
+                            <span class="badge badge-gray">—</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($pick->was_correct === true)
+                            <span class="badge badge-green">✓ Won</span>
+                        @elseif($pick->was_correct === false)
+                            <span class="badge badge-red">✗ Lost</span>
+                        @else
+                            <span class="badge badge-gray">⏳ Pending</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
 <div style="margin-top:1.25rem; padding:.875rem 1rem; border-radius:8px; background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2); font-size:.74rem; color:#93c5fd;">
     <strong>ℹ️ How picks work:</strong>
-    Picks auto-select daily at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">09:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>.
-    Outcomes auto-resolve every 5 minutes via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">predictions:check-outcomes</code>.
-    Re-selecting today overwrites existing picks. Re-checking outcomes re-evaluates results from the last 7 days against current scores.
+    Daily/Draw/GG picks auto-select at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">06:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>.
+    Outcomes auto-resolve every 5 minutes via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">predictions:check-outcomes</code>. Notifications fire to Telegram + OneSignal on each win/loss.
+    Re-selecting overwrites existing picks. Re-checking outcomes re-evaluates results from the last 7 days.
 </div>
 
 @endsection

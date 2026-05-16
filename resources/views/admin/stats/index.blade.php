@@ -13,7 +13,7 @@
 <div class="stat-grid" style="margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04));border-color:rgba(16,185,129,.25);">
         <span class="stat-val" style="color:#6ee7b7;">{{ $overall !== null ? $overall . '%' : '-' }}</span>
-        <span class="stat-lbl">Overall accuracy</span>
+        <span class="stat-lbl">⭐ Daily accuracy</span>
     </div>
     <div class="stat-card">
         <span class="stat-val" style="color:#6ee7b7;">{{ $correct }}</span>
@@ -26,6 +26,34 @@
     <div class="stat-card">
         <span class="stat-val">{{ $total }}</span>
         <span class="stat-lbl">🎯 Total resolved</span>
+    </div>
+</div>
+
+{{-- Draw & GG pick suites --}}
+<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-bottom:1.25rem;">
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.10),rgba(245,158,11,.04));border-color:rgba(245,158,11,.25);">
+        <span class="stat-val" style="color:#fcd34d;">{{ $drawStat['pct'] !== null ? $drawStat['pct'].'%' : '—' }}</span>
+        <span class="stat-lbl">🤝 Draw Picks accuracy</span>
+    </div>
+    <div class="stat-card" style="background:rgba(245,158,11,.04);">
+        <span class="stat-val" style="color:#6ee7b7;">{{ $drawStat['correct'] }}</span>
+        <span class="stat-lbl">✓ Draw correct</span>
+    </div>
+    <div class="stat-card" style="background:rgba(245,158,11,.04);">
+        <span class="stat-val">{{ $drawStat['total'] }}</span>
+        <span class="stat-lbl">🎯 Draw resolved</span>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(16,185,129,.04));border-color:rgba(16,185,129,.25);">
+        <span class="stat-val" style="color:#6ee7b7;">{{ $ggStat['pct'] !== null ? $ggStat['pct'].'%' : '—' }}</span>
+        <span class="stat-lbl">⚽ GG Picks accuracy</span>
+    </div>
+    <div class="stat-card" style="background:rgba(16,185,129,.04);">
+        <span class="stat-val" style="color:#6ee7b7;">{{ $ggStat['correct'] }}</span>
+        <span class="stat-lbl">✓ GG correct</span>
+    </div>
+    <div class="stat-card" style="background:rgba(16,185,129,.04);">
+        <span class="stat-val">{{ $ggStat['total'] }}</span>
+        <span class="stat-lbl">🎯 GG resolved</span>
     </div>
 </div>
 

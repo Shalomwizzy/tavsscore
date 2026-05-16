@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Prediction;
+use App\Services\CalibrationService;
 use App\Services\GroqService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
@@ -13,7 +14,10 @@ use Illuminate\View\View;
 
 class DailyPickController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(
+        private readonly PredictionService  $predictionService,
+        private readonly CalibrationService $calibration,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -178,6 +182,31 @@ class DailyPickController extends Controller
         $o25  = (float) ($p->over_25_prob ?? 0);
         $btts = (float) ($p->btts_prob    ?? 0);
 
+        // Historical accuracy at this AI confidence band (null = insufficient data)
+        $historicalPct = $p->confidence ? $this->calibration->historicalPct((int) $p->confidence) : null;
+
+        // Odds movement: compare opening vs closing implied probabilities
+        $oddsMovement = null;
+        $opening      = is_array($p->opening_odds) ? $p->opening_odds : null;
+        $closing      = is_array($p->closing_odds)  ? $p->closing_odds  : null;
+        if ($opening && $closing) {
+            $marketKey = match ($p->predicted_outcome) {
+                'Home Win'         => 'home_win',
+                'Away Win'         => 'away_win',
+                'Draw'             => 'draw',
+                'Over 2.5 Goals'   => 'over_25',
+                'Both Teams Score' => 'btts',
+                default            => null,
+            };
+            if ($marketKey && isset($opening[$marketKey], $closing[$marketKey])) {
+                $delta = round($closing[$marketKey] - $opening[$marketKey], 1);
+                $oddsMovement = [
+                    'delta'     => $delta,
+                    'direction' => $delta > 1.5 ? 'with' : ($delta < -1.5 ? 'against' : 'neutral'),
+                ];
+            }
+        }
+
         $probs      = [$hw, $d, $aw];
         rsort($probs);
         $gap        = $probs[0] - $probs[1];
@@ -226,27 +255,29 @@ class DailyPickController extends Controller
         }
 
         return [
-            'id'           => $p->id,
-            'rank'         => $p->pick_rank,
-            'pick_label'   => $pickLabel,
-            'pick_emoji'   => $pickEmoji,
-            'outcome'      => $outcome,
-            'confidence'   => $confidence,
+            'id'             => $p->id,
+            'rank'           => $p->pick_rank,
+            'pick_label'     => $pickLabel,
+            'pick_emoji'     => $pickEmoji,
+            'outcome'        => $outcome,
+            'confidence'     => $confidence,
             'confidence_pct' => $p->confidence,
-            'tips'         => is_array($p->tips) ? $p->tips : [],
-            'hw'           => $hw,
-            'd'            => $d,
-            'aw'           => $aw,
-            'o25'          => $o25,
-            'btts'         => $btts,
-            'analysis'     => $p->analysis,
+            'historical_pct' => $historicalPct,
+            'odds_movement'  => $oddsMovement,
+            'tips'           => is_array($p->tips) ? $p->tips : [],
+            'hw'             => $hw,
+            'd'              => $d,
+            'aw'             => $aw,
+            'o25'            => $o25,
+            'btts'           => $btts,
+            'analysis'       => $p->analysis,
             'analysis_pidgin'  => $p->analysis_pidgin,
             'analysis_swahili' => $p->analysis_swahili,
-            'is_ai'        => $isAi,
-            'was_correct'  => $p->was_correct,
-            'actual_score' => $actualScore,
-            'live_score'   => $liveScore,
-            'match'        => [
+            'is_ai'          => $isAi,
+            'was_correct'    => $p->was_correct,
+            'actual_score'   => $actualScore,
+            'live_score'     => $liveScore,
+            'match'          => [
                 'home'        => $homeName,
                 'away'        => $awayName,
                 'league'      => \App\Support\LeagueCoverage::formatName($p->match?->league, $p->match?->league_country),

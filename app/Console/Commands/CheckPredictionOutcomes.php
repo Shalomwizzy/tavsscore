@@ -88,6 +88,24 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
                     }
 
+                    if ($prediction->is_draw_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '🤝 Draw Pick WON! 💰',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — Draw confirmed! ✅",
+                            path:  '/draw-picks',
+                        );
+                        $telegram->sendDrawOutcome($matchLabel, $score, true, $siteUrl, $league);
+                    }
+
+                    if ($prediction->is_gg_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '⚽ GG Pick WON! Both Teams Scored! 🔥',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — Both teams scored! ✅",
+                            path:  '/gg-picks',
+                        );
+                        $telegram->sendGGOutcome($matchLabel, $score, true, $siteUrl, $league);
+                    }
+
                     // Winner upload reminder on every win
                     $reminderKey = "winner_reminder_pred_{$prediction->id}";
                     if (! Cache::has($reminderKey)) {
@@ -124,6 +142,24 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl, $league);
                     }
 
+                    if ($prediction->is_draw_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '😔 Draw Pick Lost',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — not a draw this time. Back tomorrow 💪",
+                            path:  '/draw-picks',
+                        );
+                        $telegram->sendDrawOutcome($matchLabel, $score, false, $siteUrl, $league);
+                    }
+
+                    if ($prediction->is_gg_pick) {
+                        $oneSignal->sendPickOutcome(
+                            title: '😔 GG Pick Lost',
+                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — not both teams scored. Back tomorrow 💪",
+                            path:  '/gg-picks',
+                        );
+                        $telegram->sendGGOutcome($matchLabel, $score, false, $siteUrl, $league);
+                    }
+
                     Cache::put($cacheKey, true, now()->addDays(2));
                 }
             }
@@ -133,9 +169,13 @@ class CheckPredictionOutcomes extends Command
         Log::info("CheckPredictionOutcomes: resolved {$resolved} predictions.");
 
         // ── 2. Correct score outcomes ─────────────────────────────────────────
+        // IMPORTANT: we gate on the DB column `correct_score_notified` (not just
+        // cache) so that cache:clear during a deploy never re-fires notifications
+        // for matches that have already been reported.
         $scorePredictions = Prediction::query()
             ->with('match')
             ->whereNotNull('likely_scores')
+            ->where('correct_score_notified', false)
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
                 ->whereNotNull('home_score')
@@ -148,9 +188,6 @@ class CheckPredictionOutcomes extends Command
         foreach ($scorePredictions as $prediction) {
             $match = $prediction->match;
             if (! $match) continue;
-
-            $cacheKey = "correct_score_notified_{$prediction->id}";
-            if (Cache::has($cacheKey)) continue;
 
             $actualScore   = (int) $match->home_score . '-' . (int) $match->away_score;
             $league        = $match->league ?? '';
@@ -192,7 +229,8 @@ class CheckPredictionOutcomes extends Command
 
             $telegram->sendCorrectScoreOutcome($matchLabel, $predictedList, $actualScore, $won, $siteUrl, $league);
 
-            Cache::put($cacheKey, true, now()->addDays(2));
+            // Mark in DB so this never fires again even after cache:clear
+            $prediction->update(['correct_score_notified' => true]);
         }
 
         // ── 3. Rollover picks ─────────────────────────────────────────────────

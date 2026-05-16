@@ -33,16 +33,6 @@
         transition: background 160ms, opacity 160ms, transform 160ms;
     }
     .gen-btn:hover:not(:disabled) { background:rgba(16,185,129,.22); transform:translateY(-1px); }
-    .gen-btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; }
-
-    .gen-spinner {
-        display: none; width:13px; height:13px;
-        border: 2px solid rgba(110,231,183,.3); border-top-color: #6ee7b7;
-        border-radius: 50%; animation: spin .65s linear infinite;
-    }
-    .gen-btn.loading .gen-spinner { display:inline-block; }
-    .gen-btn.loading .gen-icon    { display:none; }
-
     /* League section */
     .pred-league-section { margin-bottom: 1.25rem; }
 
@@ -237,14 +227,6 @@
     /* Empty/loading */
     .gen-prompt { display:flex; flex-direction:column; align-items:center; gap:.65rem; }
 
-    .auto-notice {
-        display:flex; align-items:center; gap:.5rem;
-        padding:.5rem .875rem; border-radius:8px;
-        background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2);
-        color:#93c5fd; font-size:.75rem; font-weight:600;
-        margin-bottom:1rem;
-    }
-
     /* Archive / date picker */
     .archive-nav-p {
         display:flex; flex-wrap:wrap; gap:.45rem; align-items:center;
@@ -300,17 +282,11 @@
         </div>
         <div class="preds-actions">
             <span class="count-text" id="pred-count"></span>
-            @if($dateMeta['is_today'])
-            <button id="gen-btn" class="gen-btn" type="button">
-                <span class="gen-spinner"></span>
-                <span class="gen-icon">🔄</span>
-                Refresh Predictions
-            </button>
-            @else
+            @unless($dateMeta['is_today'])
             <a href="{{ route('predictions.index') }}" class="gen-btn" style="text-decoration:none;">
                 <span class="gen-icon">↩</span> Back to today
             </a>
-            @endif
+            @endunless
         </div>
     </div>
 
@@ -345,11 +321,6 @@
         @endunless
     </form>
 
-    <div id="auto-notice" class="auto-notice" style="display:none">
-        <span class="spin" style="width:12px;height:12px;border-width:2px;"></span>
-        Generating predictions for today's matches…
-    </div>
-
     <div id="loading-state" class="state-box">
         <span class="state-icon"><span class="spin"></span></span>
         <div class="state-title">Loading predictions…</div>
@@ -365,9 +336,9 @@
     <div id="empty-state" class="state-box" style="display:none">
         <div class="gen-prompt">
             <span class="state-icon">🔮</span>
-            <div class="state-title">No matches to predict yet</div>
-            <p class="state-sub">There are no upcoming matches in the database.<br>
-                Run <code style="font-size:.78rem;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px">php artisan fetch:matches</code> to pull today's fixtures.</p>
+            <div class="state-title">Predictions coming soon</div>
+            <p class="state-sub">Today's predictions are generated automatically at 06:00 Lagos time.<br>
+                Check back shortly or visit <a href="{{ route('picks.index') }}" style="color:#6ee7b7;">Daily Picks</a> for our top 3 picks.</p>
         </div>
     </div>
 
@@ -384,17 +355,12 @@
 
     var ARCHIVE_DATE = @json($dateMeta['is_today'] ? null : $dateMeta['iso']);
     var PRED_API = @json(url('/api/predictions')) + (ARCHIVE_DATE ? ('?date=' + ARCHIVE_DATE) : '');
-    var GEN_API  = @json(url('/api/predictions/generate'));
-    var CSRF     = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
-
     /* DOM */
     var elLoading = document.getElementById('loading-state');
     var elError   = document.getElementById('error-state');
     var elEmpty   = document.getElementById('empty-state');
     var elList    = document.getElementById('preds-list');
     var elCount   = document.getElementById('pred-count');
-    var elNotice  = document.getElementById('auto-notice');
-    var genBtn    = document.getElementById('gen-btn');
 
     /* Top-league sort order (API-Football IDs) */
     var TOP_ORDER = [2,3,39,61,78,135,140,848,88,94,40,48,45,144,179,203,253,71,307,262,292];
@@ -414,12 +380,6 @@
         elError.style.display   = s === 'error'   ? '' : 'none';
         elEmpty.style.display   = s === 'empty'   ? '' : 'none';
         elList.style.display    = s === 'ready'   ? 'block' : 'none';
-    }
-
-    function setGenerating(on) {
-        genBtn.disabled = on;
-        genBtn.classList.toggle('loading', on);
-        elNotice.style.display = on ? 'flex' : 'none';
     }
 
     /* Escape */
@@ -739,22 +699,7 @@
         showState('ready');
     }
 
-    /* Generate predictions via POST then render */
-    function generate(silent) {
-        setGenerating(true);
-        if (!silent) showState('loading');
-
-        fetch(GEN_API, {
-            method: 'POST',
-            headers: { 'Accept':'application/json', 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF },
-        })
-        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-        .then(function(d){ renderList(Array.isArray(d.data) ? d.data : []); })
-        .catch(function(){ showState('error'); })
-        .finally(function(){ setGenerating(false); });
-    }
-
-    /* Load predictions - auto-generate if empty */
+    /* Load predictions and render */
     window.loadPredictions = function () {
         showState('loading');
         elCount.textContent = '';
@@ -764,18 +709,13 @@
             .then(function(d){
                 var preds = Array.isArray(d.data) ? d.data : [];
                 if (preds.length === 0) {
-                    /* Auto-generate silently */
-                    generate(true);
+                    showState('empty');
                 } else {
                     renderList(preds);
                 }
             })
             .catch(function(){ showState('error'); });
     };
-
-    if (genBtn) {
-        genBtn.addEventListener('click', function(){ generate(false); });
-    }
 
     loadPredictions();
 }());

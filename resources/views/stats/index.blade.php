@@ -205,6 +205,35 @@
 </div>
 @endforeach
 
+{{-- ── Triple-AI Pick Suites ── --}}
+<section class="s-section">
+    <div class="section-label">Pick Suites</div>
+    <h2 class="section-title" style="font-size:1.2rem;">Triple-AI verified picks accuracy</h2>
+    <p style="font-size:.82rem; color:var(--text-dim); line-height:1.6; margin-bottom:1.25rem;">
+        Draw Picks and GG Picks require all 3 independent AI engines to agree — tighter filters, stronger signal.
+    </p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
+        @php
+            $dpct = $drawStat['pct'];
+            $dcls = $dpct === null ? 'pct-none' : ($dpct >= 60 ? 'pct-good' : ($dpct >= 45 ? 'pct-ok' : 'pct-low'));
+            $gpct = $ggStat['pct'];
+            $gcls = $gpct === null ? 'pct-none' : ($gpct >= 60 ? 'pct-good' : ($gpct >= 45 ? 'pct-ok' : 'pct-low'));
+        @endphp
+        <div class="big-tile" style="border-color:rgba(245,158,11,.25);background:linear-gradient(135deg,rgba(245,158,11,.08),transparent);text-align:center;">
+            <div style="font-size:.7rem;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">🤝 Draw Picks</div>
+            <div class="big-num {{ $dcls }}" style="font-size:2.4rem;">{{ $dpct !== null ? $dpct.'%' : '—' }}</div>
+            <div class="big-lbl">{{ $drawStat['correct'] }} won · {{ $drawStat['total'] }} resolved</div>
+            <a href="{{ route('draw-picks.index') }}" style="display:inline-block;margin-top:.75rem;font-size:.72rem;color:#fcd34d;text-decoration:none;font-weight:700;">Today's picks →</a>
+        </div>
+        <div class="big-tile" style="border-color:rgba(16,185,129,.25);background:linear-gradient(135deg,rgba(16,185,129,.08),transparent);text-align:center;">
+            <div style="font-size:.7rem;font-weight:700;color:#6ee7b7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">⚽ GG Picks</div>
+            <div class="big-num {{ $gcls }}" style="font-size:2.4rem;">{{ $gpct !== null ? $gpct.'%' : '—' }}</div>
+            <div class="big-lbl">{{ $ggStat['correct'] }} won · {{ $ggStat['total'] }} resolved</div>
+            <a href="{{ route('gg-picks.index') }}" style="display:inline-block;margin-top:.75rem;font-size:.72rem;color:#6ee7b7;text-decoration:none;font-weight:700;">Today's picks →</a>
+        </div>
+    </div>
+</section>
+
 {{-- ── By outcome type ── --}}
 <section class="s-section">
     <div class="section-label">Breakdown</div>
@@ -397,9 +426,9 @@
 {{-- ── Disclaimer ── --}}
 <div style="padding:1.25rem 1.5rem; background:var(--card); border:1px solid var(--border); border-radius:12px; font-size:.78rem; color:var(--text-dim); line-height:1.75; margin-top:2rem;">
     <strong style="color:var(--text);">About these stats:</strong>
-    Accuracy is measured on our daily picks only - the 3 highest-confidence predictions each day.
-    Past performance is not a guarantee of future results.
-    These predictions are for entertainment purposes only.
+    Daily pick accuracy covers our 3 highest-confidence predictions per day.
+    Draw Picks and GG Picks are tracked separately — they use a stricter triple-AI consensus filter.
+    Past performance is not a guarantee of future results. These predictions are for entertainment purposes only.
 </div>
 
 @endif

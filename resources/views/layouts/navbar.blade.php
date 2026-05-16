@@ -23,7 +23,7 @@
                class="nav-pill {{ request()->routeIs('predictions.*') ? 'active' : '' }}">Predictions</a>
 
             {{-- Picks dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('picks.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
+            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     ⭐ Picks
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -32,6 +32,14 @@
                     <a href="{{ route('picks.index') }}" class="nav-drop-item {{ request()->routeIs('picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">⭐</span>
                         <span><span class="ndi-label">Daily Picks</span><span class="ndi-sub">Top 3 picks today</span></span>
+                    </a>
+                    <a href="{{ route('draw-picks.index') }}" class="nav-drop-item {{ request()->routeIs('draw-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🤝</span>
+                        <span><span class="ndi-label">Draw Picks</span><span class="ndi-sub">Triple AI draw predictions</span></span>
+                    </a>
+                    <a href="{{ route('gg-picks.index') }}" class="nav-drop-item {{ request()->routeIs('gg-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">⚽</span>
+                        <span><span class="ndi-label">GG Picks</span><span class="ndi-sub">Both teams to score</span></span>
                     </a>
                     <a href="{{ route('rollover.index') }}" class="nav-drop-item {{ request()->routeIs('rollover.*') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🔄</span>
@@ -55,7 +63,7 @@
             </a>
 
             {{-- More dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('stats.index','results.index','winners.*','hall-of-fame.*','blog.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
+            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','winners.*','hall-of-fame.*','blog.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     More
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -64,6 +72,10 @@
                     <a href="{{ route('stats.index') }}" class="nav-drop-item {{ request()->routeIs('stats.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📊</span>
                         <span><span class="ndi-label">Stats</span><span class="ndi-sub">AI accuracy & records</span></span>
+                    </a>
+                    <a href="{{ route('track-record.index') }}" class="nav-drop-item {{ request()->routeIs('track-record.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">📈</span>
+                        <span><span class="ndi-label">Track Record</span><span class="ndi-sub">Verified results over time</span></span>
                     </a>
                     <a href="{{ route('results.index') }}" class="nav-drop-item {{ request()->routeIs('results.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📜</span>
@@ -152,6 +164,20 @@
                 <small>Top 3 picks today</small>
             </span>
         </a>
+        <a href="{{ route('draw-picks.index') }}" class="drawer-item {{ request()->routeIs('draw-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🤝</span>
+            <span class="di-text">
+                Draw Picks
+                <small>Triple AI draw predictions</small>
+            </span>
+        </a>
+        <a href="{{ route('gg-picks.index') }}" class="drawer-item {{ request()->routeIs('gg-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">⚽</span>
+            <span class="di-text">
+                GG Picks
+                <small>Both teams to score</small>
+            </span>
+        </a>
         <a href="{{ route('rollover.index') }}" class="drawer-item {{ request()->routeIs('rollover.*') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🔄</span>
             <span class="di-text">
@@ -180,6 +206,10 @@
         <a href="{{ route('stats.index') }}" class="drawer-item {{ request()->routeIs('stats.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📊</span>
             <span class="di-text">Stats</span>
+        </a>
+        <a href="{{ route('track-record.index') }}" class="drawer-item {{ request()->routeIs('track-record.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">📈</span>
+            <span class="di-text">Track Record</span>
         </a>
         <a href="{{ route('results.index') }}" class="drawer-item {{ request()->routeIs('results.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📜</span>

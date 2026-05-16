@@ -12,7 +12,7 @@ class NotifyDailyPicks extends Command
 {
     protected $signature = 'picks:notify';
 
-    protected $description = 'Send push notification and Telegram post with today\'s daily picks at 08:00 Lagos.';
+    protected $description = 'Send push notification and Telegram post with today\'s daily picks, draw picks, and GG picks at 08:00 Lagos.';
 
     public function handle(OneSignalService $oneSignal, TelegramService $telegram): int
     {
@@ -20,6 +20,7 @@ class NotifyDailyPicks extends Command
         $today  = CarbonImmutable::now($tz)->startOfDay();
         $cutoff = CarbonImmutable::now($tz)->endOfDay();
 
+        // ── Daily picks ────────────────────────────────────────────
         $picks = Prediction::query()
             ->with('match')
             ->where('is_daily_pick', true)
@@ -27,40 +28,111 @@ class NotifyDailyPicks extends Command
             ->orderBy('pick_rank')
             ->get();
 
-        if ($picks->isEmpty()) {
-            $this->warn('No daily picks found for today - notification skipped.');
-            return self::SUCCESS;
+        if ($picks->isNotEmpty()) {
+            $lines = $picks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                $conf = $p->confidence ? " ({$p->confidence}%)" : '';
+                return "{$match->home_team} vs {$match->away_team}: {$p->predicted_outcome}{$conf}";
+            })->filter()->values();
+
+            $oneSignal->sendMatchAlert(
+                title:   '🎯 Today\'s Daily Picks Are Live!',
+                message: $lines->implode(' | ') . ' - Tap for full analysis',
+                path:    '/picks',
+            );
+
+            $telegramPicks = $picks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                return [
+                    'match'      => "{$match->home_team} vs {$match->away_team}",
+                    'league'     => $match->league ?? '',
+                    'tip'        => $p->predicted_outcome ?? '',
+                    'confidence' => $p->confidence ?? '',
+                ];
+            })->filter()->values()->toArray();
+
+            $telegram->sendDailyPicks($telegramPicks, config('app.url'));
+        } else {
+            $this->warn('No daily picks found for today — daily notification skipped.');
         }
 
-        $lines = $picks->map(function ($p) {
-            $match = $p->match;
-            if (! $match) return null;
-            $conf = $p->confidence ? " ({$p->confidence}%)" : '';
-            return "{$match->home_team} vs {$match->away_team}: {$p->predicted_outcome}{$conf}";
-        })->filter()->values();
+        // ── Draw picks ─────────────────────────────────────────────
+        $drawPicks = Prediction::query()
+            ->with('match')
+            ->where('is_draw_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->orderBy('draw_rank')
+            ->get();
 
-        // OneSignal push
-        $oneSignal->sendMatchAlert(
-            title:   '🎯 Today\'s Daily Picks Are Live!',
-            message: $lines->implode(' | ') . ' - Tap for full analysis',
-            path:    '/picks',
-        );
+        if ($drawPicks->isNotEmpty()) {
+            $drawLines = $drawPicks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                $conf = $p->confidence ? " ({$p->confidence}%)" : '';
+                return "{$match->home_team} vs {$match->away_team}: Draw{$conf}";
+            })->filter()->values();
 
-        // Telegram - daily picks
-        $telegramPicks = $picks->map(function ($p) {
-            $match = $p->match;
-            if (! $match) return null;
-            return [
-                'match'      => "{$match->home_team} vs {$match->away_team}",
-                'league'     => $match->league ?? '',
-                'tip'        => $p->predicted_outcome ?? '',
-                'confidence' => $p->confidence ?? '',
-            ];
-        })->filter()->values()->toArray();
+            $oneSignal->sendMatchAlert(
+                title:   '🤝 Today\'s Draw Picks — Triple AI Agreed!',
+                message: $drawLines->implode(' | ') . ' - Tap for analysis',
+                path:    '/draw-picks',
+            );
 
-        $telegram->sendDailyPicks($telegramPicks, config('app.url'));
+            $telegramDrawPicks = $drawPicks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                return [
+                    'match'      => "{$match->home_team} vs {$match->away_team}",
+                    'league'     => $match->league ?? '',
+                    'confidence' => $p->confidence ?? '',
+                ];
+            })->filter()->values()->toArray();
 
-        // Telegram - correct score predictions for all today's matches
+            $telegram->sendDrawPicks($telegramDrawPicks, config('app.url'));
+        } else {
+            $this->warn('No draw picks found for today — draw notification skipped.');
+        }
+
+        // ── GG picks ───────────────────────────────────────────────
+        $ggPicks = Prediction::query()
+            ->with('match')
+            ->where('is_gg_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->orderBy('gg_rank')
+            ->get();
+
+        if ($ggPicks->isNotEmpty()) {
+            $ggLines = $ggPicks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                $conf = $p->confidence ? " ({$p->confidence}%)" : '';
+                return "{$match->home_team} vs {$match->away_team}: GG{$conf}";
+            })->filter()->values();
+
+            $oneSignal->sendMatchAlert(
+                title:   '⚽ Today\'s GG Picks — Both Teams to Score!',
+                message: $ggLines->implode(' | ') . ' - Tap for analysis',
+                path:    '/gg-picks',
+            );
+
+            $telegramGGPicks = $ggPicks->map(function ($p) {
+                $match = $p->match;
+                if (! $match) return null;
+                return [
+                    'match'      => "{$match->home_team} vs {$match->away_team}",
+                    'league'     => $match->league ?? '',
+                    'confidence' => $p->confidence ?? '',
+                ];
+            })->filter()->values()->toArray();
+
+            $telegram->sendGGPicks($telegramGGPicks, config('app.url'));
+        } else {
+            $this->warn('No GG picks found for today — GG notification skipped.');
+        }
+
+        // ── Correct score predictions ──────────────────────────────
         $scorePredictions = Prediction::query()
             ->with('match')
             ->whereNotNull('likely_scores')
@@ -82,7 +154,12 @@ class NotifyDailyPicks extends Command
             $telegram->sendCorrectScores($scorePredictions, config('app.url'));
         }
 
-        $this->info("Sent {$picks->count()} picks + correct scores via OneSignal and Telegram.");
+        $this->info(sprintf(
+            'Sent %d picks, %d draw picks, %d GG picks + correct scores.',
+            $picks->count(),
+            $drawPicks->count(),
+            $ggPicks->count(),
+        ));
 
         return self::SUCCESS;
     }

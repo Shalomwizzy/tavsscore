@@ -258,6 +258,12 @@
             <a href="{{ route('admin.picks') }}" class="sb-link {{ request()->routeIs('admin.picks') ? 'active' : '' }}">
                 <span class="sb-icon">⭐</span> Daily Picks
             </a>
+            <a href="{{ route('admin.draw-picks.index') }}" class="sb-link {{ request()->routeIs('admin.draw-picks.*') ? 'active' : '' }}">
+                <span class="sb-icon">🤝</span> Draw Picks
+            </a>
+            <a href="{{ route('admin.gg-picks.index') }}" class="sb-link {{ request()->routeIs('admin.gg-picks.*') ? 'active' : '' }}">
+                <span class="sb-icon">⚽</span> GG Picks
+            </a>
             <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
                 <span class="sb-icon">📬</span> Newsletter
             </a>
@@ -281,6 +287,10 @@
                 <span class="sb-icon">📊</span> Stats
             </a>
 
+            <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}">
+                <span class="sb-icon">🧠</span> AI Learning
+            </a>
+
             <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <span class="sb-icon">⚙️</span> Settings
             </a>
@@ -291,6 +301,12 @@
             </a>
             <a href="{{ route('picks.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">↗</span> Public Picks
+            </a>
+            <a href="{{ route('draw-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Draw Picks
+            </a>
+            <a href="{{ route('gg-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public GG Picks
             </a>
             <a href="{{ route('blog.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">📰</span> View Blog

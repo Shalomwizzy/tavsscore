@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Correct Score Predictions | TavsScore - AI Scoreline Predictions')
-@section('meta_description', 'AI-powered correct score predictions for today\'s matches. See the most likely scorelines calculated from Poisson statistical models and team data.')
+@section('title', 'Correct Score Predictions | TavsScore — High-Risk AI Scoreline Forecasts')
+@section('meta_description', 'AI exact score forecasts using Poisson models and team data. High-risk / long-shot predictions — best for insight and fun, not as a primary betting strategy.')
+@section('og_image', asset('images/og-correct-score.jpg'))
 
 @push('styles')
 <style>
@@ -104,19 +105,25 @@
 
     {{-- Hero --}}
     <div class="cs-hero">
-        <div class="cs-badge">🎯 CORRECT SCORE</div>
-        <h1 class="cs-title">Correct Score Predictions</h1>
+        <div class="cs-badge">🎯 CORRECT SCORE · HIGH RISK</div>
+        <h1 class="cs-title">Correct Score Forecasts</h1>
         <p class="cs-sub">
-            Most likely scorelines for today's matches, calculated using Poisson statistical modelling
-            from each team's attack strength, defence record and recent form.
+            Our AI's most likely scorelines, derived from Poisson modelling, attack/defence ratings and recent form.
+            Exact scores are the hardest market in football — use these for insight, fun, or small-stake long shots, not as a primary strategy.
         </p>
     </div>
 
-    {{-- Disclaimer --}}
+    {{-- Risk disclaimer --}}
     <div class="cs-disclaimer">
-        ⚠️ Correct score markets are the hardest to predict in football. These are statistical probabilities, not certainties.
-        Always combine with our <a href="{{ route('picks.index') }}" style="color:#c4b5fd; font-weight:700;">Daily Picks</a> for context.
-        Never stake more than you can afford to lose.
+        <strong style="color:#fff;">⚠️ High-Risk Market.</strong>
+        Correct score is significantly harder to predict than 1X2, Over/Under, or BTTS.
+        Even a strong AI model will miss exact scores regularly — that is the nature of the market.
+        Use these as <strong>long-shot entertainment</strong>, not primary picks.
+        For lower-risk AI picks see our
+        <a href="{{ route('picks.index') }}" style="color:#c4b5fd;font-weight:700;">Daily Picks</a>,
+        <a href="{{ route('gg-picks.index') }}" style="color:#c4b5fd;font-weight:700;">GG Picks</a>, or
+        <a href="{{ route('draw-picks.index') }}" style="color:#c4b5fd;font-weight:700;">Draw Picks</a>.
+        🔞 18+ only · Never stake what you cannot afford to lose.
     </div>
 
     {{-- Grid --}}

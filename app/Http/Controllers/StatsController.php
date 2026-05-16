@@ -100,11 +100,20 @@ class StatsController extends Controller
             return array_merge($bucket, $stat);
         });
 
+        // ── Draw picks accuracy ───────────────────────────────────
+        $drawResolved = Prediction::where('is_draw_pick', true)->whereNotNull('was_correct')->get(['was_correct']);
+        $drawStat     = $this->stat($drawResolved);
+
+        // ── GG picks accuracy ─────────────────────────────────────
+        $ggResolved = Prediction::where('is_gg_pick', true)->whereNotNull('was_correct')->get(['was_correct']);
+        $ggStat     = $this->stat($ggResolved);
+
         return view('stats.index', compact(
             'total', 'correct', 'overall',
             'byOutcome', 'byLeague', 'weekly',
             'recentLog', 'periodStats',
             'byCategory', 'calibration',
+            'drawStat', 'ggStat',
         ));
     }
 

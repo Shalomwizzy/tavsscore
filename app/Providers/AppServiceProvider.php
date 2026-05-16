@@ -13,15 +13,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (Schema::hasTable('settings')) {
-            $telegramUrl = Setting::get('telegram_url', 'https://t.me/tavsscore');
-            $twitterUrl  = Setting::get('twitter_url',  'https://x.com/tavsscore');
+        $telegramUrl = 'https://t.me/tavsscore';
+        $twitterUrl  = 'https://x.com/tavsscore';
 
-            View::share('telegramUrl', $telegramUrl);
-            View::share('twitterUrl',  $twitterUrl);
-        } else {
-            View::share('telegramUrl', 'https://t.me/tavsscore');
-            View::share('twitterUrl',  'https://x.com/tavsscore');
+        try {
+            if (Schema::hasTable('settings')) {
+                $telegramUrl = Setting::get('telegram_url', $telegramUrl);
+                $twitterUrl  = Setting::get('twitter_url',  $twitterUrl);
+            }
+        } catch (\Throwable) {
+            // DB unavailable during early boot (artisan commands, test setup, fresh install)
         }
+
+        View::share('telegramUrl', $telegramUrl);
+        View::share('twitterUrl',  $twitterUrl);
     }
 }

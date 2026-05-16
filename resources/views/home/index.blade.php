@@ -128,6 +128,7 @@
 @media (max-width: 540px) {
     .nsc-grid       { grid-template-columns: 1fr; }
     .community-grid { grid-template-columns: 1fr; }
+    .install-notif-grid { grid-template-columns: 1fr !important; }
 }
 </style>
 @endpush
@@ -255,7 +256,41 @@
                 </div>
             </a>
 
-            {{-- ── 4. ROLLOVER CHALLENGE ── --}}
+            {{-- ── 4. DRAW PICKS ── --}}
+            <a href="{{ route('draw-picks.index') }}" class="nsc-card">
+                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(245,158,11,.04));">
+                    <span class="nsc-emoji">🤝</span>
+                    <span class="nsc-live-tag" style="background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#fcd34d;">Triple AI</span>
+                </div>
+                <div class="nsc-body">
+                    <div class="nsc-title">Draw Picks</div>
+                    <p class="nsc-desc">
+                        Draws are the hardest market to get right — so we hold them to a higher standard.
+                        A draw pick only appears here when all three independent AI engines separately analyse the match
+                        and all three reach the same conclusion: it will end level. Triple agreement, no exceptions.
+                    </p>
+                    <div class="nsc-cta" style="color:#fcd34d;">View Draw Picks →</div>
+                </div>
+            </a>
+
+            {{-- ── 5. GG PICKS ── --}}
+            <a href="{{ route('gg-picks.index') }}" class="nsc-card">
+                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(59,130,246,.06));">
+                    <span class="nsc-emoji">⚽</span>
+                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#6ee7b7;">Triple AI</span>
+                </div>
+                <div class="nsc-body">
+                    <div class="nsc-title">GG Picks</div>
+                    <p class="nsc-desc">
+                        Both teams to score is one of the most popular markets in African betting.
+                        Our GG picks are only published when all three AI engines independently predict
+                        that both sides will get on the scoresheet — high conviction, nothing speculative.
+                    </p>
+                    <div class="nsc-cta" style="color:#6ee7b7;">View GG Picks →</div>
+                </div>
+            </a>
+
+            {{-- ── 6. ROLLOVER CHALLENGE ── --}}
             <a href="{{ route('rollover.index') }}" class="nsc-card">
                 <div class="nsc-header" style="background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(99,102,241,.04));">
                     <span class="nsc-emoji">🔄</span>
@@ -706,6 +741,60 @@
             <span class="league-pill">🇿🇦 PSL</span>
             <span class="league-pill">🌍 CAF CL</span>
             <span class="league-pill">+ more</span>
+        </div>
+    </div>
+</section>
+
+{{-- ══════════════════════════════════════════
+     INSTALL APP + NOTIFICATIONS CTA
+══════════════════════════════════════════ --}}
+<section style="padding: 3rem 0 4rem;">
+    <div class="wrap">
+        <div class="install-notif-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; margin:0 auto;">
+
+            {{-- Install card --}}
+            <div style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02)); border:1px solid rgba(16,185,129,.2); border-radius:18px; padding:1.75rem;">
+                <div style="font-size:2rem; margin-bottom:.75rem;">📲</div>
+                <h3 style="font-size:1.1rem; font-weight:900; color:#fff; letter-spacing:-.02em; margin-bottom:.5rem;">Add to Your Home Screen</h3>
+                <p style="font-size:.85rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
+                    TavsScore works like a native app. Add it to your phone's home screen for one-tap access to live scores and daily picks — no app store, no installs.
+                </p>
+                <div style="font-size:.8rem; color:var(--text-dim); margin-bottom:.6rem; font-weight:700;">How to install:</div>
+                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:.5rem;">
+                    <strong style="color:var(--text);">iPhone (Safari):</strong> Tap the Share button ⬆️ → "Add to Home Screen" → Add
+                </div>
+                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
+                    <strong style="color:var(--text);">Android (Chrome):</strong> Tap the ⋮ menu → "Add to Home screen" → Install
+                </div>
+                <button onclick="openInstallGuide()" style="display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1.1rem; border-radius:9px; background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:#6ee7b7; font-size:.82rem; font-weight:700; cursor:pointer;">
+                    Full install guide →
+                </button>
+            </div>
+
+            {{-- Notifications card --}}
+            <div style="background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.02)); border:1px solid rgba(59,130,246,.2); border-radius:18px; padding:1.75rem;">
+                <div style="font-size:2rem; margin-bottom:.75rem;">🔔</div>
+                <h3 style="font-size:1.1rem; font-weight:900; color:#fff; letter-spacing:-.02em; margin-bottom:.5rem;">Get Free Pick Alerts</h3>
+                <p style="font-size:.85rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
+                    Never miss a pick. Subscribe to push notifications and we'll send you today's AI picks at 08:00 Lagos every morning, plus live goal alerts and outcome results.
+                </p>
+                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:.5rem;">
+                    <strong style="color:var(--text);">What you get:</strong>
+                </div>
+                <ul style="font-size:.8rem; color:var(--text-dim); line-height:1.8; margin:0 0 1.1rem; padding-left:1.25rem;">
+                    <li>🎯 Daily picks at 08:00 every morning</li>
+                    <li>⚽ Goal alerts for live matches</li>
+                    <li>✅ Outcome notifications when picks settle</li>
+                    <li>🔄 Rollover pick updates</li>
+                </ul>
+                <button onclick="requestPushPermission()" style="display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1.1rem; border-radius:9px; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); color:#93c5fd; font-size:.82rem; font-weight:700; cursor:pointer;">
+                    🔔 Enable notifications →
+                </button>
+                <div style="font-size:.72rem; color:var(--text-dim); margin-top:.65rem;">
+                    Already subscribed? The bell icon 🔔 in the bottom-right lets you manage preferences.
+                </div>
+            </div>
+
         </div>
     </div>
 </section>
