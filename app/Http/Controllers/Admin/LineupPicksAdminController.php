@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class LineupPicksAdminController extends Controller
@@ -39,5 +41,13 @@ class LineupPicksAdminController extends Controller
             ->groupBy(fn ($p) => $p->match?->match_time?->setTimezone($tz)->format('Y-m-d') ?? 'unknown');
 
         return view('admin.lineup-picks.index', compact('todayPicks', 'history'));
+    }
+
+    public function sendNotification(): RedirectResponse
+    {
+        Artisan::call('picks:notify', ['--type' => 'lineup']);
+
+        return redirect()->route('admin.lineup-picks.index')
+            ->with('success', 'Lineup picks notification pushed to Telegram and OneSignal.');
     }
 }

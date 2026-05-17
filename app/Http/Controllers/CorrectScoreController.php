@@ -16,12 +16,12 @@ class CorrectScoreController extends Controller
 
         $predictions = Prediction::query()
             ->with('match')
-            ->whereNotNull('likely_scores')
+            ->where('is_correct_score_pick', true)
             ->whereHas('match', fn ($q) => $q
                 ->whereBetween('match_time', [$today, $cutoff])
                 ->whereNotIn('status', ['CANC', 'PST'])
             )
-            ->orderByDesc('confidence')
+            ->orderBy('correct_score_rank')
             ->get()
             ->filter(fn ($p) => ! empty($p->likely_scores));
 

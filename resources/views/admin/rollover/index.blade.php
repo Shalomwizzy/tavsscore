@@ -72,6 +72,7 @@
                 <tr>
                     <th>Day</th>
                     <th>Match</th>
+                    <th>League</th>
                     <th>Tip</th>
                     <th>AI Consensus</th>
                     <th>Odds</th>
@@ -88,6 +89,9 @@
                 <tr>
                     <td style="font-weight:800; color:#fcd34d;">Day {{ $rp->day_number }}</td>
                     <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $rm?->home_team }} vs {{ $rm?->away_team }}</td>
+                    <td style="color:var(--dim); font-size:.74rem; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ \App\Support\LeagueCoverage::formatName($rm?->league, $rm?->league_country) }}
+                    </td>
                     <td style="color:#6ee7b7; font-weight:700;">{{ $rp->groq_verdict }}</td>
                     <td style="font-size:.72rem;">
                         <span style="color:#a5b4fc;">G: {{ $rp->groq_verdict }}</span><br>

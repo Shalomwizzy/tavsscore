@@ -19,7 +19,7 @@ class PredictionService
     private const MIN_XG              = 0.30;
     private const MAX_XG              = 4.50;
     private const MAX_GOALS_GRID      = 8;
-    private const MAX_DAILY_PICKS     = 50;   // quality over quantity
+    private const MAX_DAILY_PICKS     = 100;  // covers full European slate on busy Saturdays
     private const COMPLETED_STATUSES  = ['FT', 'AET', 'PEN'];
     private const EXCLUDED_UPCOMING_STATUSES = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
@@ -31,6 +31,7 @@ class PredictionService
         private readonly NewsService              $newsService,
         private readonly LineupService            $lineupService,
         private readonly AdaptiveThresholdService $adaptive,
+        private readonly PiRatingService          $piRating,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -51,9 +52,27 @@ class PredictionService
         // ── Extended stats (powers both Poisson and the AI prompt) ──
         $homeStats = $this->extendedTeamStats($match->home_team, $match->match_time, $match->id);
         $awayStats = $this->extendedTeamStats($match->away_team, $match->match_time, $match->id);
-        $homeXg    = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
-        $awayXg    = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
+
+        // Venue-aware xG: use home-specific scoring vs away-specific conceding rates
+        // when enough split samples exist (≥3), blended 60/40 with overall rates for stability.
+        $homeXgVenue   = $this->homeAttackStrength($homeStats) * $this->awayConceding($awayStats) * self::HOME_ADVANTAGE;
+        $homeXgOverall = $this->attackStrength($homeStats)     * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE;
+        $awayXgVenue   = $this->awayAttackStrength($awayStats) * $this->homeConceding($homeStats);
+        $awayXgOverall = $this->attackStrength($awayStats)     * $this->defenseWeakness($homeStats);
+
+        $homeXg = $this->clampXg($homeXgVenue * 0.60 + $homeXgOverall * 0.40);
+        $awayXg = $this->clampXg($awayXgVenue * 0.60 + $awayXgOverall * 0.40);
         $poisson   = $this->poissonProbabilities($homeXg, $awayXg);
+
+        // Pi-rating differential: positive = home stronger, negative = away stronger
+        $piRatings = $this->piRating->ratingsFor($match->home_team, $match->away_team);
+
+        // Match importance flags (derby, rivalry, late season, struggling teams)
+        $importance = $this->matchImportanceContext($match, $homeStats, $awayStats);
+
+        // Per-league calibration (draw rate, predictability tier)
+        $leagueId  = (int) $match->league_id;
+        $leagueDrawDesc = \App\Support\LeagueCalibration::drawRateDescription($leagueId);
 
         // ── H2H history ───────────────────────────────────────────
         $h2h = $this->headToHead($match->home_team, $match->away_team, $match->match_time, $match->id);
@@ -126,10 +145,33 @@ class PredictionService
             $lineupData,
             $h2h,
             $matchPreview,
+            $piRatings,
+            $homeXg,
+            $awayXg,
+            $importance,
+            $leagueDrawDesc,
         );
 
         // Respect 30 RPM: 2.1 s between calls
         usleep(2_100_000);
+
+        if ($groq === null) {
+            // Groq failed — try Gemini then Mistral for at least an outcome verdict
+            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h)
+                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h);
+
+            if ($fallback !== null) {
+                $groq = [
+                    'home_win' => $poisson['home_win'],
+                    'draw'     => $poisson['draw'],
+                    'away_win' => $poisson['away_win'],
+                    'over_25'  => $poisson['over_25'],
+                    'btts'     => $poisson['btts'],
+                    'tips'     => [['market' => $fallback['outcome'], 'confidence' => $fallback['confidence'], 'rationale' => 'AI verdict (fallback)']],
+                    'analysis' => GroqService::FALLBACK_ANALYSIS,
+                ];
+            }
+        }
 
         if ($groq !== null) {
             $homeWin = $groq['home_win'];
@@ -142,7 +184,7 @@ class PredictionService
             $tips    = $groq['tips'] ?? [];
             $analysis = $groq['analysis'];
         } else {
-            // Groq unavailable — store neutral Poisson + pending marker
+            // All AIs unavailable — store neutral Poisson + pending marker
             $homeWin  = $poisson['home_win'];
             $draw     = $poisson['draw'];
             $awayWin  = $poisson['away_win'];
@@ -214,6 +256,7 @@ class PredictionService
                 'predicted_outcome' => $primaryOutcome,
                 'tips'              => $tips,
                 'confidence'        => $primaryConfidence,
+                'pi_rating_diff'    => $piRatings['diff'],
                 'analysis'          => $analysis,
                 'likely_scores'     => $likelyScores,
                 'opening_odds'      => $openingOdds,
@@ -260,7 +303,7 @@ class PredictionService
             $candidates[] = ['market' => 'Home Team NOT to Score', 'confidence' => (int) round($awayClean), 'rationale' => 'Poisson P(home scores 0)'];
         }
 
-        $candidates = array_values(array_filter($candidates, fn ($c) => $c['confidence'] >= 50 && $c['confidence'] <= 95));
+        $candidates = array_values(array_filter($candidates, fn ($c) => $c['confidence'] >= 60 && $c['confidence'] <= 95));
         usort($candidates, fn ($a, $b) => $b['confidence'] <=> $a['confidence']);
 
         // Diversify: only one of each category so we don't return 3 goal-line tips
@@ -348,9 +391,10 @@ class PredictionService
         $groqOutcome    = $tips[0]['market']     ?? '';
         $groqConfidence = (int) ($tips[0]['confidence'] ?? 70);
 
-        // Groq itself is below 50% — exclude immediately without calling the other AIs
-        if ($groqConfidence < 50) {
-            $tips[0]['gemini_agrees'] = false;
+        // Groq itself is too uncertain — no point calling other AIs
+        if ($groqConfidence < 60) {
+            $tips[0]['gemini_agrees']   = false;
+            $tips[0]['agreement_level'] = 'speculative';
             return $tips;
         }
 
@@ -374,44 +418,55 @@ class PredictionService
             } catch (\Throwable) {}
         }
 
-        // Any configured AI below 50% confidence → hard exclude
-        if ($geminiVerdict !== null && $geminiVerdict['confidence'] < 50) {
-            $tips[0]['gemini_agrees'] = false;
-            $tips[0]['gemini_tip']    = $geminiVerdict['outcome'];
-            $tips[0]['gemini_conf']   = $geminiVerdict['confidence'];
-            return $tips;
-        }
-        if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 50) {
-            $tips[0]['gemini_agrees'] = false;
-            $tips[0]['mistral_tip']   = $mistralVerdict['outcome'];
-            $tips[0]['mistral_conf']  = $mistralVerdict['confidence'];
-            return $tips;
-        }
-
-        // All configured AIs must independently reach the same outcome as Groq
-        $groqNorm   = mb_strtolower(trim($groqOutcome));
-        $geminiOk   = $geminiVerdict  === null || mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm;
-        $mistralOk  = $mistralVerdict === null || mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm;
-        $allAgree   = $geminiOk && $mistralOk;
-
-        // Store each AI's verdict for display / debugging
+        // Store each AI's raw verdict for audit / display
         if ($geminiVerdict !== null) {
-            $tips[0]['gemini_tip']   = $geminiVerdict['outcome'];
-            $tips[0]['gemini_conf']  = $geminiVerdict['confidence'];
+            $tips[0]['gemini_tip']  = $geminiVerdict['outcome'];
+            $tips[0]['gemini_conf'] = $geminiVerdict['confidence'];
         }
         if ($mistralVerdict !== null) {
             $tips[0]['mistral_tip']  = $mistralVerdict['outcome'];
             $tips[0]['mistral_conf'] = $mistralVerdict['confidence'];
         }
-        $tips[0]['gemini_agrees'] = $allAgree;
 
-        // When all AIs agree, average all available confidences for an honest score
-        if ($allAgree) {
-            $confs = [$groqConfidence];
-            if ($geminiVerdict)  $confs[] = $geminiVerdict['confidence'];
-            if ($mistralVerdict) $confs[] = $mistralVerdict['confidence'];
-            $tips[0]['confidence'] = (int) round(array_sum($confs) / count($confs));
+        $groqNorm = mb_strtolower(trim($groqOutcome));
+
+        // An AI "agrees" only when it reaches the same outcome AND is ≥60% confident
+        $geminiOk  = $geminiVerdict  === null
+            || (mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm && $geminiVerdict['confidence']  >= 60);
+        $mistralOk = $mistralVerdict === null
+            || (mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm && $mistralVerdict['confidence'] >= 60);
+
+        $allAgree      = $geminiOk && $mistralOk;
+        $configuredAIs = 1 + ($geminiVerdict !== null ? 1 : 0) + ($mistralVerdict !== null ? 1 : 0);
+
+        // Collect confidences from agreeing AIs only (Groq always included)
+        $confs = [$groqConfidence];
+        if ($geminiOk  && $geminiVerdict  !== null) $confs[] = $geminiVerdict['confidence'];
+        if ($mistralOk && $mistralVerdict !== null)  $confs[] = $mistralVerdict['confidence'];
+        $avgAgreeConf = (int) round(array_sum($confs) / count($confs));
+
+        // ── Calibrated confidence + agreement level ───────────────
+        if ($configuredAIs === 1) {
+            // Only Groq is configured — no external validation available
+            $agreementLevel = 'unverified';
+            $finalConf      = $groqConfidence;
+        } elseif ($allAgree) {
+            // Every configured AI independently reached the same outcome
+            $agreementLevel = 'strong';
+            $finalConf      = $avgAgreeConf;
+        } elseif (count($confs) >= 2) {
+            // Groq + at least one other AI agree; remainder disagree
+            $agreementLevel = 'partial';
+            $finalConf      = max(0, $avgAgreeConf - 10);
+        } else {
+            // Groq alone — all other configured AIs disagree
+            $agreementLevel = 'conflict';
+            $finalConf      = (int) round($groqConfidence * 0.75);
         }
+
+        $tips[0]['agreement_level'] = $agreementLevel;
+        $tips[0]['gemini_agrees']   = $allAgree; // kept for picks-selection backward compat
+        $tips[0]['confidence']      = $finalConf;
 
         return $tips;
     }
@@ -572,6 +627,9 @@ class PredictionService
         $h2h          = $this->headToHead($match->home_team, $match->away_team, $match->match_time, $match->id);
 
         // Build Poisson baseline — use existing probabilities if available, otherwise compute fresh
+        $homeXgBase = $this->clampXg($this->homeAttackStrength($homeStats) * $this->homeConceding($awayStats) * self::HOME_ADVANTAGE);
+        $awayXgBase = $this->clampXg($this->awayAttackStrength($awayStats) * $this->awayConceding($homeStats));
+
         if ($existing) {
             $poisson = [
                 'home_win' => (float) ($existing->home_win_prob ?? 33),
@@ -583,10 +641,12 @@ class PredictionService
                 'btts'     => (float) ($existing->btts_prob     ?? 45),
             ];
         } else {
-            $homeXg  = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
-            $awayXg  = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
-            $poisson = $this->poissonProbabilities($homeXg, $awayXg);
+            $poisson = $this->poissonProbabilities($homeXgBase, $awayXgBase);
         }
+
+        $piRatings      = $this->piRating->ratingsFor($match->home_team, $match->away_team);
+        $importance     = $this->matchImportanceContext($match, $homeForm, $awayForm);
+        $leagueDrawDesc = \App\Support\LeagueCalibration::drawRateDescription((int) $match->league_id);
 
         $groq = $this->groqService->getPrediction(
             $match, $poisson,
@@ -596,10 +656,32 @@ class PredictionService
             $lineupData,
             $h2h,
             $matchPreview,
+            $piRatings,
+            $homeXgBase,
+            $awayXgBase,
+            $importance,
+            $leagueDrawDesc,
         );
 
         if (! $groq) {
-            return false;
+            // Groq failed — try Gemini then Mistral for a fallback verdict
+            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h)
+                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h);
+
+            if (! $fallback) {
+                return false;
+            }
+
+            $groq = [
+                'home_win'          => (float) ($existing->home_win_prob ?? $poisson['home_win']),
+                'draw'              => (float) ($existing->draw_prob     ?? $poisson['draw']),
+                'away_win'          => (float) ($existing->away_win_prob ?? $poisson['away_win']),
+                'over_25'           => (float) ($existing->over_25_prob  ?? $poisson['over_25']),
+                'btts'              => (float) ($existing->btts_prob     ?? $poisson['btts']),
+                'predicted_outcome' => $fallback['outcome'],
+                'tips'              => [['market' => $fallback['outcome'], 'confidence' => $fallback['confidence'], 'rationale' => 'AI verdict (fallback)']],
+                'analysis'          => GroqService::FALLBACK_ANALYSIS,
+            ];
         }
 
         usleep(2_100_000);
@@ -655,11 +737,14 @@ class PredictionService
         $today  = now($tz)->startOfDay();
         $cutoff = now($tz)->endOfDay();
 
+        // FIELD() returns 0 for IDs not in the list — without correction, unlisted
+        // African domestic leagues sort FIRST (0 < 1). IF(...) remaps 0 → 9999
+        // so unlisted leagues always sort after all explicitly ranked leagues.
         return FootballMatch::query()
             ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
             ->whereNotIn('status', self::EXCLUDED_UPCOMING_STATUSES)
             ->whereBetween('match_time', [$today, $cutoff])
-            ->orderByRaw("FIELD(league_id, {$order})")
+            ->orderByRaw("IF(FIELD(league_id, {$order}) = 0, 9999, FIELD(league_id, {$order}))")
             ->orderBy('match_time')
             ->limit(self::MAX_DAILY_PICKS)
             ->get();
@@ -675,60 +760,64 @@ class PredictionService
      * @param  CarbonInterface|null  $date  If provided, returns predictions for that date only
      *                                       (browse archive). If null, today's upcoming matches.
      */
-    public function allPredictions(?CarbonInterface $date = null): Collection
+    public function allPredictions(?CarbonInterface $date = null, int $page = 1): array
     {
-        $tz = config('app.timezone');
+        $tz      = config('app.timezone');
+        $perPage = 25;
+        $offset  = ($page - 1) * $perPage;
 
         if ($date !== null) {
-            // Archive view: predictions whose match was on the requested date
             $start = $date->copy()->startOfDay();
             $end   = $date->copy()->endOfDay();
 
+            $total = Prediction::query()
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$start, $end]))
+                ->count();
+
             $predictions = Prediction::query()
                 ->with('match')
-                ->whereHas('match', fn ($q) => $q
-                    ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
-                    ->whereBetween('match_time', [$start, $end])
-                )
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$start, $end]))
                 ->orderByDesc('confidence')
-                ->limit(self::MAX_DAILY_PICKS * 2)
+                ->skip($offset)->take($perPage)
                 ->get();
 
             $this->autoResolveCollection($predictions);
 
-            return $predictions
-                ->filter(fn (Prediction $p) => $this->geminiAgrees($p))
-                ->values()
-                ->map(fn (Prediction $p): array => $this->formatPrediction($p));
+            return [
+                'data'    => $predictions->values()->map(fn (Prediction $p) => $this->formatPrediction($p))->all(),
+                'meta'    => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'has_more' => ($offset + $perPage) < $total],
+            ];
         }
 
         $today = CarbonImmutable::now($tz)->startOfDay();
 
+        $baseQuery = Prediction::query()
+            ->whereHas('match', fn ($q) => $q->where('match_time', '>=', $today));
+
+        $total = $baseQuery->count();
+
         $predictions = Prediction::query()
             ->with('match')
-            ->whereHas('match', fn ($q) => $q
-                ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
-                ->where('match_time', '>=', $today)
-            )
-            ->orderBy('created_at', 'desc')
-            ->limit(self::MAX_DAILY_PICKS)
+            ->whereHas('match', fn ($q) => $q->where('match_time', '>=', $today))
+            ->orderByDesc('confidence')
+            ->skip($offset)->take($perPage)
             ->get();
 
-        if ($predictions->isEmpty()) {
+        if ($predictions->isEmpty() && $page === 1) {
+            $total = Prediction::query()->count();
             $predictions = Prediction::query()
                 ->with('match')
-                ->whereHas('match', fn ($q) => LeagueCoverage::scopeCovered($q))
                 ->latest('created_at')
-                ->limit(self::MAX_DAILY_PICKS)
+                ->skip($offset)->take($perPage)
                 ->get();
         }
 
         $this->autoResolveCollection($predictions);
 
-        return $predictions
-            ->filter(fn (Prediction $p) => $this->geminiAgrees($p))
-            ->values()
-            ->map(fn (Prediction $p): array => $this->formatPrediction($p));
+        return [
+            'data'    => $predictions->values()->map(fn (Prediction $p) => $this->formatPrediction($p))->all(),
+            'meta'    => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'has_more' => ($offset + $perPage) < $total],
+        ];
     }
 
     /**
@@ -747,6 +836,8 @@ class PredictionService
         $coldMarkets         = $this->adaptive->coldMarkets();
         $excludedInSelection = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
         $excludedOutcomes    = ['Competitive Match', 'Draw'];
+        $europeanIds         = LeagueCoverage::topEuropean();
+        $euroMinConf         = max(55, $minConfidence - 5);
 
         $candidates = Prediction::query()
             ->with('match')
@@ -755,7 +846,16 @@ class PredictionService
             ->whereNotNull('analysis')
             ->whereNotNull('predicted_outcome')
             ->whereNotIn('predicted_outcome', $excludedOutcomes)
-            ->where('confidence', '>=', $minConfidence)
+            ->where(fn ($q) => $q
+                ->where(fn ($inner) => $inner
+                    ->whereHas('match', fn ($m) => $m->whereIn('league_id', $europeanIds))
+                    ->where('confidence', '>=', $euroMinConf)
+                )
+                ->orWhere(fn ($inner) => $inner
+                    ->whereHas('match', fn ($m) => $m->whereNotIn('league_id', $europeanIds))
+                    ->where('confidence', '>=', $minConfidence)
+                )
+            )
             ->whereHas('match', fn ($q) => $q
                 ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
                 ->whereBetween('match_time', [$today, $cutoff])
@@ -764,10 +864,13 @@ class PredictionService
             ->get();
 
         if ($candidates->isEmpty()) {
-            return Prediction::query()
+            // No qualifying predictions at all — clear stale picks so we don't
+            // keep showing yesterday's or low-quality picks as if they're fresh.
+            Prediction::query()
                 ->where('is_daily_pick', true)
                 ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('pick_rank')->get();
+                ->update(['is_daily_pick' => false, 'pick_rank' => null]);
+            return new EloquentCollection();
         }
 
         // Clear existing today's picks now that we know new ones are available.
@@ -792,18 +895,17 @@ class PredictionService
             $d   = (float) $p->draw_prob;
             $aw  = (float) $p->away_win_prob;
 
+            $outcome = (string) $p->predicted_outcome;
+
             $probs = [$hw, $d, $aw];
             rsort($probs);
             $gap    = $probs[0] - $probs[1];
             $aiConf = (int) ($p->confidence ?? 0);
 
-            // Base score: AI confidence + probability separation gap.
-            // League is deliberately NOT a factor — the highest-confidence pick
-            // wins regardless of which country or division it comes from.
-            $score = $aiConf + ($gap * 0.3);
+            $tierBonus = in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 8 : 0;
+            $score = $aiConf + ($gap * 0.3) + $tierBonus;
 
             // Apply historical accuracy multiplier for this market type.
-            $outcome  = (string) $p->predicted_outcome;
             $accuracy = $accuracyWeights[$outcome] ?? 1.0;
             $score    = $score * $accuracy;
 
@@ -821,15 +923,33 @@ class PredictionService
                 'ai_conf'    => $aiConf,
             ];
         })
-        ->filter(fn ($s) => $s !== null && $s['ai_conf'] >= $minConfidence)
+        ->filter(fn ($s) => $s !== null && $s['ai_conf'] >= (
+            in_array((int) $s['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true)
+                ? $euroMinConf
+                : $minConfidence
+        ))
         ->sortByDesc('score');
 
-        // Take up to 3, preferring different tip types — but never backfill
-        // with a lower-quality pick just to reach 3. Quality over quantity.
+        // Tier-first selection: European/global leagues are always preferred over
+        // African domestic leagues regardless of confidence scores.
+        // Only backfill with non-European picks if we can't reach 3 from European.
+        $europeanIds     = LeagueCoverage::topEuropean();
+        $europeanScored  = $scored->filter(fn ($s) => in_array((int) $s['prediction']->match?->league_id, $europeanIds, true));
+        $nonEuroScored   = $scored->reject(fn ($s) => in_array((int) $s['prediction']->match?->league_id, $europeanIds, true));
+
         $picks = collect();
         $used  = [];
 
-        foreach ($scored as $item) {
+        foreach ($europeanScored as $item) {
+            if ($picks->count() >= 3) break;
+            if (! in_array($item['tip_type'], $used, true)) {
+                $picks->push($item);
+                $used[] = $item['tip_type'];
+            }
+        }
+
+        // Backfill with non-European only if European pool didn't reach 3
+        foreach ($nonEuroScored as $item) {
             if ($picks->count() >= 3) break;
             if (! in_array($item['tip_type'], $used, true)) {
                 $picks->push($item);
@@ -860,7 +980,8 @@ class PredictionService
         $cutoff   = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        $candidates = Prediction::query()
+        // Primary pool: AI explicitly recommended Draw at ≥60% confidence
+        $primary = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
             ->where('analysis', '!=', 'Prediction pending')
@@ -875,9 +996,43 @@ class PredictionService
             ->get()
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
-                return ($tips[0]['gemini_agrees'] ?? null) === true;
-            })
-            ->sortByDesc('confidence')
+                return ($tips[0]['gemini_agrees'] ?? null) !== false;
+            });
+
+        // Secondary pool: draw_prob ≥ 45% with composite draw signals ≥ 3.
+        // Lowered from 55% — when 3+ independent draw indicators align the
+        // composite score requirement is strong enough to justify the lower
+        // Poisson threshold. Draws are structurally underrepresented otherwise.
+        $secondary = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->where('draw_prob', '>=', 45)
+            ->where('confidence', '>=', 45)  // relaxed threshold for statistically strong draws
+            ->whereHas('match', fn ($q) => $q
+                ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->filter(function (Prediction $p): bool {
+                $tips = is_array($p->tips) ? $p->tips : [];
+                if (($tips[0]['gemini_agrees'] ?? null) === false) return false;
+                // Only include when ≥3 draw composite indicators align
+                $h2h = $this->headToHead(
+                    $p->match?->home_team ?? '',
+                    $p->match?->away_team ?? '',
+                    $p->match?->match_time ?? now(),
+                    (int) $p->match_id,
+                );
+                return $this->drawCompositeScore($p, $h2h) >= 3;
+            });
+
+        // Merge: primary first, then secondary, deduplicated by match_id
+        $candidates = $primary->merge($secondary)
+            ->unique('match_id')
+            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (int) $p->draw_prob)
             ->take(5)
             ->values();
 
@@ -927,9 +1082,9 @@ class PredictionService
             ->get()
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
-                return ($tips[0]['gemini_agrees'] ?? null) === true;
+                return ($tips[0]['gemini_agrees'] ?? null) !== false;
             })
-            ->sortByDesc('confidence')
+            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (int) $p->confidence)
             ->take(5)
             ->values();
 
@@ -975,9 +1130,10 @@ class PredictionService
                 ->whereBetween('match_time', [$today, $cutoff])
                 ->whereNotIn('status', $excluded)
             )
-            ->orderByDesc('over_15_prob')
-            ->limit(5)
-            ->get();
+            ->get()
+            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (float) $p->over_15_prob)
+            ->take(5)
+            ->values();
 
         if ($candidates->isEmpty()) {
             return Prediction::query()
@@ -1016,7 +1172,7 @@ class PredictionService
             ->where('analysis', '!=', 'Prediction pending')
             ->whereNotNull('analysis')
             ->whereNotNull('over_25_prob')
-            ->where('over_25_prob', '>=', 65)
+            ->where('over_25_prob', '>=', 60)
             ->whereHas('match', fn ($q) => $q
                 ->whereBetween('match_time', [$today, $cutoff])
                 ->whereNotIn('status', $excluded)
@@ -1026,7 +1182,7 @@ class PredictionService
                 $tips = is_array($p->tips) ? $p->tips : [];
                 return ($tips[0]['gemini_agrees'] ?? null) !== false;
             })
-            ->sortByDesc('over_25_prob')
+            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (float) $p->over_25_prob)
             ->take(5)
             ->values();
 
@@ -1082,8 +1238,8 @@ class PredictionService
                 $prob  = min($home3, $away3);
                 return ['prediction' => $p, 'prob' => $prob, 'label' => $label];
             })
-            ->filter(fn ($item) => $item['prob'] <= 8.0)
-            ->sortBy('prob')
+            ->filter(fn ($item) => $item['prob'] <= 15.0)
+            ->sortBy(fn ($item) => (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? -1000 : 0) + $item['prob'])
             ->take(5)
             ->values();
 
@@ -1110,6 +1266,56 @@ class PredictionService
         return $candidates->map(fn ($i) => $i['prediction'])->pipe(
             fn ($col) => new EloquentCollection($col->all())
         );
+    }
+
+    /**
+     * Select up to 5 correct score picks for today.
+     * Picks are the highest-confidence games that have likely_scores computed.
+     * Top European league games are prioritised over domestic leagues at equal confidence.
+     */
+    public function selectCorrectScorePicks(): EloquentCollection
+    {
+        $today    = now('Africa/Lagos')->startOfDay();
+        $cutoff   = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereNotNull('likely_scores')
+            ->where('confidence', '>=', 60)
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->filter(fn (Prediction $p) => ! empty($p->likely_scores))
+            ->sortByDesc(fn (Prediction $p) =>
+                (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+                + (int) ($p->confidence ?? 0)
+            )
+            ->take(5)
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_correct_score_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('correct_score_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_correct_score_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_correct_score_pick' => false, 'correct_score_rank' => null]);
+
+        $candidates->each(function (Prediction $p, int $idx) {
+            $p->update(['is_correct_score_pick' => true, 'correct_score_rank' => $idx + 1]);
+        });
+
+        return new EloquentCollection($candidates->all());
     }
 
     /**
@@ -1167,16 +1373,29 @@ class PredictionService
 
     private function poissonProbabilities(float $homeXg, float $awayXg): array
     {
+        // Dixon-Coles rho correction (ρ ≈ -0.13).
+        // Basic Poisson underestimates 0-0 and 1-1 draws. The τ function applies
+        // a small adjustment to four scorelines to correct for goal correlation,
+        // directly improving draw prediction accuracy.
+        $rho = -0.13;
+        $dc  = function (int $h, int $a) use ($homeXg, $awayXg, $rho): float {
+            if ($h === 0 && $a === 0) return 1 - $homeXg * $awayXg * $rho;
+            if ($h === 1 && $a === 0) return 1 + $awayXg * $rho;
+            if ($h === 0 && $a === 1) return 1 + $homeXg * $rho;
+            if ($h === 1 && $a === 1) return 1 - $rho;
+            return 1.0;
+        };
+
         $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = $h3p = $a3p = 0.0;
 
         for ($h = 0; $h <= self::MAX_GOALS_GRID; $h++) {
             $ph = $this->poisson($homeXg, $h);
             for ($a = 0; $a <= self::MAX_GOALS_GRID; $a++) {
-                $p = $ph * $this->poisson($awayXg, $a);
+                $p = $ph * $this->poisson($awayXg, $a) * $dc($h, $a);
                 $tot += $p;
-                if ($h > $a)  { $hw += $p; }
+                if ($h > $a)       { $hw += $p; }
                 elseif ($h === $a) { $d  += $p; }
-                else          { $aw += $p; }
+                else               { $aw += $p; }
                 $g = $h + $a;
                 if ($g >= 2)  { $o15 += $p; }
                 if ($g >= 3)  { $o25 += $p; }
@@ -1418,6 +1637,36 @@ class PredictionService
         return $s['matches_played'] === 0 ? self::NEUTRAL_GOALS_RATE : max(0.20, $s['goals_conceded'] / $s['matches_played']);
     }
 
+    // Venue-split attack/defense — used when enough split samples exist.
+    // Falls back to the overall rate when the venue sample is < 3 matches.
+    private function homeAttackStrength(array $s): float
+    {
+        return $s['home_matches'] >= 3
+            ? $s['home_scored'] / $s['home_matches']
+            : $this->attackStrength($s);
+    }
+
+    private function homeConceding(array $s): float
+    {
+        return $s['home_matches'] >= 3
+            ? max(0.20, $s['home_conceded'] / $s['home_matches'])
+            : $this->defenseWeakness($s);
+    }
+
+    private function awayAttackStrength(array $s): float
+    {
+        return $s['away_matches'] >= 3
+            ? $s['away_scored'] / $s['away_matches']
+            : $this->attackStrength($s);
+    }
+
+    private function awayConceding(array $s): float
+    {
+        return $s['away_matches'] >= 3
+            ? max(0.20, $s['away_conceded'] / $s['away_matches'])
+            : $this->defenseWeakness($s);
+    }
+
     private function clampXg(float $xg): float
     {
         return round(min(self::MAX_XG, max(self::MIN_XG, $xg)), 3);
@@ -1516,7 +1765,7 @@ class PredictionService
         ];
     }
 
-    private function topScorelines(float $homeXg, float $awayXg, int $n = 3): array
+    private function topScorelines(float $homeXg, float $awayXg, int $n = 5): array
     {
         $scores = [];
         for ($h = 0; $h <= 5; $h++) {
@@ -1535,6 +1784,134 @@ class PredictionService
             array_keys($top),
             array_values($top)
         );
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  Match importance detection
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Derive contextual match importance flags from form data and timing.
+     * We don't have standings, so we use form + season timing as proxies.
+     *
+     * Returns an array of flags and a human-readable context string for
+     * inclusion in the Groq prompt.
+     */
+    private function matchImportanceContext(
+        FootballMatch $match,
+        array $homeStats,
+        array $awayStats,
+    ): array {
+        $flags   = [];
+        $context = [];
+        $month   = (int) ($match->match_time?->format('n') ?? date('n'));
+
+        // ── Late-season pressure (Apr–Jun = European seasons closing) ──
+        $lateSeasonMonths = [4, 5, 6];
+        if (in_array($month, $lateSeasonMonths, true)) {
+            $flags[]   = 'late_season';
+            $context[] = 'This is a late-season fixture — title races, relegation battles, and European qualification are likely at stake. Weigh match importance heavily.';
+        }
+
+        // ── Derby detection: team names sharing a city keyword ──
+        $derbyKeywords = [
+            'Manchester', 'Liverpool', 'London', 'Madrid', 'Milan', 'Rome', 'Roma',
+            'Glasgow', 'Lisbon', 'Porto', 'Seville', 'Sevilla', 'Istanbul',
+            'Buenos Aires', 'São Paulo', 'Rio', 'Lagos', 'Accra', 'Nairobi',
+            'Barcelona', 'Turin', 'Torino', 'Dortmund', 'Gelsenkirchen',
+        ];
+        foreach ($derbyKeywords as $city) {
+            if (stripos($match->home_team, $city) !== false && stripos($match->away_team, $city) !== false) {
+                $flags[]   = 'derby';
+                $context[] = "This appears to be a local derby ({$city}). Derby matches have higher draw probability than form alone suggests — intensity elevates and favourites underperform. Treat draw as a realistic outcome.";
+                break;
+            }
+        }
+
+        // ── Classic rivalry detection ──
+        $rivalries = [
+            ['Manchester United', 'Manchester City'],
+            ['Arsenal', 'Tottenham'],
+            ['Liverpool', 'Everton'],
+            ['Real Madrid', 'Barcelona'],
+            ['Real Madrid', 'Atletico Madrid'],
+            ['Barcelona', 'Atletico Madrid'],
+            ['Inter', 'AC Milan'],
+            ['Juventus', 'Inter'],
+            ['Juventus', 'AC Milan'],
+            ['Roma', 'Lazio'],
+            ['Napoli', 'Juventus'],
+            ['Dortmund', 'Bayern'],
+            ['Ajax', 'Feyenoord'],
+            ['Celtic', 'Rangers'],
+            ['Porto', 'Benfica'],
+            ['Porto', 'Sporting'],
+            ['Boca Juniors', 'River Plate'],
+        ];
+        $home = $match->home_team;
+        $away = $match->away_team;
+        foreach ($rivalries as [$a, $b]) {
+            if ((stripos($home, $a) !== false && stripos($away, $b) !== false)
+             || (stripos($home, $b) !== false && stripos($away, $a) !== false)) {
+                $flags[]   = 'rivalry';
+                $context[] = "This is a high-profile rivalry match ({$home} vs {$away}). Historical data shows draw probability is elevated in rivalry games. Do not dismiss draw as headline.";
+                break;
+            }
+        }
+
+        // ── Poor recent form proxy: might be relegation-threatened ──
+        $homeLossRate = $homeStats['matches_played'] > 0
+            ? $homeStats['losses'] / $homeStats['matches_played'] : 0;
+        $awayLossRate = $awayStats['matches_played'] > 0
+            ? $awayStats['losses'] / $awayStats['matches_played'] : 0;
+
+        if ($homeLossRate >= 0.55) {
+            $flags[]   = 'home_struggling';
+            $context[] = "The home team is in very poor form (losing {$homeStats['losses']} of last {$homeStats['matches_played']} matches) — may be in a relegation battle, which can produce unpredictable results driven by desperation.";
+        }
+        if ($awayLossRate >= 0.55) {
+            $flags[]   = 'away_struggling';
+            $context[] = "The away team is in very poor form — may be under relegation pressure, which distorts normal form predictions.";
+        }
+
+        return [
+            'flags'   => $flags,
+            'context' => implode(' ', $context),
+        ];
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  Draw composite signal
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Calculate how many draw-favourable indicators are present for this prediction.
+     * Used in selectDrawPicks() to lower the Gemini agreement threshold when
+     * multiple statistical signals all point toward a draw outcome.
+     *
+     * Returns an integer count (0–5). Score ≥ 3 triggers the relaxed threshold.
+     */
+    private function drawCompositeScore(Prediction $p, array $h2h): int
+    {
+        $score = 0;
+
+        // Signal 1: High Poisson draw probability
+        if ((float) $p->draw_prob >= 55) $score++;
+
+        // Signal 2: Neither team is dominant — evenly contested
+        if ((float) $p->home_win_prob < 45 && (float) $p->away_win_prob < 45) $score++;
+
+        // Signal 3: Both teams have similar strength (small 1X2 gap)
+        $hwAbs = abs((float) $p->home_win_prob - (float) $p->away_win_prob);
+        if ($hwAbs <= 10) $score++;
+
+        // Signal 4: H2H draw rate above 33%
+        if ($h2h['total'] >= 3 && ($h2h['draws'] / $h2h['total']) >= 0.33) $score++;
+
+        // Signal 5: Low BTTS and low Over 2.5 — tight defensive match
+        if ((float) ($p->btts_prob ?? 50) < 45 && (float) ($p->over_25_prob ?? 50) < 45) $score++;
+
+        return $score;
     }
 
     // ──────────────────────────────────────────────────────────────

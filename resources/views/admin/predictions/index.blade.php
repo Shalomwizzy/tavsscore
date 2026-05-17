@@ -79,9 +79,9 @@
                     </td>
                     <td>
                         @if($pred->was_correct === true)
-                            <span class="badge badge-green">✓ Win</span>
+                            <span class="badge badge-green">✓ Won</span>
                         @elseif($pred->was_correct === false)
-                            <span class="badge badge-red">✗ Loss</span>
+                            <span class="badge badge-red">✗ Lost</span>
                         @else
                             <span style="color:var(--dim); font-size:.72rem;">-</span>
                         @endif

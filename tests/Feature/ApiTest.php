@@ -59,7 +59,7 @@ class ApiTest extends TestCase
             'api_id' => 20, 'league' => 'La Liga', 'league_country' => 'Spain',
             'home_team' => 'Real Madrid', 'away_team' => 'Atletico',
             'status' => 'NS',
-            'match_time' => now('Africa/Lagos')->addHours(2),
+            'match_time' => now('Africa/Lagos')->setTime(15, 0),
         ]);
 
         $response = $this->getJson('/api/matches/today');

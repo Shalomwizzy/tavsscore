@@ -17,10 +17,11 @@ class PredictionController extends Controller
     {
         $tz   = config('app.timezone');
         $date = $this->parseDate($request->query('date'), $tz);
+        $page = max(1, (int) $request->query('page', 1));
 
-        return response()->json([
-            'data' => $this->predictionService->allPredictions($date),
-        ])->header('Cache-Control', 'public, max-age=60');
+        return response()->json(
+            $this->predictionService->allPredictions($date, $page)
+        )->header('Cache-Control', 'public, max-age=60');
     }
 
     private function parseDate(?string $raw, string $tz): ?Carbon
@@ -61,7 +62,6 @@ class PredictionController extends Controller
         return response()->json([
             'message' => "Generated {$predictions->count()} predictions.",
             'count' => $predictions->count(),
-            'data' => $this->predictionService->allPredictions(),
-        ]);
+        ] + $this->predictionService->allPredictions());
     }
 }

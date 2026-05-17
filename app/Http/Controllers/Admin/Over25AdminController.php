@@ -7,6 +7,7 @@ use App\Models\Prediction;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class Over25AdminController extends Controller
@@ -35,7 +36,9 @@ class Over25AdminController extends Controller
             ->get()
             ->groupBy(fn ($p) => $p->match?->match_time?->setTimezone($tz)->format('Y-m-d') ?? 'unknown');
 
-        $resolved = Prediction::where('is_over25_pick', true)->where('over25_notified', true)->with('match')->get();
+        $resolved = Prediction::where('is_over25_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereIn('status', ['FT','AET','PEN'])->whereNotNull('home_score'))
+            ->with('match')->get();
         $total    = $resolved->count();
         $correct  = $resolved->filter(fn ($p) => $p->match && ((int)$p->match->home_score + (int)$p->match->away_score) >= 3)->count();
         $accuracy = $total > 0 ? round($correct / $total * 100, 1) : null;
@@ -46,6 +49,11 @@ class Over25AdminController extends Controller
     public function refresh(): RedirectResponse
     {
         $picks = $this->predictionService->selectOver25Picks();
+
+        if ($picks->isNotEmpty()) {
+            Artisan::call('picks:notify', ['--type' => 'over25']);
+        }
+
         return redirect()->route('admin.over25.index')
             ->with('success', "Re-selected {$picks->count()} Over 2.5 picks.");
     }

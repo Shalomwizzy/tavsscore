@@ -146,6 +146,7 @@
                     <th>Confidence</th>
                     <th>Kickoff</th>
                     <th>Result</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -171,12 +172,20 @@
                     </td>
                     <td>
                         @if($pick->was_correct === true)
-                            <span class="badge badge-green">✓ Correct</span>
+                            <span class="badge badge-green">✓ Won</span>
                         @elseif($pick->was_correct === false)
-                            <span class="badge badge-red">✗ Wrong</span>
+                            <span class="badge badge-red">✗ Lost</span>
                         @else
                             <span class="badge badge-gray">⏳ Pending</span>
                         @endif
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ route('admin.picks.regenerate', $pick) }}"
+                              onsubmit="return confirm('Re-run AI for this match and push notification?');">
+                            @csrf
+                            <input type="hidden" name="type" value="daily">
+                            <button type="submit" style="background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:2px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;">🔄 Regen</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach

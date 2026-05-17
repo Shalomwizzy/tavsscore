@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\FootballMatch;
 use App\Services\FootballService;
 use App\Services\OneSignalService;
+use App\Services\PiRatingService;
 use App\Support\LeagueCoverage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -17,7 +18,7 @@ class FetchMatches extends Command
 
     protected $description = 'Fetch live, today and finished football matches from API-Football.';
 
-    public function handle(FootballService $footballService, OneSignalService $oneSignal): int
+    public function handle(FootballService $footballService, OneSignalService $oneSignal, PiRatingService $piRating): int
     {
         try {
             $written = 0;
@@ -44,10 +45,23 @@ class FetchMatches extends Command
                 $this->detectAndNotifyGoal($existing, $match, $oneSignal);
                 $this->detectAndNotifyFullTime($existing, $match, $oneSignal);
 
-                FootballMatch::query()->updateOrCreate(
+                $updated = FootballMatch::query()->updateOrCreate(
                     ['api_id' => $match['api_id']],
                     $this->matchData($match)
                 );
+
+                // Update pi-ratings the moment a match becomes FT/AET/PEN.
+                // Cache-gated so it only fires once per match.
+                $isNowFT = in_array($match['status'], ['FT', 'AET', 'PEN'], true);
+                $wasLive = $existing && in_array($existing->status, ['1H','2H','ET','BT','P','LIVE','HT'], true);
+                if ($isNowFT && $wasLive) {
+                    $cacheKey = "pi_rated_{$updated->id}";
+                    if (! Cache::has($cacheKey)) {
+                        $updated->refresh();
+                        $piRating->updateForMatch($updated);
+                        Cache::put($cacheKey, true, now()->addDays(3));
+                    }
+                }
             }
 
             // ── Pass 3: Auto-expire stale live statuses ──

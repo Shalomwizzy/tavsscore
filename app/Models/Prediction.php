@@ -30,6 +30,8 @@ class Prediction extends Model
         'analysis_french',
         'likely_scores',
         'correct_score_notified',
+        'is_correct_score_pick',
+        'correct_score_rank',
         'is_daily_pick',
         'pick_rank',
         'is_draw_pick',
@@ -46,12 +48,14 @@ class Prediction extends Model
         'team3plus_rank',
         'team3plus_label',
         'team3plus_notified',
+        'winner_reminder_sent',
         'home_3plus_prob',
         'away_3plus_prob',
         'was_correct',
         'has_lineup',
         'opening_odds',
         'closing_odds',
+        'pi_rating_diff',
     ];
 
     protected $casts = [
@@ -65,6 +69,8 @@ class Prediction extends Model
         'tips'                    => 'array',
         'confidence'              => 'integer',
         'correct_score_notified'  => 'boolean',
+        'is_correct_score_pick'   => 'boolean',
+        'correct_score_rank'      => 'integer',
         'is_daily_pick'           => 'boolean',
         'pick_rank'               => 'integer',
         'is_draw_pick'            => 'boolean',
@@ -80,6 +86,7 @@ class Prediction extends Model
         'is_team3plus_pick'       => 'boolean',
         'team3plus_rank'          => 'integer',
         'team3plus_notified'      => 'boolean',
+        'winner_reminder_sent'    => 'boolean',
         'home_3plus_prob'         => 'decimal:2',
         'away_3plus_prob'         => 'decimal:2',
         'was_correct'             => 'boolean',
@@ -87,6 +94,7 @@ class Prediction extends Model
         'likely_scores'           => 'array',
         'opening_odds'            => 'array',
         'closing_odds'            => 'array',
+        'pi_rating_diff'          => 'float',
         'created_at'              => 'datetime',
     ];
 

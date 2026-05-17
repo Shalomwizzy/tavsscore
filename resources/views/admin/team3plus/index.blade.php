@@ -12,7 +12,7 @@
             @csrf
             <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fca5a5;">🎯 Re-select Today</button>
         </form>
-        <a href="{{ route('team3plus.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+        <a href="{{ route('team3plus-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
     </div>
 </div>
 
@@ -68,6 +68,7 @@
                     <th>Other 3+ Prob</th>
                     <th>Kickoff (Lagos)</th>
                     <th>Result</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,6 +109,14 @@
                         @else
                             <span class="badge badge-gray">⏳ Pending</span>
                         @endif
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ route('admin.picks.regenerate', $pick) }}"
+                              onsubmit="return confirm('Re-run AI for this match and push notification?');">
+                            @csrf
+                            <input type="hidden" name="type" value="team3plus">
+                            <button type="submit" style="background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:2px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;">🔄 Regen</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach

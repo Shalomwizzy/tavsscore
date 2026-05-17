@@ -6,8 +6,21 @@
 
 <div class="page-hd">
     <span class="page-hd-title">🎯 Correct Score Predictions</span>
-    <a href="{{ route('correct-score.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+    <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.correct-score.notify') }}"
+              onsubmit="return confirm('Push correct score notification to Telegram and OneSignal?');">
+            @csrf
+            <button type="submit" class="btn-a btn-green">📢 Push Notification</button>
+        </form>
+        <a href="{{ route('correct-score.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+    </div>
 </div>
+
+@if(session('success'))
+<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#6ee7b7;">
+    ✅ {{ session('success') }}
+</div>
+@endif
 
 {{-- Today --}}
 <div class="a-card" style="margin-bottom:1.25rem; border-color:rgba(139,92,246,.3);">
@@ -35,6 +48,7 @@
                     <th>Top Scorelines</th>
                     <th>Kickoff (Lagos)</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -47,7 +61,7 @@
                     <td style="font-weight:700; color:#fff;">{{ $pred->confidence ?? '-' }}%</td>
                     <td>
                         <div style="display:flex; gap:.3rem; flex-wrap:wrap;">
-                            @foreach(array_slice($scores, 0, 4) as $i => $s)
+                            @foreach(array_slice($scores, 0, 5) as $i => $s)
                             <span style="background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);padding:1px 7px;border-radius:4px;font-weight:700;font-size:.72rem;{{ $i === 0 ? 'border-color:rgba(139,92,246,.5);' : '' }}">
                                 {{ $s['score'] }} <span style="opacity:.7;">({{ $s['pct'] }}%)</span>
                             </span>
@@ -63,6 +77,14 @@
                         @else
                             <span class="badge badge-green">Upcoming</span>
                         @endif
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ route('admin.picks.regenerate', $pred) }}"
+                              onsubmit="return confirm('Re-run AI for this match and push correct score notification?');">
+                            @csrf
+                            <input type="hidden" name="type" value="correctscore">
+                            <button type="submit" style="background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);padding:2px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;">🔄 Regen</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach
@@ -101,7 +123,7 @@
                             </td>
                             <td>
                                 <div style="display:flex; gap:.25rem; flex-wrap:wrap;">
-                                    @foreach(array_slice($scores, 0, 3) as $s)
+                                    @foreach(array_slice($scores, 0, 5) as $s)
                                     <span style="background:rgba(139,92,246,.1);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);padding:1px 6px;border-radius:3px;font-weight:700;font-size:.7rem;">
                                         {{ $s['score'] }}
                                     </span>

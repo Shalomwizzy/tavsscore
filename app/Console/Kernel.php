@@ -31,6 +31,8 @@ class Kernel extends ConsoleKernel
         // Picks: select at midnight + retry at 06:00 for late-loading fixtures
         $schedule->command('picks:select --force')->dailyAt('00:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('05:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:select')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:select')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Staggered notifications 06:00–07:40 Lagos, one pick type every 20 min
         $schedule->command('picks:notify --type=daily')->dailyAt('06:00')->timezone('Africa/Lagos')->withoutOverlapping();
@@ -50,8 +52,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:fetch-closing-odds')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:fetch-closing-odds')->dailyAt('14:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Select today's rollover pick at 09:30 Lagos (after daily picks at 09:00)
-        $schedule->command('rollover:select')->dailyAt('09:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        // Select today's rollover pick at 10:30 Lagos — after the 10:00 odds fetch
+        // so impliedOdds() finds real bookmaker prices instead of AI-derived ones.
+        $schedule->command('rollover:select')->dailyAt('10:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Post today's pick results to Telegram at 23:00 Lagos
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();

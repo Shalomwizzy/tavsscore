@@ -230,4 +230,51 @@ PROMPT;
             'confidence' => (int) ($data['confidence'] ?? 70),
         ];
     }
+
+    /**
+     * Translate text (plain analysis or HTML article) into the target language.
+     * Returns null on any failure so the caller can fall back gracefully.
+     *
+     * @param  string  $language  'pidgin' | 'swahili' | 'french'
+     * @param  bool    $isHtml    true for blog HTML content, false for plain analysis
+     */
+    public function translate(string $text, string $language, bool $isHtml = false): ?string
+    {
+        if (! $this->isConfigured() || blank($text)) return null;
+
+        $instruction = match (strtolower($language)) {
+            'pidgin' => $isHtml
+                ? "Translate the football article HTML below into natural Nigerian Pidgin English.\n- Preserve ALL HTML tags exactly. Translate only the text inside tags.\n- Keep team names, scores, league names, and proper nouns unchanged.\n- Use natural Pidgin: \"dey fire\", \"no go fit\", \"well well\", \"no shaking\".\n- Return ONLY the translated HTML. No commentary, no markdown fences."
+                : "Translate the football analysis below into natural Nigerian Pidgin English.\n- Keep team names, probabilities, and the 💡 Tip: sentence.\n- The final sentence MUST start with \"💡 Tip:\" in Pidgin.\n- Return ONLY the translated text, nothing else.",
+            'swahili' => $isHtml
+                ? "Translate the football article HTML below into natural East African Swahili (Kenya/Tanzania style).\n- Preserve ALL HTML tags exactly. Translate only the text inside tags.\n- Keep team names, scores, league names, and proper nouns unchanged.\n- Return ONLY the translated HTML. No commentary, no markdown fences."
+                : "Translate the football analysis below into natural East African Swahili.\n- Keep team names, probabilities, and the 💡 Tip: sentence.\n- The final sentence MUST start with \"💡 Tip:\" in Swahili.\n- Return ONLY the translated text, nothing else.",
+            'french' => $isHtml
+                ? "Translate the football article HTML below into natural French.\n- Preserve ALL HTML tags exactly. Translate only the text inside tags.\n- Keep team names, scores, league names, and proper nouns unchanged.\n- Return ONLY the translated HTML. No commentary, no markdown fences."
+                : "Translate the football analysis below into natural French.\n- Keep team names, probabilities, and the 💡 Tip: sentence.\n- The final sentence MUST start with \"💡 Tip:\" in French.\n- Return ONLY the translated text, nothing else.",
+            default => null,
+        };
+
+        if ($instruction === null) return null;
+
+        try {
+            $response = Http::timeout(90)
+                ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
+                ->post('https://generativelanguage.googleapis.com/v1beta/models/' . config('services.gemini.model', 'gemini-2.0-flash') . ':generateContent', [
+                    'contents'         => [
+                        ['role' => 'user', 'parts' => [['text' => $instruction . "\n\n" . $text]]],
+                    ],
+                    'generationConfig' => ['temperature' => 0.20, 'maxOutputTokens' => 8192],
+                ]);
+        } catch (ConnectionException | Throwable $e) {
+            Log::warning('Gemini translate failed', ['lang' => $language, 'error' => $e->getMessage()]);
+            return null;
+        }
+
+        if ($response->failed()) return null;
+
+        $out = trim((string) data_get($response->json(), 'candidates.0.content.parts.0.text'));
+        $out = preg_replace('/^```(?:\w+)?\s*|\s*```$/m', '', $out);
+        return trim($out) ?: null;
+    }
 }

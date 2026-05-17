@@ -18,6 +18,7 @@ class BlogPost extends Model
         'content',
         'content_pidgin',
         'content_swahili',
+        'content_french',
         'featured_image',
         'image_path',
         'category',

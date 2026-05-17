@@ -31,7 +31,7 @@ class PublicPagesTest extends TestCase
             'home_team'  => 'Arsenal',
             'away_team'  => 'Chelsea',
             'status'     => 'NS',
-            'match_time' => now('Africa/Lagos')->addHours(2),
+            'match_time' => now('Africa/Lagos')->setTime(15, 0),
         ]);
 
         Prediction::create([

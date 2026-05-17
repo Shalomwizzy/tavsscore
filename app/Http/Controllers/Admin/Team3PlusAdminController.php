@@ -7,6 +7,7 @@ use App\Models\Prediction;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class Team3PlusAdminController extends Controller
@@ -50,6 +51,11 @@ class Team3PlusAdminController extends Controller
     public function refresh(): RedirectResponse
     {
         $picks = $this->predictionService->selectTeam3PlusPicks();
+
+        if ($picks->isNotEmpty()) {
+            Artisan::call('picks:notify', ['--type' => 'team3plus']);
+        }
+
         return redirect()->route('admin.team3plus.index')
             ->with('success', "Re-selected {$picks->count()} Team 3+ picks.");
     }

@@ -6,6 +6,7 @@ use App\Models\Prediction;
 use App\Services\OneSignalService;
 use App\Services\RolloverService;
 use App\Services\TelegramService;
+use App\Support\LeagueCoverage;
 use App\Support\PickHelpers;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -63,7 +64,7 @@ class CheckPredictionOutcomes extends Command
 
             $score      = (int) $match->home_score . '-' . (int) $match->away_score;
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
-            $league     = $match->league ?? '';
+            $league     = LeagueCoverage::formatName($match->league, $match->league_country);
             $cacheKey   = "outcome_notified_{$prediction->id}";
 
             if ($wasCorrect) {
@@ -106,16 +107,20 @@ class CheckPredictionOutcomes extends Command
                         $telegram->sendGGOutcome($matchLabel, $score, true, $siteUrl, $league);
                     }
 
-                    // Winner upload reminder on every win
-                    $reminderKey = "winner_reminder_pred_{$prediction->id}";
-                    if (! Cache::has($reminderKey)) {
+                    // Winner upload reminder — only for actual picks, never for generic predictions
+                    $isActualPick = $prediction->is_daily_pick || $prediction->is_draw_pick
+                        || $prediction->is_gg_pick || $prediction->has_lineup
+                        || $prediction->is_over15_pick || $prediction->is_over25_pick
+                        || $prediction->is_team3plus_pick || $prediction->is_correct_score_pick;
+
+                    if ($isActualPick && ! $prediction->winner_reminder_sent) {
                         $oneSignal->sendPickOutcome(
                             title: '🏆 Won? Upload Your Screenshot!',
                             body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
                             path:  '/winners',
                         );
                         $telegram->sendWinnerUploadReminder($siteUrl);
-                        Cache::put($reminderKey, true, now()->addDays(3));
+                        $prediction->update(['winner_reminder_sent' => true]);
                     }
 
                     Cache::put($cacheKey, true, now()->addDays(2));
@@ -177,7 +182,7 @@ class CheckPredictionOutcomes extends Command
 
         $scorePredictions = Prediction::query()
             ->with('match')
-            ->whereNotNull('likely_scores')
+            ->where('is_correct_score_pick', true)
             ->where('correct_score_notified', false)
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
@@ -193,7 +198,7 @@ class CheckPredictionOutcomes extends Command
             if (! $match) continue;
 
             $actualScore   = (int) $match->home_score . '-' . (int) $match->away_score;
-            $league        = $match->league ?? '';
+            $league        = LeagueCoverage::formatName($match->league, $match->league_country);
             $matchLabel    = "{$match->home_team} vs {$match->away_team}";
             $likelyScores  = is_array($prediction->likely_scores) ? $prediction->likely_scores : [];
             $predictedList = collect($likelyScores)->pluck('score')->filter()->implode(', ');
@@ -211,16 +216,15 @@ class CheckPredictionOutcomes extends Command
                     path:  '/correct-score',
                 );
 
-                // Winner upload reminder
-                $reminderKey = "winner_reminder_score_{$prediction->id}";
-                if (! Cache::has($reminderKey)) {
+                // Winner upload reminder — DB flag so it survives cache:clear and deploys
+                if (! $prediction->winner_reminder_sent) {
                     $oneSignal->sendPickOutcome(
                         title: '🏆 Won? Upload Your Screenshot!',
                         body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
                         path:  '/winners',
                     );
                     $telegram->sendWinnerUploadReminder($siteUrl);
-                    Cache::put($reminderKey, true, now()->addDays(3));
+                    $prediction->update(['winner_reminder_sent' => true]);
                 }
             } else {
                 $oneSignal->sendPickOutcome(
@@ -266,7 +270,7 @@ class CheckPredictionOutcomes extends Command
             $total = $home + $away;
             $score = "{$home}-{$away}";
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
-            $league     = $match->league ?? '';
+            $league     = LeagueCoverage::formatName($match->league, $match->league_country);
 
             // Over 1.5
             if ($prediction->is_over15_pick && ! $prediction->over15_notified) {
@@ -289,6 +293,11 @@ class CheckPredictionOutcomes extends Command
                     );
                 }
                 $telegram->sendOver15Outcome($matchLabel, $score, $won, $siteUrl, $league);
+                if ($won && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
                 $prediction->update(['over15_notified' => true]);
             }
 
@@ -313,6 +322,11 @@ class CheckPredictionOutcomes extends Command
                     );
                 }
                 $telegram->sendOver25Outcome($matchLabel, $score, $won, $siteUrl, $league);
+                if ($won && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
                 $prediction->update(['over25_notified' => true]);
             }
 
@@ -340,6 +354,11 @@ class CheckPredictionOutcomes extends Command
                     );
                 }
                 $telegram->sendTeam3PlusOutcome($matchLabel, $teamName, $score, $won, $siteUrl, $league);
+                if ($won && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
                 $prediction->update(['team3plus_notified' => true]);
             }
         }

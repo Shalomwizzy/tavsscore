@@ -110,6 +110,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/picks/refresh-draw', [Admin\PicksAdminController::class, 'refreshDraw'])->name('picks.refresh-draw');
         Route::post('/picks/refresh-gg',   [Admin\PicksAdminController::class, 'refreshGG'])->name('picks.refresh-gg');
         Route::post('/picks/recheck',      [Admin\PicksAdminController::class, 'recheck'])->name('picks.recheck');
+        Route::post('/picks/{prediction}/regenerate', [Admin\PicksAdminController::class, 'regeneratePick'])->name('picks.regenerate');
 
         /* Stats */
         Route::get('/stats', [\App\Http\Controllers\Admin\StatsAdminController::class, 'index'])->name('stats.index');
@@ -127,10 +128,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/gg-picks/refresh', [Admin\GGPicksAdminController::class, 'refresh'])->name('gg-picks.refresh');
 
         /* Lineup Picks */
-        Route::get('/lineup-picks', [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'index'])->name('lineup-picks.index');
+        Route::get('/lineup-picks',          [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'index'])->name('lineup-picks.index');
+        Route::post('/lineup-picks/notify',  [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'sendNotification'])->name('lineup-picks.notify');
 
         /* Correct Score */
-        Route::get('/correct-score', [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'index'])->name('correct-score.index');
+        Route::get('/correct-score',         [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'index'])->name('correct-score.index');
+        Route::post('/correct-score/notify', [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'sendNotification'])->name('correct-score.notify');
 
         /* Over 1.5 Picks */
         Route::get('/over15',          [\App\Http\Controllers\Admin\Over15AdminController::class, 'index'])->name('over15.index');
@@ -171,5 +174,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/settings',  [Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+
+        Route::get('/pi-ratings',         [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'index'])->name('pi-ratings.index');
+        Route::post('/pi-ratings/rebuild', [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'rebuild'])->name('pi-ratings.rebuild');
     });
 });

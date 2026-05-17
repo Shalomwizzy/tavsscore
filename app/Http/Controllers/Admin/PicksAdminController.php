@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Prediction;
 use App\Services\PredictionService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
@@ -90,6 +91,10 @@ class PicksAdminController extends Controller
     {
         $picks = $this->predictionService->selectDailyPicks();
 
+        if ($picks->isNotEmpty()) {
+            Artisan::call('picks:notify', ['--type' => 'daily']);
+        }
+
         return redirect()->route('admin.picks')
             ->with('success', "Re-selected {$picks->count()} daily picks.");
     }
@@ -98,6 +103,10 @@ class PicksAdminController extends Controller
     {
         $picks = $this->predictionService->selectDrawPicks();
 
+        if ($picks->isNotEmpty()) {
+            Artisan::call('picks:notify', ['--type' => 'draw']);
+        }
+
         return redirect()->route('admin.picks')
             ->with('success', "Re-selected {$picks->count()} draw picks.");
     }
@@ -105,6 +114,10 @@ class PicksAdminController extends Controller
     public function refreshGG(): RedirectResponse
     {
         $picks = $this->predictionService->selectGGPicks();
+
+        if ($picks->isNotEmpty()) {
+            Artisan::call('picks:notify', ['--type' => 'gg']);
+        }
 
         return redirect()->route('admin.picks')
             ->with('success', "Re-selected {$picks->count()} GG picks.");
@@ -116,5 +129,25 @@ class PicksAdminController extends Controller
 
         return redirect()->route('admin.picks')
             ->with('success', 'Re-checked outcomes for the last 7 days.');
+    }
+
+    public function regeneratePick(Prediction $prediction, Request $request): RedirectResponse
+    {
+        $type  = $request->input('type', 'daily');
+        $match = $prediction->match;
+
+        if ($match) {
+            if ($type === 'lineup') {
+                $this->predictionService->regenerateWithLineup($match);
+            } else {
+                $this->predictionService->generateForMatch($match);
+            }
+        }
+
+        Artisan::call('picks:notify', ['--type' => $type]);
+
+        $label = $match ? "{$match->home_team} vs {$match->away_team}" : "match #{$prediction->id}";
+
+        return back()->with('success', "Regenerated prediction for {$label} and pushed {$type} notification.");
     }
 }

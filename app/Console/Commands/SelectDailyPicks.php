@@ -134,6 +134,27 @@ class SelectDailyPicks extends Command
             $this->info("✅ {$team3Picks->count()} Team 3+ picks selected.");
         }
 
+        // ── Correct Score picks ────────────────────────────────────
+        $this->info('Selecting Correct Score picks…');
+        $csPicks = $service->selectCorrectScorePicks();
+        if ($csPicks->isEmpty()) {
+            $this->warn('No qualifying Correct Score picks today.');
+        } else {
+            foreach ($csPicks as $p) {
+                $match  = $p->match;
+                $top    = $p->likely_scores[0]['score'] ?? '?';
+                $this->line(sprintf(
+                    '  🎯 CS #%d  %s vs %s  (top score: %s, conf: %s%%)',
+                    $p->correct_score_rank,
+                    $match?->home_team ?? '?',
+                    $match?->away_team ?? '?',
+                    $top,
+                    $p->confidence,
+                ));
+            }
+            $this->info("✅ {$csPicks->count()} Correct Score picks selected.");
+        }
+
         return self::SUCCESS;
     }
 

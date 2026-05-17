@@ -53,12 +53,13 @@ class TelegramService
         $lines = ["⭐ <b>Today's TavsScore Daily Picks</b>\n"];
 
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '⭐';
-            $match  = $pick['match'] ?? '';
-            $tip    = $pick['tip'] ?? '';
-            $conf   = $pick['confidence'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>{$tip}</b> ({$conf}% confidence)";
+            $rank        = $i === 0 ? '👑' : '⭐';
+            $match       = $pick['match'] ?? '';
+            $tip         = $pick['tip'] ?? '';
+            $conf        = $pick['confidence'] ?? '';
+            $league      = $pick['league'] ?? '';
+            $leaguePart  = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>{$tip}</b> ({$conf}% confidence)";
         }
 
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/picks\">See full analysis</a>";
@@ -123,15 +124,17 @@ class TelegramService
         $lines = ["🎯 <b>Today's Correct Score Predictions</b>\n"];
 
         foreach ($predictions as $pred) {
-            $match  = $pred['match'] ?? '';
-            $scores = $pred['scores'] ?? [];
+            $match      = $pred['match'] ?? '';
+            $scores     = $pred['scores'] ?? [];
+            $league     = $pred['league'] ?? '';
             if (empty($scores)) continue;
 
-            $scoreLine = collect($scores)
+            $scoreLine   = collect($scores)
                 ->map(fn ($s) => "{$s['score']} ({$s['pct']}%)")
                 ->implode(' | ');
+            $leaguePart  = $league ? "\n   🏆 {$league}" : '';
 
-            $lines[] = "⚽ <b>{$match}</b>\n   🎯 {$scoreLine}";
+            $lines[] = "⚽ <b>{$match}</b>{$leaguePart}\n   🎯 {$scoreLine}";
         }
 
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/correct-score\">See all predictions</a>";
@@ -169,6 +172,28 @@ class TelegramService
             . "🔗 <a href=\"{$siteUrl}/picks\">See today's picks</a>";
 
         $this->send($message);
+    }
+
+    public function sendRolloverPick(
+        string $match,
+        string $tip,
+        int    $day,
+        float  $stake,
+        float  $potentialReturn,
+        string $siteUrl,
+        string $league = ''
+    ): void {
+        $leaguePart = $league ? "\n   🏆 {$league}" : '';
+
+        $msg = "🎯 <b>ROLLOVER DAY {$day} PICK IS LIVE!</b>\n\n"
+            . "⚽ <b>{$match}</b>{$leaguePart}\n"
+            . "Tip: <b>{$tip}</b>\n\n"
+            . "💰 Stake: <b>" . number_format($stake, 0) . " NGN</b>\n"
+            . "🎁 Potential Return: <b>" . number_format($potentialReturn, 0) . " NGN</b>\n\n"
+            . "🔗 <a href=\"{$siteUrl}/rollover\">Track the challenge</a>\n"
+            . "⚠️ No prediction is guaranteed. Bet responsibly.";
+
+        $this->send($msg);
     }
 
     public function sendRolloverOutcome(
@@ -300,11 +325,12 @@ class TelegramService
         $lines = ["🤝 <b>Today's Draw Picks — Triple AI Agreed</b>\n"];
 
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '⚖️';
-            $match  = $pick['match'] ?? '';
-            $conf   = $pick['confidence'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Draw</b> ({$conf}% confidence)";
+            $rank       = $i === 0 ? '👑' : '⚖️';
+            $match      = $pick['match'] ?? '';
+            $conf       = $pick['confidence'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>Draw</b> ({$conf}% confidence)";
         }
 
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/draw-picks\">See full analysis</a>";
@@ -320,11 +346,12 @@ class TelegramService
         $lines = ["⚽ <b>Today's GG Picks — Both Teams to Score</b>\n"];
 
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '⚽';
-            $match  = $pick['match'] ?? '';
-            $conf   = $pick['confidence'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Both Teams Score</b> ({$conf}% confidence)";
+            $rank       = $i === 0 ? '👑' : '⚽';
+            $match      = $pick['match'] ?? '';
+            $conf       = $pick['confidence'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>Both Teams Score</b> ({$conf}% confidence)";
         }
 
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/gg-picks\">See full analysis</a>";
@@ -433,11 +460,12 @@ class TelegramService
         if (empty($picks)) return;
         $lines = ["⚽ <b>Today's Over 1.5 Goals Picks</b>\n"];
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '⚽';
-            $match  = $pick['match'] ?? '';
-            $prob   = $pick['prob'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Over 1.5 Goals</b> ({$prob}% likely)";
+            $rank       = $i === 0 ? '👑' : '⚽';
+            $match      = $pick['match'] ?? '';
+            $prob       = $pick['prob'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>Over 1.5 Goals</b> ({$prob}% likely)";
         }
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/over-1-5\">See full analysis</a>";
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
@@ -449,11 +477,12 @@ class TelegramService
         if (empty($picks)) return;
         $lines = ["🔥 <b>Today's Over 2.5 Goals Picks</b>\n"];
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '🔥';
-            $match  = $pick['match'] ?? '';
-            $prob   = $pick['prob'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>Over 2.5 Goals</b> ({$prob}% likely)";
+            $rank       = $i === 0 ? '👑' : '🔥';
+            $match      = $pick['match'] ?? '';
+            $prob       = $pick['prob'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>Over 2.5 Goals</b> ({$prob}% likely)";
         }
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/over-2-5\">See full analysis</a>";
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
@@ -465,12 +494,13 @@ class TelegramService
         if (empty($picks)) return;
         $lines = ["🚫 <b>Today's Team 3+ Goals — NO Picks</b>\n"];
         foreach ($picks as $i => $pick) {
-            $rank   = $i === 0 ? '👑' : '🚫';
-            $match  = $pick['match'] ?? '';
-            $team   = $pick['team'] ?? '';
-            $prob   = $pick['prob'] ?? '';
-            $league = $pick['league'] ?? '';
-            $lines[] = "{$rank} <b>{$match}</b>\n   {$league}\n   Tip: <b>{$team} — 3+ Goals NO</b> (only {$prob}% chance they score 3+)";
+            $rank       = $i === 0 ? '👑' : '🚫';
+            $match      = $pick['match'] ?? '';
+            $team       = $pick['team'] ?? '';
+            $prob       = $pick['prob'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>{$team} — 3+ Goals NO</b> (only {$prob}% chance they score 3+)";
         }
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/team-3-plus\">See full analysis</a>";
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";

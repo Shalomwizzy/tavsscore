@@ -6,8 +6,21 @@
 
 <div class="page-hd">
     <span class="page-hd-title">⚡ Lineup Confirmed Picks</span>
-    <a href="{{ route('lineup-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+    <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.lineup-picks.notify') }}"
+              onsubmit="return confirm('Push all today\'s lineup picks to Telegram and OneSignal?');">
+            @csrf
+            <button type="submit" class="btn-a btn-green">📢 Push Notification</button>
+        </form>
+        <a href="{{ route('lineup-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
+    </div>
 </div>
+
+@if(session('success'))
+<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#6ee7b7;">
+    ✅ {{ session('success') }}
+</div>
+@endif
 
 {{-- Today --}}
 <div class="a-card" style="margin-bottom:1.25rem; border-color:rgba(16,185,129,.3);">
@@ -35,6 +48,7 @@
                     <th>Top Scoreline</th>
                     <th>Kickoff (Lagos)</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -63,6 +77,14 @@
                         @else
                             <span class="badge badge-green">⚡ Lineup Set</span>
                         @endif
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ route('admin.picks.regenerate', $pick) }}"
+                              onsubmit="return confirm('Re-run lineup AI for this match and push lineup notification?');">
+                            @csrf
+                            <input type="hidden" name="type" value="lineup">
+                            <button type="submit" style="background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);padding:2px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;">🔄 Regen</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach

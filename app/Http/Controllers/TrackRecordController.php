@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CalibrationSnapshot;
 use App\Models\Prediction;
 use App\Services\CalibrationService;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class TrackRecordController extends Controller
@@ -69,10 +68,18 @@ class TrackRecordController extends Controller
         }
 
         // ── Confidence calibration bands ─────────────────────────────
-        $calibration = $this->calibration->bands();
+        try {
+            $calibration = $this->calibration->bands();
+        } catch (\Throwable) {
+            $calibration = collect();
+        }
 
         // ── Monthly snapshots (system evolution over time) ───────────
-        $snapshots = CalibrationSnapshot::orderBy('period_label')->get();
+        try {
+            $snapshots = CalibrationSnapshot::orderBy('period_label')->get();
+        } catch (\Throwable) {
+            $snapshots = collect();
+        }
 
         // ── Best and worst months ─────────────────────────────────────
         $qualified  = $monthly->filter(fn ($m) => $m['total'] >= 5);

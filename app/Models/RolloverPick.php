@@ -13,13 +13,14 @@ class RolloverPick extends Model
         'implied_odds', 'stake_amount', 'potential_return',
         'was_correct', 'result_score',
         'groq_verdict', 'gemini_verdict', 'mistral_verdict', 'both_agree',
-        'status',
+        'status', 'winner_reminder_sent',
     ];
 
     protected $casts = [
         'pick_date'       => 'date',
         'was_correct'     => 'boolean',
-        'both_agree'      => 'boolean',
+        'both_agree'           => 'boolean',
+        'winner_reminder_sent' => 'boolean',
         'implied_odds'    => 'decimal:2',
         'stake_amount'    => 'decimal:2',
         'potential_return' => 'decimal:2',

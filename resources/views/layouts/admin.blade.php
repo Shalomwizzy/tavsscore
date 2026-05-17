@@ -299,6 +299,9 @@
             <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}">
                 <span class="sb-icon">🧠</span> AI Learning
             </a>
+            <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}">
+                <span class="sb-icon">⚡</span> Pi-Ratings
+            </a>
 
             <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <span class="sb-icon">⚙️</span> Settings
@@ -325,6 +328,12 @@
             </a>
             <a href="{{ route('team3plus-picks.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">↗</span> Public Team 3+
+            </a>
+            <a href="{{ route('correct-score.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Correct Score
+            </a>
+            <a href="{{ route('lineup-picks.index') }}" target="_blank" class="sb-link">
+                <span class="sb-icon">↗</span> Public Lineup Picks
             </a>
             <a href="{{ route('blog.index') }}" target="_blank" class="sb-link">
                 <span class="sb-icon">📰</span> View Blog

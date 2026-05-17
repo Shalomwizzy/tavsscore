@@ -69,6 +69,7 @@
                     <th>Kickoff (Lagos)</th>
                     <th>AI</th>
                     <th>Result</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -111,6 +112,14 @@
                                 <span class="badge badge-gray">⏳ Pending</span>
                             @endif
                         @endif
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ route('admin.picks.regenerate', $pick) }}"
+                              onsubmit="return confirm('Re-run AI for this match and push notification?');">
+                            @csrf
+                            <input type="hidden" name="type" value="over15">
+                            <button type="submit" style="background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:2px 10px;border-radius:5px;font-size:.72rem;cursor:pointer;">🔄 Regen</button>
+                        </form>
                     </td>
                 </tr>
                 @endforeach

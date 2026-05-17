@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Prediction;
 use App\Models\RolloverChallenge;
 use App\Models\RolloverPick;
+use App\Support\LeagueCoverage;
 use App\Support\PickHelpers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -121,6 +122,14 @@ class RolloverService
         $stake = $this->calculateStake($challenge, $dayNumber);
 
         // Find the best match from today's predictions
+        // Rollover stakes real money — restrict to top European + CAF continental only.
+        // African domestic leagues (NPFL, PSL, etc.) are excluded here because bookmaker
+        // odds are thin, data is sparse, and AI calibration is weaker on those fixtures.
+        $eligibleLeagues = array_merge(
+            \App\Support\LeagueCoverage::topEuropean(),
+            \App\Support\LeagueCoverage::africaContinental(),
+        );
+
         // Selection is driven by AI confidence + dual-AI agreement, NOT odds
         $candidates = Prediction::query()
             ->with('match')
@@ -134,6 +143,7 @@ class RolloverService
                     CarbonImmutable::now($tz)->endOfDay(),
                 ])
                 ->whereNotIn('status', ['CANC', 'PST', 'FT', 'AET', 'PEN', 'ABD'])
+                ->whereIn('league_id', $eligibleLeagues)
             )
             ->orderByDesc('confidence')
             ->limit(20)
@@ -160,9 +170,9 @@ class RolloverService
 
             $groqNorm = mb_strtolower(trim($pred->predicted_outcome));
 
-            // Any AI below 50% confidence → skip this match
-            if ($geminiVerdict  !== null && $geminiVerdict['confidence']  < 50) continue;
-            if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 50) continue;
+            // Any AI below 60% confidence → skip this match
+            if ($geminiVerdict  !== null && $geminiVerdict['confidence']  < 60) continue;
+            if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 60) continue;
 
             // Every configured AI must independently reach the same outcome as Groq
             $geminiOk  = $geminiVerdict  === null || mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm;
@@ -193,7 +203,9 @@ class RolloverService
         $pred        = $best['prediction'];
         $displayOdds = $this->impliedOdds($pred); // display only, not selection criteria
 
-        return RolloverPick::create([
+        $potentialReturn = round($stake * $displayOdds, 2);
+
+        $pick = RolloverPick::create([
             'challenge_id'     => $challenge->id,
             'match_id'         => $pred->match_id,
             'prediction_id'    => $pred->id,
@@ -201,12 +213,35 @@ class RolloverService
             'pick_date'        => $today,
             'implied_odds'     => $displayOdds,
             'stake_amount'     => $stake,
-            'potential_return' => round($stake * $displayOdds, 2),
+            'potential_return' => $potentialReturn,
             'groq_verdict'     => $pred->predicted_outcome,
             'gemini_verdict'   => $best['geminiVerdict']['outcome']  ?? null,
             'both_agree'       => $best['allAgree'],
             'status'           => 'pending',
         ]);
+
+        // Notify users about the new rollover pick
+        $matchLabel = "{$pred->match?->home_team} vs {$pred->match?->away_team}";
+        $league     = LeagueCoverage::formatName($pred->match?->league, $pred->match?->league_country);
+        $siteUrl    = config('app.url');
+
+        $this->oneSignal->sendMatchAlert(
+            title:   "🎯 Rollover Day {$dayNumber} Pick Is Live!",
+            message: ($league ? "[{$league}] " : '') . "{$matchLabel} — Tip: {$pred->predicted_outcome} @ {$displayOdds} odds. Tap to track.",
+            path:    '/rollover',
+        );
+
+        $this->telegram->sendRolloverPick(
+            $matchLabel,
+            $pred->predicted_outcome,
+            $dayNumber,
+            $stake,
+            $potentialReturn,
+            $siteUrl,
+            $league,
+        );
+
+        return $pick;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -264,7 +299,7 @@ class RolloverService
                 $matchLabel = "{$match->home_team} vs {$match->away_team}";
                 $tip        = $pick->groq_verdict ?? $pick->gemini_verdict ?? '—';
                 $siteUrl    = config('app.url');
-                $league     = $match->league ?? '';
+                $league     = LeagueCoverage::formatName($match->league, $match->league_country);
 
                 if ($newStatus === 'won') {
                     $this->oneSignal->sendPickOutcome(
@@ -292,18 +327,15 @@ class RolloverService
                     league:  $league,
                 );
 
-                // Winner upload reminder on every rollover win
-                if ($newStatus === 'won') {
-                    $reminderKey = "winner_reminder_rollover_{$pick->id}";
-                    if (! Cache::has($reminderKey)) {
-                        $this->oneSignal->sendPickOutcome(
-                            title: '🏆 Won? Upload Your Screenshot!',
-                            body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
-                            path:  '/winners',
-                        );
-                        $this->telegram->sendWinnerUploadReminder($siteUrl);
-                        Cache::put($reminderKey, true, now()->addDays(3));
-                    }
+                // Winner upload reminder — DB flag so it survives cache:clear and deploys
+                if ($newStatus === 'won' && ! $pick->winner_reminder_sent) {
+                    $this->oneSignal->sendPickOutcome(
+                        title: '🏆 Won? Upload Your Screenshot!',
+                        body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
+                        path:  '/winners',
+                    );
+                    $this->telegram->sendWinnerUploadReminder($siteUrl);
+                    $pick->update(['winner_reminder_sent' => true]);
                 }
 
                 Cache::put($cacheKey, true, now()->addDays(3));

@@ -23,9 +23,21 @@ class LineupService
 
         $cacheKey = "lineup_{$match->api_id}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($match) {
-            return $this->fetch((int) $match->api_id);
-        });
+        // Return cached lineup if we already found one.
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null && $cached !== '') {
+            return $cached;
+        }
+
+        // Don't cache empty results — keep hitting the API every minute until
+        // the lineup is published. Once found, cache it for 90 minutes.
+        $data = $this->fetch((int) $match->api_id);
+
+        if ($data !== '') {
+            Cache::put($cacheKey, $data, now()->addMinutes(90));
+        }
+
+        return $data;
     }
 
     private function isWithinWindow(FootballMatch $match): bool

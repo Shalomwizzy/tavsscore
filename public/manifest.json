@@ -42,9 +42,5 @@
         }
     ],
     "categories": ["sports", "news"],
-    "lang": "en",
-    "serviceworker": {
-        "src": "/sw.js",
-        "scope": "/"
-    }
+    "lang": "en"
 }

@@ -188,6 +188,8 @@ class CheckPredictionOutcomesTest extends TestCase
             'analysis'               => 'Test analysis.',
             'likely_scores'          => [['score' => '2-1', 'probability' => 18.5]],
             'correct_score_notified' => false,
+            'is_correct_score_pick'  => true,
+            'correct_score_rank'     => 1,
         ]);
 
         $this->artisan('predictions:check-outcomes')->assertSuccessful();
@@ -208,6 +210,8 @@ class CheckPredictionOutcomesTest extends TestCase
             'analysis'               => 'Test analysis.',
             'likely_scores'          => [['score' => '2-1', 'probability' => 18.5]],
             'correct_score_notified' => true, // already sent
+            'is_correct_score_pick'  => true,
+            'correct_score_rank'     => 1,
         ]);
 
         // Pre-seed outcome cache key so outcome notifications are also skipped
