@@ -134,13 +134,13 @@
         @endif
         <div class="tr-stat">
             <div class="tr-stat-lbl">Current Streak</div>
-            <div class="tr-stat-val {{ $streak['type'] === 'W' ? 'tr-stat-green' : ($streak['type'] === 'L' ? 'tr-stat-red' : '') }}">
+            <div class="tr-stat-val {{ $streak['type'] === 'win' ? 'tr-stat-green' : ($streak['type'] === 'loss' ? 'tr-stat-red' : '') }}">
                 @if($streak['count'] > 0)
-                    {{ $streak['type'] === 'W' ? '🔥' : '❄️' }} {{ $streak['count'] }}
+                    {{ $streak['type'] === 'win' ? '🔥' : '❄️' }} {{ $streak['count'] }}
                 @else N/A @endif
             </div>
             <div class="tr-stat-sub">
-                @if($streak['count'] > 0) {{ $streak['type'] === 'W' ? 'correct in a row' : 'wrong in a row' }}
+                @if($streak['count'] > 0) {{ $streak['type'] === 'win' ? 'correct in a row' : 'wrong in a row' }}
                 @else no streak yet @endif
             </div>
         </div>
