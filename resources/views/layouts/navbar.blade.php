@@ -23,7 +23,7 @@
                class="nav-pill {{ request()->routeIs('predictions.*') ? 'active' : '' }}">Predictions</a>
 
             {{-- Picks dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
+            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     ⭐ Picks
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -63,8 +63,12 @@
                         <span><span class="ndi-label">Over 2.5 Goals</span><span class="ndi-sub">5 daily picks</span></span>
                     </a>
                     <a href="{{ route('team3plus-picks.index') }}" class="nav-drop-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🚫</span>
+                        <span><span class="ndi-label">Team Goals NO</span><span class="ndi-sub">2+ & 3+ NO picks</span></span>
+                    </a>
+                    <a href="{{ route('double-chance.index') }}" class="nav-drop-item {{ request()->routeIs('double-chance.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🎯</span>
-                        <span><span class="ndi-label">Team 3+ Goals</span><span class="ndi-sub">A team to score 3+</span></span>
+                        <span><span class="ndi-label">Double Chance</span><span class="ndi-sub">1X & 2X daily picks</span></span>
                     </a>
                 </div>
             </div>
@@ -227,10 +231,17 @@
             </span>
         </a>
         <a href="{{ route('team3plus-picks.index') }}" class="drawer-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🚫</span>
+            <span class="di-text">
+                Team Goals NO
+                <small>2+ & 3+ NO picks</small>
+            </span>
+        </a>
+        <a href="{{ route('double-chance.index') }}" class="drawer-item {{ request()->routeIs('double-chance.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🎯</span>
             <span class="di-text">
-                Team 3+ Goals
-                <small>A team to score 3+</small>
+                Double Chance
+                <small>1X & 2X daily picks</small>
             </span>
         </a>
 
