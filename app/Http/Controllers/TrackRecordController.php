@@ -94,7 +94,11 @@ class TrackRecordController extends Controller
             ->limit(30)
             ->get(['was_correct', 'created_at']);
 
-        $streak = \App\Support\PickHelpers::streakFromResolved($recent);
+        try {
+            $streak = \App\Support\PickHelpers::streakFromResolved($recent);
+        } catch (\Throwable) {
+            $streak = ['type' => 'none', 'count' => 0, 'best' => 0];
+        }
 
         return view('track-record.index', compact(
             'total', 'correct', 'overall',
