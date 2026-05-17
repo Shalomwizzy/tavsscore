@@ -27,7 +27,7 @@ class FootballService
 
     public function fetchLiveMatches(): array
     {
-        return Cache::remember(self::LIVE_CACHE_KEY, now()->addSeconds(30), function (): array {
+        return Cache::remember(self::LIVE_CACHE_KEY, now()->addSeconds(60), function (): array {
             return $this->fetchFixtures(['live' => 'all']);
         });
     }
@@ -36,8 +36,7 @@ class FootballService
     {
         $date = CarbonImmutable::now(config('app.timezone'))->toDateString();
 
-        // 30s TTL matches live-feed TTL so finished status reaches DB within one cron cycle
-        return Cache::remember(self::TODAY_CACHE_KEY.'.'.$date, now()->addSeconds(30), function () use ($date): array {
+        return Cache::remember(self::TODAY_CACHE_KEY.'.'.$date, now()->addMinutes(3), function () use ($date): array {
             return $this->fetchFixtures(['date' => $date]);
         });
     }

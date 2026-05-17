@@ -21,7 +21,8 @@ class LineupService
             return '';
         }
 
-        $cacheKey = "lineup_{$match->api_id}";
+        $cacheKey      = "lineup_{$match->api_id}";
+        $missKey       = "lineup_miss_{$match->api_id}";
 
         // Return cached lineup if we already found one.
         $cached = Cache::get($cacheKey);
@@ -29,12 +30,18 @@ class LineupService
             return $cached;
         }
 
-        // Don't cache empty results — keep hitting the API every minute until
-        // the lineup is published. Once found, cache it for 90 minutes.
+        // Back off 5 minutes after each empty API response to avoid burning quota
+        // hammering the API every minute before clubs publish their lineups.
+        if (Cache::has($missKey)) {
+            return '';
+        }
+
         $data = $this->fetch((int) $match->api_id);
 
         if ($data !== '') {
             Cache::put($cacheKey, $data, now()->addMinutes(90));
+        } else {
+            Cache::put($missKey, true, now()->addMinutes(5));
         }
 
         return $data;
