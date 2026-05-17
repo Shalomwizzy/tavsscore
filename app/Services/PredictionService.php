@@ -251,6 +251,8 @@ class PredictionService
                 'over_25_prob'      => $over25,
                 'over_35_prob'      => $over35,
                 'btts_prob'         => $btts,
+                'home_2plus_prob'   => $poisson['home_2plus'],
+                'away_2plus_prob'   => $poisson['away_2plus'],
                 'home_3plus_prob'   => $poisson['home_3plus'],
                 'away_3plus_prob'   => $poisson['away_3plus'],
                 'predicted_outcome' => $primaryOutcome,
@@ -1210,7 +1212,11 @@ class PredictionService
      * For the "A Team to Score 3+" YES/NO market, we predict NO on the team
      * with the lowest Poisson P(goals ≥ 3) — i.e. the team we are most confident
      * will NOT score 3 goals. We require that team's probability ≤ 8%.
-     * Stored with team3plus_label = 'Home' or 'Away' (the team we predict NO on).
+     * Stored with team3plus_label = 'Home 3+', 'Away 3+', 'Home 2+', or 'Away 2+'.
+     * We predict NO on both the 2+ and 3+ markets and pick the single safest NO:
+     * — 3+ NO (≤15% threshold): team predicted not to score 3 or more goals.
+     * — 2+ NO (≤25% threshold): team predicted not to score 2 or more goals (fallback).
+     * Lower Poisson probability = more confident NO = preferred pick.
      */
     public function selectTeam3PlusPicks(): EloquentCollection
     {
@@ -1218,7 +1224,6 @@ class PredictionService
         $cutoff = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        // Fetch candidates BEFORE clearing so existing picks survive if nothing qualifies.
         $candidates = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
@@ -1231,15 +1236,36 @@ class PredictionService
                 ->whereNotIn('status', $excluded)
             )
             ->get()
-            ->map(function (Prediction $p) {
+            ->map(function (Prediction $p): ?array {
                 $home3 = (float) ($p->home_3plus_prob ?? 0);
                 $away3 = (float) ($p->away_3plus_prob ?? 0);
-                $label = $home3 <= $away3 ? 'Home' : 'Away';
-                $prob  = min($home3, $away3);
-                return ['prediction' => $p, 'prob' => $prob, 'label' => $label];
+                $home2 = (float) ($p->home_2plus_prob ?? 0);
+                $away2 = (float) ($p->away_2plus_prob ?? 0);
+
+                // Collect all qualifying NO picks; lower probability = more confident NO
+                $options = [];
+                if ($home3 > 0 && $home3 <= 15.0) $options[] = ['label' => 'Home 3+', 'prob' => $home3];
+                if ($away3 > 0 && $away3 <= 15.0) $options[] = ['label' => 'Away 3+', 'prob' => $away3];
+                // 2+ NO is a fallback: only surface when 3+ doesn't qualify but 2+ is very low
+                if ($home2 > 0 && $home2 <= 25.0 && ($home3 <= 0 || $home3 > 15.0)) {
+                    $options[] = ['label' => 'Home 2+', 'prob' => $home2];
+                }
+                if ($away2 > 0 && $away2 <= 25.0 && ($away3 <= 0 || $away3 > 15.0)) {
+                    $options[] = ['label' => 'Away 2+', 'prob' => $away2];
+                }
+
+                if (empty($options)) return null;
+
+                usort($options, fn ($a, $b) => $a['prob'] <=> $b['prob']);
+                $best = $options[0];
+
+                return ['prediction' => $p, 'label' => $best['label'], 'prob' => $best['prob']];
             })
-            ->filter(fn ($item) => $item['prob'] <= 15.0)
-            ->sortBy(fn ($item) => (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? -1000 : 0) + $item['prob'])
+            ->filter()
+            ->sortBy(fn ($item) =>
+                (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? -1000 : 0)
+                + $item['prob']
+            )
             ->take(5)
             ->values();
 
@@ -1386,7 +1412,7 @@ class PredictionService
             return 1.0;
         };
 
-        $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = $h3p = $a3p = 0.0;
+        $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = $h3p = $a3p = $h2p = $a2p = 0.0;
 
         for ($h = 0; $h <= self::MAX_GOALS_GRID; $h++) {
             $ph = $this->poisson($homeXg, $h);
@@ -1401,6 +1427,8 @@ class PredictionService
                 if ($g >= 3)  { $o25 += $p; }
                 if ($g >= 4)  { $o35 += $p; }
                 if ($h >= 1 && $a >= 1) { $btts += $p; }
+                if ($h >= 2)  { $h2p += $p; }
+                if ($a >= 2)  { $a2p += $p; }
                 if ($h >= 3)  { $h3p += $p; }
                 if ($a >= 3)  { $a3p += $p; }
             }
@@ -1424,6 +1452,8 @@ class PredictionService
             'btts'             => round($btts / $tot * 100, 1),
             'home_clean_sheet' => $homeClean,
             'away_clean_sheet' => $awayClean,
+            'home_2plus'       => round($h2p  / $tot * 100, 1),
+            'away_2plus'       => round($a2p  / $tot * 100, 1),
             'home_3plus'       => round($h3p  / $tot * 100, 1),
             'away_3plus'       => round($a3p  / $tot * 100, 1),
         ];
@@ -1515,7 +1545,11 @@ class PredictionService
         $scored = $conceded = $htScored = $htConceded = 0;
         $homeMatches = $awayMatches = 0;
         $homeScored  = $homeConceded = $awayScored = $awayConceded = 0;
-        $formDetailed = [];
+        $formDetailed  = [];
+        $streak2plus   = 0;
+        $streak3plus   = 0;
+        $inStreak2plus = true;
+        $inStreak3plus = true;
 
         foreach ($matches as $m) {
             $isHome = $m->home_team === $team;
@@ -1544,6 +1578,10 @@ class PredictionService
             $venue    = $isHome ? 'H' : 'A';
             $date     = $m->match_time?->format('d M');
             $formDetailed[] = "{$result}({$gf}-{$ga}) {$venue} {$date} vs {$opponent}";
+
+            // Consecutive scoring streak counters (matches are newest-first)
+            if ($inStreak2plus && $gf >= 2) $streak2plus++; else $inStreak2plus = false;
+            if ($inStreak3plus && $gf >= 3) $streak3plus++; else $inStreak3plus = false;
         }
 
         $n = max(1, $matches->count());
@@ -1574,6 +1612,8 @@ class PredictionService
             'cpg'            => round($conceded / $n, 2),
             'ht_gpg'         => round($htScored   / $n, 2),
             'ht_cpg'         => round($htConceded  / $n, 2),
+            'streak_2plus'   => $streak2plus,
+            'streak_3plus'   => $streak3plus,
         ];
     }
 

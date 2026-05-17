@@ -44,8 +44,7 @@ class Team3PlusController extends Controller
 
         $correct = $recentPicks->filter(function ($p) {
             if (! $p->match) return false;
-            $label = $p->team3plus_label ?? 'Home';
-            return $label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3;
+            return $this->pickWon($p);
         })->count();
         $total   = $recentPicks->count();
         $accuracy = [
@@ -62,13 +61,28 @@ class Team3PlusController extends Controller
         foreach ($picks as $p) {
             if (! in_array($p->match?->status, ['FT', 'AET', 'PEN'], true)) continue;
             if ($p->match?->home_score === null) continue;
-            $label = $p->team3plus_label ?? 'Home';
-            $won   = $label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3;
             if ($p->was_correct === null) {
+                $won = $this->pickWon($p);
                 $p->update(['was_correct' => $won]);
                 $p->was_correct = $won;
             }
         }
+    }
+
+    /**
+     * Determine if a team3plus NO pick won.
+     * Labels: 'Home 3+', 'Away 3+', 'Home 2+', 'Away 2+' (new format)
+     *         'Home', 'Away' (legacy format — NO on 3+ market)
+     * NO pick wins when the named team scores FEWER than the market threshold.
+     */
+    private function pickWon(Prediction $p): bool
+    {
+        $label  = $p->team3plus_label ?? 'Home 3+';
+        $isHome = str_starts_with($label, 'Home');
+        $goals  = $isHome ? (int) $p->match->home_score : (int) $p->match->away_score;
+
+        if (str_ends_with($label, '2+')) return $goals < 2;   // NO on 2+: wins when team scores 0 or 1
+        return $goals < 3;                                     // NO on 3+ (new & legacy): wins when team scores < 3
     }
 
     private function formatPick(Prediction $p): array
@@ -77,14 +91,20 @@ class Team3PlusController extends Controller
             && $p->analysis !== GroqService::FALLBACK_ANALYSIS
             && $p->analysis !== 'Prediction pending';
 
-        $label    = $p->team3plus_label ?? 'Home';
+        $label    = $p->team3plus_label ?? 'Home 3+';
+        $isHome   = str_starts_with($label, 'Home');
+        $market   = str_ends_with($label, '2+') ? '2+' : '3+';
         $home3    = (float)($p->home_3plus_prob ?? 0);
         $away3    = (float)($p->away_3plus_prob ?? 0);
-        $prob     = $label === 'Home' ? $home3 : $away3;   // the named team's 3+ prob (low = confident NO)
-        $teamName = $label === 'Home' ? ($p->match?->home_team ?? 'Home') : ($p->match?->away_team ?? 'Away');
+        $home2    = (float)($p->home_2plus_prob ?? 0);
+        $away2    = (float)($p->away_2plus_prob ?? 0);
+        $prob     = $market === '2+'
+            ? ($isHome ? $home2 : $away2)
+            : ($isHome ? $home3 : $away3);
+        $teamName = $isHome ? ($p->match?->home_team ?? 'Home') : ($p->match?->away_team ?? 'Away');
         $isFt     = in_array($p->match?->status, ['FT', 'AET', 'PEN'], true);
         $isLive   = in_array($p->match?->status, ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'], true);
-        $won      = $isFt ? ($label === 'Home' ? (int)$p->match->home_score < 3 : (int)$p->match->away_score < 3) : null;
+        $won      = $isFt ? $this->pickWon($p) : null;
 
         $liveScore = null;
         if (($isLive || $isFt) && $p->match && $p->match->home_score !== null) {
@@ -95,8 +115,9 @@ class Team3PlusController extends Controller
             'id'          => $p->id,
             'rank'        => $p->team3plus_rank,
             'label'       => $label,
+            'market'      => $market,
             'team_name'   => $teamName,
-            'prob'        => round($prob, 1),   // named team's 3+ prob (low = confident NO)
+            'prob'        => round($prob, 1),
             'analysis'    => $p->analysis,
             'is_ai'       => $isAi,
             'was_correct' => $won,

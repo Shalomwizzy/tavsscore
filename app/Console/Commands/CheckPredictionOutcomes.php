@@ -330,26 +330,31 @@ class CheckPredictionOutcomes extends Command
                 $prediction->update(['over25_notified' => true]);
             }
 
-            // Team 3+ NO — wins when the named team scores fewer than 3
+            // Team goals NO pick — wins when the named team scores fewer than the market threshold
             if ($prediction->is_team3plus_pick && ! $prediction->team3plus_notified) {
-                $label    = $prediction->team3plus_label ?? 'Home';
-                $teamName = $label === 'Home' ? $match->home_team : $match->away_team;
-                $won      = $label === 'Home' ? $home < 3 : $away < 3;
+                $label    = $prediction->team3plus_label ?? 'Home 3+';
+                $isHome   = str_starts_with($label, 'Home');
+                $teamName = $isHome ? $match->home_team : $match->away_team;
+                $goals    = $isHome ? $home : $away;
+
+                // 2+ NO: wins when team scores 0 or 1. 3+ NO (new & legacy): wins when team scores < 3.
+                if (str_ends_with($label, '2+')) { $won = $goals < 2; $marketLabel = '2+ Goals: NO'; }
+                else                              { $won = $goals < 3; $marketLabel = '3+ Goals: NO'; }
 
                 $this->line($won
-                    ? "  🚫✅  {$matchLabel} {$score} — {$teamName} did NOT score 3+ (NO hit)"
-                    : "  🚫❌  {$matchLabel} {$score} — {$teamName} scored 3+, NO missed");
+                    ? "  🚫✅  {$matchLabel} {$score} — {$teamName} {$marketLabel} hit"
+                    : "  🚫❌  {$matchLabel} {$score} — {$teamName} {$marketLabel} missed");
 
                 if ($won) {
                     $oneSignal->sendPickOutcome(
-                        title: '🚫 Team 3+ NO — Won! 🔥',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} stayed under 3 goals! ✅",
+                        title: '🚫 Team ' . $marketLabel . ' — Won! 🔥',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} stayed under! ✅",
                         path:  '/team-3-plus',
                     );
                 } else {
                     $oneSignal->sendPickOutcome(
-                        title: '😔 Team 3+ NO — Didn\'t Land',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} hit 3+. We recalibrate 💪",
+                        title: '😔 Team ' . $marketLabel . ' — Missed',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} hit the target. We recalibrate 💪",
                         path:  '/team-3-plus',
                     );
                 }
