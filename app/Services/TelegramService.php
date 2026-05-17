@@ -506,4 +506,35 @@ class TelegramService
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
         $this->send(implode("\n", $lines));
     }
+
+    public function sendDoubleChancePicks(array $picks, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+        $lines = ["🎯 <b>Today's Double Chance Picks — 1X & 2X</b>\n"];
+        foreach ($picks as $i => $pick) {
+            $rank       = $i === 0 ? '👑' : '🎯';
+            $match      = $pick['match'] ?? '';
+            $label      = $pick['label'] ?? '1X';
+            $prob       = $pick['prob'] ?? '';
+            $league     = $pick['league'] ?? '';
+            $leaguePart = $league ? "\n   🏆 {$league}" : '';
+            $desc       = $label === '1X' ? 'Home Win or Draw' : 'Away Win or Draw';
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>{$label} ({$desc})</b> — {$prob}% confidence";
+        }
+        $lines[] = "\n🔗 <a href=\"{$siteUrl}/double-chance\">See full analysis</a>";
+        $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";
+        $this->send(implode("\n", $lines));
+    }
+
+    public function sendDoubleChanceOutcome(string $match, string $label, string $score, bool $won, string $siteUrl, string $league = ''): void
+    {
+        $desc = $label === '1X' ? 'Home Win or Draw' : 'Away Win or Draw';
+        $leaguePart = $league ? "🏆 {$league} | " : '';
+        if ($won) {
+            $msg = "✅ <b>Double Chance {$label} — WON! 🎯</b>\n{$leaguePart}{$match} ended <b>{$score}</b>\nPick: <b>{$label} ({$desc})</b> ✅\n\n🔗 <a href=\"{$siteUrl}/double-chance\">View picks</a>";
+        } else {
+            $msg = "❌ <b>Double Chance {$label} — Missed</b>\n{$leaguePart}{$match} ended <b>{$score}</b>\nPick: <b>{$label} ({$desc})</b> — didn't land this time. We recalibrate 💪\n\n🔗 <a href=\"{$siteUrl}/double-chance\">View picks</a>";
+        }
+        $this->send($msg);
+    }
 }

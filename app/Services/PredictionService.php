@@ -1345,6 +1345,74 @@ class PredictionService
     }
 
     /**
+     * Select up to 5 Double Chance picks for today.
+     * Label '1X' = Home Win or Draw (home_win_prob + draw_prob).
+     * Label '2X' = Away Win or Draw (away_win_prob + draw_prob).
+     * For each match we take whichever label has the higher combined probability,
+     * require ≥ 72%, then rank by probability descending and take the top 5.
+     */
+    public function selectDoubleChancePicks(): EloquentCollection
+    {
+        $today    = now('Africa/Lagos')->startOfDay();
+        $cutoff   = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->whereNotNull('home_win_prob')
+            ->whereNotNull('draw_prob')
+            ->whereNotNull('away_win_prob')
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->map(function (Prediction $p): ?array {
+                $dc1x = (float) $p->home_win_prob + (float) $p->draw_prob;
+                $dc2x = (float) $p->away_win_prob + (float) $p->draw_prob;
+
+                if ($dc1x >= $dc2x && $dc1x >= 72.0) {
+                    return ['prediction' => $p, 'label' => '1X', 'prob' => $dc1x];
+                }
+                if ($dc2x > $dc1x && $dc2x >= 72.0) {
+                    return ['prediction' => $p, 'label' => '2X', 'prob' => $dc2x];
+                }
+                return null;
+            })
+            ->filter()
+            ->sortByDesc(fn ($item) =>
+                (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+                + $item['prob']
+            )
+            ->take(5)
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_double_chance_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('double_chance_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_double_chance_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_double_chance_pick' => false, 'double_chance_rank' => null, 'double_chance_label' => null]);
+
+        $candidates->each(function (array $item, int $idx) {
+            $item['prediction']->update([
+                'is_double_chance_pick' => true,
+                'double_chance_rank'    => $idx + 1,
+                'double_chance_label'   => $item['label'],
+            ]);
+        });
+
+        return $candidates->map(fn ($i) => $i['prediction'])->pipe(
+            fn ($col) => new EloquentCollection($col->all())
+        );
+    }
+
+    /**
      * Settle any finished predictions that the scheduler hasn't resolved yet.
      * Runs inline so API responses always include up-to-date was_correct values.
      */

@@ -252,6 +252,7 @@ class CheckPredictionOutcomes extends Command
                 ->where('is_over15_pick', true)
                 ->orWhere('is_over25_pick', true)
                 ->orWhere('is_team3plus_pick', true)
+                ->orWhere('is_double_chance_pick', true)
             )
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
@@ -365,6 +366,37 @@ class CheckPredictionOutcomes extends Command
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
                 $prediction->update(['team3plus_notified' => true]);
+            }
+
+            // Double Chance — wins when the result matches the 1X or 2X label
+            if ($prediction->is_double_chance_pick && ! $prediction->double_chance_notified) {
+                $label = $prediction->double_chance_label ?? '1X';
+                $won   = $label === '1X' ? ($home >= $away) : ($away >= $home);
+
+                $this->line($won
+                    ? "  🎯✅  {$matchLabel} {$score} — Double Chance {$label} hit"
+                    : "  🎯❌  {$matchLabel} {$score} — Double Chance {$label} missed");
+
+                if ($won) {
+                    $oneSignal->sendPickOutcome(
+                        title: '🎯 Double Chance ' . $label . ' — WON! 💰',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — result covered! ✅",
+                        path:  '/double-chance',
+                    );
+                } else {
+                    $oneSignal->sendPickOutcome(
+                        title: '😔 Double Chance ' . $label . ' — Missed',
+                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Tough one — we recalibrate 💪",
+                        path:  '/double-chance',
+                    );
+                }
+                $telegram->sendDoubleChanceOutcome($matchLabel, $label, $score, $won, $siteUrl, $league);
+                if ($won && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
+                $prediction->update(['double_chance_notified' => true]);
             }
         }
 

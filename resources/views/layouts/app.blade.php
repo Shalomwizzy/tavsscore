@@ -640,6 +640,7 @@
                     <a href="{{ route('picks.index') }}">⭐ Daily Picks</a>
                     <a href="{{ route('draw-picks.index') }}">🤝 Draw Picks</a>
                     <a href="{{ route('gg-picks.index') }}">⚽ GG Picks</a>
+                    <a href="{{ route('double-chance.index') }}">🎯 Double Chance</a>
                     <a href="{{ route('lineup-picks.index') }}">⚡ Lineup Picks</a>
                     <a href="{{ route('rollover.index') }}">🔄 Rollover</a>
                     <a href="{{ route('correct-score.index') }}">🎯 Correct Score</a>

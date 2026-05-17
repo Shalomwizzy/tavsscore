@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 class NotifyDailyPicks extends Command
 {
-    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|team3plus|lineup|correctscore (default: all)}';
+    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|team3plus|doublechance|lineup|correctscore (default: all)}';
 
     protected $description = 'Send push + Telegram for today\'s picks. Use --type= to send one group at a time for staggered scheduling.';
 
@@ -198,6 +198,54 @@ class NotifyDailyPicks extends Command
                 $this->info("Team 3+ picks sent: {$team3Picks->count()}");
             } else {
                 $this->warn('No Team 3+ picks today — skipped.');
+            }
+        }
+
+        // ── Double Chance picks ────────────────────────────────────
+        if ($type === 'all' || $type === 'doublechance') {
+            $dcPicks = Prediction::query()
+                ->with('match')
+                ->where('is_double_chance_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('double_chance_rank')
+                ->get();
+
+            if ($dcPicks->isNotEmpty()) {
+                $dcLines = $dcPicks->map(function ($p) {
+                    $match = $p->match;
+                    if (! $match) return null;
+                    $label  = $p->double_chance_label ?? '1X';
+                    $dc1x   = round((float) $p->home_win_prob + (float) $p->draw_prob, 1);
+                    $dc2x   = round((float) $p->away_win_prob + (float) $p->draw_prob, 1);
+                    $prob   = $label === '1X' ? $dc1x : $dc2x;
+                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
+                    $league = $league ? "[{$league}] " : '';
+                    $desc   = $label === '1X' ? 'Home Win or Draw' : 'Away Win or Draw';
+                    return "{$league}{$match->home_team} vs {$match->away_team}: {$label} ({$desc}) ({$prob}%)";
+                })->filter()->values();
+
+                $oneSignal->sendMatchAlert(
+                    title:   '🎯 Today\'s Double Chance Picks Are Live!',
+                    message: $dcLines->implode(' | ') . ' — Tap for analysis',
+                    path:    '/double-chance',
+                );
+
+                $telegram->sendDoubleChancePicks($dcPicks->map(function ($p) {
+                    if (! $p->match) return null;
+                    $label = $p->double_chance_label ?? '1X';
+                    $dc1x  = round((float) $p->home_win_prob + (float) $p->draw_prob, 1);
+                    $dc2x  = round((float) $p->away_win_prob + (float) $p->draw_prob, 1);
+                    return [
+                        'match'  => "{$p->match->home_team} vs {$p->match->away_team}",
+                        'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country),
+                        'label'  => $label,
+                        'prob'   => $label === '1X' ? $dc1x : $dc2x,
+                    ];
+                })->filter()->values()->toArray(), $url);
+
+                $this->info("Double Chance picks sent: {$dcPicks->count()}");
+            } else {
+                $this->warn('No Double Chance picks today — skipped.');
             }
         }
 

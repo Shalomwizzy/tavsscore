@@ -9,6 +9,7 @@ use App\Http\Controllers\Over15PicksController;
 use App\Http\Controllers\Over25PicksController;
 use App\Http\Controllers\RolloverController;
 use App\Http\Controllers\Team3PlusController;
+use App\Http\Controllers\DoubleChanceController;
 use App\Http\Controllers\WinnersController;
 use App\Http\Controllers\DailyPickController;
 use App\Http\Controllers\DrawPicksController;
@@ -37,7 +38,8 @@ Route::get('/lineup-picks',  [LineupPicksController::class, 'index'])->name('lin
 Route::get('/correct-score', [CorrectScoreController::class, 'index'])->name('correct-score.index');
 Route::get('/over-1-5',     [Over15PicksController::class,  'index'])->name('over15-picks.index');
 Route::get('/over-2-5',     [Over25PicksController::class,  'index'])->name('over25-picks.index');
-Route::get('/team-3-plus',  [Team3PlusController::class,    'index'])->name('team3plus-picks.index');
+Route::get('/team-3-plus',    [Team3PlusController::class,    'index'])->name('team3plus-picks.index');
+Route::get('/double-chance',  [DoubleChanceController::class,  'index'])->name('double-chance.index');
 Route::get('/rollover',           [RolloverController::class, 'index'])->name('rollover.index');
 Route::get('/rollover/{date}',    [RolloverController::class, 'show'])->name('rollover.show')->where('date', '\d{4}-\d{2}-\d{2}');
 Route::get('/stats',        [StatsController::class, 'index'])->name('stats.index');
