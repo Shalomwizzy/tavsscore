@@ -63,8 +63,13 @@ class CalibrationService
             }
 
             foreach ($buckets as &$b) {
-                $b['pct'] = $b['total'] >= 10
+                $b['trusted'] = $b['total'] >= 10;
+                $b['pct']     = $b['trusted']
                     ? round($b['correct'] / $b['total'] * 100, 1)
+                    : null;
+                $midpoint     = ($b['min'] + $b['max']) / 2;
+                $b['gap']     = $b['pct'] !== null
+                    ? round($b['pct'] - $midpoint, 1)
                     : null;
             }
             unset($b);
