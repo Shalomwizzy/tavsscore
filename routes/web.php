@@ -166,6 +166,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/winners/{winner}/amount',       [\App\Http\Controllers\Admin\WinnersAdminController::class, 'updateAmount'])->name('winners.update-amount');
         Route::delete('/winners/{winner}',            [\App\Http\Controllers\Admin\WinnersAdminController::class, 'reject'])->name('winners.reject');
 
+        /* Booking Code */
+        Route::get('/booking-code',      [\App\Http\Controllers\Admin\BookingCodeController::class, 'index'])->name('booking-code.index');
+        Route::post('/booking-code/send',[\App\Http\Controllers\Admin\BookingCodeController::class, 'send'])->name('booking-code.send');
+
         /* Broadcast */
         Route::get('/broadcast',      [\App\Http\Controllers\Admin\BroadcastController::class, 'index'])->name('broadcast.index');
         Route::post('/broadcast/send',[\App\Http\Controllers\Admin\BroadcastController::class, 'send'])->name('broadcast.send');

@@ -291,6 +291,9 @@
             <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}">
                 <span class="sb-icon">🎯</span> Double Chance
             </a>
+            <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}">
+                <span class="sb-icon">🎟️</span> Booking Code
+            </a>
             <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}">
                 <span class="sb-icon">🔄</span> Rollover
             </a>

@@ -527,6 +527,27 @@ class TelegramService
         $this->send(implode("\n", $lines));
     }
 
+    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl): void
+    {
+        $notePart = $note ? "\n📋 Picks: <b>{$note}</b>" : '';
+        $howTo = match (strtolower($platform)) {
+            'bet9ja'    => "Open Bet9ja app → Booking Code → Enter <b>{$code}</b>",
+            '1xbet'     => "Open 1xBet app → Coupon Code → Enter <b>{$code}</b>",
+            'betway'    => "Open Betway app → Booking Code → Enter <b>{$code}</b>",
+            'parimatch' => "Open Parimatch app → Booking Code → Enter <b>{$code}</b>",
+            default     => "Open {$platform} app → Booking Code → Enter <b>{$code}</b>",
+        };
+
+        $msg = "🎟️ <b>BOOKING CODE — " . strtoupper($platform) . "</b>\n\n"
+             . "🔑 Code: <code>{$code}</code>"
+             . $notePart . "\n\n"
+             . "📲 How to use:\n{$howTo}\n\n"
+             . "⚠️ Verify odds before placing. Bet responsibly.\n"
+             . "🔗 <a href=\"{$siteUrl}/picks\">See full analysis</a>";
+
+        $this->send($msg);
+    }
+
     public function sendDoubleChanceOutcome(string $match, string $label, string $score, bool $won, string $siteUrl, string $league = ''): void
     {
         $desc = $label === '1X' ? 'Home Win or Draw' : 'Away Win or Draw';
