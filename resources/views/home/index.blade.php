@@ -367,7 +367,23 @@
                 </div>
             </a>
 
-            {{-- ── 7. AFRICAN FOOTBALL ── --}}
+            {{-- ── 7. DOUBLE CHANCE ── --}}
+            <a href="{{ route('double-chance.index') }}" class="nsc-card">
+                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(59,130,246,.04));">
+                    <span class="nsc-emoji">🎯</span>
+                    <span class="nsc-live-tag" style="background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.3); color:#93c5fd;">5 Daily</span>
+                </div>
+                <div class="nsc-body">
+                    <div class="nsc-title">Double Chance</div>
+                    <p class="nsc-desc">
+                        <strong style="color:#fff;">1X</strong> (Home Win or Draw) and <strong style="color:#fff;">2X</strong> (Away Win or Draw) — the safest way to back a team without needing an outright win.
+                        Our AI picks 5 matches daily where the combined probability is highest, giving you maximum coverage with minimum risk.
+                    </p>
+                    <div class="nsc-cta" style="color:#93c5fd;">View Double Chance Picks →</div>
+                </div>
+            </a>
+
+            {{-- ── 8. AFRICAN FOOTBALL ── --}}
             <a href="{{ route('africa.index') }}" class="nsc-card">
                 <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.1), rgba(251,191,36,.06));">
                     <span class="nsc-emoji">🌍</span>

@@ -288,6 +288,9 @@
             <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}">
                 <span class="sb-icon">🚫</span> Team 3+ NO
             </a>
+            <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}">
+                <span class="sb-icon">🎯</span> Double Chance
+            </a>
             <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}">
                 <span class="sb-icon">🔄</span> Rollover
             </a>

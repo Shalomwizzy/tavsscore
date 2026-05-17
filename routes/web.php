@@ -148,6 +148,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Team 3+ Picks */
         Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');
         Route::post('/team3plus/refresh', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'refresh'])->name('team3plus.refresh');
+        Route::get('/double-chance',          [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'index'])->name('double-chance.index');
+        Route::post('/double-chance/refresh', [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'refresh'])->name('double-chance.refresh');
 
         /* Rollover */
         Route::get('/rollover',                      [\App\Http\Controllers\Admin\RolloverAdminController::class, 'index'])->name('rollover.index');

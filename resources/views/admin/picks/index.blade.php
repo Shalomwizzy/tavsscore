@@ -29,6 +29,7 @@
         <a href="{{ route('picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Daily Picks</a>
         <a href="{{ route('draw-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Draw Picks</a>
         <a href="{{ route('gg-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ GG Picks</a>
+        <a href="{{ route('double-chance.index') }}" target="_blank" class="btn-a btn-blue">↗ Double Chance</a>
     </div>
 </div>
 
