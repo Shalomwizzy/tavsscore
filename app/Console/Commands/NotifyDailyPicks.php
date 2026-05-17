@@ -8,6 +8,7 @@ use App\Services\TelegramService;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class NotifyDailyPicks extends Command
 {
@@ -54,6 +55,7 @@ class NotifyDailyPicks extends Command
                     return ['match' => "{$match->home_team} vs {$match->away_team}", 'league' => LeagueCoverage::formatName($match->league, $match->league_country), 'tip' => $p->predicted_outcome ?? '', 'confidence' => $p->confidence ?? ''];
                 })->filter()->values()->toArray(), $url);
 
+                Cache::put('picks_sent_daily_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Daily picks sent: {$picks->count()}");
             } else {
                 $this->warn('No daily picks today — skipped.');
@@ -82,6 +84,7 @@ class NotifyDailyPicks extends Command
 
                 $oneSignal->sendMatchAlert(title: '🤝 Today\'s Draw Picks — Triple AI Agreed!', message: $drawLines->implode(' | ') . ' - Tap for analysis', path: '/draw-picks');
                 $telegram->sendDrawPicks($drawPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
+                Cache::put('picks_sent_draw_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Draw picks sent: {$drawPicks->count()}");
             } else {
                 $this->warn('No draw picks today — skipped.');
@@ -109,6 +112,7 @@ class NotifyDailyPicks extends Command
 
                 $oneSignal->sendMatchAlert(title: '⚽ Today\'s GG Picks — Both Teams to Score!', message: $ggLines->implode(' | ') . ' - Tap for analysis', path: '/gg-picks');
                 $telegram->sendGGPicks($ggPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
+                Cache::put('picks_sent_gg_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("GG picks sent: {$ggPicks->count()}");
             } else {
                 $this->warn('No GG picks today — skipped.');
@@ -135,6 +139,7 @@ class NotifyDailyPicks extends Command
 
                 $oneSignal->sendMatchAlert(title: '⚽ Today\'s Over 1.5 Goals Picks Are Live!', message: $o15Lines->implode(' | ') . ' — Tap for analysis', path: '/over-1-5');
                 $telegram->sendOver15Picks($over15Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_15_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
+                Cache::put('picks_sent_over15_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Over 1.5 picks sent: {$over15Picks->count()}");
             } else {
                 $this->warn('No Over 1.5 picks today — skipped.');
@@ -161,6 +166,7 @@ class NotifyDailyPicks extends Command
 
                 $oneSignal->sendMatchAlert(title: '🔥 Today\'s Over 2.5 Goals Picks Are Live!', message: $o25Lines->implode(' | ') . ' — Tap for analysis', path: '/over-2-5');
                 $telegram->sendOver25Picks($over25Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_25_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
+                Cache::put('picks_sent_over25_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Over 2.5 picks sent: {$over25Picks->count()}");
             } else {
                 $this->warn('No Over 2.5 picks today — skipped.');
@@ -204,6 +210,7 @@ class NotifyDailyPicks extends Command
                         : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
                     return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'team' => $teamName, 'market' => $market, 'prob' => $prob];
                 })->filter()->values()->toArray(), $url);
+                Cache::put('picks_sent_team3plus_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Team Goals NO picks sent: {$team3Picks->count()}");
             } else {
                 $this->warn('No Team 3+ picks today — skipped.');
@@ -252,6 +259,7 @@ class NotifyDailyPicks extends Command
                     ];
                 })->filter()->values()->toArray(), $url);
 
+                Cache::put('picks_sent_doublechance_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Double Chance picks sent: {$dcPicks->count()}");
             } else {
                 $this->warn('No Double Chance picks today — skipped.');

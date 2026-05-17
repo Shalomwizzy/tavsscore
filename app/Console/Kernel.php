@@ -34,14 +34,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:select')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Staggered notifications 06:00–07:40 Lagos, one pick type every 20 min
-        $schedule->command('picks:notify --type=daily')->dailyAt('06:00')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=draw')->dailyAt('06:20')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=gg')->dailyAt('06:40')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over15')->dailyAt('07:00')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over25')->dailyAt('07:20')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=team3plus')->dailyAt('07:40')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=doublechance')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        // Staggered notifications 01:00–02:00 Lagos — sent right after midnight selection.
+        // Once a type is notified, a cache flag prevents the 05:00/08:00 picks:select
+        // from overwriting those picks, so what users receive is always what stays.
+        $schedule->command('picks:notify --type=daily')->dailyAt('01:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=draw')->dailyAt('01:10')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=gg')->dailyAt('01:20')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over15')->dailyAt('01:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over25')->dailyAt('01:40')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=team3plus')->dailyAt('01:50')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=doublechance')->dailyAt('02:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Re-predict daily pick matches the moment their confirmed lineup drops
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new
