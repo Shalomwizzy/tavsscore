@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', "Today's Draw Picks – Triple AI Verified | TavsScore")
-@section('meta_description', 'Free daily draw predictions where all three independent AI engines agree on a draw. Only the strongest draw picks make the cut — triple-validated, published every morning.')
-@section('og_title', "Today's Draw Picks — Triple AI Agreed")
+@section('meta_description', 'Free daily draw predictions where all three independent AI engines agree on a draw. Only the strongest draw picks make the cut. Triple-validated, published every morning.')
+@section('og_title', "Today's Draw Picks: Triple AI Agreed")
 @section('og_description', 'Three independent AI engines must all predict a draw for a pick to appear here. Free daily draw predictions from TavsScore.')
 @section('og_image', asset('images/og-draw-picks.jpg'))
 @section('canonical', url('/draw-picks'))
@@ -151,7 +151,7 @@
         <div class="picks-eyebrow">🤝 Draw Picks</div>
         <h1 class="picks-title">Today's <span class="accent">Draw Picks</span></h1>
         <p class="picks-subtitle">
-            Three independent AI engines each analyse the match data separately. A pick only appears here when <strong style="color:var(--text);">all three independently predict a draw</strong> — no groupthink, strict triple agreement.
+            Three independent AI engines each analyse the match data separately. A pick only appears here when <strong style="color:var(--text);">all three independently predict a draw</strong>. No groupthink, strict triple agreement.
         </p>
         <div class="picks-meta">
             <span class="picks-badge badge-source">🤖 Triple AI Verified</span>
@@ -276,7 +276,7 @@
 
                 <div class="pick-card-footer">
                     @if($geminiAgrees === true)
-                    <span style="font-size:.7rem; color:#6ee7b7; font-weight:700;">✅ AI #1 · AI #2 · AI #3 — all agreed</span>
+                    <span style="font-size:.7rem; color:#6ee7b7; font-weight:700;">✅ AI #1 · AI #2 · AI #3, all agreed</span>
                     @endif
                     @if($pick['confidence_pct'] && $pick['was_correct'] === null)
                     <span style="font-size:.7rem; color:var(--text-dim); margin-left:auto;">{{ $pick['confidence_pct'] }}% confidence</span>
@@ -287,7 +287,7 @@
             <div class="empty-state">
                 <div style="font-size:2.5rem; margin-bottom:1rem;">🤝</div>
                 <h3>No Draw Picks Yet Today</h3>
-                <p>Our three AI engines analyse every match independently. Draw picks only appear when all three reach the same conclusion — that standard takes time to meet. Check back later today.</p>
+                <p>Our three AI engines analyse every match independently. Draw picks only appear when all three reach the same conclusion. That standard takes time to meet. Check back later today.</p>
             </div>
             @endforelse
         </div>
@@ -298,15 +298,15 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Three AIs analyse independently</strong> — each engine receives only raw match data and stats. They never see each other's output.</div>
+                    <div class="hiw-text"><strong>Three AIs analyse independently</strong>: each engine receives only raw match data and stats. They never see each other's output.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>All three must predict a draw</strong> — if even one AI disagrees or returns below 60% confidence, the match is excluded entirely.</div>
+                    <div class="hiw-text"><strong>All three must predict a draw</strong>: if even one AI disagrees or returns below 60% confidence, the match is excluded entirely.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>Top 5 published at 08:00 Lagos time</strong> — sorted by consensus confidence. Full track record visible on the <a href="{{ route('stats.index') }}" style="color:var(--green);">stats page</a>.</div>
+                    <div class="hiw-text"><strong>Top 5 published at 08:00 Lagos time</strong>, sorted by consensus confidence. Full track record visible on the <a href="{{ route('stats.index') }}" style="color:var(--green);">stats page</a>.</div>
                 </div>
             </div>
         </div>
@@ -319,7 +319,7 @@
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
         Draw Picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
         Triple-AI agreement increases signal strength but does not guarantee any outcome.
-        Please gamble responsibly — never stake money you cannot afford to lose.
+        Please gamble responsibly. Never stake money you cannot afford to lose.
     </div>
 </div>
 

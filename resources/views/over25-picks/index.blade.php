@@ -2,7 +2,7 @@
 @section('title', "Today's Over 2.5 Goals Picks – AI Powered | TavsScore")
 @section('meta_description', 'Free daily Over 2.5 Goals predictions using Poisson modelling and AI analysis. Only matches with 65%+ goal probability make the cut. 5 picks every morning.')
 @section('og_title', "Today's Over 2.5 Goals Picks")
-@section('og_description', 'AI-powered Over 2.5 Goals picks with Gemini cross-validation. Only high-probability goal-heavy fixtures qualify — 5 picks daily from TavsScore.')
+@section('og_description', 'AI-powered Over 2.5 Goals picks with Gemini cross-validation. Only high-probability goal-heavy fixtures qualify. 5 picks daily from TavsScore.')
 @section('og_image', asset('images/og-over25.jpg'))
 @section('canonical', url('/over-2-5'))
 
@@ -75,7 +75,7 @@
         <div class="picks-eyebrow">🔥 Over 2.5 Goals</div>
         <h1 class="picks-title">Today's <span class="accent">Over 2.5</span> Picks</h1>
         <p class="picks-subtitle">
-            Matches where our model gives <strong style="color:var(--text);">65% or higher probability</strong> of 3 or more total goals — well above the average. Gemini cross-checks every pick. Five selected daily.
+            Matches where our model gives <strong style="color:var(--text);">65% or higher probability</strong> of 3 or more total goals, well above the average. Gemini cross-checks every pick. Five selected daily.
         </p>
         <div class="picks-meta">
             <span class="picks-badge badge-amber">📊 Poisson + AI</span>
@@ -145,7 +145,7 @@
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>
                             <div class="pick-callout-label">Our prediction</div>
-                            <div class="pick-callout-value">🔥 Over 2.5 Goals — YES</div>
+                            <div class="pick-callout-value">🔥 Over 2.5 Goals: YES</div>
                         </div>
                         <div style="text-align:right;">
                             @if($pick['was_correct'] === true)
@@ -206,15 +206,15 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Poisson modelling from expected goals</strong> — attack strength, defence weakness, home advantage and H2H history combine to estimate xG for each team.</div>
+                    <div class="hiw-text"><strong>Poisson modelling from expected goals</strong>: attack strength, defence weakness, home advantage and H2H history combine to estimate xG for each team.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>65% probability minimum</strong> — only matches where the model gives a genuine edge over the 53% base rate make the cut. Gemini must not disagree.</div>
+                    <div class="hiw-text"><strong>65% probability minimum</strong>: only matches where the model gives a genuine edge over the 53% base rate make the cut. Gemini must not disagree.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>5 picks at 08:00 Lagos time</strong> — ranked by probability, highest first. Full results on the <a href="{{ route('stats.index') }}" style="color:#f59e0b;">stats page</a>.</div>
+                    <div class="hiw-text"><strong>5 picks at 08:00 Lagos time</strong>, ranked by probability, highest first. Full results on the <a href="{{ route('stats.index') }}" style="color:#f59e0b;">stats page</a>.</div>
                 </div>
             </div>
         </div>
@@ -226,7 +226,7 @@
     <div style="text-align:center; font-size:.7rem; color:var(--text-dim); line-height:1.75; padding:.875rem 1rem; border-top:1px solid var(--border); margin-top:2rem;">
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
         Over 2.5 Goals picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
-        Please gamble responsibly — never stake more than you can afford to lose.
+        Please gamble responsibly. Never stake more than you can afford to lose.
     </div>
 </div>
 

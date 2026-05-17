@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', "Today's GG Picks – Both Teams to Score | TavsScore")
 @section('meta_description', 'Free daily Both Teams Score (GG) predictions where all three independent AI engines agree. Triple-validated, published every morning. No upsells, free forever.')
-@section('og_title', "Today's GG Picks — Both Teams to Score")
+@section('og_title', "Today's GG Picks: Both Teams to Score")
 @section('og_description', 'Three independent AI engines must all predict Both Teams Score for a pick to appear here. Free daily GG predictions from TavsScore.')
 @section('og_image', asset('images/og-gg-picks.jpg'))
 @section('canonical', url('/gg-picks'))
@@ -152,7 +152,7 @@
         <div class="picks-eyebrow">⚽ GG Picks</div>
         <h1 class="picks-title">Today's <span class="accent">GG Picks</span></h1>
         <p class="picks-subtitle">
-            Both teams to score — the market where high-quality triple agreement tells you the most. A pick only appears here when <strong style="color:var(--text);">all three AI engines independently agree</strong> that both sides will get on the scoresheet.
+            Both teams to score, the market where high-quality triple agreement tells you the most. A pick only appears here when <strong style="color:var(--text);">all three AI engines independently agree</strong> that both sides will get on the scoresheet.
         </p>
         <div class="picks-meta">
             <span class="picks-badge badge-source">🤖 Triple AI Verified</span>
@@ -286,7 +286,7 @@
 
                 <div class="pick-card-footer">
                     @if($geminiAgrees === true)
-                    <span style="font-size:.7rem; color:#6ee7b7; font-weight:700;">✅ AI #1 · AI #2 · AI #3 — all agreed</span>
+                    <span style="font-size:.7rem; color:#6ee7b7; font-weight:700;">✅ AI #1 · AI #2 · AI #3, all agreed</span>
                     @endif
                     @if($pick['confidence_pct'] && $pick['was_correct'] === null)
                     <span style="font-size:.7rem; color:var(--text-dim); margin-left:auto;">{{ $pick['confidence_pct'] }}% confidence</span>
@@ -297,7 +297,7 @@
             <div class="empty-state">
                 <div style="font-size:2.5rem; margin-bottom:1rem;">⚽</div>
                 <h3>No GG Picks Yet Today</h3>
-                <p>GG picks only appear when all three AI engines independently agree that both teams will score. That level of agreement takes time to find — check back later today.</p>
+                <p>GG picks only appear when all three AI engines independently agree that both teams will score. That level of agreement takes time to find. Check back later today.</p>
             </div>
             @endforelse
         </div>
@@ -308,15 +308,15 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Three AIs analyse independently</strong> — each engine receives only raw match data, recent form, and head-to-head stats. No AI sees another's answer.</div>
+                    <div class="hiw-text"><strong>Three AIs analyse independently</strong>: each engine receives only raw match data, recent form, and head-to-head stats. No AI sees another's answer.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>All three must predict Both Teams Score</strong> — if any AI disagrees or its confidence falls below 60%, the match is excluded entirely.</div>
+                    <div class="hiw-text"><strong>All three must predict Both Teams Score</strong>: if any AI disagrees or its confidence falls below 60%, the match is excluded entirely.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>Top 5 published at 08:00 Lagos time</strong> — sorted by consensus confidence. Full track record visible on the <a href="{{ route('stats.index') }}" style="color:var(--green);">stats page</a>.</div>
+                    <div class="hiw-text"><strong>Top 5 published at 08:00 Lagos time</strong>, sorted by consensus confidence. Full track record visible on the <a href="{{ route('stats.index') }}" style="color:var(--green);">stats page</a>.</div>
                 </div>
             </div>
         </div>
@@ -329,7 +329,7 @@
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
         GG Picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
         Triple-AI agreement increases signal strength but does not guarantee any outcome.
-        Please gamble responsibly — never stake money you cannot afford to lose.
+        Please gamble responsibly. Never stake money you cannot afford to lose.
     </div>
 </div>
 

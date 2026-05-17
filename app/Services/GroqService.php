@@ -20,15 +20,20 @@ class GroqService
     public function getPrediction(
         FootballMatch $match,
         array $poissonFallback,
-        array $homeStats     = [],
-        array $awayStats     = [],
-        array $homeForm      = [],
-        array $awayForm      = [],
-        string $homeNews     = '',
-        string $awayNews     = '',
-        string $lineupData   = '',
-        array $h2h           = [],
-        string $matchPreview = '',
+        array $homeStats      = [],
+        array $awayStats      = [],
+        array $homeForm       = [],
+        array $awayForm       = [],
+        string $homeNews      = '',
+        string $awayNews      = '',
+        string $lineupData    = '',
+        array $h2h            = [],
+        string $matchPreview  = '',
+        array $piRatings      = [],
+        float $homeXg         = 0.0,
+        float $awayXg         = 0.0,
+        array $importance     = [],
+        string $leagueDrawDesc = '',
     ): ?array {
         $apiKey = config('services.groq.key');
 
@@ -47,7 +52,7 @@ class GroqService
                     'response_format' => ['type' => 'json_object'],
                     'messages'        => [
                         ['role' => 'system', 'content' => $this->systemPrompt()],
-                        ['role' => 'user',   'content' => $this->userPrompt($match, $poissonFallback, $homeStats, $awayStats, $homeForm, $awayForm, $homeNews, $awayNews, $lineupData, $h2h, $matchPreview)],
+                        ['role' => 'user',   'content' => $this->userPrompt($match, $poissonFallback, $homeStats, $awayStats, $homeForm, $awayForm, $homeNews, $awayNews, $lineupData, $h2h, $matchPreview, $piRatings, $homeXg, $awayXg, $importance, $leagueDrawDesc)],
                     ],
                 ]);
         } catch (ConnectionException $e) {
@@ -99,6 +104,13 @@ Translate the football article HTML below into natural East African Swahili (Ken
 - Use natural sentence flow, not literal/word-for-word translation.
 - Return ONLY the translated HTML. No commentary, no markdown fences.
 SWAHILI,
+            'french' => <<<'FRENCH'
+Translate the football article HTML below into natural French.
+- Preserve ALL HTML tags exactly: <p>, <h2>, <h3>, <strong>, <em>, <a>, <ul>, <li>, <br>, etc. Translate only the text inside tags.
+- Keep team names, scores, dates, league names, and proper nouns in the original form.
+- Use natural sentence flow, not literal/word-for-word translation.
+- Return ONLY the translated HTML. No commentary, no markdown fences.
+FRENCH,
             default => null,
         };
 
@@ -108,12 +120,11 @@ SWAHILI,
 
         try {
             $response = Http::withToken($apiKey)
-                ->acceptJson()->asJson()->timeout(60)
-                ->retry(2, 3000, fn ($_, $r) => !($r && $r->status() === 429))
+                ->acceptJson()->asJson()->timeout(90)
                 ->post(config('services.groq.url'), [
                     'model'       => config('services.groq.model'),
                     'temperature' => 0.30,
-                    'max_tokens'  => 4000,
+                    'max_tokens'  => 8000,
                     'messages'    => [
                         ['role' => 'system', 'content' => $instruction],
                         ['role' => 'user',   'content' => $english],
@@ -178,12 +189,11 @@ FRENCH,
 
         try {
             $response = Http::withToken($apiKey)
-                ->acceptJson()->asJson()->timeout(20)
-                ->retry(2, 2000, fn ($_, $r) => !($r && $r->status() === 429))
+                ->acceptJson()->asJson()->timeout(30)
                 ->post(config('services.groq.url'), [
                     'model'       => config('services.groq.model'),
                     'temperature' => 0.40,
-                    'max_tokens'  => 400,
+                    'max_tokens'  => 1200,
                     'messages'    => [
                         ['role' => 'system', 'content' => $instruction],
                         ['role' => 'user',   'content' => $english],
@@ -220,9 +230,10 @@ You are TavsScore's senior football intelligence analyst. Real users stake real 
 
 ═══ CORE ACCURACY RULES ═══
 5. home_win + draw + away_win MUST equal exactly 100.
-6. NEVER recommend Draw as headline — hardest market to call.
+6. When Poisson draw probability ≥ 60%, you MUST seriously consider "Draw" as your headline pick. Only choose Home Win or Away Win instead if form, H2H, or squad data gives clear evidence one team will break the deadlock. If you are not fully sure, use "Home or Draw (1X)" or "Draw or Away (X2)" rather than forcing a pure win pick.
 7. 1 STRONG tip beats 3 weak ones. Only include tips you can genuinely justify.
 8. Return ONLY valid JSON — no markdown fences, no text outside the object.
+9. Never use em dashes (—) in any text field. Use commas, colons, or full stops instead.
 9. Over 1.5 Goals hits ~75% — far safer than Over 2.5 (~52%). Prefer it unless data clearly shows goals.
 
 ═══ MARKET SELECTION INTELLIGENCE ═══
@@ -254,16 +265,21 @@ SYSTEM;
 
     private function userPrompt(
         FootballMatch $match,
-        array $poisson       = [],
-        array $homeStats     = [],
-        array $awayStats     = [],
-        array $homeForm      = [],
-        array $awayForm      = [],
-        string $homeNews     = '',
-        string $awayNews     = '',
-        string $lineupData   = '',
-        array $h2h           = [],
-        string $matchPreview = '',
+        array $poisson        = [],
+        array $homeStats      = [],
+        array $awayStats      = [],
+        array $homeForm       = [],
+        array $awayForm       = [],
+        string $homeNews      = '',
+        string $awayNews      = '',
+        string $lineupData    = '',
+        array $h2h            = [],
+        string $matchPreview  = '',
+        array $piRatings      = [],
+        float $homeXg         = 0.0,
+        float $awayXg         = 0.0,
+        array $importance     = [],
+        string $leagueDrawDesc = '',
     ): string {
         $kickoff = $match->match_time?->format('l, d M Y, H:i') ?? 'Today';
         $home    = $match->home_team;
@@ -312,6 +328,41 @@ SYSTEM;
             ? ''
             : "\n\n⚡ CONFIRMED LINEUPS — STAR PLAYER ANALYSIS REQUIRED:\nIdentify the most dangerous player in each XI. Star striker starting → boost attack. Star absent → reduce. Name them explicitly in your analysis.\n{$lineupData}";
 
+        // ── Pi-ratings block ──────────────────────────────────────
+        $piBlock = '';
+        if (! empty($piRatings) && ($piRatings['home_games'] > 0 || $piRatings['away_games'] > 0)) {
+            $diff    = $piRatings['diff'];
+            $diffStr = $diff > 0
+                ? "{$home} stronger by " . abs($diff) . " pi-points (home venue)"
+                : ($diff < 0
+                    ? "{$away} stronger by " . abs($diff) . " pi-points (away venue)"
+                    : 'Teams evenly matched by pi-ratings');
+            $piBlock = "\n\n═══ PI-RATINGS (dynamic strength, updated after every match) ═══\n"
+                . "  {$home} home pi-rating: {$piRatings['home_pi']} | {$away} away pi-rating: {$piRatings['away_pi']}\n"
+                . "  Differential: {$diffStr}\n"
+                . "  Unlike league table, pi-ratings update on goal difference vs expectation — more accurate than position alone.";
+        }
+
+        // ── xG block ─────────────────────────────────────────────
+        $xgBlock = '';
+        if ($homeXg > 0 || $awayXg > 0) {
+            $xgBlock = "\n\n═══ EXPECTED GOALS (venue-adjusted Poisson xG) ═══\n"
+                . "  {$home} xG: {$homeXg} | {$away} xG: {$awayXg}\n"
+                . "  These are venue-split expected goals (home team's home scoring rate × away team's away conceding rate). More accurate than season averages.";
+        }
+
+        // ── Match importance block ────────────────────────────────
+        $importanceBlock = '';
+        if (! empty($importance['context'])) {
+            $importanceBlock = "\n\n═══ MATCH CONTEXT & IMPORTANCE ═══\n" . $importance['context'];
+        }
+
+        // ── League draw rate ─────────────────────────────────────
+        $drawRateBlock = '';
+        if (! blank($leagueDrawDesc)) {
+            $drawRateBlock = "\n\n📊 LEAGUE DRAW RATE: {$leagueDrawDesc} Factor this into your draw probability assessment.";
+        }
+
         return <<<PROMPT
 MATCH: {$home} vs {$away}
 COMPETITION: {$league}
@@ -321,30 +372,33 @@ KICKOFF: {$kickoff}
 
 {$statsBlock}
 {$h2hBlock}
+{$piBlock}{$xgBlock}
 
-═══ POISSON MODEL PROBABILITIES ═══
+═══ POISSON MODEL PROBABILITIES (Dixon-Coles corrected) ═══
   1X2:        Home Win {$hw}% | Draw {$d}% | Away Win {$aw}%
   Goals:      Over 1.5 Goals {$o15}% | Under 1.5 Goals {$u15}% | Over 2.5 Goals {$o25}% | Under 2.5 Goals {$u25}% | Over 3.5 Goals {$o35}%
   BTTS:       Both Teams Score {$btt}%
   Clean Sheet: Home Clean Sheet {$homeClean} | Away Clean Sheet {$awayClean}
-{$newsBlock}{$previewBlock}{$lineupBlock}
+{$drawRateBlock}{$importanceBlock}{$newsBlock}{$previewBlock}{$lineupBlock}
 
 ═══ YOUR ANALYSIS TASK ═══
 Using ALL data above PLUS your deep knowledge of these clubs (playing style, key players, manager tactics, stadium atmosphere, historical tendencies):
 
-1. Set final match probabilities — adjust Poisson where news/lineups/your knowledge justifies it.
+1. Set final match probabilities — adjust Poisson where pi-ratings, news, lineups or your knowledge justifies it.
 2. Choose your 1 STRONGEST tip from the markets list. This is what users stake money on.
 3. Add up to 2 genuine alternatives (only if you are truly confident).
 4. Mention specific players by name in the analysis when relevant.
 5. Apply market selection rules from your training — do NOT default to Home Win / Away Win every time.
    - If clean sheet % is high → consider Clean Sheet or Win to Nil.
    - If BTTS rate is high for both teams → consider GG over 1X2.
+   - If draw probability ≥ 60% OR match context flags a derby/rivalry → seriously consider Draw.
    - If one team is clearly better but draw is possible → Draw No Bet.
    - If one team rarely scores → Team NOT to Score.
    - If it is a top attacking team → consider Corners market.
+   - If pi-rating differential is small (< 0.1) → teams are evenly matched; lean toward draw or double chance.
 
 AVAILABLE MARKETS:
-  1X2:           "Home Win", "Away Win" (never "Draw" as headline)
+  1X2:           "Home Win", "Draw", "Away Win"
   Double Chance: "Home or Draw (1X)", "Draw or Away (X2)", "Home or Away (12)"
   Draw No Bet:   "Draw No Bet - Home", "Draw No Bet - Away"
   Win Either Half:"Win Either Half - Home", "Win Either Half - Away"
@@ -366,10 +420,10 @@ REQUIRED JSON OUTPUT:
   "btts":     <int 0-100>,
   "tips": [
     { "market": "<strongest pick>", "confidence": <int 65-95>, "rationale": "<≤15 words>" },
-    { "market": "<2nd best>",       "confidence": <int 55-90>, "rationale": "<≤15 words>" },
-    { "market": "<3rd best>",       "confidence": <int 50-85>, "rationale": "<≤15 words>" }
+    { "market": "<2nd best>",       "confidence": <int 60-90>, "rationale": "<≤15 words>" },
+    { "market": "<3rd best>",       "confidence": <int 60-85>, "rationale": "<≤15 words>" }
   ],
-  "analysis": "<4-5 sentences: form gap, attacking threat, defensive strength, key player or injury impact, H2H significance. End: 💡 Tip: [top market in one sentence].>"
+  "analysis": "<4-5 sentences: form gap, attacking threat, defensive strength, key player or injury impact, H2H significance. End: 💡 Tip: [top market in one sentence]. No em dashes.>"
 }
 
 RULES: home_win + draw + away_win = 100. Tips confidence descending. Only include tips you can genuinely justify with the data. Respond with JSON only.
@@ -486,7 +540,7 @@ BLOCK;
             if (! is_array($t)) continue;
             $market = trim((string) ($t['market'] ?? ''));
             $conf   = (int) ($t['confidence'] ?? 0);
-            if ($market === '' || $conf < 50 || $conf > 100) continue;
+            if ($market === '' || $conf < 60 || $conf > 100) continue;
 
             $valid[] = [
                 'market'     => mb_substr($market, 0, 60),

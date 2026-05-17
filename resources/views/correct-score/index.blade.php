@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Correct Score Predictions | TavsScore — High-Risk AI Scoreline Forecasts')
-@section('meta_description', 'AI exact score forecasts using Poisson models and team data. High-risk / long-shot predictions — best for insight and fun, not as a primary betting strategy.')
+@section('title', 'Correct Score Predictions | TavsScore: High-Risk AI Scoreline Forecasts')
+@section('meta_description', 'AI exact score forecasts using Poisson models and team data. High-risk / long-shot predictions. Best for insight and fun, not as a primary betting strategy.')
 @section('og_image', asset('images/og-correct-score.jpg'))
 
 @push('styles')
@@ -109,7 +109,7 @@
         <h1 class="cs-title">Correct Score Forecasts</h1>
         <p class="cs-sub">
             Our AI's most likely scorelines, derived from Poisson modelling, attack/defence ratings and recent form.
-            Exact scores are the hardest market in football — use these for insight, fun, or small-stake long shots, not as a primary strategy.
+            Exact scores are the hardest market in football. Use these for insight, fun, or small-stake long shots, not as a primary strategy.
         </p>
     </div>
 
@@ -117,7 +117,7 @@
     <div class="cs-disclaimer">
         <strong style="color:#fff;">⚠️ High-Risk Market.</strong>
         Correct score is significantly harder to predict than 1X2, Over/Under, or BTTS.
-        Even a strong AI model will miss exact scores regularly — that is the nature of the market.
+        Even a strong AI model will miss exact scores regularly. That is the nature of the market.
         Use these as <strong>long-shot entertainment</strong>, not primary picks.
         For lower-risk AI picks see our
         <a href="{{ route('picks.index') }}" style="color:#c4b5fd;font-weight:700;">Daily Picks</a>,
@@ -157,7 +157,7 @@
 
             @if($outcome && $outcome !== 'Competitive Match')
             <div class="cs-tip">
-                🤖 AI tip: {{ $outcome }}{{ $conf ? " — {$conf}% confidence" : '' }}
+                🤖 AI tip: {{ $outcome }}{{ $conf ? " · {$conf}% confidence" : '' }}
             </div>
             @endif
 

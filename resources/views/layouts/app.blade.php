@@ -676,7 +676,7 @@
             <div class="footer-install-strip">
                 <div>
                     <div class="fi-label">📲 Add TavsScore to your home screen</div>
-                    <div class="fi-sub">Works like an app — free picks, live scores &amp; notifications</div>
+                    <div class="fi-sub">Works like an app. Free picks, live scores &amp; notifications</div>
                 </div>
                 <button class="fi-btn" onclick="openInstallGuide()">How to install →</button>
             </div>
@@ -747,7 +747,7 @@
         <div class="install-box">
             <button class="install-close" onclick="closeInstallGuide()" aria-label="Close">&times;</button>
             <h2 id="install-modal-title" style="font-size:1.1rem; font-weight:900; color:#fff; margin-bottom:.3rem;">📲 Get TavsScore on Your Phone</h2>
-            <p style="font-size:.8rem; color:var(--text-dim); margin-bottom:1.1rem; line-height:1.6;">Add us to your home screen for instant access — free picks and live scores one tap away. No app store needed.</p>
+            <p style="font-size:.8rem; color:var(--text-dim); margin-bottom:1.1rem; line-height:1.6;">Add us to your home screen for instant access. Free picks and live scores one tap away. No app store needed.</p>
 
             <div class="install-tabs">
                 <button class="itab active" onclick="switchTab('ios',this)">iPhone / Safari</button>
@@ -758,11 +758,11 @@
             <div class="install-panel active" id="panel-ios">
                 <div class="install-step">
                     <div class="is-num">1</div>
-                    <div class="is-text">Open <strong>tavsscore.com</strong> in <strong>Safari</strong> on your iPhone or iPad. (Must be Safari — Chrome on iPhone can't install.)</div>
+                    <div class="is-text">Open <strong>tavsscore.com</strong> in <strong>Safari</strong> on your iPhone or iPad. (Must be Safari. Chrome on iPhone can't install.)</div>
                 </div>
                 <div class="install-step">
                     <div class="is-num">2</div>
-                    <div class="is-text">Tap the <strong>Share button</strong> at the bottom of your screen — it looks like a box with an arrow pointing up <span class="is-img">⬆️</span></div>
+                    <div class="is-text">Tap the <strong>Share button</strong> at the bottom of your screen. It looks like a box with an arrow pointing up <span class="is-img">⬆️</span></div>
                 </div>
                 <div class="install-step">
                     <div class="is-num">3</div>
@@ -776,7 +776,7 @@
                 <div class="notif-box" style="margin-top:1.1rem;">
                     <div class="notif-box-title">🔔 Enable Push Notifications</div>
                     <div class="notif-box-text">
-                        On iPhone, notifications only work after you've added the site to your home screen. Open the app from your home screen, then tap "Allow" when the notification prompt appears — or tap the bell icon in the bottom-right corner of the page.
+                        On iPhone, notifications only work after you've added the site to your home screen. Open the app from your home screen, then tap "Allow" when the notification prompt appears, or tap the bell icon in the bottom-right corner of the page.
                     </div>
                 </div>
             </div>
@@ -793,7 +793,7 @@
                 </div>
                 <div class="install-step">
                     <div class="is-num">3</div>
-                    <div class="is-text">Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong> — you may see an install banner pop up at the bottom of the screen automatically.</div>
+                    <div class="is-text">Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>. You may see an install banner pop up at the bottom of the screen automatically.</div>
                 </div>
                 <div class="install-step">
                     <div class="is-num">4</div>

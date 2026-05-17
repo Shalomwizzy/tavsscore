@@ -210,7 +210,7 @@
     <div class="section-label">Pick Suites</div>
     <h2 class="section-title" style="font-size:1.2rem;">Triple-AI verified picks accuracy</h2>
     <p style="font-size:.82rem; color:var(--text-dim); line-height:1.6; margin-bottom:1.25rem;">
-        Draw Picks and GG Picks require all 3 independent AI engines to agree — tighter filters, stronger signal.
+        Draw Picks and GG Picks require all 3 independent AI engines to agree. Tighter filters, stronger signal.
     </p>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
         @php
@@ -427,7 +427,7 @@
 <div style="padding:1.25rem 1.5rem; background:var(--card); border:1px solid var(--border); border-radius:12px; font-size:.78rem; color:var(--text-dim); line-height:1.75; margin-top:2rem;">
     <strong style="color:var(--text);">About these stats:</strong>
     Daily pick accuracy covers our 3 highest-confidence predictions per day.
-    Draw Picks and GG Picks are tracked separately — they use a stricter triple-AI consensus filter.
+    Draw Picks and GG Picks are tracked separately. They use a stricter triple-AI consensus filter.
     Past performance is not a guarantee of future results. These predictions are for entertainment purposes only.
 </div>
 

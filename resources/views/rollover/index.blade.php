@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Rollover Challenge — Day ' . ($challenge ? $challenge->currentDay() - 1 : 0) . ' of 10')
-@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, compounding stakes for maximum returns. Triple-AI validated — all 3 engines must agree.')
+@section('title', 'Rollover Challenge, Day ' . ($challenge ? $challenge->currentDay() - 1 : 0) . ' of 10')
+@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, compounding stakes for maximum returns. Triple-AI validated. All 3 engines must agree.')
 
 @push('styles')
 <style>
@@ -173,14 +173,14 @@
         <div class="rv-complete-icon">🏆</div>
         <div class="rv-complete-title">Challenge Complete!</div>
         <p style="color:var(--text-dim); font-size:.82rem; margin-bottom:.5rem;">
-            10/10 picks correct — {{ number_format($currentBalance, 0) }} NGN from {{ number_format((float)$challenge->initial_stake, 0) }} NGN starting stake.
+            10/10 picks correct. {{ number_format($currentBalance, 0) }} NGN from {{ number_format((float)$challenge->initial_stake, 0) }} NGN starting stake.
         </p>
         <p style="font-size:.74rem; color:#6ee7b7;">Next challenge starts tomorrow. Come back then!</p>
     </div>
     @elseif($challenge->status === 'complete' && $daysDone < 10)
     <div class="rv-bust">
         <div class="rv-bust-icon">💀</div>
-        <div class="rv-bust-title">Challenge Over — Pick Lost</div>
+        <div class="rv-bust-title">Challenge Over. Pick Lost</div>
         <p style="color:var(--text-dim); font-size:.82rem; margin-bottom:.5rem;">
             Made it {{ $daysDone }} days. A new challenge starts tomorrow.
         </p>
@@ -237,13 +237,13 @@
     @endphp
     <div class="rv-pick-card {{ $cardExtra }}">
         <div class="rv-pick-badge">
-            📅 Day {{ $todayPick->day_number }} of 10 — {{ $todayPick->pick_date->format('M d, Y') }}
+            📅 Day {{ $todayPick->day_number }} of 10 · {{ $todayPick->pick_date->format('M d, Y') }}
         </div>
 
         @if($todayPick->status === 'won')
-        <div class="rv-result-banner won">✅ Pick Won! {{ $todayPick->result_score }} — Balance upgraded to {{ number_format((float)$todayPick->potential_return, 0) }} NGN</div>
+        <div class="rv-result-banner won">✅ Pick Won! {{ $todayPick->result_score }}. Balance upgraded to {{ number_format((float)$todayPick->potential_return, 0) }} NGN</div>
         @elseif($todayPick->status === 'lost')
-        <div class="rv-result-banner lost">❌ Pick Lost {{ $todayPick->result_score }} — Challenge resets tomorrow</div>
+        <div class="rv-result-banner lost">❌ Pick Lost {{ $todayPick->result_score }}. Challenge resets tomorrow</div>
         @endif
 
         <div class="rv-pick-teams">{{ $m?->home_team }} vs {{ $m?->away_team }}</div>
@@ -300,7 +300,7 @@
 
     {{-- Disclaimer --}}
     <div class="rv-disclaimer">
-        ⚠️ <strong>Rollover is a compounding strategy, not a guarantee.</strong> The AI picks the safest available match using triple cross-validation — three independent engines must all agree — but no prediction is certain. Only stake what you can afford to lose. If the pick loses, the challenge resets — this is normal.
+        ⚠️ <strong>Rollover is a compounding strategy, not a guarantee.</strong> The AI picks the safest available match using triple cross-validation: three independent engines must all agree. No prediction is certain. Only stake what you can afford to lose. If the pick loses, the challenge resets; this is normal.
     </div>
 
     {{-- Challenge history table --}}
@@ -382,7 +382,7 @@
             <div style="background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🎯</div>
                 <div style="font-weight:700; color:#a5b4fc; font-size:.8rem; margin-bottom:.25rem;">Safe Low Odds</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">We target odds between 1.10 and 1.50 — the sweet spot where high confidence matches low risk for a single-game stake.</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">We target odds between 1.10 and 1.50, the sweet spot where high confidence matches low risk for a single-game stake.</div>
             </div>
             <div style="background:rgba(251,191,36,.05); border:1px solid rgba(251,191,36,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🔄</div>

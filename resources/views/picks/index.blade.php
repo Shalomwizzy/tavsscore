@@ -879,7 +879,7 @@ if (! function_exists('stripTip')) {
                     A two-stage system: first, Poisson distribution calculates goal probabilities
                     from each team's recent attack and defence stats. Then three independent AI engines
                     each enrich that with knowledge of current form, head-to-head history, injuries and
-                    tactical context — and must all reach the same conclusion before any tip is published.
+                    tactical context, and must all reach the same conclusion before any tip is published.
                 </div>
             </div>
             <div class="faq-item">
@@ -910,7 +910,7 @@ if (! function_exists('stripTip')) {
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>
         These picks are for <strong style="color:var(--text-dim);">entertainment purposes only</strong> and do not constitute financial or betting advice.
         AI predictions are never guaranteed. Past accuracy is not a guarantee of future results.
-        Please gamble responsibly — never stake money you cannot afford to lose.
+        Please gamble responsibly. Never stake money you cannot afford to lose.
     </div>
 </div>
 

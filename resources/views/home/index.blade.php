@@ -220,7 +220,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Match Predictions</div>
                     <p class="nsc-desc">
-                        Our triple-AI engine runs three completely independent analyses on every upcoming match — team form, head-to-head records,
+                        Our triple-AI engine runs three completely independent analyses on every upcoming match: team form, head-to-head records,
                         injury reports, confirmed lineups, and real-time news. All three must reach the same conclusion before a prediction
                         is published, with a confidence score and full reasoning you can read in plain English.
                     </p>
@@ -265,7 +265,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Draw Picks</div>
                     <p class="nsc-desc">
-                        Draws are the hardest market to get right — so we hold them to a higher standard.
+                        Draws are the hardest market to get right, so we hold them to a higher standard.
                         A draw pick only appears here when all three independent AI engines separately analyse the match
                         and all three reach the same conclusion: it will end level. Triple agreement, no exceptions.
                     </p>
@@ -284,7 +284,7 @@
                     <p class="nsc-desc">
                         Both teams to score is one of the most popular markets in African betting.
                         Our GG picks are only published when all three AI engines independently predict
-                        that both sides will get on the scoresheet — high conviction, nothing speculative.
+                        that both sides will get on the scoresheet. High conviction, nothing speculative.
                     </p>
                     <div class="nsc-cta" style="color:#6ee7b7;">View GG Picks →</div>
                 </div>
@@ -337,7 +337,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Lineup Picks</div>
                     <p class="nsc-desc">
-                        Standard predictions are made hours before kick-off. Lineup Picks are different — they're generated
+                        Standard predictions are made hours before kick-off. Lineup Picks are different: they're generated
                         only <strong style="color:#fff;">after official starting XIs are confirmed</strong>, typically 60 minutes before the match.
                         This means the AI knows exactly who's playing, who's missing, and adjusts its pick accordingly.
                     </p>
@@ -437,7 +437,7 @@
                     <p class="nsc-desc">
                         A complete archive of every prediction we've made and how it ended.
                         Browse by date or league see the AI's predicted market, the actual final score,
-                        and whether the pick was correct. No cherry-picking, no hidden losses — full history, always.
+                        and whether the pick was correct. No cherry-picking, no hidden losses. Full history, always.
                     </p>
                     @if($recentResults->isNotEmpty())
                     <div style="margin-top:.6rem;">
@@ -757,7 +757,7 @@
                 <div style="font-size:2rem; margin-bottom:.75rem;">📲</div>
                 <h3 style="font-size:1.1rem; font-weight:900; color:#fff; letter-spacing:-.02em; margin-bottom:.5rem;">Add to Your Home Screen</h3>
                 <p style="font-size:.85rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
-                    TavsScore works like a native app. Add it to your phone's home screen for one-tap access to live scores and daily picks — no app store, no installs.
+                    TavsScore works like a native app. Add it to your phone's home screen for one-tap access to live scores and daily picks. No app store, no installs.
                 </p>
                 <div style="font-size:.8rem; color:var(--text-dim); margin-bottom:.6rem; font-weight:700;">How to install:</div>
                 <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:.5rem;">

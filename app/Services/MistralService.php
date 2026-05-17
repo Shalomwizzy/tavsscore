@@ -57,7 +57,8 @@ Instructions:
 - Study recent form, goals scored/conceded, home/away performance, and H2H trends carefully.
 - Select the SINGLE outcome you are most confident about from the list below.
 - Do NOT guess — only pick what the data genuinely supports.
-- Rate your confidence from 0 to 100. If you are not at least 50% confident, reflect that in your score.
+- Rate your confidence from 0 to 100. If you are not at least 60% confident, reflect that in your score.
+- Never use em dashes (—) in any text. Use commas, colons, or full stops instead.
 
 Respond with ONLY valid JSON (no markdown, no code fences):
 {"outcome":"Home Win","confidence":76}

@@ -2,7 +2,7 @@
 @section('title', "Today's Over 1.5 Goals Picks – AI Powered | TavsScore")
 @section('meta_description', 'Free daily Over 1.5 Goals predictions backed by Poisson probability modelling. Only matches with 82%+ likelihood of 2 or more goals make the cut. 5 picks daily.')
 @section('og_title', "Today's Over 1.5 Goals Picks")
-@section('og_description', 'AI-powered Over 1.5 Goals picks. Only the highest-probability goal-heavy matches make the daily cut — 5 picks every morning.')
+@section('og_description', 'AI-powered Over 1.5 Goals picks. Only the highest-probability goal-heavy matches make the daily cut. 5 picks every morning.')
 @section('og_image', asset('images/og-over15.jpg'))
 @section('canonical', url('/over-1-5'))
 
@@ -145,7 +145,7 @@
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>
                             <div class="pick-callout-label">Our prediction</div>
-                            <div class="pick-callout-value">⚽ Over 1.5 Goals — YES</div>
+                            <div class="pick-callout-value">⚽ Over 1.5 Goals: YES</div>
                         </div>
                         <div style="text-align:right;">
                             @if($pick['was_correct'] === true)
@@ -207,15 +207,15 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Poisson distribution modelling</strong> — we compute expected goals (xG) for both teams from recent form, attack/defense strength, and head-to-head data.</div>
+                    <div class="hiw-text"><strong>Poisson distribution modelling</strong>: we compute expected goals (xG) for both teams from recent form, attack/defense strength, and head-to-head data.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>82% probability minimum</strong> — only matches where the model gives 82% or higher chance of 2+ goals make the cut. This filters out uncertain fixtures.</div>
+                    <div class="hiw-text"><strong>82% probability minimum</strong>: only matches where the model gives 82% or higher chance of 2+ goals make the cut. This filters out uncertain fixtures.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>5 picks published at 08:00 Lagos</strong> — sorted by probability, highest first. Track our record on the <a href="{{ route('stats.index') }}" style="color:#60a5fa;">stats page</a>.</div>
+                    <div class="hiw-text"><strong>5 picks published at 08:00 Lagos</strong>, sorted by probability, highest first. Track our record on the <a href="{{ route('stats.index') }}" style="color:#60a5fa;">stats page</a>.</div>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'AI Track Record | TavsScore — Verified Football Prediction Accuracy')
-@section('meta_description', 'See exactly how our AI football predictions perform over time. Real verified results, month by month. No cherry-picking — the complete track record.')
+@section('title', 'AI Track Record | TavsScore: Verified Football Prediction Accuracy')
+@section('meta_description', 'See exactly how our AI football predictions perform over time. Real verified results, month by month. No cherry-picking. The complete track record.')
 @section('og_image', asset('images/og-track-record.jpg'))
 
 @push('styles')
@@ -97,7 +97,7 @@
     {{-- Hero --}}
     <div class="tr-hero">
         <div class="tr-badge">📈 VERIFIED TRACK RECORD</div>
-        <h1 class="tr-title">Our AI Picks — The Real Results</h1>
+        <h1 class="tr-title">Our AI Picks: The Real Results</h1>
         <p class="tr-sub">
             No cherry-picking. No spin. Every daily pick we've ever made is tracked, resolved, and shown below exactly as it happened.
             The system learns from every result to get stricter and sharper over time.
@@ -137,7 +137,7 @@
             <div class="tr-stat-val {{ $streak['type'] === 'W' ? 'tr-stat-green' : ($streak['type'] === 'L' ? 'tr-stat-red' : '') }}">
                 @if($streak['count'] > 0)
                     {{ $streak['type'] === 'W' ? '🔥' : '❄️' }} {{ $streak['count'] }}
-                @else — @endif
+                @else N/A @endif
             </div>
             <div class="tr-stat-sub">
                 @if($streak['count'] > 0) {{ $streak['type'] === 'W' ? 'correct in a row' : 'wrong in a row' }}
@@ -171,12 +171,12 @@
             <div class="tr-improve-delta">
                 @if($improvement['delta'] > 0)
                     <span style="color:#34d399;">↑ +{{ $improvement['delta'] }}pp improvement</span>
-                    — the AI has learned from {{ $total }} resolved picks and is getting sharper.
+                    . The AI has learned from {{ $total }} resolved picks and is getting sharper.
                 @elseif($improvement['delta'] < 0)
                     <span style="color:#f87171;">↓ {{ $improvement['delta'] }}pp</span>
-                    — a tough recent stretch; the system is adjusting its thresholds automatically.
+                    . A tough recent stretch; the system is adjusting its thresholds automatically.
                 @else
-                    <span style="color:var(--text-dim);">Stable accuracy</span> — consistent performance across both periods.
+                    <span style="color:var(--text-dim);">Stable accuracy</span>. Consistent performance across both periods.
                 @endif
             </div>
         </div>
@@ -262,7 +262,7 @@
         <div class="tr-empty" style="padding:2rem 1rem;">
             <div class="tr-empty-icon">🌱</div>
             <p class="tr-empty-msg">
-                Monthly evolution snapshots start recording from now. After a few months this section will show exactly how the AI's confidence threshold and calibration accuracy have changed — concrete proof of the system learning.
+                Monthly evolution snapshots start recording from now. After a few months this section will show exactly how the AI's confidence threshold and calibration accuracy have changed, concrete proof of the system learning.
             </p>
         </div>
         @else

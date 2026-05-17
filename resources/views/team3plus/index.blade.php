@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', "Team to Score 3+ Goals — NO Picks | Daily AI Picks | TavsScore")
-@section('meta_description', 'Free daily "A Team to Score 3 or More Goals — NO" predictions. Our Poisson model identifies the team most unlikely to score 3+ goals and we bet NO. 5 picks every day.')
-@section('og_title', "Team 3+ Goals NO Picks — Daily AI Predictions")
+@section('title', "Team to Score 3+ Goals: NO Picks | Daily AI Picks | TavsScore")
+@section('meta_description', 'Free daily "A Team to Score 3 or More Goals: NO" predictions. Our Poisson model identifies the team most unlikely to score 3+ goals and we bet NO. 5 picks every day.')
+@section('og_title', "Team 3+ Goals NO Picks: Daily AI Predictions")
 @section('og_description', 'AI picks for the "A Team to Score 3+ Goals" YES/NO market. We predict NO on the team our model is most confident will NOT score 3. 5 picks every day from TavsScore.')
 @section('og_image', asset('images/og-team3plus.jpg'))
 @section('canonical', url('/team-3-plus'))
@@ -76,8 +76,8 @@
 
 <section class="picks-hero">
     <div class="wrap">
-        <div class="picks-eyebrow">🚫 Team 3+ Goals — NO</div>
-        <h1 class="picks-title">A Team to Score 3+ Goals — <span class="accent">NO</span></h1>
+        <div class="picks-eyebrow">🚫 Team 3+ Goals: NO</div>
+        <h1 class="picks-title">A Team to Score 3+ Goals: <span class="accent">NO</span></h1>
         <p class="picks-subtitle">
             We predict <strong style="color:var(--text);">NO</strong> on the team our model is most confident will <em>not</em> score 3 or more goals. The highlighted team is the one we are saying NO on. Available at most bookmakers.
         </p>
@@ -93,7 +93,7 @@
 
         <div class="market-info">
             <p>
-                <strong>What is this market?</strong> "A Team to Score 3 or More Goals" is a YES/NO market available at Bet365, William Hill, 1xBet, and most major bookmakers under <em>Match Goals → A Team to Score 3+</em>. For each match you can bet on a <em>specific team</em> — YES they will score 3+, or NO they won't. <strong>We only predict NO</strong> — on the team our Poisson model is most confident will stay under 3 goals.
+                <strong>What is this market?</strong> "A Team to Score 3 or More Goals" is a YES/NO market available at Bet365, William Hill, 1xBet, and most major bookmakers under <em>Match Goals → A Team to Score 3+</em>. For each match you can bet on a <em>specific team</em> YES they will score 3+, or NO they won't. <strong>We only predict NO</strong>. On the team our Poisson model is most confident will stay under 3 goals.
             </p>
         </div>
 
@@ -155,7 +155,7 @@
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>
                             <div class="pick-callout-label">Our prediction</div>
-                            <div class="pick-callout-value">🚫 {{ $pick['team_name'] }}: 3+ Goals — NO</div>
+                            <div class="pick-callout-value">🚫 {{ $pick['team_name'] }}: 3+ Goals: NO</div>
                         </div>
                         <div style="text-align:right;">
                             @if($pick['was_correct'] === true)
@@ -200,7 +200,7 @@
                 @endif
 
                 <div class="pick-card-footer">
-                    <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} has only {{ $pick['prob'] }}% chance of scoring 3+ goals — we predict NO</span>
+                    <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} has only {{ $pick['prob'] }}% chance of scoring 3+ goals. We predict NO</span>
                 </div>
             </div>
             @empty
@@ -217,15 +217,15 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Poisson model gives each team a 3+ probability</strong> — from attacking xG we calculate the exact probability of each team scoring 3 or more goals in this match.</div>
+                    <div class="hiw-text"><strong>Poisson model gives each team a 3+ probability</strong>: from attacking xG we calculate the exact probability of each team scoring 3 or more goals in this match.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
-                    <div class="hiw-text"><strong>We pick the team most unlikely to score 3+</strong> — if a team's probability is ≤8%, we are highly confident and publish the NO pick. The highlighted team name is the one we're saying NO on.</div>
+                    <div class="hiw-text"><strong>We pick the team most unlikely to score 3+</strong>: if a team's probability is ≤8%, we are highly confident and publish the NO pick. The highlighted team name is the one we're saying NO on.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">3</div>
-                    <div class="hiw-text"><strong>We win if that team scores 0, 1 or 2 goals</strong> — the pick is resolved when the match finishes. A score of 3+ by the named team means we lose; anything under 3 means we win.</div>
+                    <div class="hiw-text"><strong>We win if that team scores 0, 1 or 2 goals</strong>: the pick is resolved when the match finishes. A score of 3+ by the named team means we lose; anything under 3 means we win.</div>
                 </div>
             </div>
         </div>
