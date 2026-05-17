@@ -492,15 +492,16 @@ class TelegramService
     public function sendTeam3PlusPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) return;
-        $lines = ["🚫 <b>Today's Team 3+ Goals — NO Picks</b>\n"];
+        $lines = ["🚫 <b>Today's Team Goals NO Picks (2+ &amp; 3+ Markets)</b>\n"];
         foreach ($picks as $i => $pick) {
             $rank       = $i === 0 ? '👑' : '🚫';
             $match      = $pick['match'] ?? '';
             $team       = $pick['team'] ?? '';
             $prob       = $pick['prob'] ?? '';
+            $market     = $pick['market'] ?? '3+';
             $league     = $pick['league'] ?? '';
             $leaguePart = $league ? "\n   🏆 {$league}" : '';
-            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>{$team} — 3+ Goals NO</b> (only {$prob}% chance they score 3+)";
+            $lines[] = "{$rank} <b>{$match}</b>{$leaguePart}\n   Tip: <b>{$team} — {$market} Goals NO</b> (only {$prob}% chance they score {$market})";
         }
         $lines[] = "\n🔗 <a href=\"{$siteUrl}/team-3-plus\">See full analysis</a>";
         $lines[] = "\n⚠️ No prediction is guaranteed. Bet responsibly.";

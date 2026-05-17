@@ -178,19 +178,23 @@
                     </div>
                 </div>
 
-                {{-- Per-team probability bars --}}
+                {{-- Per-team probability bars — use market-appropriate probs --}}
+                @php
+                    $homeProb = $market === '2+' ? $pick['home_2plus'] : $pick['home_3plus'];
+                    $awayProb = $market === '2+' ? $pick['away_2plus'] : $pick['away_3plus'];
+                @endphp
                 <div style="padding:0 1.75rem; margin-bottom:1.25rem;">
                     <div style="font-size:.68rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem;">{{ $market }} Goals probability per team (lower = better for NO)</div>
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem;">
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Str::limit($pick['match']['home'], 12) }} {{ $market }}</div>
-                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['home_3plus'], 100) }}%; background:{{ $isHome ? '#ef4444' : '#6b7280' }};"></div></div>
-                            <div style="font-size:.72rem; font-weight:800; color:{{ $isHome ? '#fca5a5' : '#9ca3af' }};">{{ $pick['home_3plus'] }}%</div>
+                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($homeProb, 100) }}%; background:{{ $isHome ? '#ef4444' : '#6b7280' }};"></div></div>
+                            <div style="font-size:.72rem; font-weight:800; color:{{ $isHome ? '#fca5a5' : '#9ca3af' }};">{{ $homeProb }}%</div>
                         </div>
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Str::limit($pick['match']['away'], 12) }} {{ $market }}</div>
-                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($pick['away_3plus'], 100) }}%; background:{{ !$isHome ? '#ef4444' : '#6b7280' }};"></div></div>
-                            <div style="font-size:.72rem; font-weight:800; color:{{ !$isHome ? '#fca5a5' : '#9ca3af' }};">{{ $pick['away_3plus'] }}%</div>
+                            <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($awayProb, 100) }}%; background:{{ !$isHome ? '#ef4444' : '#6b7280' }};"></div></div>
+                            <div style="font-size:.72rem; font-weight:800; color:{{ !$isHome ? '#fca5a5' : '#9ca3af' }};">{{ $awayProb }}%</div>
                         </div>
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem;">Over 2.5</div>

@@ -124,6 +124,8 @@ class Team3PlusController extends Controller
             'live_score'  => $liveScore,
             'home_3plus'  => round($home3, 1),
             'away_3plus'  => round($away3, 1),
+            'home_2plus'  => round($home2, 1),
+            'away_2plus'  => round($away2, 1),
             'over25_prob' => round((float)($p->over_25_prob ?? 0)),
             'match' => [
                 'home'       => $p->match?->home_team ?? 'Home',

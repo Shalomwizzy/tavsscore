@@ -180,22 +180,31 @@ class NotifyDailyPicks extends Command
                 $t3Lines = $team3Picks->map(function ($p) {
                     $match = $p->match;
                     if (! $match) return null;
-                    $label    = $p->team3plus_label ?? 'Home';
-                    $teamName = $label === 'Home' ? $match->home_team : $match->away_team;
-                    $prob     = round($label === 'Home' ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
+                    $label    = $p->team3plus_label ?? 'Home 3+';
+                    $isHome   = str_starts_with($label, 'Home');
+                    $market   = str_ends_with($label, '2+') ? '2+' : '3+';
+                    $teamName = $isHome ? $match->home_team : $match->away_team;
+                    $prob     = $market === '2+'
+                        ? round($isHome ? ($p->home_2plus_prob ?? 0) : ($p->away_2plus_prob ?? 0))
+                        : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
                     $league   = LeagueCoverage::formatName($match->league, $match->league_country);
                     $league   = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: {$teamName} 3+ NO ({$prob}%)";
+                    return "{$league}{$match->home_team} vs {$match->away_team}: {$teamName} {$market} Goals NO ({$prob}%)";
                 })->filter()->values();
 
-                $oneSignal->sendMatchAlert(title: '🚫 Today\'s Team 3+ NO Picks Are Live!', message: $t3Lines->implode(' | ') . ' — Tap for analysis', path: '/team-3-plus');
+                $oneSignal->sendMatchAlert(title: '🚫 Today\'s Team Goals NO Picks Are Live!', message: $t3Lines->implode(' | ') . ' — Tap for analysis', path: '/team-3-plus');
                 $telegram->sendTeam3PlusPicks($team3Picks->map(function ($p) {
                     if (! $p->match) return null;
-                    $label    = $p->team3plus_label ?? 'Home';
-                    $teamName = $label === 'Home' ? $p->match->home_team : $p->match->away_team;
-                    return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'team' => $teamName, 'prob' => round($label === 'Home' ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0))];
+                    $label    = $p->team3plus_label ?? 'Home 3+';
+                    $isHome   = str_starts_with($label, 'Home');
+                    $market   = str_ends_with($label, '2+') ? '2+' : '3+';
+                    $teamName = $isHome ? $p->match->home_team : $p->match->away_team;
+                    $prob     = $market === '2+'
+                        ? round($isHome ? ($p->home_2plus_prob ?? 0) : ($p->away_2plus_prob ?? 0))
+                        : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
+                    return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'team' => $teamName, 'market' => $market, 'prob' => $prob];
                 })->filter()->values()->toArray(), $url);
-                $this->info("Team 3+ picks sent: {$team3Picks->count()}");
+                $this->info("Team Goals NO picks sent: {$team3Picks->count()}");
             } else {
                 $this->warn('No Team 3+ picks today — skipped.');
             }
