@@ -41,6 +41,12 @@ class FootballService
         });
     }
 
+    public function fetchFixturesByDate(string $date): array
+    {
+        Cache::forget(self::TODAY_CACHE_KEY.'.'.$date);
+        return $this->fetchFixtures(['date' => $date]);
+    }
+
     public function liveMatchesFromDatabase(): Collection
     {
         return FootballMatch::query()
