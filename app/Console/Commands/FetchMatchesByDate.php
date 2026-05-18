@@ -20,37 +20,48 @@ class FetchMatchesByDate extends Command
 
         $this->info("Fetching fixtures for {$date}…");
 
-        $fixtures = collect($footballService->fetchFixturesByDate($date))
-            ->filter(fn (array $m): bool => LeagueCoverage::shouldIngest($m));
+        $allFixtures = collect($footballService->fetchFixturesByDate($date));
 
-        if ($fixtures->isEmpty()) {
+        if ($allFixtures->isEmpty()) {
             $this->warn("No fixtures returned for {$date}. API may still be exhausted or date has no matches.");
             return self::FAILURE;
         }
 
+        // Pre-load all api_ids already in our DB so we know which matches we track
+        $trackedApiIds = FootballMatch::whereIn('api_id', $allFixtures->pluck('api_id'))
+            ->pluck('api_id')
+            ->flip();
+
         $updated = 0;
-        foreach ($fixtures as $match) {
-            FootballMatch::query()->updateOrCreate(
-                ['api_id' => $match['api_id']],
-                [
-                    'league'         => $match['league'],
-                    'league_id'      => $match['league_id'],
-                    'league_country' => $match['league_country'],
-                    'home_team'      => $match['home_team'],
-                    'away_team'      => $match['away_team'],
-                    'home_score'     => $match['home_score'],
-                    'away_score'     => $match['away_score'],
-                    'home_score_ht'  => $match['home_score_ht'] ?? null,
-                    'away_score_ht'  => $match['away_score_ht'] ?? null,
-                    'status'         => $match['status'],
-                    'elapsed'        => $match['elapsed'],
-                    'match_time'     => $match['match_time'],
-                ]
-            );
-            $updated++;
+        foreach ($allFixtures as $match) {
+            $alreadyTracked = isset($trackedApiIds[$match['api_id']]);
+
+            // Always update matches already in our DB (even non-covered leagues) so
+            // final scores reach picks that were created before a league was de-listed.
+            // Only insert NEW rows for matches passing the coverage filter.
+            if ($alreadyTracked || LeagueCoverage::shouldIngest($match)) {
+                FootballMatch::query()->updateOrCreate(
+                    ['api_id' => $match['api_id']],
+                    [
+                        'league'         => $match['league'],
+                        'league_id'      => $match['league_id'],
+                        'league_country' => $match['league_country'],
+                        'home_team'      => $match['home_team'],
+                        'away_team'      => $match['away_team'],
+                        'home_score'     => $match['home_score'],
+                        'away_score'     => $match['away_score'],
+                        'home_score_ht'  => $match['home_score_ht'] ?? null,
+                        'away_score_ht'  => $match['away_score_ht'] ?? null,
+                        'status'         => $match['status'],
+                        'elapsed'        => $match['elapsed'],
+                        'match_time'     => $match['match_time'],
+                    ]
+                );
+                $updated++;
+            }
         }
 
-        // Force stale live matches for this date to FT so outcome checker resolves them
+        // Force any matches for this date still stuck in a live status to FT
         $forced = FootballMatch::query()
             ->whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])
             ->whereDate('match_time', $date)

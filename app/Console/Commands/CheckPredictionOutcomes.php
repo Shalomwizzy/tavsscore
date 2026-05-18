@@ -174,11 +174,7 @@ class CheckPredictionOutcomes extends Command
         Log::info("CheckPredictionOutcomes: resolved {$resolved} predictions.");
 
         // ── 2. Correct score outcomes ─────────────────────────────────────────
-        // Two-layer guard:
-        //  (a) correct_score_notified DB flag — survives cache:clear and deploys
-        //  (b) 26-hour match_time window — structurally prevents re-firing old
-        //      records that have correct_score_notified=false after a fresh migration
-        $scoreSince = now()->subHours(26);
+        $scoreSince = now()->subDays($days)->startOfDay();
 
         $scorePredictions = Prediction::query()
             ->with('match')
@@ -241,10 +237,7 @@ class CheckPredictionOutcomes extends Command
         }
 
         // ── 3. Over 1.5 / Over 2.5 / Team 3+ outcomes ───────────────────────
-        // Each pick type resolves independently from was_correct (which tracks the
-        // primary AI outcome, not the goals threshold). Uses a 26-hour window and
-        // a DB-persisted notified flag so deploys can never re-fire old results.
-        $goalsSince = now()->subHours(26);
+        $goalsSince = now()->subDays($days)->startOfDay();
 
         $goalsFinished = Prediction::query()
             ->with('match')
