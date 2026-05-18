@@ -26,24 +26,33 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('predict:matches')->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('predictions:check-outcomes')->everyFiveMinutes()->withoutOverlapping();
-        // Reset daily picks at midnight Lagos (Africa/Lagos = WAT, UTC+1).
-        // The selector also re-runs at 06:00 in case morning fixtures load late.
-        // Picks: select at midnight + retry at 06:00 for late-loading fixtures
-        $schedule->command('picks:select --force')->dailyAt('00:00')->timezone('Africa/Lagos')->withoutOverlapping();
+
+        // API-Football quota resets at 01:00 Lagos each day.
+        // At 01:30 we clear the quota-exhausted cache flag so fetch:matches
+        // resumes immediately and has ~90 min to load today's fixtures before
+        // picks are selected at 03:00.
+        $schedule->call(function () {
+            \Illuminate\Support\Facades\Cache::forget('api_football_quota_exhausted');
+        })->dailyAt('01:30')->timezone('Africa/Lagos')->name('clear-quota-flag');
+
+        // Picks: force-select at 03:00 (fixtures loaded, predictions generated).
+        // Silent re-runs at 05:00, 08:00, 10:00 — these are blocked by the
+        // "picks_sent_{type}_{date}" cache flags so notified picks are never replaced.
+        $schedule->command('picks:select --force')->dailyAt('03:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('05:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Staggered notifications 01:00–02:00 Lagos — sent right after midnight selection.
-        // Once a type is notified, a cache flag prevents the 05:00/08:00 picks:select
+        // Staggered notifications 03:30–04:30 Lagos — 30 min after picks:select --force.
+        // Once a type is notified, a cache flag prevents later picks:select runs
         // from overwriting those picks, so what users receive is always what stays.
-        $schedule->command('picks:notify --type=daily')->dailyAt('01:00')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=draw')->dailyAt('01:10')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=gg')->dailyAt('01:20')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over15')->dailyAt('01:30')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over25')->dailyAt('01:40')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=team3plus')->dailyAt('01:50')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=doublechance')->dailyAt('02:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=daily')->dailyAt('03:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=draw')->dailyAt('03:40')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=gg')->dailyAt('03:50')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over15')->dailyAt('04:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over25')->dailyAt('04:10')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=team3plus')->dailyAt('04:20')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=doublechance')->dailyAt('04:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Re-predict daily pick matches the moment their confirmed lineup drops
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new

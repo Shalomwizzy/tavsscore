@@ -191,6 +191,6 @@ class SelectDailyPicks extends Command
             ));
         }
 
-        $this->info("✅ {$picks->count()} daily picks selected. Notification will fire at 01:00 Lagos.");
+        $this->info("✅ {$picks->count()} daily picks selected. Notification will fire at 03:30 Lagos.");
     }
 }
