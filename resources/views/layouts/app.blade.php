@@ -106,6 +106,10 @@
             --yellow-dim:   rgba(245,158,11,0.12);
         }
 
+        html, body {
+            overflow-x: hidden;
+        }
+
         body {
             min-height: 100vh;
             background: var(--bg);

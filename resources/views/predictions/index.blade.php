@@ -258,20 +258,19 @@
         .preds-header { flex-direction:column; align-items:flex-start; }
     }
 
+    /* Left info block in card header */
+    .pc-info { min-width: 0; flex: 1; }
+
     /* ── Mobile card fix: stop actions from squishing team names ── */
     @media (max-width:600px) {
-        .pc-head { flex-wrap: wrap; gap: .5rem; }
-        /* Left side takes full row first */
-        .pc-head > div:first-child { flex: 1 1 100%; min-width: 0; }
-        /* Actions sit below, left-aligned */
-        .pc-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; }
-        /* Trim long verdict chip text */
-        .verdict-chip {
-            max-width: 160px; overflow: hidden;
-            text-overflow: ellipsis; white-space: nowrap;
-            display: inline-flex;
-        }
-        /* Prevent date from wrapping character-by-character */
+        .pc-head { flex-wrap: wrap; gap: .4rem; }
+        /* Left block takes full first row */
+        .pc-info { flex: 1 1 100%; }
+        /* Actions sit below on their own row, left-aligned */
+        .pc-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: .4rem; }
+        /* Trim long verdict chip so it never overflows */
+        .verdict-chip { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Date clips instead of wrapping character by character */
         .pc-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     }
 </style>
@@ -647,7 +646,7 @@
 
         return '<div class="pred-card fade-up">'
             +'<div class="pc-head">'
-            +'<div style="min-width:0;flex:1;">'
+            +'<div class="pc-info">'
             +'<div class="pc-teams">'
             +  esc(m.home_team||'?') + formDots(p.home_form)
             +  ' <span class="vs">vs</span> '
