@@ -53,6 +53,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:notify --type=over25')->dailyAt('04:10')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=team3plus')->dailyAt('04:20')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=doublechance')->dailyAt('04:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        // Backup run at 07:30 — covers days where predictions aren't ready by 04:30.
+        // Cache guard in NotifyDailyPicks prevents double-sending if 04:30 already fired.
+        $schedule->command('picks:notify --type=doublechance')->dailyAt('07:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Re-predict daily pick matches the moment their confirmed lineup drops
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new

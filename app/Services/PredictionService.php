@@ -1357,7 +1357,7 @@ class PredictionService
         $cutoff   = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-        $candidates = Prediction::query()
+        $allScoredPredictions = Prediction::query()
             ->with('match')
             ->whereNotNull('home_win_prob')
             ->whereNotNull('draw_prob')
@@ -1367,25 +1367,35 @@ class PredictionService
                 ->whereNotIn('status', $excluded)
             )
             ->get()
-            ->map(function (Prediction $p): ?array {
+            ->map(function (Prediction $p): array {
                 $dc1x = (float) $p->home_win_prob + (float) $p->draw_prob;
                 $dc2x = (float) $p->away_win_prob + (float) $p->draw_prob;
+                $bestDc = $dc1x >= $dc2x ? $dc1x : $dc2x;
+                $label  = $dc1x >= $dc2x ? '1X' : '2X';
+                return ['prediction' => $p, 'label' => $label, 'prob' => $bestDc, 'dc1x' => $dc1x, 'dc2x' => $dc2x];
+            });
 
-                if ($dc1x >= $dc2x && $dc1x >= 72.0) {
-                    return ['prediction' => $p, 'label' => '1X', 'prob' => $dc1x];
-                }
-                if ($dc2x > $dc1x && $dc2x >= 72.0) {
-                    return ['prediction' => $p, 'label' => '2X', 'prob' => $dc2x];
-                }
-                return null;
-            })
-            ->filter()
+        // Primary: >= 72% DC confidence
+        $candidates = $allScoredPredictions
+            ->filter(fn ($item) => $item['prob'] >= 72.0)
             ->sortByDesc(fn ($item) =>
                 (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
                 + $item['prob']
             )
             ->take(5)
             ->values();
+
+        // Fallback: best 3 by DC score with minimum 60% (ensures picks always exist)
+        if ($candidates->isEmpty()) {
+            $candidates = $allScoredPredictions
+                ->filter(fn ($item) => $item['prob'] >= 60.0)
+                ->sortByDesc(fn ($item) =>
+                    (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+                    + $item['prob']
+                )
+                ->take(3)
+                ->values();
+        }
 
         if ($candidates->isEmpty()) {
             return Prediction::query()

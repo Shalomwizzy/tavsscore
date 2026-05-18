@@ -59,9 +59,27 @@ class DoubleChanceAdminController extends Controller
 
         if ($picks->isNotEmpty()) {
             Artisan::call('picks:notify', ['--type' => 'doublechance']);
+            $output = Artisan::output();
+            $sent   = str_contains($output, 'Double Chance picks sent:');
+            $msg    = $sent
+                ? "Re-selected {$picks->count()} picks — notification sent to Telegram + push ✅"
+                : "Re-selected {$picks->count()} picks — notification skipped (picks may already be sent today or an error occurred).";
+        } else {
+            $msg = 'No qualifying Double Chance picks found today (need DC probability ≥ 60%).';
         }
 
-        return redirect()->route('admin.double-chance.index')
-            ->with('success', "Re-selected {$picks->count()} Double Chance picks.");
+        return redirect()->route('admin.double-chance.index')->with('success', $msg);
+    }
+
+    public function notify(): RedirectResponse
+    {
+        Artisan::call('picks:notify', ['--type' => 'doublechance', '--force' => true]);
+        $output = Artisan::output();
+        $sent   = str_contains($output, 'Double Chance picks sent:');
+        $msg    = $sent
+            ? 'Double Chance notification sent to Telegram + push ✅'
+            : 'No Double Chance picks found for today — nothing sent. Run Re-select first.';
+
+        return redirect()->route('admin.double-chance.index')->with('success', $msg);
     }
 }

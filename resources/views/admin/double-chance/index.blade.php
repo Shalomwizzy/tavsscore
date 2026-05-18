@@ -10,7 +10,12 @@
         <form method="POST" action="{{ route('admin.double-chance.refresh') }}"
               onsubmit="return confirm('Re-select today\'s Double Chance picks? This overwrites the current selection.');">
             @csrf
-            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#93c5fd;">🎯 Re-select Today</button>
+            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#93c5fd;">🎯 Re-select &amp; Notify</button>
+        </form>
+        <form method="POST" action="{{ route('admin.double-chance.notify') }}"
+              onsubmit="return confirm('Send Double Chance notification to Telegram and push now?');">
+            @csrf
+            <button type="submit" class="btn-a" style="background:linear-gradient(135deg,#064e3b,#065f46);color:#6ee7b7;">📣 Send Notification</button>
         </form>
         <a href="{{ route('double-chance.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
     </div>
@@ -169,10 +174,10 @@
 
 <div style="margin-top:1.25rem; padding:.875rem 1rem; border-radius:8px; background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.18); font-size:.74rem; color:#93c5fd;">
     <strong>ℹ️ How Double Chance picks work:</strong>
-    Auto-select at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">05:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>.
-    <strong>1X</strong> = home_win_prob + draw_prob ≥ 72%. <strong>2X</strong> = away_win_prob + draw_prob ≥ 72%.
-    We pick whichever label has the higher combined probability per match, top 5 daily.
+    Auto-select at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">03:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>, notification at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">04:30</code>.
+    Primary: best DC probability ≥ 72% (up to 5 picks). Fallback: top 3 with ≥ 60% DC probability.
     <strong>1X wins</strong> when home_score ≥ away_score. <strong>2X wins</strong> when away_score ≥ home_score.
+    Use <strong>Re-select &amp; Notify</strong> to force-pick and immediately send, or <strong>Send Notification</strong> to resend current picks.
 </div>
 
 @endsection

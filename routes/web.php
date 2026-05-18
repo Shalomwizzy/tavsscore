@@ -150,6 +150,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/team3plus/refresh', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'refresh'])->name('team3plus.refresh');
         Route::get('/double-chance',          [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'index'])->name('double-chance.index');
         Route::post('/double-chance/refresh', [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'refresh'])->name('double-chance.refresh');
+        Route::post('/double-chance/notify',  [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'notify'])->name('double-chance.notify');
 
         /* Rollover */
         Route::get('/rollover',                      [\App\Http\Controllers\Admin\RolloverAdminController::class, 'index'])->name('rollover.index');
