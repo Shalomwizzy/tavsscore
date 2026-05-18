@@ -274,21 +274,22 @@ if (! function_exists('stripTip')) {
 
     /* ── Yesterday section ── */
     .yesterday-section { padding: 0 0 3rem; }
-    .yesterday-grid    { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1.25rem; }
+    .yesterday-grid    { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: .75rem; margin-top: 1.25rem; }
 
     .yesterday-card {
         background: var(--card); border: 1px solid var(--border);
-        border-radius: 12px; padding: 1.1rem 1.25rem;
+        border-radius: 12px; padding: .9rem 1rem;
     }
     .yesterday-card.y-win  { border-color: rgba(16,185,129,.3); }
     .yesterday-card.y-loss { border-color: rgba(239,68,68,.25); }
     .yesterday-card.y-pending { opacity: .65; }
 
-    .y-league { font-size: .65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
-    .y-match  { font-size: .82rem; font-weight: 700; color: #fff; margin-bottom: .5rem; line-height: 1.3; }
-    .y-pick   { font-size: .75rem; color: var(--text-dim); margin-bottom: .5rem; }
-    .y-result { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
-    .y-score  { font-size: .8rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+    .y-league { font-size: .6rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .y-match  { font-size: .8rem; font-weight: 700; color: #fff; margin-bottom: .4rem; line-height: 1.3; }
+    .y-pick   { font-size: .72rem; color: var(--text-dim); margin-bottom: .4rem; }
+    .y-result { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
+    .y-score  { font-size: .78rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 
     /* ── Empty ── */
     .picks-empty { text-align: center; padding: 4rem 1rem; }
@@ -304,8 +305,7 @@ if (! function_exists('stripTip')) {
     .faq-a       { font-size: .8rem; color: var(--text-dim); line-height: 1.7; }
 
     @media (max-width: 768px) {
-        .yesterday-grid { grid-template-columns: 1fr; }
-        .faq-grid       { grid-template-columns: 1fr; }
+        .faq-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
         .pick-team { font-size: 1rem; }
@@ -841,11 +841,11 @@ if (! function_exists('stripTip')) {
                 <div class="y-pick">{{ $pick['pick_emoji'] }} {{ $pick['pick_label'] }}</div>
                 <div class="y-result">
                     @if($pick['was_correct'] === true)
-                        <span class="result-badge result-win-badge" style="font-size:.72rem;">✓ Correct</span>
+                        <span class="result-badge result-win-badge" style="font-size:.72rem;">✓ Won</span>
                     @elseif($pick['was_correct'] === false)
-                        <span class="result-badge result-loss-badge" style="font-size:.72rem;">✗ Incorrect</span>
+                        <span class="result-badge result-loss-badge" style="font-size:.72rem;">✗ Lost</span>
                     @else
-                        <span class="result-badge result-pending-badge" style="font-size:.72rem;">Pending</span>
+                        <span class="result-badge result-pending-badge" style="font-size:.72rem;">⏳ Pending</span>
                     @endif
                     @if($pick['actual_score'])
                         <span class="y-score">{{ $pick['actual_score'] }}</span>

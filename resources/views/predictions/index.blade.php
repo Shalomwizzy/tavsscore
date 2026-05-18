@@ -257,6 +257,23 @@
         .prob-label { display:none; }
         .preds-header { flex-direction:column; align-items:flex-start; }
     }
+
+    /* ── Mobile card fix: stop actions from squishing team names ── */
+    @media (max-width:600px) {
+        .pc-head { flex-wrap: wrap; gap: .5rem; }
+        /* Left side takes full row first */
+        .pc-head > div:first-child { flex: 1 1 100%; min-width: 0; }
+        /* Actions sit below, left-aligned */
+        .pc-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; }
+        /* Trim long verdict chip text */
+        .verdict-chip {
+            max-width: 160px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+            display: inline-flex;
+        }
+        /* Prevent date from wrapping character-by-character */
+        .pc-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    }
 </style>
 @endpush
 
