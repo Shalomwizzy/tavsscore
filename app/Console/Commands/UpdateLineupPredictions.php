@@ -74,11 +74,10 @@ class UpdateLineupPredictions extends Command
         }
 
         if (! empty($updated)) {
-            $oneSignal->sendMatchAlert(
-                title:   '⚡ Lineups Confirmed - Picks Updated!',
-                message: implode(' | ', $updated) . ' - Tap to see analysis',
-                path:    '/lineup-picks',
-            );
+            $first = $telegramPicks[0] ?? [];
+            $topMatch = $first['match'] ?? '';
+            $topTip   = $first['tip']   ?? '';
+            $oneSignal->notifyLineupUpdated($topMatch, $topTip, count($updated));
 
             $telegram->sendLineupPicks($telegramPicks, config('app.url'));
         }

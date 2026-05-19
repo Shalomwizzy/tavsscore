@@ -45,11 +45,9 @@ class NotifyDailyPicks extends Command
                     return "{$league}{$match->home_team} vs {$match->away_team}: {$p->predicted_outcome}{$conf}";
                 })->filter()->values();
 
-                $oneSignal->sendMatchAlert(
-                    title:   '🎯 Today\'s Daily Picks Are Live!',
-                    message: $lines->implode(' | ') . ' - Tap for full analysis',
-                    path:    '/picks',
-                );
+                $topPick = $picks->first();
+                $topMatch = $topPick->match ? "{$topPick->match->home_team} vs {$topPick->match->away_team}" : '';
+                $oneSignal->notifyDailyPicks($topMatch, $topPick->predicted_outcome ?? '', $picks->count());
 
                 $telegram->sendDailyPicks($picks->map(function ($p) {
                     $match = $p->match;
@@ -75,16 +73,9 @@ class NotifyDailyPicks extends Command
                 ->get();
 
             if ($drawPicks->isNotEmpty()) {
-                $drawLines = $drawPicks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    $conf   = $p->confidence ? " ({$p->confidence}%)" : '';
-                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: Draw{$conf}";
-                })->filter()->values();
-
-                $oneSignal->sendMatchAlert(title: '🤝 Today\'s Draw Picks — Triple AI Agreed!', message: $drawLines->implode(' | ') . ' - Tap for analysis', path: '/draw-picks');
+                $topDraw = $drawPicks->first();
+                $topDrawMatch = $topDraw->match ? "{$topDraw->match->home_team} vs {$topDraw->match->away_team}" : '';
+                $oneSignal->notifyDrawPicks($topDrawMatch, $drawPicks->count());
                 $telegram->sendDrawPicks($drawPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
                 Cache::put('picks_sent_draw_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Draw picks sent: {$drawPicks->count()}");
@@ -103,16 +94,9 @@ class NotifyDailyPicks extends Command
                 ->get();
 
             if ($ggPicks->isNotEmpty()) {
-                $ggLines = $ggPicks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    $conf   = $p->confidence ? " ({$p->confidence}%)" : '';
-                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: GG{$conf}";
-                })->filter()->values();
-
-                $oneSignal->sendMatchAlert(title: '⚽ Today\'s GG Picks — Both Teams to Score!', message: $ggLines->implode(' | ') . ' - Tap for analysis', path: '/gg-picks');
+                $topGG = $ggPicks->first();
+                $topGGMatch = $topGG->match ? "{$topGG->match->home_team} vs {$topGG->match->away_team}" : '';
+                $oneSignal->notifyGGPicks($topGGMatch, $ggPicks->count());
                 $telegram->sendGGPicks($ggPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
                 Cache::put('picks_sent_gg_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("GG picks sent: {$ggPicks->count()}");
@@ -131,15 +115,9 @@ class NotifyDailyPicks extends Command
                 ->get();
 
             if ($over15Picks->isNotEmpty()) {
-                $o15Lines = $over15Picks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: Over 1.5 (" . round($p->over_15_prob ?? 0) . "%)";
-                })->filter()->values();
-
-                $oneSignal->sendMatchAlert(title: '⚽ Today\'s Over 1.5 Goals Picks Are Live!', message: $o15Lines->implode(' | ') . ' — Tap for analysis', path: '/over-1-5');
+                $topO15 = $over15Picks->first();
+                $topO15Match = $topO15->match ? "{$topO15->match->home_team} vs {$topO15->match->away_team}" : '';
+                $oneSignal->notifyOver15Picks($topO15Match, round($topO15->over_15_prob ?? 0) . '%', $over15Picks->count());
                 $telegram->sendOver15Picks($over15Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_15_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
                 Cache::put('picks_sent_over15_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Over 1.5 picks sent: {$over15Picks->count()}");
@@ -158,15 +136,9 @@ class NotifyDailyPicks extends Command
                 ->get();
 
             if ($over25Picks->isNotEmpty()) {
-                $o25Lines = $over25Picks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: Over 2.5 (" . round($p->over_25_prob ?? 0) . "%)";
-                })->filter()->values();
-
-                $oneSignal->sendMatchAlert(title: '🔥 Today\'s Over 2.5 Goals Picks Are Live!', message: $o25Lines->implode(' | ') . ' — Tap for analysis', path: '/over-2-5');
+                $topO25 = $over25Picks->first();
+                $topO25Match = $topO25->match ? "{$topO25->match->home_team} vs {$topO25->match->away_team}" : '';
+                $oneSignal->notifyOver25Picks($topO25Match, round($topO25->over_25_prob ?? 0) . '%', $over25Picks->count());
                 $telegram->sendOver25Picks($over25Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_25_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
                 Cache::put('picks_sent_over25_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
                 $this->info("Over 2.5 picks sent: {$over25Picks->count()}");
@@ -185,22 +157,12 @@ class NotifyDailyPicks extends Command
                 ->get();
 
             if ($team3Picks->isNotEmpty()) {
-                $t3Lines = $team3Picks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    $label    = $p->team3plus_label ?? 'Home 3+';
-                    $isHome   = str_starts_with($label, 'Home');
-                    $market   = str_ends_with($label, '2+') ? '2+' : '3+';
-                    $teamName = $isHome ? $match->home_team : $match->away_team;
-                    $prob     = $market === '2+'
-                        ? round($isHome ? ($p->home_2plus_prob ?? 0) : ($p->away_2plus_prob ?? 0))
-                        : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
-                    $league   = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league   = $league ? "[{$league}] " : '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: {$teamName} {$market} Goals NO ({$prob}%)";
-                })->filter()->values();
-
-                $oneSignal->sendMatchAlert(title: '🚫 Today\'s Team Goals NO Picks Are Live!', message: $t3Lines->implode(' | ') . ' — Tap for analysis', path: '/team-3-plus');
+                $topT3 = $team3Picks->first();
+                $topT3Match = $topT3->match ? "{$topT3->match->home_team} vs {$topT3->match->away_team}" : '';
+                $topT3Label = $topT3->team3plus_label ?? 'Home 3+';
+                $topT3IsHome = str_starts_with($topT3Label, 'Home');
+                $topT3Team = $topT3->match ? ($topT3IsHome ? $topT3->match->home_team : $topT3->match->away_team) : '';
+                $oneSignal->notifyTeam3Picks($topT3Match, $topT3Team, $team3Picks->count());
                 $telegram->sendTeam3PlusPicks($team3Picks->map(function ($p) {
                     if (! $p->match) return null;
                     $label    = $p->team3plus_label ?? 'Home 3+';
@@ -232,24 +194,13 @@ class NotifyDailyPicks extends Command
                     ->get();
 
                 if ($dcPicks->isNotEmpty()) {
-                    $dcLines = $dcPicks->map(function ($p) {
-                        $match = $p->match;
-                        if (! $match) return null;
-                        $label  = $p->double_chance_label ?? '1X';
-                        $dc1x   = round((float) $p->home_win_prob + (float) $p->draw_prob, 1);
-                        $dc2x   = round((float) $p->away_win_prob + (float) $p->draw_prob, 1);
-                        $prob   = $label === '1X' ? $dc1x : $dc2x;
-                        $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                        $league = $league ? "[{$league}] " : '';
-                        $desc   = $label === '1X' ? 'Home Win or Draw' : 'Away Win or Draw';
-                        return "{$league}{$match->home_team} vs {$match->away_team}: {$label} ({$desc}) ({$prob}%)";
-                    })->filter()->values();
-
-                    $oneSignal->sendMatchAlert(
-                        title:   '🎯 Today\'s Double Chance Picks Are Live!',
-                        message: $dcLines->implode(' | ') . ' — Tap for analysis',
-                        path:    '/double-chance',
-                    );
+                    $topDC = $dcPicks->first();
+                    $topDCMatch = $topDC->match ? "{$topDC->match->home_team} vs {$topDC->match->away_team}" : '';
+                    $topDCLabel = $topDC->double_chance_label ?? '1X';
+                    $topDCProb  = $topDCLabel === '1X'
+                        ? round((float) $topDC->home_win_prob + (float) $topDC->draw_prob, 1)
+                        : round((float) $topDC->away_win_prob + (float) $topDC->draw_prob, 1);
+                    $oneSignal->notifyDoubleChancePicks($topDCMatch, $topDCLabel, $topDCProb . '%', $dcPicks->count());
 
                     $telegram->sendDoubleChancePicks($dcPicks->map(function ($p) {
                         if (! $p->match) return null;
@@ -297,7 +248,9 @@ class NotifyDailyPicks extends Command
                     $telegramData[] = ['match' => "{$match->home_team} vs {$match->away_team}", 'league' => LeagueCoverage::formatName($match->league, $match->league_country), 'tip' => $p->predicted_outcome, 'confidence' => $p->confidence ?? ''];
                 }
                 if (! empty($lines)) {
-                    $oneSignal->sendMatchAlert(title: '⚡ Lineups Confirmed — Picks Updated!', message: implode(' | ', $lines) . ' — Tap for analysis', path: '/lineup-picks');
+                    $topLineup = $lineupPicks->first();
+                    $topLineupMatch = $topLineup->match ? "{$topLineup->match->home_team} vs {$topLineup->match->away_team}" : '';
+                    $oneSignal->notifyLineupUpdated($topLineupMatch, $topLineup->predicted_outcome ?? '', count($lines));
                     $telegram->sendLineupPicks($telegramData, $url);
                     $this->info("Lineup picks sent: " . count($lines));
                 }
@@ -332,7 +285,10 @@ class NotifyDailyPicks extends Command
                     return "{$league}{$match->home_team} vs {$match->away_team}: {$top}";
                 })->filter()->values();
 
-                $oneSignal->sendMatchAlert(title: '🎯 Today\'s Correct Score Predictions Are Live!', message: $pushLines->implode(' | ') . ' — Tap for all scorelines', path: '/correct-score');
+                $topCS = $scorePicks->first();
+                $topCSMatch = $topCS->match ? "{$topCS->match->home_team} vs {$topCS->match->away_team}" : '';
+                $topCSScore = $topCS->likely_scores[0]['score'] ?? '?-?';
+                $oneSignal->notifyCorrectScorePicks($topCSMatch, $topCSScore, $scorePicks->count());
                 $telegram->sendCorrectScores($telegramData, $url);
                 $this->info("Correct score picks sent: {$scorePicks->count()}");
             } else {

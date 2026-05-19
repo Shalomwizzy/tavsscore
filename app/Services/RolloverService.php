@@ -243,11 +243,7 @@ class RolloverService
         $league     = LeagueCoverage::formatName($pred->match?->league, $pred->match?->league_country);
         $siteUrl    = config('app.url');
 
-        $this->oneSignal->sendMatchAlert(
-            title:   "🎯 Rollover Day {$dayNumber} Pick Is Live!",
-            message: ($league ? "[{$league}] " : '') . "{$matchLabel} — Tip: {$pred->predicted_outcome} @ {$displayOdds} odds. Tap to track.",
-            path:    '/rollover',
-        );
+        $this->oneSignal->notifyRolloverPick($dayNumber, $matchLabel, $pred->predicted_outcome, $stake, $potentialReturn);
 
         $this->telegram->sendRolloverPick(
             $matchLabel,
@@ -320,17 +316,9 @@ class RolloverService
                 $league     = LeagueCoverage::formatName($match->league, $match->league_country);
 
                 if ($newStatus === 'won') {
-                    $this->oneSignal->sendPickOutcome(
-                        title: "🔥 Rollover Day {$pick->day_number} WON! 💰",
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$tip} ✅ The pot grows! Tap to track your returns.",
-                        path:  '/rollover',
-                    );
+                    $this->oneSignal->notifyRolloverWon($pick->day_number, $matchLabel, $score, (float) $pick->potential_return);
                 } else {
-                    $this->oneSignal->sendPickOutcome(
-                        title: "😔 Rollover Day {$pick->day_number} — Lost",
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — Football can be cruel. Fresh challenge coming soon 💪",
-                        path:  '/rollover',
-                    );
+                    $this->oneSignal->notifyRolloverLost($pick->day_number, $matchLabel, $score);
                 }
 
                 $this->telegram->sendRolloverOutcome(
@@ -347,11 +335,7 @@ class RolloverService
 
                 // Winner upload reminder — DB flag so it survives cache:clear and deploys
                 if ($newStatus === 'won' && ! $pick->winner_reminder_sent) {
-                    $this->oneSignal->sendPickOutcome(
-                        title: '🏆 Won? Upload Your Screenshot!',
-                        body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
-                        path:  '/winners',
-                    );
+                    $this->oneSignal->notifyWinnerReminder();
                     $this->telegram->sendWinnerUploadReminder($siteUrl);
                     $pick->update(['winner_reminder_sent' => true]);
                 }

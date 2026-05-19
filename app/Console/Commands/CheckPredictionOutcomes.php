@@ -72,38 +72,22 @@ class CheckPredictionOutcomes extends Command
 
                 if (! Cache::has($cacheKey)) {
                     if ($prediction->is_daily_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '🔥 We Nailed It! Pick Won!',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$prediction->predicted_outcome} ✅ Check your returns!",
-                            path:  '/picks',
-                        );
+                        $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks');
                         $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                     }
 
                     if ($prediction->has_lineup) {
-                        $oneSignal->sendPickOutcome(
-                            title: '⚡ Lineup Pick WON! 🎯',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} {$score} — {$prediction->predicted_outcome} ✅",
-                            path:  '/lineup-picks',
-                        );
+                        $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks');
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
                     }
 
                     if ($prediction->is_draw_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '🤝 Draw Pick WON! 💰',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — Draw confirmed! ✅",
-                            path:  '/draw-picks',
-                        );
+                        $oneSignal->notifyPickWon($matchLabel, 'Draw', $score, $league, '/draw-picks');
                         $telegram->sendDrawOutcome($matchLabel, $score, true, $siteUrl, $league);
                     }
 
                     if ($prediction->is_gg_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '⚽ GG Pick WON! Both Teams Scored! 🔥',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — Both teams scored! ✅",
-                            path:  '/gg-picks',
-                        );
+                        $oneSignal->notifyPickWon($matchLabel, 'Both Teams Scored', $score, $league, '/gg-picks');
                         $telegram->sendGGOutcome($matchLabel, $score, true, $siteUrl, $league);
                     }
 
@@ -114,11 +98,7 @@ class CheckPredictionOutcomes extends Command
                         || $prediction->is_team3plus_pick || $prediction->is_correct_score_pick;
 
                     if ($isActualPick && ! $prediction->winner_reminder_sent) {
-                        $oneSignal->sendPickOutcome(
-                            title: '🏆 Won? Upload Your Screenshot!',
-                            body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
-                            path:  '/winners',
-                        );
+                        $oneSignal->notifyWinnerReminder();
                         $telegram->sendWinnerUploadReminder($siteUrl);
                         $prediction->update(['winner_reminder_sent' => true]);
                     }
@@ -130,38 +110,22 @@ class CheckPredictionOutcomes extends Command
 
                 if (! Cache::has($cacheKey)) {
                     if ($prediction->is_daily_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '😔 Pick Lost — We Go Again',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Football can surprise anyone — back tomorrow 💪",
-                            path:  '/picks',
-                        );
+                        $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks');
                         $telegram->sendWrongPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                     }
 
                     if ($prediction->has_lineup) {
-                        $oneSignal->sendPickOutcome(
-                            title: '😔 Lineup Pick Lost',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Football isn't always fair — we rise again 💪",
-                            path:  '/lineup-picks',
-                        );
+                        $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks');
                         $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl, $league);
                     }
 
                     if ($prediction->is_draw_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '😔 Draw Pick Lost',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — not a draw this time. Back tomorrow 💪",
-                            path:  '/draw-picks',
-                        );
+                        $oneSignal->notifyPickLost($matchLabel, 'Draw', $score, $league, '/draw-picks');
                         $telegram->sendDrawOutcome($matchLabel, $score, false, $siteUrl, $league);
                     }
 
                     if ($prediction->is_gg_pick) {
-                        $oneSignal->sendPickOutcome(
-                            title: '😔 GG Pick Lost',
-                            body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — not both teams scored. Back tomorrow 💪",
-                            path:  '/gg-picks',
-                        );
+                        $oneSignal->notifyPickLost($matchLabel, 'Both Teams Score', $score, $league, '/gg-picks');
                         $telegram->sendGGOutcome($matchLabel, $score, false, $siteUrl, $league);
                     }
 
@@ -206,28 +170,15 @@ class CheckPredictionOutcomes extends Command
             );
 
             if ($won) {
-                $oneSignal->sendPickOutcome(
-                    title: '🎯 Correct Score — NAILED IT! 🔥',
-                    body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$actualScore} — we called the exact score! 🤖",
-                    path:  '/correct-score',
-                );
+                $oneSignal->notifyPickWon($matchLabel, 'Correct Score', $actualScore, $league, '/correct-score');
 
-                // Winner upload reminder — DB flag so it survives cache:clear and deploys
                 if (! $prediction->winner_reminder_sent) {
-                    $oneSignal->sendPickOutcome(
-                        title: '🏆 Won? Upload Your Screenshot!',
-                        body:  'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸',
-                        path:  '/winners',
-                    );
+                    $oneSignal->notifyWinnerReminder();
                     $telegram->sendWinnerUploadReminder($siteUrl);
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
             } else {
-                $oneSignal->sendPickOutcome(
-                    title: '😔 Correct Score — Not This Time',
-                    body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$actualScore}. Our picks: {$predictedList}",
-                    path:  '/correct-score',
-                );
+                $oneSignal->notifyPickLost($matchLabel, "Correct Score ({$predictedList})", $actualScore, $league, '/correct-score');
             }
 
             $telegram->sendCorrectScoreOutcome($matchLabel, $predictedList, $actualScore, $won, $siteUrl, $league);
@@ -273,22 +224,12 @@ class CheckPredictionOutcomes extends Command
                     ? "  ⚽✅  {$matchLabel} {$score} — Over 1.5 HIT"
                     : "  ⚽❌  {$matchLabel} {$score} — Over 1.5 missed");
 
-                if ($won) {
-                    $oneSignal->sendPickOutcome(
-                        title: '⚽ Over 1.5 Goals — WON! 💰',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — goals delivered! ✅",
-                        path:  '/over-1-5',
-                    );
-                } else {
-                    $oneSignal->sendPickOutcome(
-                        title: '😔 Over 1.5 — Low Scoring Game',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. We go again 💪",
-                        path:  '/over-1-5',
-                    );
-                }
+                $won
+                    ? $oneSignal->notifyPickWon($matchLabel, 'Over 1.5 Goals', $score, $league, '/over-1-5')
+                    : $oneSignal->notifyPickLost($matchLabel, 'Over 1.5 Goals', $score, $league, '/over-1-5');
                 $telegram->sendOver15Outcome($matchLabel, $score, $won, $siteUrl, $league);
                 if ($won && ! $prediction->winner_reminder_sent) {
-                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $oneSignal->notifyWinnerReminder();
                     $telegram->sendWinnerUploadReminder($siteUrl);
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
@@ -302,22 +243,12 @@ class CheckPredictionOutcomes extends Command
                     ? "  🔥✅  {$matchLabel} {$score} — Over 2.5 HIT"
                     : "  🔥❌  {$matchLabel} {$score} — Over 2.5 missed");
 
-                if ($won) {
-                    $oneSignal->sendPickOutcome(
-                        title: '🔥 Over 2.5 Goals — WON! 💰',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — goals galore! ✅",
-                        path:  '/over-2-5',
-                    );
-                } else {
-                    $oneSignal->sendPickOutcome(
-                        title: '😔 Over 2.5 — Tight Game',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. AI recalibrates 💪",
-                        path:  '/over-2-5',
-                    );
-                }
+                $won
+                    ? $oneSignal->notifyPickWon($matchLabel, 'Over 2.5 Goals', $score, $league, '/over-2-5')
+                    : $oneSignal->notifyPickLost($matchLabel, 'Over 2.5 Goals', $score, $league, '/over-2-5');
                 $telegram->sendOver25Outcome($matchLabel, $score, $won, $siteUrl, $league);
                 if ($won && ! $prediction->winner_reminder_sent) {
-                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $oneSignal->notifyWinnerReminder();
                     $telegram->sendWinnerUploadReminder($siteUrl);
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
@@ -339,22 +270,12 @@ class CheckPredictionOutcomes extends Command
                     ? "  🚫✅  {$matchLabel} {$score} — {$teamName} {$marketLabel} hit"
                     : "  🚫❌  {$matchLabel} {$score} — {$teamName} {$marketLabel} missed");
 
-                if ($won) {
-                    $oneSignal->sendPickOutcome(
-                        title: '🚫 Team ' . $marketLabel . ' — Won! 🔥',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — {$teamName} stayed under! ✅",
-                        path:  '/team-3-plus',
-                    );
-                } else {
-                    $oneSignal->sendPickOutcome(
-                        title: '😔 Team ' . $marketLabel . ' — Missed',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. {$teamName} hit the target. We recalibrate 💪",
-                        path:  '/team-3-plus',
-                    );
-                }
+                $won
+                    ? $oneSignal->notifyPickWon($matchLabel, "{$teamName} — {$marketLabel}", $score, $league, '/team-3-plus')
+                    : $oneSignal->notifyPickLost($matchLabel, "{$teamName} — {$marketLabel}", $score, $league, '/team-3-plus');
                 $telegram->sendTeam3PlusOutcome($matchLabel, $teamName, $score, $won, $siteUrl, $league);
                 if ($won && ! $prediction->winner_reminder_sent) {
-                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $oneSignal->notifyWinnerReminder();
                     $telegram->sendWinnerUploadReminder($siteUrl);
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
@@ -370,22 +291,12 @@ class CheckPredictionOutcomes extends Command
                     ? "  🎯✅  {$matchLabel} {$score} — Double Chance {$label} hit"
                     : "  🎯❌  {$matchLabel} {$score} — Double Chance {$label} missed");
 
-                if ($won) {
-                    $oneSignal->sendPickOutcome(
-                        title: '🎯 Double Chance ' . $label . ' — WON! 💰',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score} — result covered! ✅",
-                        path:  '/double-chance',
-                    );
-                } else {
-                    $oneSignal->sendPickOutcome(
-                        title: '😔 Double Chance ' . $label . ' — Missed',
-                        body:  ($league ? "{$league} | " : '') . "{$matchLabel} ended {$score}. Tough one — we recalibrate 💪",
-                        path:  '/double-chance',
-                    );
-                }
+                $won
+                    ? $oneSignal->notifyPickWon($matchLabel, "Double Chance {$label}", $score, $league, '/double-chance')
+                    : $oneSignal->notifyPickLost($matchLabel, "Double Chance {$label}", $score, $league, '/double-chance');
                 $telegram->sendDoubleChanceOutcome($matchLabel, $label, $score, $won, $siteUrl, $league);
                 if ($won && ! $prediction->winner_reminder_sent) {
-                    $oneSignal->sendPickOutcome(title: '🏆 Won? Upload Your Screenshot!', body: 'Share your winning screenshot on our Winners Wall and get featured! Takes 30 seconds 📸', path: '/winners');
+                    $oneSignal->notifyWinnerReminder();
                     $telegram->sendWinnerUploadReminder($siteUrl);
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
