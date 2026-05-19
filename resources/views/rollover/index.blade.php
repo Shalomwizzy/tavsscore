@@ -33,14 +33,21 @@
     }
 
     /* Date nav */
-    .rv-date-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-    .rv-date-nav a, .rv-date-nav span {
-        font-size: .78rem; font-weight: 700; color: var(--text-dim);
-        text-decoration: none; padding: .35rem .75rem; border-radius: 999px;
-        border: 1px solid var(--border); background: var(--card);
+    .rv-date-nav { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; margin-bottom: 1.25rem; padding: .5rem .65rem; background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 10px; }
+    .rv-date-nav a, .rv-date-nav span.rv-nav-btn {
+        font-size: .74rem; font-weight: 700; color: var(--text);
+        text-decoration: none; padding: .38rem .8rem; border-radius: 7px;
+        border: 1px solid var(--border); background: rgba(255,255,255,.05);
+        white-space: nowrap; transition: background 140ms;
     }
-    .rv-date-nav a:hover { color: var(--text); background: rgba(255,255,255,.05); }
-    .rv-date-nav .rv-date-center { border: none; background: none; color: #fff; font-size: .88rem; }
+    .rv-date-nav a:hover { background: rgba(255,255,255,.1); border-color: rgba(99,179,237,.3); color: #fff; }
+    .rv-nav-disabled { opacity: .35; cursor: not-allowed; }
+    .rv-nav-today { margin-left: auto; background: rgba(245,158,11,.12) !important; border-color: rgba(245,158,11,.28) !important; color: #fcd34d !important; }
+    .rv-date-input {
+        background: rgba(8,13,26,.7); border: 1px solid var(--border); border-radius: 7px;
+        padding: .38rem .6rem; color: var(--text); font-family: inherit;
+        font-size: .76rem; font-weight: 700; cursor: pointer; color-scheme: dark;
+    }
 
     /* Today's pick card */
     .rv-pick-card {
@@ -141,20 +148,36 @@
 <div class="wrap" style="padding-top:1.5rem; padding-bottom:3rem;">
 
     {{-- Date navigation --}}
+    @php
+        $todayDateStr = \Carbon\CarbonImmutable::now('Africa/Lagos')->toDateString();
+        $viewDateStr  = $viewDate->toDateString();
+        $isRvToday    = $viewDateStr === $todayDateStr;
+        $minRv        = now('Africa/Lagos')->subDays(365)->toDateString();
+    @endphp
     <div class="rv-date-nav">
         @if($prevPick)
-            <a href="{{ route('rollover.show', $prevPick->pick_date->format('Y-m-d')) }}">← {{ $prevPick->pick_date->format('M d') }}</a>
+            <a href="{{ route('rollover.show', $prevPick->pick_date->format('Y-m-d')) }}">‹ {{ $prevPick->pick_date->format('M d') }}</a>
         @else
-            <span style="opacity:.3;">← Prev</span>
+            <span class="rv-nav-btn rv-nav-disabled">‹ Prev</span>
         @endif
 
-        <span class="rv-date-center">{{ $viewDate->format('F j, Y') }}</span>
+        <input type="date"
+               class="rv-date-input"
+               value="{{ $viewDateStr }}"
+               min="{{ $minRv }}"
+               max="{{ $todayDateStr }}"
+               aria-label="Jump to date"
+               onchange="if(this.value) window.location='/rollover/'+this.value">
 
         @if($nextPick)
-            <a href="{{ route('rollover.show', $nextPick->pick_date->format('Y-m-d')) }}">{{ $nextPick->pick_date->format('M d') }} →</a>
+            <a href="{{ route('rollover.show', $nextPick->pick_date->format('Y-m-d')) }}">{{ $nextPick->pick_date->format('M d') }} ›</a>
         @else
-            <span style="opacity:.3;">Next →</span>
+            <span class="rv-nav-btn rv-nav-disabled">Next ›</span>
         @endif
+
+        @unless($isRvToday)
+            <a href="{{ route('rollover.index') }}" class="rv-nav-btn rv-nav-today">Today</a>
+        @endunless
     </div>
 
     @if(! $challenge)

@@ -111,6 +111,21 @@
     }
     .lp-tl-step strong { color: var(--text); }
 
+    /* Result states */
+    .lp-card.result-win  { border-color: rgba(16,185,129,.5); }
+    .lp-card.result-loss { border-color: rgba(239,68,68,.4); }
+    .lp-card.result-win::before  { background: linear-gradient(90deg, #10b981, #34d399); }
+    .lp-card.result-loss::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+    .lp-result-banner {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: .5rem .75rem; border-radius: 8px; font-weight: 800; font-size: .78rem;
+        margin-bottom: .75rem;
+    }
+    .lp-result-banner.win  { background: rgba(16,185,129,.13); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .lp-result-banner.loss { background: rgba(239,68,68,.1);   color: #fca5a5; border: 1px solid rgba(239,68,68,.28); }
+    .lp-result-score { font-size: .9rem; font-weight: 900; }
+
     @media (max-width: 600px) {
         .lp-grid { grid-template-columns: 1fr; }
     }
@@ -150,10 +165,31 @@
             $analysis     = $pick->analysis ?? '';
             $kickoff      = $match?->match_time?->setTimezone('Africa/Lagos')->format('H:i') . ' Lagos';
             $likelyScores = is_array($pick->likely_scores) ? $pick->likely_scores : [];
+            $isFt         = in_array($match?->status, ['FT', 'AET', 'PEN'], true);
+            $isLive       = in_array($match?->status, ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'], true);
+            $score        = ($isFt || $isLive) && $match && $match->home_score !== null
+                                ? $match->home_score . '–' . ($match->away_score ?? 0)
+                                : null;
+            $resultClass  = $isFt ? ($pick->was_correct ? 'result-win' : ($pick->was_correct === false ? 'result-loss' : '')) : '';
             $waText       = urlencode("⚡ TavsScore Lineup Pick\n{$match?->home_team} vs {$match?->away_team}\nTip: {$outcome}" . ($conf ? " ({$conf}%)" : '') . "\nKickoff: {$kickoff}\n🔗 " . url('/lineup-picks'));
         @endphp
-        <div class="lp-card fade-up">
+        <div class="lp-card fade-up {{ $resultClass }}">
             <div class="lp-card-badge">⚡ Lineup Confirmed</div>
+
+            {{-- Result banner for finished matches --}}
+            @if($isFt && $pick->was_correct !== null)
+            <div class="lp-result-banner {{ $pick->was_correct ? 'win' : 'loss' }}">
+                <span>{{ $pick->was_correct ? '✅ Pick Won!' : '❌ Pick Lost' }}</span>
+                @if($score)
+                <span class="lp-result-score">{{ $score }}</span>
+                @endif
+            </div>
+            @elseif($isLive && $score)
+            <div class="lp-result-banner" style="background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.25); margin-bottom:.75rem;">
+                <span>🔴 LIVE</span>
+                <span class="lp-result-score">{{ $score }}</span>
+            </div>
+            @endif
 
             <div class="lp-league">{{ $match?->league }} · {{ $match?->league_country }}</div>
             <div class="lp-teams">
@@ -209,6 +245,11 @@
         </div>
         @empty
         <div class="lp-empty">
+            @if(! $dateMeta['is_today'])
+            <div class="lp-empty-icon">📁</div>
+            <div class="lp-empty-title">No Lineup Picks on {{ $dateMeta['pretty'] }}</div>
+            <p class="lp-empty-sub">No confirmed-lineup picks were generated for this date. Try a different day using the calendar above.</p>
+            @else
             <div class="lp-empty-icon">⏳</div>
             <div class="lp-empty-title">Lineups Not Confirmed Yet</div>
             <p class="lp-empty-sub">
@@ -220,6 +261,7 @@
                 <div class="lp-tl-step">🤖 <strong>AI re-runs</strong> prediction with full squad info</div>
                 <div class="lp-tl-step">🔔 <strong>Push notification</strong> sent to all subscribers</div>
             </div>
+            @endif
         </div>
         @endforelse
     </div>

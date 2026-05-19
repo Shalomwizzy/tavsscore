@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
+use App\Support\PickHelpers;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -29,6 +30,19 @@ class LineupPicksController extends Controller
             ->orderByDesc('confidence')
             ->limit(10)
             ->get();
+
+        // Resolve was_correct for any finished matches that haven't been graded yet
+        foreach ($picks as $pick) {
+            if ($pick->was_correct !== null) continue;
+            if (! in_array($pick->match?->status, ['FT', 'AET', 'PEN'], true)) continue;
+            if ($pick->match?->home_score === null) continue;
+
+            $result = PickHelpers::resolveOutcome($pick);
+            if ($result !== null) {
+                $pick->update(['was_correct' => $result]);
+                $pick->was_correct = $result;
+            }
+        }
 
         return view('lineup-picks.index', compact('picks', 'dateMeta'));
     }
