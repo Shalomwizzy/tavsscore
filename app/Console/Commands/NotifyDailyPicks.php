@@ -65,119 +65,139 @@ class NotifyDailyPicks extends Command
 
         // ── Draw picks ─────────────────────────────────────────────
         if ($type === 'all' || $type === 'draw') {
-            $drawPicks = Prediction::query()
-                ->with('match')
-                ->where('is_draw_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('draw_rank')
-                ->get();
-
-            if ($drawPicks->isNotEmpty()) {
-                $topDraw = $drawPicks->first();
-                $topDrawMatch = $topDraw->match ? "{$topDraw->match->home_team} vs {$topDraw->match->away_team}" : '';
-                $oneSignal->notifyDrawPicks($topDrawMatch, $drawPicks->count());
-                $telegram->sendDrawPicks($drawPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
-                Cache::put('picks_sent_draw_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
-                $this->info("Draw picks sent: {$drawPicks->count()}");
+            if (! $force && Cache::has("picks_sent_draw_{$date}")) {
+                $this->info('Draw picks already notified today — skipping (use --force to re-send).');
             } else {
-                $this->warn('No draw picks today — skipped.');
+                $drawPicks = Prediction::query()
+                    ->with('match')
+                    ->where('is_draw_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('draw_rank')
+                    ->get();
+
+                if ($drawPicks->isNotEmpty()) {
+                    $topDraw = $drawPicks->first();
+                    $topDrawMatch = $topDraw->match ? "{$topDraw->match->home_team} vs {$topDraw->match->away_team}" : '';
+                    $oneSignal->notifyDrawPicks($topDrawMatch, $drawPicks->count());
+                    $telegram->sendDrawPicks($drawPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_draw_{$date}", true, now()->addHours(36));
+                    $this->info("Draw picks sent: {$drawPicks->count()}");
+                } else {
+                    $this->warn('No draw picks today — skipped.');
+                }
             }
         }
 
         // ── GG picks ───────────────────────────────────────────────
         if ($type === 'all' || $type === 'gg') {
-            $ggPicks = Prediction::query()
-                ->with('match')
-                ->where('is_gg_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('gg_rank')
-                ->get();
-
-            if ($ggPicks->isNotEmpty()) {
-                $topGG = $ggPicks->first();
-                $topGGMatch = $topGG->match ? "{$topGG->match->home_team} vs {$topGG->match->away_team}" : '';
-                $oneSignal->notifyGGPicks($topGGMatch, $ggPicks->count());
-                $telegram->sendGGPicks($ggPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
-                Cache::put('picks_sent_gg_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
-                $this->info("GG picks sent: {$ggPicks->count()}");
+            if (! $force && Cache::has("picks_sent_gg_{$date}")) {
+                $this->info('GG picks already notified today — skipping (use --force to re-send).');
             } else {
-                $this->warn('No GG picks today — skipped.');
+                $ggPicks = Prediction::query()
+                    ->with('match')
+                    ->where('is_gg_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('gg_rank')
+                    ->get();
+
+                if ($ggPicks->isNotEmpty()) {
+                    $topGG = $ggPicks->first();
+                    $topGGMatch = $topGG->match ? "{$topGG->match->home_team} vs {$topGG->match->away_team}" : '';
+                    $oneSignal->notifyGGPicks($topGGMatch, $ggPicks->count());
+                    $telegram->sendGGPicks($ggPicks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'confidence' => $p->confidence ?? ''] : null)->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_gg_{$date}", true, now()->addHours(36));
+                    $this->info("GG picks sent: {$ggPicks->count()}");
+                } else {
+                    $this->warn('No GG picks today — skipped.');
+                }
             }
         }
 
         // ── Over 1.5 picks ─────────────────────────────────────────
         if ($type === 'all' || $type === 'over15') {
-            $over15Picks = Prediction::query()
-                ->with('match')
-                ->where('is_over15_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('over15_rank')
-                ->get();
-
-            if ($over15Picks->isNotEmpty()) {
-                $topO15 = $over15Picks->first();
-                $topO15Match = $topO15->match ? "{$topO15->match->home_team} vs {$topO15->match->away_team}" : '';
-                $oneSignal->notifyOver15Picks($topO15Match, round($topO15->over_15_prob ?? 0) . '%', $over15Picks->count());
-                $telegram->sendOver15Picks($over15Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_15_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
-                Cache::put('picks_sent_over15_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
-                $this->info("Over 1.5 picks sent: {$over15Picks->count()}");
+            if (! $force && Cache::has("picks_sent_over15_{$date}")) {
+                $this->info('Over 1.5 already notified today — skipping (use --force to re-send).');
             } else {
-                $this->warn('No Over 1.5 picks today — skipped.');
+                $over15Picks = Prediction::query()
+                    ->with('match')
+                    ->where('is_over15_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('over15_rank')
+                    ->get();
+
+                if ($over15Picks->isNotEmpty()) {
+                    $topO15 = $over15Picks->first();
+                    $topO15Match = $topO15->match ? "{$topO15->match->home_team} vs {$topO15->match->away_team}" : '';
+                    $oneSignal->notifyOver15Picks($topO15Match, round($topO15->over_15_prob ?? 0) . '%', $over15Picks->count());
+                    $telegram->sendOver15Picks($over15Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_15_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_over15_{$date}", true, now()->addHours(36));
+                    $this->info("Over 1.5 picks sent: {$over15Picks->count()}");
+                } else {
+                    $this->warn('No Over 1.5 picks today — skipped.');
+                }
             }
         }
 
         // ── Over 2.5 picks ─────────────────────────────────────────
         if ($type === 'all' || $type === 'over25') {
-            $over25Picks = Prediction::query()
-                ->with('match')
-                ->where('is_over25_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('over25_rank')
-                ->get();
-
-            if ($over25Picks->isNotEmpty()) {
-                $topO25 = $over25Picks->first();
-                $topO25Match = $topO25->match ? "{$topO25->match->home_team} vs {$topO25->match->away_team}" : '';
-                $oneSignal->notifyOver25Picks($topO25Match, round($topO25->over_25_prob ?? 0) . '%', $over25Picks->count());
-                $telegram->sendOver25Picks($over25Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_25_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
-                Cache::put('picks_sent_over25_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
-                $this->info("Over 2.5 picks sent: {$over25Picks->count()}");
+            if (! $force && Cache::has("picks_sent_over25_{$date}")) {
+                $this->info('Over 2.5 already notified today — skipping (use --force to re-send).');
             } else {
-                $this->warn('No Over 2.5 picks today — skipped.');
+                $over25Picks = Prediction::query()
+                    ->with('match')
+                    ->where('is_over25_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('over25_rank')
+                    ->get();
+
+                if ($over25Picks->isNotEmpty()) {
+                    $topO25 = $over25Picks->first();
+                    $topO25Match = $topO25->match ? "{$topO25->match->home_team} vs {$topO25->match->away_team}" : '';
+                    $oneSignal->notifyOver25Picks($topO25Match, round($topO25->over_25_prob ?? 0) . '%', $over25Picks->count());
+                    $telegram->sendOver25Picks($over25Picks->map(fn ($p) => $p->match ? ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'prob' => round($p->over_25_prob ?? 0)] : null)->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_over25_{$date}", true, now()->addHours(36));
+                    $this->info("Over 2.5 picks sent: {$over25Picks->count()}");
+                } else {
+                    $this->warn('No Over 2.5 picks today — skipped.');
+                }
             }
         }
 
         // ── Team 3+ picks ──────────────────────────────────────────
         if ($type === 'all' || $type === 'team3plus') {
-            $team3Picks = Prediction::query()
-                ->with('match')
-                ->where('is_team3plus_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('team3plus_rank')
-                ->get();
-
-            if ($team3Picks->isNotEmpty()) {
-                $topT3 = $team3Picks->first();
-                $topT3Match = $topT3->match ? "{$topT3->match->home_team} vs {$topT3->match->away_team}" : '';
-                $topT3Label = $topT3->team3plus_label ?? 'Home 3+';
-                $topT3IsHome = str_starts_with($topT3Label, 'Home');
-                $topT3Team = $topT3->match ? ($topT3IsHome ? $topT3->match->home_team : $topT3->match->away_team) : '';
-                $oneSignal->notifyTeam3Picks($topT3Match, $topT3Team, $team3Picks->count());
-                $telegram->sendTeam3PlusPicks($team3Picks->map(function ($p) {
-                    if (! $p->match) return null;
-                    $label    = $p->team3plus_label ?? 'Home 3+';
-                    $isHome   = str_starts_with($label, 'Home');
-                    $market   = str_ends_with($label, '2+') ? '2+' : '3+';
-                    $teamName = $isHome ? $p->match->home_team : $p->match->away_team;
-                    $prob     = $market === '2+'
-                        ? round($isHome ? ($p->home_2plus_prob ?? 0) : ($p->away_2plus_prob ?? 0))
-                        : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
-                    return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'team' => $teamName, 'market' => $market, 'prob' => $prob];
-                })->filter()->values()->toArray(), $url);
-                Cache::put('picks_sent_team3plus_' . now('Africa/Lagos')->toDateString(), true, now()->addHours(36));
-                $this->info("Team Goals NO picks sent: {$team3Picks->count()}");
+            if (! $force && Cache::has("picks_sent_team3plus_{$date}")) {
+                $this->info('Team Goals picks already notified today — skipping (use --force to re-send).');
             } else {
-                $this->warn('No Team 3+ picks today — skipped.');
+                $team3Picks = Prediction::query()
+                    ->with('match')
+                    ->where('is_team3plus_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('team3plus_rank')
+                    ->get();
+
+                if ($team3Picks->isNotEmpty()) {
+                    $topT3      = $team3Picks->first();
+                    $topT3Match = $topT3->match ? "{$topT3->match->home_team} vs {$topT3->match->away_team}" : '';
+                    $topT3Label = $topT3->team3plus_label ?? 'Home 3+';
+                    $topT3IsHome = str_starts_with($topT3Label, 'Home');
+                    $topT3Team  = $topT3->match ? ($topT3IsHome ? $topT3->match->home_team : $topT3->match->away_team) : '';
+                    $oneSignal->notifyTeam3Picks($topT3Match, $topT3Team, $team3Picks->count());
+                    $telegram->sendTeam3PlusPicks($team3Picks->map(function ($p) {
+                        if (! $p->match) return null;
+                        $label    = $p->team3plus_label ?? 'Home 3+';
+                        $isHome   = str_starts_with($label, 'Home');
+                        $market   = str_ends_with($label, '2+') ? '2+' : '3+';
+                        $teamName = $isHome ? $p->match->home_team : $p->match->away_team;
+                        $prob     = $market === '2+'
+                            ? round($isHome ? ($p->home_2plus_prob ?? 0) : ($p->away_2plus_prob ?? 0))
+                            : round($isHome ? ($p->home_3plus_prob ?? 0) : ($p->away_3plus_prob ?? 0));
+                        return ['match' => "{$p->match->home_team} vs {$p->match->away_team}", 'league' => LeagueCoverage::formatName($p->match->league, $p->match->league_country), 'team' => $teamName, 'market' => $market, 'prob' => $prob];
+                    })->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_team3plus_{$date}", true, now()->addHours(36));
+                    $this->info("Team Goals NO picks sent: {$team3Picks->count()}");
+                } else {
+                    $this->warn('No Team 3+ picks today — skipped.');
+                }
             }
         }
 
@@ -275,15 +295,6 @@ class NotifyDailyPicks extends Command
                     if (! $match) return null;
                     return ['match' => "{$match->home_team} vs {$match->away_team}", 'league' => LeagueCoverage::formatName($match->league, $match->league_country), 'scores' => array_slice(is_array($p->likely_scores) ? $p->likely_scores : [], 0, 5)];
                 })->filter()->values()->toArray();
-
-                $pushLines = $scorePicks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match || empty($p->likely_scores)) return null;
-                    $league = LeagueCoverage::formatName($match->league, $match->league_country);
-                    $league = $league ? "[{$league}] " : '';
-                    $top    = $p->likely_scores[0]['score'] ?? '';
-                    return "{$league}{$match->home_team} vs {$match->away_team}: {$top}";
-                })->filter()->values();
 
                 $topCS = $scorePicks->first();
                 $topCSMatch = $topCS->match ? "{$topCS->match->home_team} vs {$topCS->match->away_team}" : '';
