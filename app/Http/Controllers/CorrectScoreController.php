@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
-use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CorrectScoreController extends Controller
 {
-    public function index(): View
+    use ResolvesDateNav;
+
+    public function index(Request $request): View
     {
-        $tz     = 'Africa/Lagos';
-        $today  = CarbonImmutable::now($tz)->startOfDay();
-        $cutoff = CarbonImmutable::now($tz)->endOfDay();
+        $tz       = config('app.timezone');
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'correct-score.index');
+        $today    = $date->copy()->startOfDay();
+        $cutoff   = $date->copy()->endOfDay();
 
         $predictions = Prediction::query()
             ->with('match')
@@ -25,6 +30,6 @@ class CorrectScoreController extends Controller
             ->get()
             ->filter(fn ($p) => ! empty($p->likely_scores));
 
-        return view('correct-score.index', compact('predictions'));
+        return view('correct-score.index', compact('predictions', 'dateMeta'));
     }
 }

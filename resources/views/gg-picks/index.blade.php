@@ -150,7 +150,11 @@
 <section class="picks-hero">
     <div class="wrap">
         <div class="picks-eyebrow">⚽ GG Picks</div>
-        <h1 class="picks-title">Today's <span class="accent">GG Picks</span></h1>
+        <h1 class="picks-title">
+            @if($dateMeta['is_today'])Today's <span class="accent">GG Picks</span>
+            @else<span class="accent">GG Picks</span> — {{ $dateMeta['pretty'] }}
+            @endif
+        </h1>
         <p class="picks-subtitle">
             Both teams to score, the market where high-quality triple agreement tells you the most. A pick only appears here when <strong style="color:var(--text);">all three AI engines independently agree</strong> that both sides will get on the scoresheet.
         </p>
@@ -164,6 +168,8 @@
 {{-- Main --}}
 <section class="picks-section">
     <div class="wrap">
+
+        @include('partials.date-nav')
 
         {{-- Accuracy strip --}}
         @if($accuracy['total'] > 0)

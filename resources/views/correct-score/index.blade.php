@@ -113,6 +113,8 @@
         </p>
     </div>
 
+    @include('partials.date-nav')
+
     {{-- Risk disclaimer --}}
     <div class="cs-disclaimer">
         <strong style="color:#fff;">⚠️ High-Risk Market.</strong>

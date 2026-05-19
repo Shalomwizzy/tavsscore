@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
 use App\Services\PredictionService;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DoubleChanceController extends Controller
 {
+    use ResolvesDateNav;
+
     public function __construct(private readonly PredictionService $predictionService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tz     = config('app.timezone');
-        $today  = now($tz)->startOfDay();
-        $cutoff = now($tz)->endOfDay();
+        $tz       = config('app.timezone');
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'double-chance.index');
+        $today    = $date->copy()->startOfDay();
+        $cutoff   = $date->copy()->endOfDay();
 
         $picks = Prediction::query()
             ->with('match')
@@ -23,7 +29,7 @@ class DoubleChanceController extends Controller
             ->orderBy('double_chance_rank')
             ->get();
 
-        if ($picks->isEmpty()) {
+        if ($picks->isEmpty() && $dateMeta['is_today']) {
             $picks = $this->predictionService->selectDoubleChancePicks();
         }
 
@@ -48,10 +54,10 @@ class DoubleChanceController extends Controller
             'pct'     => $total > 0 ? round($correct / $total * 100, 1) : null,
         ];
 
-        return view('double-chance.index', compact('formatted', 'accuracy'));
+        return view('double-chance.index', compact('formatted', 'accuracy', 'dateMeta'));
     }
 
-    private function autoResolve($picks): void
+    private function autoResolve(\Illuminate\Database\Eloquent\Collection $picks): void
     {
         foreach ($picks as $p) {
             if (! in_array($p->match?->status, ['FT', 'AET', 'PEN'], true)) continue;

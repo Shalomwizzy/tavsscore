@@ -2,22 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
 use App\Services\GroqService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DrawPicksController extends Controller
 {
+    use ResolvesDateNav;
+
     public function __construct(private readonly PredictionService $predictionService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tz     = config('app.timezone');
-        $today  = now($tz)->startOfDay();
-        $cutoff = now($tz)->endOfDay();
+        $tz       = config('app.timezone');
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'draw-picks.index');
+        $today    = $date->copy()->startOfDay();
+        $cutoff   = $date->copy()->endOfDay();
 
         $picks = Prediction::query()
             ->with('match')
@@ -26,7 +32,7 @@ class DrawPicksController extends Controller
             ->orderBy('draw_rank')
             ->get();
 
-        if ($picks->isEmpty()) {
+        if ($picks->isEmpty() && $dateMeta['is_today']) {
             $picks = $this->predictionService->selectDrawPicks();
         }
 
@@ -52,7 +58,7 @@ class DrawPicksController extends Controller
                 : null,
         ];
 
-        return view('draw-picks.index', compact('formatted', 'accuracy'));
+        return view('draw-picks.index', compact('formatted', 'accuracy', 'dateMeta'));
     }
 
     private function autoResolve(EloquentCollection $picks): void

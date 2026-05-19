@@ -2,22 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
 use App\Services\GroqService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class Over15PicksController extends Controller
 {
+    use ResolvesDateNav;
+
     public function __construct(private readonly PredictionService $predictionService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tz     = config('app.timezone');
-        $today  = now($tz)->startOfDay();
-        $cutoff = now($tz)->endOfDay();
+        $tz       = config('app.timezone');
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'over15-picks.index');
+        $today    = $date->copy()->startOfDay();
+        $cutoff   = $date->copy()->endOfDay();
 
         $picks = Prediction::query()
             ->with('match')
@@ -26,7 +32,7 @@ class Over15PicksController extends Controller
             ->orderBy('over15_rank')
             ->get();
 
-        if ($picks->isEmpty()) {
+        if ($picks->isEmpty() && $dateMeta['is_today']) {
             $picks = $this->predictionService->selectOver15Picks();
         }
 
@@ -52,7 +58,7 @@ class Over15PicksController extends Controller
             'pct'     => $total > 0 ? round($correct / $total * 100, 1) : null,
         ];
 
-        return view('over15-picks.index', compact('formatted', 'accuracy'));
+        return view('over15-picks.index', compact('formatted', 'accuracy', 'dateMeta'));
     }
 
     private function autoResolve(EloquentCollection $picks): void

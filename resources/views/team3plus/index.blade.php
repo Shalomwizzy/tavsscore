@@ -96,6 +96,8 @@
 <section class="picks-section">
     <div class="wrap">
 
+        @include('partials.date-nav')
+
         <div class="market-info">
             <p>
                 <strong>What is this market?</strong> "A Team to Score 2 or More Goals" and "A Team to Score 3 or More Goals" are YES/NO markets at Bet365, William Hill, 1xBet, and most bookmakers under <em>Match Goals → A Team to Score 2+/3+</em>. <strong>We only predict NO</strong> — on the team our Poisson model says is least likely to hit the threshold. Each day the AI chooses the safer market between 2+ and 3+ to maximise confidence.

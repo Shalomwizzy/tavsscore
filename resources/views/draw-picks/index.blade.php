@@ -149,7 +149,11 @@
 <section class="picks-hero">
     <div class="wrap">
         <div class="picks-eyebrow">🤝 Draw Picks</div>
-        <h1 class="picks-title">Today's <span class="accent">Draw Picks</span></h1>
+        <h1 class="picks-title">
+            @if($dateMeta['is_today'])Today's <span class="accent">Draw Picks</span>
+            @else<span class="accent">Draw Picks</span> — {{ $dateMeta['pretty'] }}
+            @endif
+        </h1>
         <p class="picks-subtitle">
             Three independent AI engines each analyse the match data separately. A pick only appears here when <strong style="color:var(--text);">all three independently predict a draw</strong>. No groupthink, strict triple agreement.
         </p>
@@ -163,6 +167,8 @@
 {{-- Main --}}
 <section class="picks-section">
     <div class="wrap">
+
+        @include('partials.date-nav')
 
         {{-- Accuracy strip --}}
         @if($accuracy['total'] > 0)

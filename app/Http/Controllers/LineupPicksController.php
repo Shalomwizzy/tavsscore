@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
-use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class LineupPicksController extends Controller
 {
-    public function index(): View
+    use ResolvesDateNav;
+
+    public function index(Request $request): View
     {
-        $tz     = 'Africa/Lagos';
-        $today  = CarbonImmutable::now($tz)->startOfDay();
-        $cutoff = CarbonImmutable::now($tz)->endOfDay();
+        $tz       = config('app.timezone');
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'lineup-picks.index');
+        $today    = $date->copy()->startOfDay();
+        $cutoff   = $date->copy()->endOfDay();
 
         $picks = Prediction::query()
             ->with('match')
@@ -25,6 +30,6 @@ class LineupPicksController extends Controller
             ->limit(10)
             ->get();
 
-        return view('lineup-picks.index', compact('picks'));
+        return view('lineup-picks.index', compact('picks', 'dateMeta'));
     }
 }

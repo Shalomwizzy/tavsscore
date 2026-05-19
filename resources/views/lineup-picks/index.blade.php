@@ -136,6 +136,8 @@
         </div>
     </div>
 
+    @include('partials.date-nav')
+
     {{-- Grid --}}
     <div class="lp-grid">
         @forelse($picks as $pick)

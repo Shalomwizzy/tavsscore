@@ -87,6 +87,8 @@
 <section class="picks-section">
     <div class="wrap">
 
+        @include('partials.date-nav')
+
         @if($accuracy['total'] > 0)
         <div class="accuracy-strip">
             <div style="display:flex; align-items:center; gap:1.1rem;">

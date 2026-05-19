@@ -94,6 +94,8 @@
 <section class="picks-section">
     <div class="wrap">
 
+        @include('partials.date-nav')
+
         {{-- Accuracy strip --}}
         @if($accuracy['total'] > 0)
         <div class="accuracy-strip">
