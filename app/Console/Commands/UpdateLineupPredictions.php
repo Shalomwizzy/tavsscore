@@ -8,6 +8,7 @@ use App\Services\PredictionService;
 use App\Services\TelegramService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class UpdateLineupPredictions extends Command
 {
@@ -34,43 +35,55 @@ class UpdateLineupPredictions extends Command
         $updated     = [];
         $telegramPicks = [];
 
+        $this->line("Processing {$matches->count()} eligible matches…");
+
         foreach ($matches as $match) {
+            $label = "{$match->home_team} vs {$match->away_team}";
+
             $wasUpdated = $predictionService->regenerateWithLineup($match);
 
-            if ($wasUpdated) {
-                $prediction = $match->prediction;
-                $outcome    = $prediction?->predicted_outcome ?? '-';
-                $conf       = $prediction?->confidence ?? 0;
-
-                // Only promote as a lineup pick if AIs didn't explicitly conflict.
-                // gemini_agrees === null   → Gemini not configured, still include.
-                // agreement_level = 'speculative' → Groq < 60% but no one else called;
-                //   lineup context makes this pick more reliable, so allow it through.
-                // agreement_level = 'conflict' → all other AIs disagree → hard exclude.
-                $tips           = is_array($prediction?->tips) ? $prediction->tips : [];
-                $geminiAgrees   = $tips[0]['gemini_agrees']   ?? null;
-                $agreementLevel = $tips[0]['agreement_level'] ?? 'unverified';
-
-                if ($geminiAgrees === false && $agreementLevel !== 'speculative') {
-                    $this->line("  ⛔ {$match->home_team} vs {$match->away_team} — AIs conflict, skipping lineup pick.");
-                    continue;
-                }
-
-                if ($conf < 50) {
-                    $this->line("  ⬇️ {$match->home_team} vs {$match->away_team} — confidence too low ({$conf}%), skipping.");
-                    continue;
-                }
-
-                $this->info("⚡ {$match->home_team} vs {$match->away_team} → {$outcome} ({$conf}%)");
-                $leaguePrefix    = $match->league ? "[{$match->league}] " : '';
-                $updated[]       = "{$leaguePrefix}{$match->home_team} vs {$match->away_team}: {$outcome}";
-                $telegramPicks[] = [
-                    'match'      => "{$match->home_team} vs {$match->away_team}",
-                    'league'     => $match->league ?? '',
-                    'tip'        => $outcome,
-                    'confidence' => $conf,
-                ];
+            if (! $wasUpdated) {
+                $this->line("  ⏭  {$label} — no lineup yet / already processed / AI failed.");
+                Log::debug("UpdateLineupPredictions: skipped {$label} (regenerate=false)");
+                continue;
             }
+
+            $prediction = $match->prediction;
+            $outcome    = $prediction?->predicted_outcome ?? '-';
+            $conf       = $prediction?->confidence ?? 0;
+
+            // Only promote as a lineup pick if AIs didn't explicitly conflict.
+            // gemini_agrees === null   → Gemini not configured, still include.
+            // agreement_level = 'speculative' → Groq < 60% but no one else called;
+            //   lineup context makes this pick more reliable, so allow it through.
+            // agreement_level = 'conflict' → all other AIs disagree → hard exclude.
+            $tips           = is_array($prediction?->tips) ? $prediction->tips : [];
+            $geminiAgrees   = $tips[0]['gemini_agrees']   ?? null;
+            $agreementLevel = $tips[0]['agreement_level'] ?? 'unverified';
+
+            if ($geminiAgrees === false && $agreementLevel !== 'speculative') {
+                $this->line("  ⛔ {$label} — AIs conflict (level={$agreementLevel}), skipping lineup pick.");
+                Log::info("UpdateLineupPredictions: {$label} excluded — conflict (level={$agreementLevel})");
+                continue;
+            }
+
+            if ($conf < 50) {
+                $this->line("  ⬇️  {$label} — confidence too low ({$conf}%), skipping.");
+                Log::info("UpdateLineupPredictions: {$label} excluded — conf={$conf}%");
+                continue;
+            }
+
+            $this->info("⚡ {$label} → {$outcome} ({$conf}%)");
+            Log::info("UpdateLineupPredictions: pick added — {$label} → {$outcome} ({$conf}%)");
+
+            $leaguePrefix    = $match->league ? "[{$match->league}] " : '';
+            $updated[]       = "{$leaguePrefix}{$label}: {$outcome}";
+            $telegramPicks[] = [
+                'match'      => $label,
+                'league'     => $match->league ?? '',
+                'tip'        => $outcome,
+                'confidence' => $conf,
+            ];
         }
 
         if (! empty($updated)) {

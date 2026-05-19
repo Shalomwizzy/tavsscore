@@ -6,6 +6,7 @@ use App\Models\RolloverChallenge;
 use App\Models\RolloverPick;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class RolloverController extends Controller
@@ -63,8 +64,17 @@ class RolloverController extends Controller
             ->orderBy('pick_date')
             ->first();
 
+        // All completed challenges with their picks (excluding the current one)
+        $pastChallenges = RolloverChallenge::query()
+            ->where('status', 'complete')
+            ->when($challenge, fn ($q) => $q->where('id', '!=', $challenge->id))
+            ->latest('started_at')
+            ->with(['picks' => fn ($q) => $q->with('match')->orderBy('day_number')])
+            ->limit(5)
+            ->get();
+
         return view('rollover.index', compact(
-            'challenge', 'todayPick', 'allPicks', 'viewDate', 'prevPick', 'nextPick'
+            'challenge', 'todayPick', 'allPicks', 'viewDate', 'prevPick', 'nextPick', 'pastChallenges'
         ));
     }
 }

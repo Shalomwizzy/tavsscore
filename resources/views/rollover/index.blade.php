@@ -103,6 +103,11 @@
     .rv-empty-icon   { font-size: 3rem; margin-bottom: .75rem; }
     .rv-empty-title  { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: .5rem; }
 
+    /* Past challenges accordion */
+    details.rv-table-wrap summary::-webkit-details-marker { display: none; }
+    details.rv-table-wrap summary::marker { display: none; }
+    details.rv-table-wrap[open] summary { border-bottom: 1px solid var(--border); }
+
     /* Disclaimer */
     .rv-disclaimer   { background: rgba(245,158,11,.06); border: 1px solid rgba(245,158,11,.18); border-radius: 10px; padding: .875rem 1rem; font-size: .74rem; color: #fbbf24; margin-bottom: 1.5rem; }
 
@@ -363,6 +368,72 @@
             </table>
         </div>
     </div>
+    @endif
+
+    {{-- Past challenges --}}
+    @if($pastChallenges->isNotEmpty())
+    <div style="font-size:.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.75rem;">🗂 Previous Challenges</div>
+    @foreach($pastChallenges as $pc)
+    @php
+        $pcWon   = $pc->picks->where('status', 'won')->count();
+        $pcTotal = $pc->picks->count();
+        $pcResult = $pcWon >= 10 ? '🏆 Completed 10/10' : ($pcWon . '/' . $pcTotal . ' won — bust day ' . ($pcWon + 1));
+        $pcStart = $pc->started_at instanceof \Carbon\Carbon ? $pc->started_at : \Carbon\Carbon::parse($pc->started_at);
+    @endphp
+    <details class="rv-table-wrap" style="margin-bottom:1rem;" {{ $loop->first ? 'open' : '' }}>
+        <summary style="padding:1rem 1.25rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; list-style:none; border-bottom:1px solid var(--border);">
+            <span class="rv-table-title">📋 Challenge: {{ $pcStart->format('M d, Y') }}</span>
+            <span style="font-size:.72rem; color:var(--text-dim);">{{ $pcResult }}</span>
+        </summary>
+        <div style="overflow-x:auto;">
+            <table class="rv-tbl">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Match</th>
+                        <th>Tip</th>
+                        <th>Odds</th>
+                        <th>Stake</th>
+                        <th>Return</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($pc->picks as $rp)
+                    @php $rm = $rp->match; @endphp
+                    <tr>
+                        <td>
+                            <a href="{{ route('rollover.show', $rp->pick_date->format('Y-m-d')) }}">
+                                Day {{ $rp->day_number }}<br>
+                                <span style="color:var(--text-dim); font-size:.65rem;">{{ $rp->pick_date->format('M d') }}</span>
+                            </a>
+                        </td>
+                        <td style="color:#fff; font-weight:600; white-space:nowrap;">
+                            {{ $rm?->home_team }} vs {{ $rm?->away_team }}
+                            @if($rp->result_score)
+                                <span style="color:var(--text-dim); font-size:.7rem;"> ({{ $rp->result_score }})</span>
+                            @endif
+                        </td>
+                        <td style="color:#6ee7b7; font-weight:700;">{{ $rp->groq_verdict }}</td>
+                        <td style="color:#fcd34d; font-weight:700;">{{ $rp->implied_odds }}</td>
+                        <td style="color:var(--text-dim);">{{ number_format((float)$rp->stake_amount, 0) }}</td>
+                        <td style="color:#6ee7b7;">{{ number_format((float)$rp->potential_return, 0) }}</td>
+                        <td>
+                            @if($rp->status === 'won')
+                                <span class="rv-badge rv-badge-won">✓ Won</span>
+                            @elseif($rp->status === 'lost')
+                                <span class="rv-badge rv-badge-lost">✗ Lost</span>
+                            @else
+                                <span class="rv-badge rv-badge-void">Void</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </details>
+    @endforeach
     @endif
 
     {{-- How it works --}}

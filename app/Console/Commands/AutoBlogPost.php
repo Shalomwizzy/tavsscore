@@ -18,18 +18,19 @@ class AutoBlogPost extends Command
 
     private const TOP_LEAGUE_IDS = [2, 3, 39, 61, 78, 135, 140, 848];
 
-    // Curated Unsplash football images by category keyword
+    // Picsum Photos — stable seeded URLs, no auth required, always serve correctly.
+    // Format: https://picsum.photos/seed/{seed}/1200/630
     private const IMAGES = [
-        'champions' => 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=630&fit=crop',
-        'trophy'    => 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop',
-        'stadium'   => 'https://images.unsplash.com/photo-1522778526-14035268858b?w=1200&h=630&fit=crop',
-        'crowd'     => 'https://images.unsplash.com/photo-1508473957426-c8de15a9f820?w=1200&h=630&fit=crop',
-        'match'     => 'https://images.unsplash.com/photo-1431324155629-787b334de4e6?w=1200&h=630&fit=crop',
-        'pitch'     => 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=630&fit=crop',
-        'goal'      => 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1200&h=630&fit=crop',
-        'transfer'  => 'https://images.unsplash.com/photo-1570498839593-e565b39455fc?w=1200&h=630&fit=crop',
-        'training'  => 'https://images.unsplash.com/photo-1524015368236-bbf6b41e9d27?w=1200&h=630&fit=crop',
-        'analysis'  => 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=1200&h=630&fit=crop',
+        'champions' => 'https://picsum.photos/seed/football-champions/1200/630',
+        'trophy'    => 'https://picsum.photos/seed/football-trophy/1200/630',
+        'stadium'   => 'https://picsum.photos/seed/football-stadium/1200/630',
+        'crowd'     => 'https://picsum.photos/seed/football-crowd/1200/630',
+        'match'     => 'https://picsum.photos/seed/football-match/1200/630',
+        'pitch'     => 'https://picsum.photos/seed/football-pitch/1200/630',
+        'goal'      => 'https://picsum.photos/seed/football-goal/1200/630',
+        'transfer'  => 'https://picsum.photos/seed/football-transfer/1200/630',
+        'training'  => 'https://picsum.photos/seed/football-training/1200/630',
+        'analysis'  => 'https://picsum.photos/seed/football-analysis/1200/630',
     ];
 
     public function handle(): int
@@ -70,7 +71,7 @@ class AutoBlogPost extends Command
 
             $response = Http::withToken($apiKey)
                 ->acceptJson()->asJson()->timeout(45)
-                ->retry(2, 1000, fn ($e, $r) => !($r && $r->status() === 429))
+                ->retry(2, 1000, fn ($_, $r) => !($r && $r->status() === 429))
                 ->post(config('services.groq.url'), [
                     'model'           => config('services.groq.model', 'llama-3.3-70b-versatile'),
                     'temperature'     => 0.65,
@@ -101,15 +102,20 @@ class AutoBlogPost extends Command
                 throw new \RuntimeException('Invalid JSON from Groq: ' . substr($raw, 0, 200));
             }
 
+            // Strip any <img> tags and <a> tags the AI sneaks in — they reference
+            // fake URLs that will 404. We provide the hero image separately.
+            $content = preg_replace('/<img[^>]*>/i', '', $json['content']);
+            $content = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $content);
+
             $image    = $this->pickImage($json['title'], $matchList);
             $category = $this->pickCategory($matchList);
-            $excerpt  = $this->buildExcerpt($json['content']);
+            $excerpt  = $this->buildExcerpt($content);
 
             $post = BlogPost::create([
                 'title'           => $json['title'],
                 'slug'            => BlogPost::generateSlug($json['title']),
                 'excerpt'         => $excerpt,
-                'content'         => $json['content'],
+                'content'         => $content,
                 'featured_image'  => $image,
                 'category'        => $category,
                 'author'          => 'TavsScore AI',
