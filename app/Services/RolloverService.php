@@ -149,9 +149,20 @@ class RolloverService
             ->limit(20)
             ->get();
 
-        $best = null;
+        // Markets used in the last 2 rollover picks — we'll deprioritise these
+        // so the rollover doesn't become an Over 2.5 repeat every single day.
+        $recentMarkets = RolloverPick::query()
+            ->latest('pick_date')
+            ->limit(2)
+            ->pluck('groq_verdict')
+            ->toArray();
+
+        $qualifiedPicks = [];
 
         foreach ($candidates as $pred) {
+            // Stop once we have 5 diversity candidates — limits extra API calls
+            if (count($qualifiedPicks) >= 5) break;
+
             $match = $pred->match;
             if (! $match) continue;
 
@@ -182,23 +193,30 @@ class RolloverService
                 continue;
             }
 
-            // Prefer highest Groq confidence among fully-agreed picks
-            if ($best === null || $pred->confidence > $best['prediction']->confidence) {
-                $best = [
-                    'prediction'     => $pred,
-                    'geminiVerdict'  => $geminiVerdict,
-                    'mistralVerdict' => $mistralVerdict,
-                    'allAgree'       => true,
-                ];
-            }
-            // Very high confidence from all AIs — stop searching
-            if ($pred->confidence >= 85) break;
+            $qualifiedPicks[] = [
+                'prediction'     => $pred,
+                'geminiVerdict'  => $geminiVerdict,
+                'mistralVerdict' => $mistralVerdict,
+                'allAgree'       => true,
+            ];
         }
 
-        if (! $best) {
+        if (empty($qualifiedPicks)) {
             Log::info('RolloverService: no match had triple-AI agreement today — no pick selected.');
             return null;
         }
+
+        // Market diversity: prefer picks whose market wasn't used in the last 2 days,
+        // then fall back to highest confidence. This prevents the same tip (e.g. Over 2.5)
+        // from appearing every single rollover day.
+        usort($qualifiedPicks, function (array $a, array $b) use ($recentMarkets): int {
+            $aUsed = in_array($a['prediction']->predicted_outcome, $recentMarkets, true);
+            $bUsed = in_array($b['prediction']->predicted_outcome, $recentMarkets, true);
+            if ($aUsed !== $bUsed) return $aUsed ? 1 : -1;
+            return $b['prediction']->confidence <=> $a['prediction']->confidence;
+        });
+
+        $best = $qualifiedPicks[0];
 
         $pred        = $best['prediction'];
         $displayOdds = $this->impliedOdds($pred); // display only, not selection criteria

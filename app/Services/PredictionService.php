@@ -474,17 +474,6 @@ class PredictionService
     }
 
     /**
-     * Returns true if this prediction should be shown.
-     * false = Gemini explicitly disagreed (hard exclude).
-     * null/missing = Gemini not configured or pre-dual-AI data — still eligible.
-     */
-    private function geminiAgrees(Prediction $p): bool
-    {
-        $tips = is_array($p->tips) ? $p->tips : [];
-        return ($tips[0]['gemini_agrees'] ?? null) !== false;
-    }
-
-    /**
      * Map a market label to the bookmaker-implied probability we have.
      * Returns null if we don't track that market.
      */
@@ -1020,8 +1009,12 @@ class PredictionService
             ->get()
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
-                if (($tips[0]['gemini_agrees'] ?? null) === false) return false;
-                // Only include when ≥3 draw composite indicators align
+                // Hard-block only when AIs explicitly conflict (all other AIs disagree
+                // with Groq's outcome). 'speculative' = Groq was uncertain but no one
+                // was called yet — draw_prob (Poisson) is still reliable in that case.
+                $agreementLevel = $tips[0]['agreement_level'] ?? 'unverified';
+                if ($agreementLevel === 'conflict') return false;
+                // Require ≥3 draw composite indicators to maintain quality bar
                 $h2h = $this->headToHead(
                     $p->match?->home_team ?? '',
                     $p->match?->away_team ?? '',
@@ -1069,7 +1062,8 @@ class PredictionService
 
         $ggOutcomes = ['Both Teams Score', 'Both Teams Score (GG)'];
 
-        $candidates = Prediction::query()
+        // Primary: AI explicitly predicted GG with ≥60% confidence and no AI conflict
+        $primary = Prediction::query()
             ->with('match')
             ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
             ->where('analysis', '!=', 'Prediction pending')
@@ -1085,8 +1079,32 @@ class PredictionService
             ->filter(function (Prediction $p): bool {
                 $tips = is_array($p->tips) ? $p->tips : [];
                 return ($tips[0]['gemini_agrees'] ?? null) !== false;
-            })
-            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (int) $p->confidence)
+            });
+
+        // Secondary: Poisson btts_prob ≥ 68% — reliable regardless of what the AI
+        // named as its primary outcome (Groq often labels these "Over 2.5 Goals").
+        // Same pattern as selectOver15Picks() which gates on over_15_prob alone.
+        $secondary = Prediction::query()
+            ->with('match')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereNotNull('btts_prob')
+            ->where('btts_prob', '>=', 68)
+            ->where('confidence', '>=', 55)
+            ->whereHas('match', fn ($q) => $q
+                ->where(fn ($w) => LeagueCoverage::scopeCovered($w))
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get();
+
+        $candidates = $primary->merge($secondary)
+            ->unique('match_id')
+            ->sortByDesc(fn (Prediction $p) =>
+                (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+                + (int) max($p->confidence, (float) ($p->btts_prob ?? 0))
+            )
             ->take(5)
             ->values();
 

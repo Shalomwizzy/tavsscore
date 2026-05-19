@@ -42,13 +42,22 @@ class UpdateLineupPredictions extends Command
                 $outcome    = $prediction?->predicted_outcome ?? '-';
                 $conf       = $prediction?->confidence ?? 0;
 
-                // Only promote as a lineup pick if both AIs agreed.
-                // gemini_agrees === null means Gemini not configured — still include.
-                $tips         = is_array($prediction?->tips) ? $prediction->tips : [];
-                $geminiAgrees = $tips[0]['gemini_agrees'] ?? null;
+                // Only promote as a lineup pick if AIs didn't explicitly conflict.
+                // gemini_agrees === null   → Gemini not configured, still include.
+                // agreement_level = 'speculative' → Groq < 60% but no one else called;
+                //   lineup context makes this pick more reliable, so allow it through.
+                // agreement_level = 'conflict' → all other AIs disagree → hard exclude.
+                $tips           = is_array($prediction?->tips) ? $prediction->tips : [];
+                $geminiAgrees   = $tips[0]['gemini_agrees']   ?? null;
+                $agreementLevel = $tips[0]['agreement_level'] ?? 'unverified';
 
-                if ($geminiAgrees === false) {
-                    $this->line("  ⛔ {$match->home_team} vs {$match->away_team} — AIs disagree, skipping lineup pick.");
+                if ($geminiAgrees === false && $agreementLevel !== 'speculative') {
+                    $this->line("  ⛔ {$match->home_team} vs {$match->away_team} — AIs conflict, skipping lineup pick.");
+                    continue;
+                }
+
+                if ($conf < 50) {
+                    $this->line("  ⬇️ {$match->home_team} vs {$match->away_team} — confidence too low ({$conf}%), skipping.");
                     continue;
                 }
 
