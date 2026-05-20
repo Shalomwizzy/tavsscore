@@ -602,6 +602,25 @@
     </style>
 
     @stack('styles')
+
+    {{-- Global mobile overrides: placed after @stack so they win cascade over view-specific CSS --}}
+    <style>
+    @media (max-width: 640px) {
+        .pick-card-top { padding: 1.25rem 1rem 0 !important; }
+        .pick-card-footer { padding: .75rem 1rem !important; }
+        .prob-section, .pick-analysis-section { padding: 0 1rem !important; }
+        .pick-callout { flex-wrap: wrap !important; gap: .65rem !important; }
+        .pick-callout-value { font-size: 1.05rem !important; }
+        .pick-team { font-size: 1rem !important; word-break: break-word !important; }
+        .accuracy-strip { flex-direction: column !important; align-items: flex-start !important; }
+    }
+    @media (max-width: 480px) {
+        .pick-card-top { padding: 1rem .875rem 0 !important; }
+        .pick-callout-value { font-size: .95rem !important; }
+        .prob-row { flex-wrap: wrap !important; }
+        .prob-box { min-width: 110px !important; }
+    }
+    </style>
 </head>
 <body>
 <div class="page-shell">
