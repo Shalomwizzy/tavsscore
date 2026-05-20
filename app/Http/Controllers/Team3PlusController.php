@@ -76,10 +76,9 @@ class Team3PlusController extends Controller
     }
 
     /**
-     * Determine if a team3plus NO pick won.
-     * Labels: 'Home 3+', 'Away 3+', 'Home 2+', 'Away 2+' (new format)
-     *         'Home', 'Away' (legacy format — NO on 3+ market)
-     * NO pick wins when the named team scores FEWER than the market threshold.
+     * Determine if a team3plus YES pick won.
+     * Labels: 'Home 3+', 'Away 3+', 'Home 2+', 'Away 2+'
+     * YES pick wins when the named team scores AT LEAST the market threshold.
      */
     private function pickWon(Prediction $p): bool
     {
@@ -87,8 +86,8 @@ class Team3PlusController extends Controller
         $isHome = str_starts_with($label, 'Home');
         $goals  = $isHome ? (int) $p->match->home_score : (int) $p->match->away_score;
 
-        if (str_ends_with($label, '2+')) return $goals < 2;   // NO on 2+: wins when team scores 0 or 1
-        return $goals < 3;                                     // NO on 3+ (new & legacy): wins when team scores < 3
+        if (str_ends_with($label, '2+')) return $goals >= 2;  // YES on 2+: wins when team scores 2+
+        return $goals >= 3;                                    // YES on 3+: wins when team scores 3+
     }
 
     private function formatPick(Prediction $p): array

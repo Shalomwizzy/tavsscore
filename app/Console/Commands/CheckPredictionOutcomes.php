@@ -255,20 +255,20 @@ class CheckPredictionOutcomes extends Command
                 $prediction->update(['over25_notified' => true]);
             }
 
-            // Team goals NO pick — wins when the named team scores fewer than the market threshold
+            // Team goals YES pick — wins when the named team scores at least the market threshold
             if ($prediction->is_team3plus_pick && ! $prediction->team3plus_notified) {
                 $label    = $prediction->team3plus_label ?? 'Home 3+';
                 $isHome   = str_starts_with($label, 'Home');
                 $teamName = $isHome ? $match->home_team : $match->away_team;
                 $goals    = $isHome ? $home : $away;
 
-                // 2+ NO: wins when team scores 0 or 1. 3+ NO (new & legacy): wins when team scores < 3.
-                if (str_ends_with($label, '2+')) { $won = $goals < 2; $marketLabel = '2+ Goals: NO'; }
-                else                              { $won = $goals < 3; $marketLabel = '3+ Goals: NO'; }
+                // YES picks: wins when team reaches the goal threshold.
+                if (str_ends_with($label, '2+')) { $won = $goals >= 2; $marketLabel = '2+ Goals: YES'; }
+                else                              { $won = $goals >= 3; $marketLabel = '3+ Goals: YES'; }
 
                 $this->line($won
-                    ? "  🚫✅  {$matchLabel} {$score} — {$teamName} {$marketLabel} hit"
-                    : "  🚫❌  {$matchLabel} {$score} — {$teamName} {$marketLabel} missed");
+                    ? "  ⚽✅  {$matchLabel} {$score} — {$teamName} {$marketLabel} hit"
+                    : "  ⚽❌  {$matchLabel} {$score} — {$teamName} {$marketLabel} missed");
 
                 $won
                     ? $oneSignal->notifyPickWon($matchLabel, "{$teamName} — {$marketLabel}", $score, $league, '/team-3-plus')
