@@ -46,14 +46,14 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:.75rem;">
             <div>
                 <label class="form-label">Register URL (Affiliate)</label>
-                <input type="url" name="register_url" value="{{ old('register_url') }}" required maxlength="500"
+                <input type="text" name="register_url" value="{{ old('register_url') }}" required maxlength="500"
                     placeholder="https://..."
                     class="form-input" style="width:100%; box-sizing:border-box;">
                 @error('register_url') <span class="form-hint" style="color:#fca5a5;">{{ $message }}</span> @enderror
             </div>
             <div>
                 <label class="form-label">Website URL <span style="opacity:.5;">(optional)</span></label>
-                <input type="url" name="website_url" value="{{ old('website_url') }}" maxlength="500"
+                <input type="text" name="website_url" value="{{ old('website_url') }}" maxlength="500"
                     placeholder="https://..."
                     class="form-input" style="width:100%; box-sizing:border-box;">
                 @error('website_url') <span class="form-hint" style="color:#fca5a5;">{{ $message }}</span> @enderror
@@ -175,11 +175,11 @@
                                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.5rem;">
                                             <div>
                                                 <label class="form-label" style="font-size:.7rem;">Register URL</label>
-                                                <input type="url" name="register_url" value="{{ $link->register_url }}" required maxlength="500" class="form-input" style="width:100%; box-sizing:border-box; font-size:.78rem;">
+                                                <input type="text" name="register_url" value="{{ $link->register_url }}" required maxlength="500" class="form-input" style="width:100%; box-sizing:border-box; font-size:.78rem;">
                                             </div>
                                             <div>
                                                 <label class="form-label" style="font-size:.7rem;">Website URL</label>
-                                                <input type="url" name="website_url" value="{{ $link->website_url }}" maxlength="500" class="form-input" style="width:100%; box-sizing:border-box; font-size:.78rem;">
+                                                <input type="text" name="website_url" value="{{ $link->website_url }}" maxlength="500" class="form-input" style="width:100%; box-sizing:border-box; font-size:.78rem;">
                                             </div>
                                         </div>
                                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; margin-bottom:.75rem;">

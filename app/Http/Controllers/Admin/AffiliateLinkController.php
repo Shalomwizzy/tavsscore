@@ -22,8 +22,8 @@ class AffiliateLinkController extends Controller
         $data = $request->validate([
             'platform'     => ['required', 'string', 'max:60'],
             'slug'         => ['required', 'string', 'max:60', 'regex:/^[a-z0-9\-]+$/'],
-            'register_url' => ['required', 'url', 'max:500'],
-            'website_url'  => ['nullable', 'url', 'max:500'],
+            'register_url' => ['required', 'string', 'max:500', 'regex:/^https?:\/\/.+/'],
+            'website_url'  => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/.+/'],
             'promo_text'   => ['nullable', 'string', 'max:200'],
             'color'        => ['nullable', 'string', 'max:7'],
             'logo_emoji'   => ['nullable', 'string', 'max:10'],
@@ -40,8 +40,8 @@ class AffiliateLinkController extends Controller
         $data = $request->validate([
             'platform'     => ['required', 'string', 'max:60'],
             'slug'         => ['required', 'string', 'max:60', 'regex:/^[a-z0-9\-]+$/'],
-            'register_url' => ['required', 'url', 'max:500'],
-            'website_url'  => ['nullable', 'url', 'max:500'],
+            'register_url' => ['required', 'string', 'max:500', 'regex:/^https?:\/\/.+/'],
+            'website_url'  => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/.+/'],
             'promo_text'   => ['nullable', 'string', 'max:200'],
             'color'        => ['nullable', 'string', 'max:7'],
             'logo_emoji'   => ['nullable', 'string', 'max:10'],
