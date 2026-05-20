@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Correct Score Predictions | TavsScore: High-Risk AI Scoreline Forecasts')
-@section('meta_description', 'AI exact score forecasts using Poisson models and team data. High-risk / long-shot predictions. Best for insight and fun, not as a primary betting strategy.')
+@section('meta_description', 'AI exact score forecasts using Poisson probability models and team data. Statistical long-shot predictions — best used for insight and match analysis.')
 @section('og_image', asset('images/og-correct-score.jpg'))
 
 @push('styles')

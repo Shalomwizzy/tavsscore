@@ -309,6 +309,11 @@
                 <span class="sb-icon">⚡</span> Pi-Ratings
             </a>
 
+            <div class="sb-section-label">Revenue</div>
+            <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}">
+                <span class="sb-icon">💰</span> Affiliate Links
+            </a>
+
             <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <span class="sb-icon">⚙️</span> Settings
             </a>

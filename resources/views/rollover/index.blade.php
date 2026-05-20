@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Rollover Challenge, Day ' . ($challenge ? $challenge->currentDay() - 1 : 0) . ' of 10')
-@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, compounding stakes for maximum returns. Triple-AI validated. All 3 engines must agree.')
+@section('meta_description', 'Follow TavsScore\'s 10-day rollover challenge. One ultra-safe pick per day, triple-AI validated. All 3 engines must agree before a pick is selected.')
 
 @push('styles')
 <style>
@@ -129,7 +129,6 @@
     .rv-complete-title { font-size: 1.1rem; font-weight: 800; color: #6ee7b7; margin-bottom: .35rem; }
 
     @media (max-width: 600px) {
-        .rv-tbl th:nth-child(4), .rv-tbl td:nth-child(4) { display: none; }
         .rv-odds-row { gap: .875rem; }
     }
 </style>
@@ -190,27 +189,24 @@
 
     {{-- Challenge hero --}}
     @php
-        $currentBalance = $challenge->currentBalance();
-        $projFinal      = $challenge->projectedFinal();
-        $daysDone       = $allPicks->where('status', 'won')->count();
-        $displayDay     = $totalPicks > 0 ? $totalPicks : ($isToday && $todayPick ? 1 : 0);
+        $displayDay = $totalPicks > 0 ? $totalPicks : ($isToday && $todayPick ? 1 : 0);
     @endphp
 
-    @if($challenge->status === 'complete' && $daysDone >= 10)
+    @if($challenge->status === 'complete' && $wonPicks >= 10)
     <div class="rv-complete">
         <div class="rv-complete-icon">🏆</div>
         <div class="rv-complete-title">Challenge Complete!</div>
         <p style="color:var(--text-dim); font-size:.82rem; margin-bottom:.5rem;">
-            10/10 picks correct. {{ number_format($currentBalance, 0) }} NGN from {{ number_format((float)$challenge->initial_stake, 0) }} NGN starting stake.
+            10/10 picks correct. A perfect run — triple-AI validation held strong all 10 days.
         </p>
         <p style="font-size:.74rem; color:#6ee7b7;">Next challenge starts tomorrow. Come back then!</p>
     </div>
-    @elseif($challenge->status === 'complete' && $daysDone < 10)
+    @elseif($challenge->status === 'complete' && $wonPicks < 10)
     <div class="rv-bust">
         <div class="rv-bust-icon">💀</div>
         <div class="rv-bust-title">Challenge Over. Pick Lost</div>
         <p style="color:var(--text-dim); font-size:.82rem; margin-bottom:.5rem;">
-            Made it {{ $daysDone }} days. A new challenge starts tomorrow.
+            Made it {{ $wonPicks }} days. A new challenge starts tomorrow.
         </p>
     </div>
     @endif
@@ -222,16 +218,17 @@
 
         <div class="rv-balance-row">
             <div class="rv-bal-item">
-                <span class="rv-bal-val">{{ number_format((float)$challenge->initial_stake, 0) }} NGN</span>
-                <span class="rv-bal-lbl">Starting stake</span>
+                <span class="rv-bal-val">{{ $wonPicks }}/{{ $totalPicks }}</span>
+                <span class="rv-bal-lbl">Picks correct</span>
             </div>
             <div class="rv-bal-item">
-                <span class="rv-bal-val" style="color:#fcd34d;">{{ number_format($currentBalance, 0) }} NGN</span>
-                <span class="rv-bal-lbl">Current balance</span>
+                <span class="rv-bal-val" style="color:#fcd34d;">{{ 10 - $totalPicks }}</span>
+                <span class="rv-bal-lbl">Days remaining</span>
             </div>
             <div class="rv-bal-item">
-                <span class="rv-bal-val" style="color:#6ee7b7;">{{ number_format($projFinal, 0) }} NGN</span>
-                <span class="rv-bal-lbl">Projected (if all win)</span>
+                @php $streak = 0; foreach($allPicks->sortByDesc('day_number') as $sp) { if($sp->status === 'won') $streak++; else break; } @endphp
+                <span class="rv-bal-val" style="color:#6ee7b7;">{{ $streak }}</span>
+                <span class="rv-bal-lbl">Current streak</span>
             </div>
         </div>
 
@@ -260,7 +257,7 @@
     @php
         $m         = $todayPick->match;
         $kickoff   = $m?->match_time?->setTimezone($tz)->format('H:i') . ' Lagos';
-        $waText    = urlencode("🎯 TavsScore Rollover Day {$todayPick->day_number}/10\n{$m?->home_team} vs {$m?->away_team}\nTip: {$todayPick->groq_verdict} @ {$todayPick->implied_odds} odds\nStake: " . number_format($todayPick->stake_amount, 0) . " → Return: " . number_format($todayPick->potential_return, 0) . " NGN\n🔗 " . url('/rollover'));
+        $waText    = urlencode("🎯 TavsScore Rollover Day {$todayPick->day_number}/10\n{$m?->home_team} vs {$m?->away_team}\nTip: {$todayPick->groq_verdict} @ {$todayPick->implied_odds} odds\nKickoff: {$kickoff}\n🔗 " . url('/rollover'));
         $cardExtra = $todayPick->status === 'won' ? 'rv-result-won' : ($todayPick->status === 'lost' ? 'rv-result-lost' : '');
     @endphp
     <div class="rv-pick-card {{ $cardExtra }}">
@@ -269,7 +266,7 @@
         </div>
 
         @if($todayPick->status === 'won')
-        <div class="rv-result-banner won">✅ Pick Won! {{ $todayPick->result_score }}. Balance upgraded to {{ number_format((float)$todayPick->potential_return, 0) }} NGN</div>
+        <div class="rv-result-banner won">✅ Pick Won! {{ $todayPick->result_score }} — challenge continues to Day {{ $todayPick->day_number + 1 }}</div>
         @elseif($todayPick->status === 'lost')
         <div class="rv-result-banner lost">❌ Pick Lost {{ $todayPick->result_score }}. Challenge resets tomorrow</div>
         @endif
@@ -300,12 +297,8 @@
                 <span class="rv-odds-lbl">Implied odds</span>
             </div>
             <div class="rv-odds-item">
-                <span class="rv-odds-val">{{ number_format((float)$todayPick->stake_amount, 0) }} NGN</span>
-                <span class="rv-odds-lbl">Today's stake</span>
-            </div>
-            <div class="rv-odds-item">
-                <span class="rv-odds-val" style="color:#6ee7b7;">{{ number_format((float)$todayPick->potential_return, 0) }} NGN</span>
-                <span class="rv-odds-lbl">Return if correct</span>
+                <span class="rv-odds-val">Day {{ $todayPick->day_number }}</span>
+                <span class="rv-odds-lbl">of 10</span>
             </div>
         </div>
 
@@ -322,14 +315,16 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:2rem; text-align:center; margin-bottom:1.5rem;">
         <div style="font-size:2rem; margin-bottom:.5rem;">⏳</div>
         <div style="font-weight:800; color:#fff; margin-bottom:.35rem;">Today's Pick Not Yet Selected</div>
-        <p style="font-size:.8rem; color:var(--text-dim);">The AI selects the safest game each day at 09:30 Lagos time. Check back soon.</p>
+        <p style="font-size:.8rem; color:var(--text-dim);">The AI selects the safest game each day at 10:30 Lagos time. Check back soon.</p>
     </div>
     @endif
 
     {{-- Disclaimer --}}
     <div class="rv-disclaimer">
-        ⚠️ <strong>Rollover is a compounding strategy, not a guarantee.</strong> The AI picks the safest available match using triple cross-validation: three independent engines must all agree. No prediction is certain. Only stake what you can afford to lose. If the pick loses, the challenge resets; this is normal.
+        ⚠️ <strong>For entertainment and educational purposes only.</strong> The Rollover Challenge is a hypothetical prediction tracker — no real money is involved, no transactions take place on this site. AI picks may be wrong. Never bet more than you can afford to lose. If you have a gambling problem, visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener" style="color:#fcd34d; text-decoration:underline;">BeGambleAware.org</a>.
     </div>
+
+    @include('partials.affiliate-strip')
 
     {{-- Challenge history table --}}
     @if($allPicks->isNotEmpty())
@@ -346,8 +341,6 @@
                         <th>Match</th>
                         <th>Tip</th>
                         <th>Odds</th>
-                        <th>Stake</th>
-                        <th>Return</th>
                         <th>Result</th>
                     </tr>
                 </thead>
@@ -369,11 +362,9 @@
                         </td>
                         <td style="color:#6ee7b7; font-weight:700;">
                             {{ $rp->groq_verdict }}
-                            @if($rp->both_agree) <span title="Both AIs agree" style="font-size:.65rem;">✓✓</span> @endif
+                            @if($rp->both_agree) <span title="All AIs agree" style="font-size:.65rem;">✓✓</span> @endif
                         </td>
                         <td style="color:#fcd34d; font-weight:700;">{{ $rp->implied_odds }}</td>
-                        <td style="color:var(--text-dim);">{{ number_format((float)$rp->stake_amount, 0) }}</td>
-                        <td style="color:#6ee7b7;">{{ number_format((float)$rp->potential_return, 0) }}</td>
                         <td>
                             @if($rp->status === 'won')
                                 <span class="rv-badge rv-badge-won">✓ Won</span>
@@ -404,7 +395,7 @@
         $pcStart = $pc->started_at instanceof \Carbon\Carbon ? $pc->started_at : \Carbon\Carbon::parse($pc->started_at);
     @endphp
     <details class="rv-table-wrap" style="margin-bottom:1rem;" {{ $loop->first ? 'open' : '' }}>
-        <summary style="padding:1rem 1.25rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; list-style:none; border-bottom:1px solid var(--border);">
+        <summary style="padding:1rem 1.25rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; list-style:none;">
             <span class="rv-table-title">📋 Challenge: {{ $pcStart->format('M d, Y') }}</span>
             <span style="font-size:.72rem; color:var(--text-dim);">{{ $pcResult }}</span>
         </summary>
@@ -416,8 +407,6 @@
                         <th>Match</th>
                         <th>Tip</th>
                         <th>Odds</th>
-                        <th>Stake</th>
-                        <th>Return</th>
                         <th>Result</th>
                     </tr>
                 </thead>
@@ -439,8 +428,6 @@
                         </td>
                         <td style="color:#6ee7b7; font-weight:700;">{{ $rp->groq_verdict }}</td>
                         <td style="color:#fcd34d; font-weight:700;">{{ $rp->implied_odds }}</td>
-                        <td style="color:var(--text-dim);">{{ number_format((float)$rp->stake_amount, 0) }}</td>
-                        <td style="color:#6ee7b7;">{{ number_format((float)$rp->potential_return, 0) }}</td>
                         <td>
                             @if($rp->status === 'won')
                                 <span class="rv-badge rv-badge-won">✓ Won</span>
@@ -470,18 +457,18 @@
             </div>
             <div style="background:rgba(16,185,129,.05); border:1px solid rgba(16,185,129,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">📈</div>
-                <div style="font-weight:700; color:#6ee7b7; font-size:.8rem; margin-bottom:.25rem;">Compound Stakes</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">Start with any amount. If today's pick wins, your full return (stake + profit) becomes tomorrow's stake automatically.</div>
+                <div style="font-weight:700; color:#6ee7b7; font-size:.8rem; margin-bottom:.25rem;">Compounding Odds</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">Each day's implied odds build on the last. We track the multiplier so you can see exactly how a 10-day winning streak accumulates. Stake whatever you can afford to lose — or nothing at all.</div>
             </div>
             <div style="background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🎯</div>
                 <div style="font-weight:700; color:#a5b4fc; font-size:.8rem; margin-bottom:.25rem;">Safe Low Odds</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">We target odds between 1.10 and 1.50, the sweet spot where high confidence matches low risk for a single-game stake.</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">We target odds between 1.10 and 1.50, the sweet spot where high confidence meets low risk for a single-game selection.</div>
             </div>
             <div style="background:rgba(251,191,36,.05); border:1px solid rgba(251,191,36,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🔄</div>
                 <div style="font-weight:700; color:#fbbf24; font-size:.8rem; margin-bottom:.25rem;">10-Day Cycles</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">Each challenge runs for 10 days. After a win streak completes 10 days, the AI rests and a fresh challenge begins.</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">Each challenge runs for 10 days. After a win streak completes all 10, the AI rests and a fresh challenge begins the next day.</div>
             </div>
         </div>
     </div>

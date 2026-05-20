@@ -18,7 +18,7 @@
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">The short version</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            We do not sell your data. We do not build profiles on you. We do not send marketing emails unless you specifically ask us to. The information we collect is the minimum needed to run the site and show you relevant advertising so we can keep TavsScore free.
+            We do not sell your data. We do not build profiles on you. We do not send marketing emails unless you specifically ask us to. The information we collect is the minimum needed to run the site and improve it over time.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
             The longer version below explains the details. If something is unclear, <a href="{{ route('contact') }}" style="color:var(--green);">ask us</a> and we will explain it in plain language.
@@ -31,30 +31,37 @@
             When you visit TavsScore, our server logs basic technical information automatically: your anonymised IP address, the page you visited, the browser and operating system you are using, and the time of your visit. This is standard for any website and helps us diagnose issues and understand how the site is being used in aggregate.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We may also use analytics tools to understand which pages are popular and how people navigate the site. This data is always aggregated - we look at trends, not individuals.
+            We may also use analytics tools to understand which pages are popular and how people navigate the site. This data is always aggregated — we look at trends, not individuals.
         </p>
     </div>
 
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Cookies</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            TavsScore uses a small number of cookies. Some are essential - for example, the cookie that remembers your session if you are logged in, and the CSRF token that keeps form submissions secure. You cannot turn these off without breaking the site.
+            TavsScore uses a small number of cookies. Some are essential — for example, the cookie that remembers your session if you are logged in, and the CSRF token that keeps form submissions secure. You cannot turn these off without breaking the site.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We also use non-essential cookies for advertising (see the section below) and analytics. You can decline these through your browser settings at any time. Most browsers let you block third-party cookies entirely, which is the easiest way to opt out if that is what you prefer.
+            We may also use non-essential cookies for analytics or advertising purposes. You can decline these through your browser settings at any time. Most browsers let you block third-party cookies entirely, which is the easiest way to opt out.
         </p>
     </div>
 
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Advertising and Google AdSense</h2>
+        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Push notifications</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            TavsScore is free to use, and we keep it that way through advertising. We use Google AdSense, which shows ads based on your browsing history and interests. Google places its own cookies to do this, and their use of that data is governed by Google's own privacy policy, not ours.
+            If you subscribe to push notifications, we use OneSignal to deliver them. When you opt in, your browser generates a device token that OneSignal stores in order to send you alerts about confirmed lineup picks, Rollover updates, and other match information.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            If you would rather not see personalised ads, you can opt out through Google's Ad Settings at <a href="https://adssettings.google.com" target="_blank" rel="noopener" style="color:var(--green);">adssettings.google.com</a>. You will still see ads, but they will not be targeted to your interests.
+            We do not receive your name, email address, or any other personal information from this process — only the device token. OneSignal's own privacy policy governs how they handle that token.
         </p>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We have no control over which specific ads Google shows. If you see an ad that seems inappropriate for a football audience, the quickest way to report it is through the "Why this ad?" link that appears on most Google ads.
+            You can withdraw consent and unsubscribe at any time through your browser notification settings. Revoking permission deletes the association immediately.
+        </p>
+    </div>
+
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Telegram</h2>
+        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
+            TavsScore operates a public Telegram channel where we share picks, match alerts, and Rollover updates. Telegram is a third-party platform and their own privacy policy governs the service. When you join our Telegram channel, we see only your Telegram username (if you have one set to public) — we cannot see your phone number or any other account details, and we do not store subscriber lists.
         </p>
     </div>
 
@@ -66,14 +73,27 @@
     </div>
 
     <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
+        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Advertising</h2>
+        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
+            TavsScore is currently free with no advertising. If we introduce advertising or commercial partnerships in the future, we will update this section to explain exactly what data is involved and how to opt out. We will not introduce advertising without updating this policy first.
+        </p>
+        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
+            Any future advertising partners will be listed here with a link to their privacy policy.
+        </p>
+    </div>
+
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
         <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Third-party services we use</h2>
         <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            To run TavsScore we rely on a few external services. Each has its own privacy practices.
+            To run TavsScore we rely on several external services. Each has its own privacy practices.
         </p>
         <ul style="font-size:.88rem; color:var(--text-dim); line-height:1.85; padding-left:1.5rem;">
-            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">API-Football</strong> - provides the match data that powers our scores and fixtures. Your visits to TavsScore trigger calls to their API, but we do not pass any personal information to them.</li>
-            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Google AdSense</strong> - serves the advertising on our site. Subject to Google's privacy policy.</li>
-            <li><strong style="color:var(--text);">AI Prediction Engines</strong> - we use third-party AI services to process match information and generate predictions. We send only match data (team names, league, date) — never any user information.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">API-Football</strong> — provides the match data that powers our scores and fixtures. We do not pass any personal information to them.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">OneSignal</strong> — delivers push notifications to subscribed users. Receives only anonymous device tokens. Subject to OneSignal's privacy policy.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Telegram</strong> — our public channel for picks and alerts. Subject to Telegram's privacy policy.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Groq (LLaMA models)</strong> — one of three AI services used to generate predictions. We send only match data (team names, league, date, statistics) — never any user information.</li>
+            <li style="margin-bottom:.5rem;"><strong style="color:var(--text);">Google Gemini</strong> — cross-validation AI for predictions. Same data as above, no user information transmitted.</li>
+            <li><strong style="color:var(--text);">Mistral AI</strong> — second cross-validation AI for predictions. Same data as above, no user information transmitted.</li>
         </ul>
     </div>
 

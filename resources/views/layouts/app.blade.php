@@ -648,6 +648,7 @@
                     <a href="{{ route('lineup-picks.index') }}">⚡ Lineup Picks</a>
                     <a href="{{ route('rollover.index') }}">🔄 Rollover</a>
                     <a href="{{ route('correct-score.index') }}">🎯 Correct Score</a>
+                    <a href="{{ route('booking-codes.index') }}">🎟️ Booking Codes</a>
                 </div>
                 <div class="footer-col">
                     <div class="footer-col-title">Scores</div>

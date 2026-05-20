@@ -725,12 +725,14 @@ class TelegramService
         );
     }
 
-    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl): void
+    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null): void
     {
         $notePart = $note ? "\n📋 Picks: <b>{$note}</b>" : '';
         $howTo = match (strtolower($platform)) {
             'bet9ja'    => "Open Bet9ja app → Booking Code → Enter <b>{$code}</b>",
             '1xbet'     => "Open 1xBet app → Coupon Code → Enter <b>{$code}</b>",
+            '1win'      => "Open 1Win app → Betting Slip → Coupon Code → Enter <b>{$code}</b>",
+            'sportybet' => "Open SportyBet app → Booking Code → Enter <b>{$code}</b>",
             'betway'    => "Open Betway app → Booking Code → Enter <b>{$code}</b>",
             'parimatch' => "Open Parimatch app → Booking Code → Enter <b>{$code}</b>",
             default     => "Open {$platform} app → Booking Code → Enter <b>{$code}</b>",
@@ -744,6 +746,10 @@ class TelegramService
             . "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             . "⚠️ Verify odds before placing. Bet responsibly.\n"
             . "🔗 <a href=\"{$siteUrl}/picks\">See full analysis →</a>";
+
+        if ($affiliateUrl) {
+            $msg .= "\n📝 No {$platform} account? <a href=\"{$affiliateUrl}\">Register free →</a>";
+        }
 
         $this->send($msg);
     }

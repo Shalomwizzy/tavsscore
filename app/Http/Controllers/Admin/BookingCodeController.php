@@ -27,7 +27,10 @@ class BookingCodeController extends Controller
 
         BookingCode::create($data);
 
-        $telegram->sendBookingCode($data['platform'], strtoupper($data['code']), $data['note'] ?? '', config('app.url'));
+        $affiliate    = \App\Models\AffiliateLink::where('slug', strtolower(str_replace(' ', '', $data['platform'])))->where('is_active', true)->first();
+        $affiliateUrl = $affiliate?->register_url ?: null;
+
+        $telegram->sendBookingCode($data['platform'], strtoupper($data['code']), $data['note'] ?? '', config('app.url'), $affiliateUrl);
 
         $oneSignal->sendMatchAlert(
             title:   "🎟️ Booking Code — {$data['platform']}",

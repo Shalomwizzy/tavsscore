@@ -30,6 +30,7 @@
                     <option value="SportyBet" {{ old('platform') === 'SportyBet' ? 'selected' : '' }}>SportyBet</option>
                     <option value="Bet9ja"    {{ old('platform') === 'Bet9ja'    ? 'selected' : '' }}>Bet9ja</option>
                     <option value="1xBet"     {{ old('platform') === '1xBet'     ? 'selected' : '' }}>1xBet</option>
+                    <option value="1Win"      {{ old('platform') === '1Win'      ? 'selected' : '' }}>1Win</option>
                     <option value="Betway"    {{ old('platform') === 'Betway'    ? 'selected' : '' }}>Betway</option>
                     <option value="Parimatch" {{ old('platform') === 'Parimatch' ? 'selected' : '' }}>Parimatch</option>
                     <option value="BetKing"   {{ old('platform') === 'BetKing'   ? 'selected' : '' }}>BetKing</option>
@@ -60,6 +61,11 @@
             📤 Send to Telegram &amp; Push
         </button>
     </form>
+</div>
+
+<div style="background:rgba(99,102,241,.07); border:1px solid rgba(99,102,241,.2); border-radius:8px; padding:.75rem 1rem; margin-bottom:1.25rem; font-size:.78rem; color:#a5b4fc; line-height:1.6;">
+    💡 <strong>Affiliate links</strong> are managed in the <a href="{{ route('admin.affiliate-links.index') }}" style="color:#818cf8; text-decoration:underline;">Affiliate Links</a> section.
+    When you send a booking code, the affiliate registration link for that platform is automatically appended to the Telegram message.
 </div>
 
 <div class="a-card">

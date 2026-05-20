@@ -905,6 +905,10 @@ if (! function_exists('stripTip')) {
 
 @include('partials.language-toggle')
 
+<div class="wrap" style="padding-top:1.5rem;">
+    @include('partials.affiliate-strip')
+</div>
+
 <div class="wrap" style="padding-bottom:2rem;">
     <div style="text-align:center; font-size:.7rem; color:var(--text-dim); line-height:1.75; padding:.875rem 1rem; border-top:1px solid var(--border); margin-top:2rem;">
         🔞 <strong style="color:var(--text-dim);">18+ only.</strong>

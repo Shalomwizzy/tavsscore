@@ -47,6 +47,9 @@ Route::get('/track-record', [TrackRecordController::class, 'index'])->name('trac
 Route::get('/results',     [ResultsController::class, 'index'])->name('results.index');
 Route::get('/africa',      [AfricaController::class, 'index'])->name('africa.index');
 
+/* ── Booking Codes (public) ── */
+Route::get('/booking-codes', [App\Http\Controllers\BookingCodesController::class, 'index'])->name('booking-codes.index');
+
 /* ── Winners ── */
 Route::get('/winners',                  [WinnersController::class, 'index'])->name('winners.index');
 Route::post('/winners/submit',          [WinnersController::class, 'submit'])->middleware('throttle:10,60')->name('winners.submit');
@@ -180,6 +183,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/newsletter/export',                [Admin\NewsletterAdminController::class, 'export'])->name('newsletter.export');
         Route::post('/newsletter/send-now',             [Admin\NewsletterAdminController::class, 'sendNow'])->name('newsletter.send-now');
         Route::delete('/newsletter/{subscriber}',       [Admin\NewsletterAdminController::class, 'destroy'])->name('newsletter.destroy');
+
+        Route::get('/affiliate-links',                                    [Admin\AffiliateLinkController::class, 'index'])->name('affiliate-links.index');
+        Route::post('/affiliate-links',                                   [Admin\AffiliateLinkController::class, 'store'])->name('affiliate-links.store');
+        Route::put('/affiliate-links/{affiliateLink}',                    [Admin\AffiliateLinkController::class, 'update'])->name('affiliate-links.update');
+        Route::delete('/affiliate-links/{affiliateLink}',                 [Admin\AffiliateLinkController::class, 'destroy'])->name('affiliate-links.destroy');
+        Route::post('/affiliate-links/{affiliateLink}/toggle',            [Admin\AffiliateLinkController::class, 'toggle'])->name('affiliate-links.toggle');
 
         Route::get('/settings',  [Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');

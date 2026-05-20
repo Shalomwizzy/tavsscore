@@ -282,7 +282,7 @@
                 <div class="nsc-body">
                     <div class="nsc-title">GG Picks</div>
                     <p class="nsc-desc">
-                        Both teams to score is one of the most popular markets in African betting.
+                        Both teams to score is one of the most popular outcomes to follow in African football.
                         Our GG picks are only published when all three AI engines independently predict
                         that both sides will get on the scoresheet. High conviction, nothing speculative.
                     </p>
@@ -303,15 +303,15 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Rollover Challenge</div>
                     <p class="nsc-desc">
-                        The ultimate 10-day AI betting challenge. We start with a fixed stake and attempt to grow it
-                        every single day for 10 consecutive days each day's profit rolling into the next bet.
-                        Three independent AI engines analyse every match separately and must all agree on the same pick before it's placed. One loss resets everything.
+                        A 10-day prediction tracker. Our AI selects one ultra-safe pick per day and we follow the chain —
+                        three independent engines must all agree before any pick is made. One wrong pick resets the challenge.
+                        Follow along to see how far the streak goes.
                     </p>
                     @if($rollover)
                     <div style="margin-top:.6rem;">
                         <div style="display:flex; justify-content:space-between; font-size:.72rem; margin-bottom:.3rem;">
-                            <span style="color:var(--text-dim);">Started: ₦{{ number_format($rollover->initial_stake, 0) }}</span>
-                            <span style="color:#a5b4fc; font-weight:800;">Now: ₦{{ number_format($rolloverBalance, 0) }}</span>
+                            <span style="color:var(--text-dim);">Day {{ $rolloverDay }}/10</span>
+                            <span style="color:#a5b4fc; font-weight:800;">{{ $rollover->picks()->where('status','won')->count() }} picks correct</span>
                         </div>
                         @php $pct = $rolloverDay > 0 ? round($rolloverDay / 10 * 100) : 0; @endphp
                         <div style="height:5px; background:rgba(99,102,241,.15); border-radius:999px; overflow:hidden;">
@@ -512,9 +512,9 @@
                 <div class="nsc-body">
                     <div class="nsc-title">Blog</div>
                     <p class="nsc-desc">
-                        In-depth football analysis articles, match previews, tactical breakdowns, and betting market guides
-                        written by the TavsScore team with AI assistance. Learn how our prediction models work,
-                        which markets have the best value, and get expert insight on the biggest fixtures.
+                        In-depth football analysis articles, match previews, tactical breakdowns, and prediction model guides
+                        written by the TavsScore team with AI assistance. Learn how our models work,
+                        and get expert insight on the biggest fixtures.
                     </p>
                     <div class="nsc-cta" style="color:#6ee7b7;">Read the Blog →</div>
                 </div>
@@ -591,12 +591,12 @@
                 @if($rollover)
                 <div style="margin-bottom:.65rem;">
                     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.25rem;">
-                        <span style="font-size:.7rem; color:var(--text-dim);">Opening stake</span>
-                        <span style="font-size:.78rem; color:#fff; font-weight:700;">₦{{ number_format($rollover->initial_stake, 0) }}</span>
+                        <span style="font-size:.7rem; color:var(--text-dim);">Day</span>
+                        <span style="font-size:.78rem; color:#fff; font-weight:700;">{{ $rolloverDay }} of 10</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.5rem;">
-                        <span style="font-size:.7rem; color:var(--text-dim);">Current balance</span>
-                        <span style="font-size:1.1rem; color:#a5b4fc; font-weight:900;">₦{{ number_format($rolloverBalance, 0) }}</span>
+                        <span style="font-size:.7rem; color:var(--text-dim);">Picks correct</span>
+                        <span style="font-size:1.1rem; color:#a5b4fc; font-weight:900;">{{ $rollover->picks()->where('status','won')->count() }}/{{ $rollover->picks()->count() }}</span>
                     </div>
                     @php $pct = $rolloverDay > 0 ? round($rolloverDay / 10 * 100) : 0; @endphp
                     <div style="height:5px; background:rgba(99,102,241,.15); border-radius:999px; overflow:hidden;">
@@ -608,11 +608,11 @@
                 <div style="background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); border-radius:8px; padding:.55rem .7rem; margin-bottom:.5rem;">
                     <div style="font-size:.63rem; color:#a5b4fc; font-weight:800; text-transform:uppercase; margin-bottom:.25rem;">Today's Rollover Pick</div>
                     <div style="font-size:.82rem; font-weight:700; color:#fff;">{{ $rolloverPick->groq_verdict }}</div>
-                    <div style="font-size:.7rem; color:var(--text-dim); margin-top:.15rem;">Odds: {{ $rolloverPick->implied_odds }} · Stake: ₦{{ number_format($rolloverPick->stake_amount, 0) }}</div>
+                    <div style="font-size:.7rem; color:var(--text-dim); margin-top:.15rem;">Implied odds: {{ $rolloverPick->implied_odds }}</div>
                     @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ All 3 AI engines agree on this pick</div>@endif
                 </div>
                 @else
-                <div style="font-size:.78rem; color:var(--text-dim); padding:.4rem 0;">Today's pick is selected at 9:30am each morning.</div>
+                <div style="font-size:.78rem; color:var(--text-dim); padding:.4rem 0;">Today's pick is selected at 10:30am Lagos time.</div>
                 @endif
                 @else
                 <div style="padding:.5rem 0; color:var(--text-dim); font-size:.82rem; line-height:1.6;">
