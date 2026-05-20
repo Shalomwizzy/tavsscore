@@ -151,6 +151,10 @@ class SelectDailyPicks extends Command
         }
 
         // ── Correct Score picks ────────────────────────────────────
+        if (! $force && Cache::has("picks_sent_correctscore_{$date}")) {
+            $this->info('Correct Score picks already notified — skipping re-selection.');
+            return self::SUCCESS;
+        }
         $this->info('Selecting Correct Score picks…');
         $csPicks = $service->selectCorrectScorePicks();
         if ($csPicks->isEmpty()) {

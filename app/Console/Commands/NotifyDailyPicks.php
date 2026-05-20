@@ -281,29 +281,34 @@ class NotifyDailyPicks extends Command
 
         // ── Correct score picks ────────────────────────────────────
         if ($type === 'correctscore') {
-            $scorePicks = Prediction::query()
-                ->with('match')
-                ->where('is_correct_score_pick', true)
-                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy('correct_score_rank')
-                ->get()
-                ->filter(fn ($p) => ! empty($p->likely_scores));
-
-            if ($scorePicks->isNotEmpty()) {
-                $telegramData = $scorePicks->map(function ($p) {
-                    $match = $p->match;
-                    if (! $match) return null;
-                    return ['match' => "{$match->home_team} vs {$match->away_team}", 'league' => LeagueCoverage::formatName($match->league, $match->league_country), 'scores' => array_slice(is_array($p->likely_scores) ? $p->likely_scores : [], 0, 5)];
-                })->filter()->values()->toArray();
-
-                $topCS = $scorePicks->first();
-                $topCSMatch = $topCS->match ? "{$topCS->match->home_team} vs {$topCS->match->away_team}" : '';
-                $topCSScore = $topCS->likely_scores[0]['score'] ?? '?-?';
-                $oneSignal->notifyCorrectScorePicks($topCSMatch, $topCSScore, $scorePicks->count());
-                $telegram->sendCorrectScores($telegramData, $url);
-                $this->info("Correct score picks sent: {$scorePicks->count()}");
+            if (! $force && Cache::has("picks_sent_correctscore_{$date}")) {
+                $this->info('Correct score picks already sent today — skipped.');
             } else {
-                $this->warn('No correct score predictions today — skipped.');
+                $scorePicks = Prediction::query()
+                    ->with('match')
+                    ->where('is_correct_score_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('correct_score_rank')
+                    ->get()
+                    ->filter(fn ($p) => ! empty($p->likely_scores));
+
+                if ($scorePicks->isNotEmpty()) {
+                    $telegramData = $scorePicks->map(function ($p) {
+                        $match = $p->match;
+                        if (! $match) return null;
+                        return ['match' => "{$match->home_team} vs {$match->away_team}", 'league' => LeagueCoverage::formatName($match->league, $match->league_country), 'scores' => array_slice(is_array($p->likely_scores) ? $p->likely_scores : [], 0, 5)];
+                    })->filter()->values()->toArray();
+
+                    $topCS = $scorePicks->first();
+                    $topCSMatch = $topCS->match ? "{$topCS->match->home_team} vs {$topCS->match->away_team}" : '';
+                    $topCSScore = $topCS->likely_scores[0]['score'] ?? '?-?';
+                    $oneSignal->notifyCorrectScorePicks($topCSMatch, $topCSScore, $scorePicks->count());
+                    $telegram->sendCorrectScores($telegramData, $url);
+                    Cache::put("picks_sent_correctscore_{$date}", true, now()->addHours(36));
+                    $this->info("Correct score picks sent: {$scorePicks->count()}");
+                } else {
+                    $this->warn('No correct score predictions today — skipped.');
+                }
             }
         }
 
