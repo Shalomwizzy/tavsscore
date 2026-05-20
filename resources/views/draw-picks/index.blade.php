@@ -140,6 +140,10 @@
     .hiw-num   { width: 28px; height: 28px; border-radius: 50%; background: rgba(245,158,11,.15); border: 1px solid rgba(245,158,11,.3); color: #fcd34d; font-size: .75rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
     .hiw-text  { font-size: .85rem; color: var(--text-dim); line-height: 1.65; }
     .hiw-text strong { color: var(--text); }
+    @media(max-width:480px) {
+        .pick-callout { flex-wrap:wrap; }
+        .pick-team { font-size:1rem; }
+    }
 </style>
 @endpush
 

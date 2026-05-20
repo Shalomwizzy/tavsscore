@@ -72,6 +72,11 @@
     .market-tag { display:inline-flex; align-items:center; gap:.3rem; padding:2px 9px; border-radius:999px; font-size:.67rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; border:1px solid; }
     .tag-3plus { background:rgba(220,38,38,.1); border-color:rgba(220,38,38,.3); color:#fca5a5; }
     .tag-2plus { background:rgba(251,191,36,.1); border-color:rgba(251,191,36,.3); color:#fcd34d; }
+    .prob-bars-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(85px,1fr)); gap:.75rem; }
+    @media(max-width:480px) {
+        .pick-callout { flex-wrap:wrap; }
+        .pick-team { font-size:1rem; }
+    }
 </style>
 @endpush
 
@@ -187,7 +192,7 @@
                 @endphp
                 <div style="padding:0 1.75rem; margin-bottom:1.25rem;">
                     <div style="font-size:.68rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem;">{{ $market }} Goals probability per team (lower = better for NO)</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem;">
+                    <div class="prob-bars-grid">
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Str::limit($pick['match']['home'], 12) }} {{ $market }}</div>
                             <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ min($homeProb, 100) }}%; background:{{ $isHome ? '#ef4444' : '#6b7280' }};"></div></div>

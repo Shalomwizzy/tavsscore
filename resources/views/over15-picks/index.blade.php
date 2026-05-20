@@ -65,6 +65,11 @@
     .hiw-num { width:28px; height:28px; border-radius:50%; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); color:#93c5fd; font-size:.75rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
     .hiw-text { font-size:.85rem; color:var(--text-dim); line-height:1.65; }
     .hiw-text strong { color:var(--text); }
+    .prob-bars-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(85px,1fr)); gap:.75rem; }
+    @media(max-width:480px) {
+        .pick-callout { flex-wrap:wrap; }
+        .pick-team { font-size:1rem; }
+    }
 </style>
 @endpush
 
@@ -165,7 +170,7 @@
                 {{-- Probability bar --}}
                 <div style="padding:0 1.75rem; margin-bottom:1.25rem;">
                     <div style="font-size:.68rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem;">Goals probability breakdown</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem;">
+                    <div class="prob-bars-grid">
                         <div>
                             <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.3rem;">Over 1.5</div>
                             <div class="prob-bar-outer"><div class="prob-bar-fill" style="width:{{ $pick['prob'] }}%; background:#3b82f6;"></div></div>

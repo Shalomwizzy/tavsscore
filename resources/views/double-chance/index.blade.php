@@ -73,6 +73,12 @@
     .live-score { font-size:.85rem; font-weight:800; color:#fcd34d; padding:2px 10px; background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.25); border-radius:999px; }
     .live-dot { width:7px; height:7px; border-radius:50%; background:#ef4444; animation:blink 1s infinite; display:inline-block; margin-right:3px; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @media(max-width:480px) {
+        .pick-callout { flex-wrap:wrap; }
+        .pick-team { font-size:1rem; }
+        .prob-row { flex-wrap:wrap; }
+        .prob-box { min-width:120px; }
+    }
 </style>
 @endpush
 
