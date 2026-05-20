@@ -1226,16 +1226,20 @@ class PredictionService
     }
 
     /**
-     * Select up to 5 "A Team to Score 3+ Goals: YES" picks for today.
-     * We pick the team in each match most likely to score 3+ goals (YES prediction).
-     * Primary market: 3+ YES (prob >= 28%). Fallback: 2+ YES (prob >= 55%).
-     * Higher Poisson probability = more confident YES = preferred pick.
-     * label = 'Home 3+', 'Away 3+', 'Home 2+', or 'Away 2+'.
+     * Select up to 5 "A Team to Score 3+ Goals" picks for today.
+     * For the "A Team to Score 3+" YES/NO market, we predict NO on the team
+     * with the lowest Poisson P(goals ≥ 3) — i.e. the team we are most confident
+     * will NOT score 3 goals. We require that team's probability ≤ 8%.
+     * Stored with team3plus_label = 'Home 3+', 'Away 3+', 'Home 2+', or 'Away 2+'.
+     * We predict NO on both the 2+ and 3+ markets and pick the single safest NO:
+     * — 3+ NO (≤15% threshold): team predicted not to score 3 or more goals.
+     * — 2+ NO (≤25% threshold): team predicted not to score 2 or more goals (fallback).
+     * Lower Poisson probability = more confident NO = preferred pick.
      */
     public function selectTeam3PlusPicks(): EloquentCollection
     {
-        $today    = now('Africa/Lagos')->startOfDay();
-        $cutoff   = now('Africa/Lagos')->endOfDay();
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
         $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
         $candidates = Prediction::query()
@@ -1256,24 +1260,28 @@ class PredictionService
                 $home2 = (float) ($p->home_2plus_prob ?? 0);
                 $away2 = (float) ($p->away_2plus_prob ?? 0);
 
-                // YES picks: high probability = more confident
+                // Collect all qualifying NO picks; lower probability = more confident NO
                 $options = [];
-                if ($home3 >= 28.0) $options[] = ['label' => 'Home 3+', 'prob' => $home3];
-                if ($away3 >= 28.0) $options[] = ['label' => 'Away 3+', 'prob' => $away3];
-                // 2+ YES fallback: only when no 3+ qualifies but 2+ is very high
-                if ($home2 >= 55.0 && $home3 < 28.0) $options[] = ['label' => 'Home 2+', 'prob' => $home2];
-                if ($away2 >= 55.0 && $away3 < 28.0) $options[] = ['label' => 'Away 2+', 'prob' => $away2];
+                if ($home3 > 0 && $home3 <= 15.0) $options[] = ['label' => 'Home 3+', 'prob' => $home3];
+                if ($away3 > 0 && $away3 <= 15.0) $options[] = ['label' => 'Away 3+', 'prob' => $away3];
+                // 2+ NO is a fallback: only surface when 3+ doesn't qualify but 2+ is very low
+                if ($home2 > 0 && $home2 <= 25.0 && ($home3 <= 0 || $home3 > 15.0)) {
+                    $options[] = ['label' => 'Home 2+', 'prob' => $home2];
+                }
+                if ($away2 > 0 && $away2 <= 25.0 && ($away3 <= 0 || $away3 > 15.0)) {
+                    $options[] = ['label' => 'Away 2+', 'prob' => $away2];
+                }
 
                 if (empty($options)) return null;
 
-                usort($options, fn ($a, $b) => $b['prob'] <=> $a['prob']); // highest first
+                usort($options, fn ($a, $b) => $a['prob'] <=> $b['prob']);
                 $best = $options[0];
 
                 return ['prediction' => $p, 'label' => $best['label'], 'prob' => $best['prob']];
             })
             ->filter()
-            ->sortByDesc(fn ($item) =>
-                (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+            ->sortBy(fn ($item) =>
+                (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? -1000 : 0)
                 + $item['prob']
             )
             ->take(5)
