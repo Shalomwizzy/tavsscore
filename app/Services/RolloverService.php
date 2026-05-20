@@ -149,19 +149,20 @@ class RolloverService
             ->limit(20)
             ->get();
 
-        // Markets used in the last 2 rollover picks — we'll deprioritise these
-        // so the rollover doesn't become an Over 2.5 repeat every single day.
-        $recentMarkets = RolloverPick::query()
+        // Markets used in the last 3 rollover picks — used for diversity enforcement.
+        $recentPicks = RolloverPick::query()
             ->latest('pick_date')
-            ->limit(2)
-            ->pluck('groq_verdict')
-            ->toArray();
+            ->limit(3)
+            ->get(['groq_verdict', 'pick_date']);
+
+        $yesterdayMarket  = $recentPicks->first()?->groq_verdict;
+        $recentMarkets    = $recentPicks->pluck('groq_verdict')->toArray();
 
         $qualifiedPicks = [];
 
         foreach ($candidates as $pred) {
-            // Stop once we have 5 diversity candidates — limits extra API calls
-            if (count($qualifiedPicks) >= 5) break;
+            // Collect up to 8 candidates so we have enough diversity options
+            if (count($qualifiedPicks) >= 8) break;
 
             $match = $pred->match;
             if (! $match) continue;
@@ -206,17 +207,32 @@ class RolloverService
             return null;
         }
 
-        // Market diversity: prefer picks whose market wasn't used in the last 2 days,
-        // then fall back to highest confidence. This prevents the same tip (e.g. Over 2.5)
-        // from appearing every single rollover day.
-        usort($qualifiedPicks, function (array $a, array $b) use ($recentMarkets): int {
+        // Market diversity — hard-split into "fresh market" vs "repeat market" buckets.
+        // A pick whose market was used yesterday is put in the fallback bucket.
+        // We always pick from the fresh bucket first; only fall back if it's empty,
+        // ensuring the same market never repeats on consecutive days unless unavoidable.
+        $freshPicks  = array_values(array_filter($qualifiedPicks, fn ($p) => $p['prediction']->predicted_outcome !== $yesterdayMarket));
+        $repeatPicks = array_values(array_filter($qualifiedPicks, fn ($p) => $p['prediction']->predicted_outcome === $yesterdayMarket));
+
+        // Within each bucket sort by: used in last 3 days → confidence desc
+        $sortFn = function (array $a, array $b) use ($recentMarkets): int {
             $aUsed = in_array($a['prediction']->predicted_outcome, $recentMarkets, true);
             $bUsed = in_array($b['prediction']->predicted_outcome, $recentMarkets, true);
             if ($aUsed !== $bUsed) return $aUsed ? 1 : -1;
             return $b['prediction']->confidence <=> $a['prediction']->confidence;
-        });
+        };
+        usort($freshPicks,  $sortFn);
+        usort($repeatPicks, $sortFn);
 
-        $best = $qualifiedPicks[0];
+        $pool = ! empty($freshPicks) ? $freshPicks : $repeatPicks;
+
+        if (! empty($freshPicks)) {
+            Log::info('RolloverService: selected from fresh-market pool (avoided ' . $yesterdayMarket . ').');
+        } else {
+            Log::info('RolloverService: no fresh-market alternative — falling back to ' . $yesterdayMarket . '.');
+        }
+
+        $best = $pool[0];
 
         $pred        = $best['prediction'];
         $displayOdds = $this->impliedOdds($pred); // display only, not selection criteria
