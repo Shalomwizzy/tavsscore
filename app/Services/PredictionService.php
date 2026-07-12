@@ -32,6 +32,7 @@ class PredictionService
         private readonly LineupService            $lineupService,
         private readonly AdaptiveThresholdService $adaptive,
         private readonly PiRatingService          $piRating,
+        private readonly \App\Services\DixonColes\Predictor $dcPredictor,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -194,6 +195,47 @@ class PredictionService
             $btts     = $poisson['btts'];
             $tips     = [];
             $analysis = GroqService::FALLBACK_ANALYSIS;
+        }
+
+        // ── Dixon-Coles override (Phase 2 ship gate) ─────────────────────
+        // For leagues where DC beat the naive baseline in the 2026-07-12
+        // backtest, replace the Groq/Poisson numbers with DC's for the
+        // markets DC ships. Groq keeps ownership of the narrative + tips.
+        // Fallback is silent — if DC has no params for a team, keep whatever
+        // Groq produced.
+        $dcActive = false;
+        if (config('prediction.dc_enabled') && $match->league_id) {
+            $lid = (int) $match->league_id;
+            $dcForecast = $this->dcPredictor->predict($match, config('prediction.model_version'));
+
+            if ($dcForecast) {
+                if (in_array($lid, (array) config('prediction.dc_1x2_leagues'), true)) {
+                    $homeWin = round($dcForecast['home_win'] * 100, 1);
+                    $draw    = round($dcForecast['draw']     * 100, 1);
+                    $awayWin = round($dcForecast['away_win'] * 100, 1);
+                    $dcActive = true;
+                }
+                if (in_array($lid, (array) config('prediction.dc_over25_leagues'), true)) {
+                    $over25 = round($dcForecast['over_25'] * 100, 1);
+                    $dcActive = true;
+                }
+                if (in_array($lid, (array) config('prediction.dc_btts_leagues'), true)) {
+                    $btts = round($dcForecast['btts'] * 100, 1);
+                    $dcActive = true;
+                }
+                // Over 1.5 / 3.5 are always DC-derived when we have params —
+                // DC's full-matrix computation is strictly more informative
+                // than raw Poisson goals rate and adds no risk (backtest ties).
+                $over15 = round($dcForecast['over_15'] * 100, 1);
+                $over35 = round($dcForecast['over_35'] * 100, 1);
+            }
+        }
+        if ($dcActive) {
+            \Illuminate\Support\Facades\Log::info('PredictionService: DC active for match', [
+                'match_id'  => $match->id,
+                'league_id' => $match->league_id,
+                'home_win'  => $homeWin, 'draw' => $draw, 'away_win' => $awayWin,
+            ]);
         }
 
         // Fallback: if Groq returned no tips at all, generate from probabilities

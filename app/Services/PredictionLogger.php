@@ -33,8 +33,18 @@ class PredictionLogger
     public const VERSION_BASELINE = 'groq-poisson-v0';
 
     /**
+     * Applied when Dixon-Coles has taken over the 1X2 numbers for a match
+     * (see config('prediction.dc_1x2_leagues')). Predictions in DC-eligible
+     * leagues are logged under this version so the dashboard tracks live DC
+     * performance separately from the pure-hybrid baseline.
+     */
+    public const VERSION_DC_HYBRID = 'dc-hybrid-v1';
+
+    /**
      * Real-time observer entry point. Determines stage from the current
-     * has_lineup flag on the Prediction; enforces the kickoff guard.
+     * has_lineup flag on the Prediction, and picks the right model_version
+     * based on whether DC is enabled for this match's league. Enforces
+     * the kickoff guard.
      */
     public function logLive(Prediction $p, ?CarbonInterface $now = null): int
     {
@@ -42,7 +52,24 @@ class PredictionLogger
             ? PredictionLog::STAGE_POST_LINEUP
             : PredictionLog::STAGE_PRE_LINEUP;
 
-        return $this->log($p, self::VERSION_BASELINE, $stage, isBackfill: false, now: $now);
+        return $this->log($p, $this->activeVersion($p), $stage, isBackfill: false, now: $now);
+    }
+
+    /**
+     * dc-hybrid-v1 if this Prediction's league is in the DC-enabled 1X2 set
+     * at write time, otherwise the pure Groq+Poisson baseline. Read straight
+     * off the prediction's related match to avoid a stale value.
+     */
+    private function activeVersion(Prediction $p): string
+    {
+        if (! config('prediction.dc_enabled')) return self::VERSION_BASELINE;
+
+        $match = $p->relationLoaded('match') ? $p->match : \App\Models\FootballMatch::find($p->match_id);
+        if (! $match || ! $match->league_id) return self::VERSION_BASELINE;
+
+        return in_array((int) $match->league_id, (array) config('prediction.dc_1x2_leagues'), true)
+            ? self::VERSION_DC_HYBRID
+            : self::VERSION_BASELINE;
     }
 
     /**

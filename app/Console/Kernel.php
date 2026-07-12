@@ -94,6 +94,35 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             \App\Models\RequestLog::where('created_at', '<', now()->subDays(30))->delete();
         })->dailyAt('03:00')->timezone('Africa/Lagos')->name('prune-request-logs')->withoutOverlapping();
+
+        // ── Dixon-Coles (Phase 2) ────────────────────────────────────────
+        // Weekly refit every Monday at 04:00 Lagos — after weekend fixtures
+        // have settled, before Tuesday's midweek slate. Fits all 9 priority
+        // leagues in ~90s total.
+        $schedule->command('dc:fit')
+            ->weeklyOn(1, '04:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Shadow-log DC predictions into prediction_logs alongside every
+        // pick-selection pass so the /admin/model-metrics dashboard can
+        // compare dc-v1.0 vs dc-hybrid-v1 vs groq-poisson-v0 vs
+        // market-closing on the same fixtures.
+        $schedule->command('dc:shadow-log --hours-ahead=48')
+            ->dailyAt('03:15')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+        $schedule->command('dc:shadow-log --hours-ahead=48')
+            ->dailyAt('10:15')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+
+        // ── Data integrity (Phase 1.5.2) ─────────────────────────────────
+        // Weekly ingestion / prediction coverage sanity check.
+        $schedule->command('coverage:report --days=7')
+            ->weeklyOn(0, '07:00')
+            ->timezone('Africa/Lagos');
     }
 
     /**
