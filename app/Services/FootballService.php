@@ -47,6 +47,17 @@ class FootballService
         return $this->fetchFixtures(['date' => $date]);
     }
 
+    /**
+     * Fetch every fixture in a league × season. API-Football encodes seasons
+     * by the starting calendar year — season=2025 means the 2025-26 season.
+     * Used by `matches:backfill` to build the historical training set
+     * Dixon-Coles needs. One request returns the full ~380-match season.
+     */
+    public function fetchFixturesByLeagueSeason(int $leagueId, int $season): array
+    {
+        return $this->fetchFixtures(['league' => $leagueId, 'season' => $season]);
+    }
+
     public function liveMatchesFromDatabase(): Collection
     {
         return FootballMatch::query()

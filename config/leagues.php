@@ -48,6 +48,23 @@ return [
         848, // UEFA Conference League
     ],
 
+    // Season-priority leagues for Dixon-Coles training (Phase 2). Ordered
+    // by focus for the 2026-27 launch: user emphasis is the marquee
+    // European leagues where we have the most history and cleanest data.
+    // Others in `top_european` above will get DC coverage in a later
+    // pass once the model is proven here.
+    'season_priority' => [
+        39,  // Premier League (Eng)
+        140, // La Liga (Esp)
+        135, // Serie A (Ita)
+        78,  // Bundesliga (Ger)
+        179, // Scottish Premiership
+        94,  // Primeira Liga (Por)
+        61,  // Ligue 1 (Fra)
+        88,  // Eredivisie (Ned)
+        144, // Belgian Pro League
+    ],
+
     // Africa-focused expansion. We match by `league.country` rather than
     // ID so that all NPFL/PSL/Ghana Premier/Botola fixtures auto-include
     // even if their league ID changes between seasons. Add CAF Champions
