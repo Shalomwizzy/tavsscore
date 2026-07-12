@@ -195,5 +195,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/pi-ratings',         [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'index'])->name('pi-ratings.index');
         Route::post('/pi-ratings/rebuild', [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'rebuild'])->name('pi-ratings.rebuild');
+
+        /* Model Metrics — measurement layer for the DC / Phase-2 ship gate */
+        Route::get('/model-metrics', [Admin\ModelMetricsController::class, 'index'])->name('model-metrics.index');
     });
 });

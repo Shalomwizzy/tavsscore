@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\FootballMatch;
+use App\Services\FixtureIntegrityService;
 use App\Services\FootballService;
 use App\Services\OneSignalService;
 use App\Services\PiRatingService;
+use App\Services\TeamCanonicalizer;
 use App\Support\LeagueCoverage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -18,8 +20,13 @@ class FetchMatches extends Command
 
     protected $description = 'Fetch live, today and finished football matches from API-Football.';
 
-    public function handle(FootballService $footballService, OneSignalService $oneSignal, PiRatingService $piRating): int
-    {
+    public function handle(
+        FootballService $footballService,
+        OneSignalService $oneSignal,
+        PiRatingService $piRating,
+        TeamCanonicalizer $canon,
+        FixtureIntegrityService $integrity,
+    ): int {
         try {
             $written = 0;
 
@@ -28,10 +35,14 @@ class FetchMatches extends Command
                 ->filter(fn (array $m): bool => LeagueCoverage::shouldIngest($m));
 
             foreach ($todayMatches as $match) {
-                FootballMatch::query()->updateOrCreate(
+                $canon->resolve($match['home_team']);
+                $canon->resolve($match['away_team']);
+
+                $upserted = FootballMatch::query()->updateOrCreate(
                     ['api_id' => $match['api_id']],
                     $this->matchData($match)
                 );
+                $integrity->evaluate($upserted);
                 $written++;
             }
 
@@ -45,16 +56,22 @@ class FetchMatches extends Command
                 $this->detectAndNotifyGoal($existing, $match, $oneSignal);
                 $this->detectAndNotifyFullTime($existing, $match, $oneSignal);
 
+                $canon->resolve($match['home_team']);
+                $canon->resolve($match['away_team']);
+
                 $updated = FootballMatch::query()->updateOrCreate(
                     ['api_id' => $match['api_id']],
                     $this->matchData($match)
                 );
+                $integrity->evaluate($updated);
 
                 // Update pi-ratings the moment a match becomes FT/AET/PEN.
-                // Cache-gated so it only fires once per match.
+                // Cache-gated so it only fires once per match. Skip if the
+                // integrity check held the match — bad data would corrupt the
+                // rating.
                 $isNowFT = in_array($match['status'], ['FT', 'AET', 'PEN'], true);
                 $wasLive = $existing && in_array($existing->status, ['1H','2H','ET','BT','P','LIVE','HT'], true);
-                if ($isNowFT && $wasLive) {
+                if ($isNowFT && $wasLive && ! $updated->held_for_review) {
                     $cacheKey = "pi_rated_{$updated->id}";
                     if (! Cache::has($cacheKey)) {
                         $updated->refresh();

@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Prediction;
 use App\Models\Setting;
+use App\Observers\PredictionObserver;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -27,5 +29,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::share('telegramUrl', $telegramUrl);
         View::share('twitterUrl',  $twitterUrl);
+
+        Prediction::observe(PredictionObserver::class);
     }
 }

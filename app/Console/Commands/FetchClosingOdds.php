@@ -2,7 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\FootballMatch;
 use App\Models\Prediction;
+use App\Models\PredictionLog;
+use App\Services\MarketClosingLogger;
 use App\Services\OddsService;
 use App\Support\LeagueCoverage;
 use Illuminate\Console\Command;
@@ -21,7 +24,7 @@ class FetchClosingOdds extends Command
     protected $signature   = 'picks:fetch-closing-odds';
     protected $description = 'Fetch near-closing bookmaker odds for today\'s daily picks to track market movement.';
 
-    public function handle(OddsService $odds): int
+    public function handle(OddsService $odds, MarketClosingLogger $marketLogger): int
     {
         $today = now('Africa/Lagos');
 
@@ -74,6 +77,32 @@ class FetchClosingOdds extends Command
         }
 
         $this->info("Closing odds updated for {$updated} pick(s).");
+
+        // ── Market-closing benchmark (Phase 1.5.1) ─────────────────────────
+        // Log market-closing implied probabilities into prediction_logs for
+        // every match with a prediction_log kicking off today and not yet
+        // started. The bookmaker consensus is the real benchmark; every
+        // internal model_version is measured against it on the dashboard.
+        $matchIds = PredictionLog::query()
+            ->join('matches', 'matches.id', '=', 'prediction_logs.match_id')
+            ->whereBetween('matches.match_time', [$today->startOfDay(), $today->endOfDay()])
+            ->whereNotIn('matches.status', ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'])
+            ->distinct()
+            ->pluck('prediction_logs.match_id');
+
+        $marketRows = 0;
+        $matchesTouched = 0;
+        foreach (FootballMatch::whereIn('id', $matchIds)->get() as $match) {
+            Cache::forget('odds_implied_' . $match->api_id);
+            Cache::forget('odds_bookmakers_' . $match->api_id);
+            $written = $marketLogger->logForMatch($match);
+            if ($written > 0) {
+                $matchesTouched++;
+                $marketRows += $written;
+            }
+        }
+
+        $this->info("Market-closing: {$marketRows} row(s) logged across {$matchesTouched} match(es).");
         return self::SUCCESS;
     }
 }

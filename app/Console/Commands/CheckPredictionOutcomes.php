@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Prediction;
 use App\Services\OneSignalService;
+use App\Services\PredictionLogSettler;
 use App\Services\RolloverService;
 use App\Services\TelegramService;
 use App\Support\LeagueCoverage;
@@ -20,8 +21,12 @@ class CheckPredictionOutcomes extends Command
 
     private const FINISHED_STATUSES = ['FT', 'AET', 'PEN'];
 
-    public function handle(OneSignalService $oneSignal, TelegramService $telegram, RolloverService $rollover): int
-    {
+    public function handle(
+        OneSignalService $oneSignal,
+        TelegramService $telegram,
+        RolloverService $rollover,
+        PredictionLogSettler $logSettler,
+    ): int {
         $days  = (int) $this->option('days');
         $since = now()->subDays($days)->startOfDay();
         $siteUrl = config('app.url');
@@ -306,6 +311,11 @@ class CheckPredictionOutcomes extends Command
 
         // ── 4. Rollover picks ─────────────────────────────────────────────────
         $rollover->checkPendingPicks();
+
+        // ── 5. Prediction-log settlement (measurement layer) ─────────────────
+        $logCounts = $logSettler->settleSince($days);
+        $this->info("Prediction logs: settled {$logCounts['settled']}, voided {$logCounts['voided']}.");
+        Log::info('CheckPredictionOutcomes: prediction_logs settled', $logCounts);
 
         return self::SUCCESS;
     }

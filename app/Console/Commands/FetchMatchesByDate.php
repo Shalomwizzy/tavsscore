@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\FootballMatch;
+use App\Services\FixtureIntegrityService;
 use App\Services\FootballService;
+use App\Services\TeamCanonicalizer;
 use App\Support\LeagueCoverage;
 use Illuminate\Console\Command;
 
@@ -13,8 +15,11 @@ class FetchMatchesByDate extends Command
 
     protected $description = 'Re-fetch and update all fixtures for a specific date. Use to recover missed results when API was exhausted.';
 
-    public function handle(FootballService $footballService): int
-    {
+    public function handle(
+        FootballService $footballService,
+        TeamCanonicalizer $canon,
+        FixtureIntegrityService $integrity,
+    ): int {
         $date = $this->argument('date')
             ?? now('Africa/Lagos')->subDay()->toDateString();
 
@@ -40,7 +45,10 @@ class FetchMatchesByDate extends Command
             // final scores reach picks that were created before a league was de-listed.
             // Only insert NEW rows for matches passing the coverage filter.
             if ($alreadyTracked || LeagueCoverage::shouldIngest($match)) {
-                FootballMatch::query()->updateOrCreate(
+                $canon->resolve($match['home_team']);
+                $canon->resolve($match['away_team']);
+
+                $upserted = FootballMatch::query()->updateOrCreate(
                     ['api_id' => $match['api_id']],
                     [
                         'league'         => $match['league'],
@@ -57,6 +65,7 @@ class FetchMatchesByDate extends Command
                         'match_time'     => $match['match_time'],
                     ]
                 );
+                $integrity->evaluate($upserted);
                 $updated++;
             }
         }

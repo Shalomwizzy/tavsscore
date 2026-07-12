@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\FootballMatch;
 use App\Models\Prediction;
+use App\Models\PredictionLog;
 use App\Services\OneSignalService;
+use App\Services\PredictionLogger;
 use App\Services\RolloverService;
 use App\Services\TelegramService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -242,5 +244,110 @@ class CheckPredictionOutcomesTest extends TestCase
         $this->artisan('predictions:check-outcomes')->assertSuccessful();
 
         $this->assertNull($pred->fresh()->was_correct);
+    }
+
+    // ── Prediction log settlement ───────────────────────────────────
+
+    private function log(int $matchId, int $predictionId, string $market, string $outcome, array $extra = []): PredictionLog
+    {
+        return PredictionLog::create(array_merge([
+            'prediction_id'     => $predictionId,
+            'match_id'          => $matchId,
+            'market'            => $market,
+            'predicted_outcome' => $outcome,
+            'p_outcome'         => 0.65,
+            'p_home'            => 0.50,
+            'p_draw'            => 0.25,
+            'p_away'            => 0.25,
+            'model_version'     => PredictionLogger::VERSION_BASELINE,
+            'prediction_stage'  => PredictionLog::STAGE_PRE_LINEUP,
+            'is_backfill'       => false,
+            'kickoff_at'        => now()->subHour(),
+        ], $extra));
+    }
+
+    public function test_prediction_log_is_settled_win_for_finished_match(): void
+    {
+        $match = $this->finishedMatch(2, 0);
+        $pred  = $this->prediction($match->id, 'Home Win');
+        $log   = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win');
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertSame(PredictionLog::RESULT_WIN, $log->fresh()->actual_result);
+        $this->assertNotNull($log->fresh()->settled_at);
+    }
+
+    public function test_prediction_log_is_settled_loss_for_wrong_forecast(): void
+    {
+        $match = $this->finishedMatch(0, 2);
+        $pred  = $this->prediction($match->id, 'Home Win');
+        $log   = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win');
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertSame(PredictionLog::RESULT_LOSS, $log->fresh()->actual_result);
+    }
+
+    public function test_prediction_log_settlement_is_idempotent(): void
+    {
+        $match = $this->finishedMatch(2, 0);
+        $pred  = $this->prediction($match->id, 'Home Win');
+        $log   = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win');
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+        $firstSettledAt = $log->fresh()->settled_at;
+        $this->assertNotNull($firstSettledAt);
+
+        // Second run must not touch already-settled rows
+        $this->travel(2)->minutes();
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertEquals(
+            $firstSettledAt->timestamp,
+            $log->fresh()->settled_at->timestamp,
+            'settled_at must not change on subsequent runs — the job is not idempotent',
+        );
+        $this->assertSame(0, PredictionLog::whereNull('settled_at')->count());
+    }
+
+    public function test_postponed_match_marks_log_as_void(): void
+    {
+        $match = FootballMatch::create([
+            'api_id'         => 99201,
+            'home_team'      => 'Team P',
+            'away_team'      => 'Team Q',
+            'league'         => 'Test League',
+            'league_country' => 'Kenya',
+            'status'         => 'PST',
+            'match_time'     => now()->subHour(),
+        ]);
+        $pred  = $this->prediction($match->id, 'Home Win');
+        $log   = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win');
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertSame(PredictionLog::RESULT_VOID, $log->fresh()->actual_result);
+        $this->assertNotNull($log->fresh()->settled_at);
+    }
+
+    public function test_in_progress_match_leaves_log_unsettled(): void
+    {
+        $match = FootballMatch::create([
+            'api_id'         => 99301,
+            'home_team'      => 'Team R',
+            'away_team'      => 'Team S',
+            'league'         => 'Test League',
+            'league_country' => 'Ghana',
+            'status'         => '1H',
+            'match_time'     => now()->subMinutes(30),
+        ]);
+        $pred = $this->prediction($match->id, 'Home Win');
+        $log  = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win');
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertNull($log->fresh()->actual_result);
+        $this->assertNull($log->fresh()->settled_at);
     }
 }

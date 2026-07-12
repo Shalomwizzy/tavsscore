@@ -27,17 +27,21 @@ class FootballMatch extends Model
         'status',
         'elapsed',
         'match_time',
+        'integrity_flags',
+        'held_for_review',
     ];
 
     protected $casts = [
-        'api_id'        => 'integer',
-        'league_id'     => 'integer',
-        'home_score'    => 'integer',
-        'away_score'    => 'integer',
-        'home_score_ht' => 'integer',
-        'away_score_ht' => 'integer',
-        'elapsed'       => 'integer',
-        'match_time'    => 'datetime',
+        'api_id'          => 'integer',
+        'league_id'       => 'integer',
+        'home_score'      => 'integer',
+        'away_score'      => 'integer',
+        'home_score_ht'   => 'integer',
+        'away_score_ht'   => 'integer',
+        'elapsed'         => 'integer',
+        'match_time'      => 'datetime',
+        'integrity_flags' => 'array',
+        'held_for_review' => 'boolean',
     ];
 
     public function prediction(): HasOne

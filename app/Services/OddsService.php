@@ -62,6 +62,10 @@ class OddsService
         $bookmakers = data_get($response->json(), 'response.0.bookmakers', []);
         if (! is_array($bookmakers) || count($bookmakers) === 0) return null;
 
+        // Stash the raw bookmakers array so normalisedImpliedProbabilities()
+        // can compute margin-stripped O/U and BTTS without a second API call.
+        Cache::put('odds_bookmakers_' . $fixtureId, $bookmakers, now()->addMinutes(self::CACHE_MINUTES));
+
         // Average across all available bookmakers for each market we care about
         $hwImplied = $this->averageImplied($bookmakers, 'Match Winner', ['Home', 'home']);
         $dImplied  = $this->averageImplied($bookmakers, 'Match Winner', ['Draw', 'draw']);
@@ -104,6 +108,62 @@ class OddsService
             }
         }
         return empty($implieds) ? null : array_sum($implieds) / count($implieds);
+    }
+
+    /**
+     * Margin-stripped probabilities for market-benchmark logging (Phase 1.5.1).
+     *
+     * The default impliedProbabilities() normalises 1X2 but leaves the O/U and
+     * BTTS numbers as raw 1/odds averages — those still carry bookmaker
+     * overround (typically +4-6pp). For the market-closing baseline we need
+     * both sides of each binary market paired and normalised to sum to 1.
+     *
+     * Returns [home_win, draw, away_win, over_25, btts, sample_size] with
+     * every value in [0, 1] or null if odds are unavailable.
+     */
+    public function normalisedImpliedProbabilities(FootballMatch $match): ?array
+    {
+        $raw = $this->impliedProbabilities($match);
+        if (! $raw) return null;
+
+        $out = [
+            'home_win'    => ($raw['home_win'] ?? 0) / 100,
+            'draw'        => ($raw['draw']     ?? 0) / 100,
+            'away_win'    => ($raw['away_win'] ?? 0) / 100,
+            'sample_size' => $raw['sample_size'] ?? 0,
+        ];
+
+        if (! $match->api_id) return $out;
+
+        $bookmakers = Cache::get('odds_bookmakers_' . $match->api_id);
+        if (! is_array($bookmakers) || count($bookmakers) === 0) {
+            // Cache miss (e.g. impliedProbabilities was cached without the
+            // bookmakers array). Approximate by assuming ~5% overround.
+            $out['over_25'] = isset($raw['over_25']) ? min(1.0, $raw['over_25'] / 100 / 1.05) : null;
+            $out['btts']    = isset($raw['btts'])    ? min(1.0, $raw['btts']    / 100 / 1.05) : null;
+            return $out;
+        }
+
+        $out['over_25'] = $this->normalisedPair(
+            $this->averageOverUnder($bookmakers, 2.5, true),
+            $this->averageOverUnder($bookmakers, 2.5, false),
+        );
+        $out['btts'] = $this->normalisedPair(
+            $this->averageBtts($bookmakers, true),
+            $this->averageBtts($bookmakers, false),
+        );
+
+        return $out;
+    }
+
+    /**
+     * Pair two opposing implied probabilities (in 0-100 range) and normalise
+     * to strip bookmaker overround. Returns 0-1 or null if either side missing.
+     */
+    private function normalisedPair(?float $yes, ?float $no): ?float
+    {
+        if ($yes === null || $no === null || ($yes + $no) <= 0) return null;
+        return $yes / ($yes + $no);
     }
 
     private function averageOverUnder(array $bookmakers, float $line, bool $over): ?float
