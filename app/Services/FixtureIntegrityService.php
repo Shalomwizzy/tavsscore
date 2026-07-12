@@ -21,11 +21,13 @@ class FixtureIntegrityService
     public const FLAG_RESULT_BEFORE_KICKOFF = 'result_before_kickoff';
 
     /**
-     * Statistical models are worthless on dirty data — anything above this
-     * on a single side is either a data glitch or a truly historic anomaly.
-     * Either way, hold it out of training until confirmed.
+     * Statistical models are worthless on dirty data, but the top European
+     * leagues legitimately see 8-1 and 8-0 scorelines every year or two
+     * (Bayern, Man City, PSV). Raised from 8 to 10 after the initial 3-season
+     * backfill flagged 9 real high-profile results. Anything at 10+ is
+     * genuinely rare enough to warrant a human eyeball.
      */
-    public const BLOWOUT_THRESHOLD = 8;
+    public const BLOWOUT_THRESHOLD = 10;
 
     private const DUPLICATE_WINDOW_HOURS     = 24;
     private const BACK_TO_BACK_WINDOW_HOURS  = 48;

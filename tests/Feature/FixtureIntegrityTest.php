@@ -122,7 +122,7 @@ class FixtureIntegrityTest extends TestCase
         $service = app(FixtureIntegrityService::class);
         $match = $this->match([
             'status'     => 'FT',
-            'home_score' => 9,
+            'home_score' => 11,
             'away_score' => 0,
             'match_time' => now()->subHour(),
         ]);
@@ -131,6 +131,24 @@ class FixtureIntegrityTest extends TestCase
 
         $this->assertContains(FixtureIntegrityService::FLAG_BLOWOUT, $flags);
         $this->assertTrue($match->fresh()->held_for_review);
+    }
+
+    public function test_high_scoring_but_realistic_scoreline_is_not_held(): void
+    {
+        // 8-1 happens in top European leagues every year or two — not a blowout
+        // by the raised threshold.
+        $service = app(FixtureIntegrityService::class);
+        $match = $this->match([
+            'status'     => 'FT',
+            'home_score' => 8,
+            'away_score' => 1,
+            'match_time' => now()->subHour(),
+        ]);
+
+        $flags = $service->evaluate($match);
+
+        $this->assertNotContains(FixtureIntegrityService::FLAG_BLOWOUT, $flags);
+        $this->assertFalse($match->fresh()->held_for_review);
     }
 
     public function test_regular_scoreline_is_not_held(): void
