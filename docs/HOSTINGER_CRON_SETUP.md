@@ -17,11 +17,13 @@ Once you set this ONE cron, every future scheduling change happens in `Kernel.ph
    - **Day**: `*`
    - **Month**: `*`
    - **Weekday**: `*`
-   - **Command**:
+   - **Command** (Hostinger — PHP 8.4 explicit path):
      ```
-     cd /home/USERNAME/domains/tavsscore.com/public_html && /usr/bin/php artisan schedule:run >> storage/logs/schedule.log 2>&1
+     cd /home/USERNAME/domains/tavsscore.com/public_html && /opt/alt/php84/usr/bin/php artisan schedule:run >> storage/logs/schedule.log 2>&1
      ```
-     Replace `USERNAME` with your Hostinger username. Adjust `/domains/tavsscore.com/public_html` if your document root differs.
+     Replace `USERNAME` with your Hostinger username (e.g. `u322958380`).
+     **Use the full `/opt/alt/php84/usr/bin/php` path**. Hostinger's default `php` binary is 8.3, but this app requires 8.4 — a bare `php artisan schedule:run` will fail with Composer platform errors and every scheduled command will silently die.
+     Adjust `/domains/tavsscore.com/public_html` if your document root differs.
 4. Save.
 
 That's it. Every minute Hostinger runs `schedule:run`, which internally checks whether any scheduled command is due, and only executes the ones that are.
@@ -43,7 +45,7 @@ php artisan schedule:list
 
 ### Common gotchas on Hostinger
 
-- **`php` not found**: use the full path `/usr/bin/php` or `/opt/alt/php82/usr/bin/php` (whatever your PHP 8.2 binary is). Ask Hostinger support if unclear.
+- **`php` not found** or **Composer platform errors**: use the full path `/opt/alt/php84/usr/bin/php`. Hostinger's default `php` is 8.3; this app requires 8.4. Ask Hostinger support to confirm your PHP 8.4 binary path if it differs.
 - **Path wrong**: on Hostinger the path is usually `/home/USERNAME/domains/DOMAIN/public_html` — verify via SSH `pwd` when logged in.
 - **Storage not writable**: `chmod -R 775 storage bootstrap/cache` if you see permission errors in the schedule log.
 - **Timezone mismatch**: Hostinger's server clock may not be Africa/Lagos. Laravel handles this internally because every scheduled command specifies `->timezone('Africa/Lagos')`. Don't try to set the server clock.
