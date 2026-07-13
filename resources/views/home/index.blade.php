@@ -4,6 +4,51 @@
 
 @push('styles')
 <style>
+/* ── v2 launch banner ── */
+.v2-banner {
+    background: linear-gradient(90deg, rgba(16,185,129,.12) 0%, rgba(59,130,246,.10) 100%);
+    border-bottom: 1px solid rgba(16,185,129,.25);
+    padding: .55rem 0;
+    position: relative;
+}
+.v2-banner-inner {
+    display: flex; align-items: center; gap: .85rem;
+    text-decoration: none; color: inherit;
+    max-width: 100%;
+}
+.v2-badge {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+.v2-text {
+    flex: 1;
+    display: flex; flex-direction: column;
+    line-height: 1.35;
+    min-width: 0;
+}
+.v2-text strong { color: #fff; font-size: .82rem; font-weight: 700; }
+.v2-text span   { color: var(--text-dim); font-size: .72rem; }
+.v2-text .v2-cta { color: #6ee7b7; font-weight: 600; }
+.v2-dismiss {
+    background: transparent; border: 0; color: var(--text-dim);
+    font-size: 1.2rem; line-height: 1; cursor: pointer;
+    padding: 4px 8px; border-radius: 6px;
+    flex-shrink: 0;
+}
+.v2-dismiss:hover { background: rgba(255,255,255,.05); color: #fff; }
+@media (max-width: 640px) {
+    .v2-text strong { font-size: .78rem; }
+    .v2-text span   { font-size: .66rem; }
+    .v2-banner      { padding: .5rem 0; }
+}
+
 /* ── Hero ── */
 .hero {
     padding: 4.5rem 0 3rem;
@@ -134,6 +179,34 @@
 @endpush
 
 @section('content')
+
+{{-- ══════════════════════════════════════════
+     v2.0 LAUNCH BANNER (dismissible)
+══════════════════════════════════════════ --}}
+<section class="v2-banner" id="v2-banner" style="display:none;">
+    <div class="wrap">
+        <div class="v2-banner-inner">
+            <span class="v2-badge">2.0</span>
+            <a href="{{ route('track-record.index') }}" class="v2-text" style="text-decoration:none;">
+                <strong>TavsScore 2.0 — new statistical engine now powers Home / Draw / Away picks</strong>
+                <span>Backtested on 9,691 matches across 9 top European leagues. <span class="v2-cta">See our track record →</span></span>
+            </a>
+            <button class="v2-dismiss" onclick="dismissV2Banner()" aria-label="Dismiss">×</button>
+        </div>
+    </div>
+</section>
+<script>
+(function () {
+    // Show only if the user hasn't dismissed it yet
+    if (! localStorage.getItem('tavs_v2_banner_dismissed')) {
+        document.getElementById('v2-banner').style.display = '';
+    }
+    window.dismissV2Banner = function () {
+        localStorage.setItem('tavs_v2_banner_dismissed', '1');
+        document.getElementById('v2-banner').style.display = 'none';
+    };
+})();
+</script>
 
 {{-- ══════════════════════════════════════════
      HERO
