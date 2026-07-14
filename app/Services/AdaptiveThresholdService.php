@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Prediction;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Learns from the app's resolved prediction history and automatically adjusts
@@ -124,6 +125,17 @@ class AdaptiveThresholdService
         // ── League reliability ────────────────────────────────────
         $leaguePerf = $this->buildLeaguePerformance($all90);
 
+        // ── Historical calibration from the 5-season Dixon-Coles backtest ──
+        // The operational 90-day window above is inevitably thin (a few
+        // hundred picks). The dc:backtest command populated ~25k walk-forward
+        // predictions across 5 seasons — that's the real statistical power
+        // for band-level calibration. We surface it here but do NOT let it
+        // override the operational threshold — that would silently change
+        // pick selection based on historical data. The operator uses this
+        // to see whether the operational threshold is aligned with what the
+        // model has demonstrated over 5 seasons of held-out matches.
+        $historical = $this->buildHistoricalBacktestCalibration();
+
         return [
             'threshold'      => $threshold,
             'threshold_why'  => $this->thresholdReason($bands, $threshold),
@@ -137,7 +149,105 @@ class AdaptiveThresholdService
             'confidence_bands' => $bands,
             'market_perf'    => $marketPerf,
             'league_perf'    => $leaguePerf,
+            'historical'     => $historical,
             'computed_at'    => now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Confidence-band calibration derived from the walk-forward backtest.
+     * Buckets the 5-season DC predictions by their stated probability and
+     * compares against the realised win rate, exactly like buildConfidenceBands
+     * does for operational picks — but on ~25k rows instead of a few hundred.
+     *
+     * Returns null if the backtest hasn't been run yet.
+     *
+     * @return array|null
+     */
+    private function buildHistoricalBacktestCalibration(): ?array
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('prediction_logs')) {
+            return null;
+        }
+
+        $version = 'dc-v1.0-backtest';
+
+        // Bucket by stated probability × market. p_outcome is in [0,1]; the
+        // buildConfidenceBands bands are in % — align them by multiplying.
+        $rows = DB::table('prediction_logs')
+            ->selectRaw("
+                market,
+                CASE
+                    WHEN p_outcome < 0.55 THEN '50-54'
+                    WHEN p_outcome < 0.60 THEN '55-59'
+                    WHEN p_outcome < 0.65 THEN '60-64'
+                    WHEN p_outcome < 0.70 THEN '65-69'
+                    WHEN p_outcome < 0.75 THEN '70-74'
+                    WHEN p_outcome < 0.80 THEN '75-79'
+                    WHEN p_outcome < 0.85 THEN '80-84'
+                    ELSE '85-100'
+                END AS band,
+                COUNT(*) AS total,
+                SUM(CASE WHEN actual_result = 'WIN' THEN 1 ELSE 0 END) AS wins
+            ")
+            ->where('model_version', $version)
+            ->whereIn('actual_result', ['WIN', 'LOSS'])
+            ->where('p_outcome', '>=', 0.50)
+            ->groupBy('market', 'band')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return null;
+        }
+
+        // Group by market → list of band rows with pct + gap
+        $byMarket = [];
+        foreach ($rows as $r) {
+            $pct = $r->total > 0 ? round($r->wins / $r->total * 100, 1) : null;
+            $bandMid = match ($r->band) {
+                '50-54' => 52,   '55-59' => 57,   '60-64' => 62,
+                '65-69' => 67,   '70-74' => 72,   '75-79' => 77,
+                '80-84' => 82,   default => 92,
+            };
+            $byMarket[$r->market][] = [
+                'band'    => $r->band,
+                'total'   => (int) $r->total,
+                'wins'    => (int) $r->wins,
+                'pct'     => $pct,
+                'gap'     => $pct !== null ? round($pct - $bandMid, 1) : null,
+                'trusted' => (int) $r->total >= 20,
+            ];
+        }
+
+        // Order each market's bands and compute summary
+        $bandOrder = ['50-54','55-59','60-64','65-69','70-74','75-79','80-84','85-100'];
+        foreach ($byMarket as $m => &$bs) {
+            usort($bs, fn ($a, $b) => array_search($a['band'], $bandOrder) <=> array_search($b['band'], $bandOrder));
+        }
+        unset($bs);
+
+        $totalN    = collect($byMarket)->flatten(1)->sum('total');
+        $totalWins = collect($byMarket)->flatten(1)->sum('wins');
+        $overallPct = $totalN > 0 ? round($totalWins / $totalN * 100, 1) : null;
+
+        // Historical threshold: the lowest band across ALL markets where win
+        // rate ≥ PROFITABLE_RATE (52%) with ≥ MIN_BAND_PICKS. Advisory only.
+        $flat = collect($byMarket)->flatten(1)
+            ->filter(fn ($b) => $b['pct'] !== null && $b['trusted'] && $b['pct'] / 100 >= self::PROFITABLE_RATE)
+            ->sortBy(fn ($b) => array_search($b['band'], $bandOrder));
+
+        $historicalThreshold = null;
+        $advisoryBand        = $flat->first();
+        if ($advisoryBand) {
+            $historicalThreshold = (int) explode('-', $advisoryBand['band'])[0];
+        }
+
+        return [
+            'version'           => $version,
+            'total_predictions' => $totalN,
+            'overall_pct'       => $overallPct,
+            'by_market'         => $byMarket,
+            'advisory_threshold'=> $historicalThreshold,
         ];
     }
 

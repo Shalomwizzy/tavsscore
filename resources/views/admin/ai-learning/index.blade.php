@@ -304,8 +304,81 @@
         @endif
     </div>
 
+    {{-- ── 5-season historical backtest calibration (Phase 2/4) ────────── --}}
+    @if(! empty($state['historical']))
+        @php $h = $state['historical']; @endphp
+        <div class="al-section" style="margin-top:2.25rem;">
+            <div class="al-section-title" style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
+                <span>5-Season Historical Calibration — Dixon-Coles walk-forward backtest</span>
+                <span style="display:inline-block; background:linear-gradient(135deg,#10b981,#3b82f6); color:#fff; font-size:.55rem; font-weight:900; padding:2px 7px; border-radius:999px; letter-spacing:.04em;">{{ $h['version'] }}</span>
+            </div>
+
+            <div class="al-threshold-box" style="background:rgba(16,185,129,.06); border-color:rgba(16,185,129,.20); margin-bottom:1rem;">
+                <strong>{{ number_format($h['total_predictions']) }}</strong> held-out predictions across 5 seasons of the 9 priority European leagues.
+                Overall win rate: <strong>{{ $h['overall_pct'] ?? '—' }}%</strong>.
+                @if(! empty($h['advisory_threshold']))
+                    Historical data suggests a threshold at <strong>{{ $h['advisory_threshold'] }}%</strong> — the lowest band where the DC model was profitable over 5 seasons.
+                    The operational threshold above is set independently from live picks. If the two diverge sharply, it's worth investigating why.
+                @endif
+                <br><span style="color:var(--text-dim); font-size:.7rem;">Advisory only — does not adjust live pick selection. Use <code>/admin/model-metrics</code> for full drill-down.</span>
+            </div>
+
+            @foreach($h['by_market'] as $market => $bands)
+                @php
+                    $marketLabel = match($market) {
+                        '1X2'    => 'Home / Draw / Away',
+                        'over25' => 'Over 2.5 Goals',
+                        'over15' => 'Over 1.5 Goals',
+                        'gg'     => 'Both Teams Score',
+                        default  => $market,
+                    };
+                @endphp
+                <div style="margin-bottom:1.25rem;">
+                    <div style="font-size:.72rem; font-weight:800; color:#fff; margin-bottom:.4rem;">
+                        {{ $marketLabel }}
+                        <span style="color:var(--text-dim); font-weight:600; font-size:.68rem;">
+                            ({{ number_format(collect($bands)->sum('total')) }} predictions)
+                        </span>
+                    </div>
+                    <table class="al-table">
+                        <thead>
+                            <tr>
+                                <th>Stated confidence</th>
+                                <th style="text-align:right;">Predictions</th>
+                                <th style="text-align:right;">Wins</th>
+                                <th style="text-align:right;">Actual %</th>
+                                <th style="text-align:right;">Gap</th>
+                                <th>Reliable?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($bands as $b)
+                            <tr @if(! $b['trusted']) style="opacity:.55;" @endif>
+                                <td style="font-weight:700;">{{ $b['band'] }}%</td>
+                                <td style="text-align:right;">{{ number_format($b['total']) }}</td>
+                                <td style="text-align:right;">{{ number_format($b['wins']) }}</td>
+                                <td style="text-align:right;">{{ $b['pct'] !== null ? $b['pct'] . '%' : '—' }}</td>
+                                <td style="text-align:right;" @if($b['gap'] !== null) class="{{ $b['gap'] >= 0 ? 'al-gap-positive' : 'al-gap-negative' }}" @endif>
+                                    @if($b['gap'] !== null){{ $b['gap'] >= 0 ? '+' : '' }}{{ $b['gap'] }}pp @else — @endif
+                                </td>
+                                <td>
+                                    @if($b['trusted'])
+                                        <span class="al-pill al-pill-hot">✓ trusted</span>
+                                    @else
+                                        <span class="al-pill al-pill-warn">thin</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <p style="font-size:.68rem;color:var(--text-dim);padding-bottom:2rem;">
-        All data covers resolved daily picks only. League and market weights are applied silently during <code>picks:select</code>. Confidence threshold adjusts daily pick selection automatically. Cache refreshes every {{ \App\Services\AdaptiveThresholdService::CACHE_HOURS }}h or on Force Recalibrate.
+        Operational data (top section) covers resolved daily picks over 90 days. Historical calibration (bottom section) covers the 5-season DC backtest — deeper history, but from the model, not live picks. League and market weights are applied silently during <code>picks:select</code>. Confidence threshold adjusts daily pick selection automatically. Cache refreshes every {{ \App\Services\AdaptiveThresholdService::CACHE_HOURS }}h or on Force Recalibrate.
     </p>
 
 </div>

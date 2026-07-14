@@ -73,6 +73,84 @@
     </div>
 </div>
 
+{{-- ── Prediction Engine Infrastructure (Phase 1 + 1.5 + 2) ────────── --}}
+<div class="a-card" style="margin-bottom:1.25rem; background:linear-gradient(135deg, rgba(16,185,129,.06), rgba(59,130,246,.04)); border-color:rgba(16,185,129,.25);">
+    <div class="page-hd" style="margin-bottom:.9rem; display:flex; align-items:center; justify-content:space-between; gap:.75rem;">
+        <span style="font-weight:800; font-size:.95rem; color:#fff;">
+            🧠 Prediction Engine Infrastructure
+            @if($infra['dc_enabled'])
+                <span style="display:inline-block; background:linear-gradient(135deg,#10b981,#3b82f6); color:#fff; font-size:.6rem; font-weight:900; padding:2px 8px; border-radius:999px; margin-left:.4rem; letter-spacing:.04em;">DC v1.0 · ACTIVE</span>
+            @else
+                <span style="display:inline-block; background:rgba(107,114,128,.2); color:#9ca3af; font-size:.6rem; font-weight:900; padding:2px 8px; border-radius:999px; margin-left:.4rem;">DC OFF</span>
+            @endif
+        </span>
+        <a href="{{ route('admin.model-metrics.index') }}" class="btn-a" style="background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.3); color:#c4b5fd; font-size:.7rem;">📊 Model Metrics →</a>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.6rem;">
+        <div class="stat-card">
+            <span class="stat-val" style="color:#6ee7b7;">{{ $infra['dc_leagues_fitted'] }}<span style="font-size:.7rem;color:var(--text-dim);">/{{ $infra['dc_leagues_target'] }}</span></span>
+            <span class="stat-lbl">🎯 DC leagues fitted</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val">{{ number_format($infra['dc_teams_persisted']) }}</span>
+            <span class="stat-lbl">⚽ DC team params</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" style="font-size:1.05rem;">
+                @if($infra['dc_last_fit'])
+                    {{ $infra['dc_last_fit']->diffForHumans() }}
+                @else
+                    Never
+                @endif
+            </span>
+            <span class="stat-lbl">🔄 Last DC refit</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" style="color:#c4b5fd;">{{ number_format($infra['historical_matches']) }}</span>
+            <span class="stat-lbl">📚 Trained on (matches)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val">{{ number_format($infra['prediction_logs']) }}</span>
+            <span class="stat-lbl">📝 Prediction logs</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val">{{ number_format($infra['teams_tracked']) }}</span>
+            <span class="stat-lbl">🏷️ Teams tracked</span>
+        </div>
+        <div class="stat-card" @if($infra['teams_pending_review'] > 20) style="background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.28);" @endif>
+            <span class="stat-val" @if($infra['teams_pending_review'] > 20) style="color:#fbbf24;" @endif>{{ number_format($infra['teams_pending_review']) }}</span>
+            <span class="stat-lbl">👀 Aliases pending review</span>
+        </div>
+        <div class="stat-card" @if($infra['held_for_review'] > 0) style="background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.28);" @endif>
+            <span class="stat-val" @if($infra['held_for_review'] > 0) style="color:#fca5a5;" @endif>{{ number_format($infra['held_for_review']) }}</span>
+            <span class="stat-lbl">🚫 Held for review</span>
+        </div>
+    </div>
+
+    @if(count($infra['logs_by_version']) > 0)
+    <div style="margin-top:1rem; padding-top:.85rem; border-top:1px solid rgba(255,255,255,.06);">
+        <div style="font-size:.65rem; font-weight:800; color:var(--text-dim); letter-spacing:.05em; text-transform:uppercase; margin-bottom:.4rem;">
+            Prediction logs by model version
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:.4rem;">
+            @foreach($infra['logs_by_version'] as $version => $count)
+                @php
+                    $isDc     = str_starts_with($version, 'dc-');
+                    $isMarket = $version === 'market-closing';
+                @endphp
+                <span style="font-size:.7rem; padding:3px 9px; border-radius:999px;
+                    background:{{ $isDc ? 'rgba(16,185,129,.12)' : ($isMarket ? 'rgba(251,191,36,.10)' : 'rgba(107,114,128,.12)') }};
+                    border:1px solid {{ $isDc ? 'rgba(16,185,129,.28)' : ($isMarket ? 'rgba(251,191,36,.28)' : 'rgba(107,114,128,.28)') }};
+                    color:#fff; font-weight:700;">
+                    {{ $version }} · <span style="color:var(--text-dim); font-weight:600;">{{ number_format($count) }}</span>
+                </span>
+            @endforeach
+        </div>
+    </div>
+    @endif
+</div>
+
 {{-- Quick actions --}}
 <div class="a-card" style="margin-bottom:1.25rem">
     <div class="page-hd" style="margin-bottom:.75rem">
