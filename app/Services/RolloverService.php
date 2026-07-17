@@ -17,13 +17,17 @@ class RolloverService
     private const MIN_CONF     = 78;
     private const DAYS_PER_RUN = 10;
 
-    // Safe markets for rollover — avoid exotic/unpredictable markets
+    // Safe markets for rollover — avoid exotic/unpredictable markets.
+    // Strings must match the exact predicted_outcome values PredictionService
+    // emits (see PickHelpers::resolveForMatch for the canonical list). The
+    // (GG)/(NG) suffixed variants used to be here but were causing every BTTS
+    // pick to be filtered out — the pipeline stopped emitting them in early
+    // May 2026 which is when rollover automation silently stalled.
     private const SAFE_MARKETS = [
         'Home Win', 'Away Win', 'Draw',
         'Home or Draw (1X)', 'Draw or Away (X2)', 'Home or Away (12)',
-        'Both Teams Score (GG)', 'No Both Teams Score (NG)',
+        'Both Teams Score', 'No Both Teams Score',
         'Over 1.5 Goals', 'Over 2.5 Goals',
-        'Draw No Bet - Home', 'Draw No Bet - Away',
     ];
 
     public function __construct(
@@ -149,6 +153,16 @@ class RolloverService
             ->limit(20)
             ->get();
 
+        // Diagnostic: log the funnel size at each step. Silent misses are the
+        // exact class of failure that stalled rollover automation for two
+        // months — surface it so future ones are debuggable in one grep.
+        Log::info('RolloverService: candidate funnel', [
+            'day_number'         => $dayNumber,
+            'eligible_leagues'   => count($eligibleLeagues),
+            'min_confidence'     => self::MIN_CONF,
+            'candidates_found'   => $candidates->count(),
+        ]);
+
         // Markets used in the last 3 rollover picks — used for diversity enforcement.
         $recentPicks = RolloverPick::query()
             ->latest('pick_date')
@@ -203,7 +217,9 @@ class RolloverService
         }
 
         if (empty($qualifiedPicks)) {
-            Log::info('RolloverService: no match had triple-AI agreement today — no pick selected.');
+            Log::info('RolloverService: no match had triple-AI agreement today — no pick selected.', [
+                'candidates_examined' => $candidates->count(),
+            ]);
             return null;
         }
 
