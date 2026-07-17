@@ -17,6 +17,12 @@ class GroqService
      * Returns array with keys: home_win, draw, away_win, over_25, btts, analysis
      * Returns null on failure (rate limit, timeout, parse error).
      */
+    /**
+     * @param  string|null  $modelOverride  Force a specific Groq model instead of
+     *   config('services.groq.model'). Used by `groq:test-model` to validate a
+     *   replacement model returns the expected JSON schema before flipping GROQ_MODEL
+     *   in .env. Not intended for the normal prediction path.
+     */
     public function getPrediction(
         FootballMatch $match,
         array $poissonFallback,
@@ -34,6 +40,7 @@ class GroqService
         float $awayXg         = 0.0,
         array $importance     = [],
         string $leagueDrawDesc = '',
+        ?string $modelOverride = null,
     ): ?array {
         $apiKey = config('services.groq.key');
 
@@ -41,12 +48,14 @@ class GroqService
             return null;
         }
 
+        $model = $modelOverride ?: config('services.groq.model', 'llama-3.3-70b-versatile');
+
         try {
             $response = Http::withToken($apiKey)
                 ->acceptJson()->asJson()->timeout(30)
                 ->retry(2, 3000, fn ($_, $r) => !($r && $r->status() === 429))
                 ->post(config('services.groq.url'), [
-                    'model'           => config('services.groq.model', 'llama-3.3-70b-versatile'),
+                    'model'           => $model,
                     'temperature'     => 0.15,
                     'max_tokens'      => 1500,
                     'response_format' => ['type' => 'json_object'],

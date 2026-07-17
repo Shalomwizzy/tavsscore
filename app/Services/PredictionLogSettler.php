@@ -92,11 +92,30 @@ class PredictionLogSettler
             return $this->resolveTeamGoals($log);
         }
 
+        if ($log->market === PredictionLog::MARKET_CORRECT_SCORE) {
+            return $this->resolveCorrectScore($log);
+        }
+
         $outcome = PickHelpers::resolveForMatch($log->match, $log->predicted_outcome);
         if ($outcome === null) {
             return null;
         }
         return $outcome ? PredictionLog::RESULT_WIN : PredictionLog::RESULT_LOSS;
+    }
+
+    /**
+     * Correct-score is a single-scoreline forecast — WIN only if the actual
+     * FT score matches the string exactly ("2-1" == "2-1").
+     */
+    private function resolveCorrectScore(PredictionLog $log): ?string
+    {
+        $match = $log->match;
+        if (! $match || $match->home_score === null || $match->away_score === null) return null;
+
+        $actual = ((int) $match->home_score) . '-' . ((int) $match->away_score);
+        return $actual === $log->predicted_outcome
+            ? PredictionLog::RESULT_WIN
+            : PredictionLog::RESULT_LOSS;
     }
 
     private function resolveTeamGoals(PredictionLog $log): ?string

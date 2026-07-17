@@ -198,5 +198,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Model Metrics — measurement layer for the DC / Phase-2 ship gate */
         Route::get('/model-metrics', [Admin\ModelMetricsController::class, 'index'])->name('model-metrics.index');
+
+        /* Team Aliases — canonical-name review queue (Phase 1.5.2) */
+        Route::get('/team-aliases',                          [Admin\TeamAliasController::class, 'index'])->name('team-aliases.index');
+        Route::post('/team-aliases/bulk-approve-unique',     [Admin\TeamAliasController::class, 'bulkApproveUnique'])->name('team-aliases.bulk-approve-unique');
+        Route::post('/team-aliases/{alias}/merge',           [Admin\TeamAliasController::class, 'merge'])->name('team-aliases.merge');
+        Route::post('/team-aliases/{alias}/approve',         [Admin\TeamAliasController::class, 'approve'])->name('team-aliases.approve');
     });
 });

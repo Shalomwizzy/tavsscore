@@ -28,8 +28,8 @@ class DcFit extends Command
                               {--model-version=dc-v1.0 : model_version tag written to params + model_runs}
                               {--half-life=270 : Time-decay half-life in days}
                               {--min-matches=10 : Teams with fewer training matches get shrunk to league mean}
-                              {--iterations=400 : Max gradient-ascent iterations}
-                              {--learning-rate=0.02}';
+                              {--iterations=800 : Max gradient-ascent iterations}
+                              {--learning-rate=0.08 : Initial learning rate; auto-decays on stagnation}';
     protected $description = 'Fit Dixon-Coles model per league from historical matches and persist parameters.';
 
     public function handle(): int

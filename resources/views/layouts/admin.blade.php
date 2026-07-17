@@ -308,6 +308,12 @@
             <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}">
                 <span class="sb-icon">⚡</span> Pi-Ratings
             </a>
+            <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}">
+                <span class="sb-icon">📊</span> Model Metrics
+            </a>
+            <a href="{{ route('admin.team-aliases.index') }}" class="sb-link {{ request()->routeIs('admin.team-aliases.*') ? 'active' : '' }}">
+                <span class="sb-icon">🏷️</span> Team Aliases
+            </a>
 
             <div class="sb-section-label">Revenue</div>
             <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}">

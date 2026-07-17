@@ -104,6 +104,60 @@
         </p>
     </div>
 
+    {{-- ══════════════════════════════════════════════════════════════
+         DIXON-COLES 2.0 SHIP-GATE PROOF
+         Backs up the v2 launch banner with actual measured numbers.
+    ══════════════════════════════════════════════════════════════ --}}
+    @if(! empty($dc))
+    <div style="background:linear-gradient(135deg, rgba(16,185,129,.08), rgba(59,130,246,.05)); border:1px solid rgba(16,185,129,.28); border-radius:16px; padding:1.5rem 1.4rem; margin-bottom:2rem;">
+        <div style="display:flex; align-items:center; gap:.55rem; flex-wrap:wrap; margin-bottom:.6rem;">
+            <span style="background:linear-gradient(135deg,#10b981,#3b82f6); color:#fff; font-size:.62rem; font-weight:900; padding:3px 10px; border-radius:999px; letter-spacing:.05em;">TAVSSCORE 2.0</span>
+            <span style="color:var(--text-dim); font-size:.72rem;">New statistical engine · shipped {{ optional($dc['last_fit'])->format('M Y') ?? 'recently' }}</span>
+        </div>
+        <h2 style="font-size:1.35rem; font-weight:800; color:#fff; margin-bottom:.5rem; line-height:1.25;">
+            The Dixon-Coles engine — proven on {{ number_format($dc['total_n']) }} backtested matches
+        </h2>
+        <p style="font-size:.85rem; color:var(--text-dim); line-height:1.65; margin-bottom:1.2rem;">
+            Home / Draw / Away predictions are now powered by a bivariate Poisson statistical model, refit weekly
+            per league from the last {{ $dc['leagues_fit'] > 0 ? '5 seasons' : 'several seasons' }} of results. We validated it walk-forward — training on data
+            strictly before each match, predicting the outcome, then measuring against what actually happened.
+            <strong style="color:#fff;">Average hit rate {{ number_format($dc['dc_avg_hr'] * 100, 1) }}%</strong>
+            vs {{ number_format($dc['naive_avg_hr'] * 100, 1) }}% for a naive baseline —
+            <strong style="color:#6ee7b7;">+{{ number_format(($dc['dc_avg_hr'] - $dc['naive_avg_hr']) * 100, 1) }}pp</strong> better across all 9 top European leagues.
+        </p>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:.5rem .7rem; color:var(--text-dim); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.08);">League</th>
+                        <th style="text-align:right; padding:.5rem .7rem; color:var(--text-dim); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.08);">Matches</th>
+                        <th style="text-align:right; padding:.5rem .7rem; color:var(--text-dim); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.08);">Baseline</th>
+                        <th style="text-align:right; padding:.5rem .7rem; color:#6ee7b7; font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.08);">2.0 Engine</th>
+                        <th style="text-align:right; padding:.5rem .7rem; color:var(--text-dim); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.08);">Improvement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dc['leagues'] as $l)
+                    @php $imp = $l['delta_hr'] * 100; @endphp
+                    <tr>
+                        <td style="padding:.55rem .7rem; color:#fff; font-weight:600; border-bottom:1px solid rgba(255,255,255,.04);">{{ $l['name'] }}</td>
+                        <td style="text-align:right; padding:.55rem .7rem; color:var(--text-dim); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(255,255,255,.04);">{{ number_format($l['n']) }}</td>
+                        <td style="text-align:right; padding:.55rem .7rem; color:var(--text-dim); font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(255,255,255,.04);">{{ number_format($l['naive_hr'] * 100, 1) }}%</td>
+                        <td style="text-align:right; padding:.55rem .7rem; color:#6ee7b7; font-weight:700; font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(255,255,255,.04);">{{ number_format($l['dc_hr'] * 100, 1) }}%</td>
+                        <td style="text-align:right; padding:.55rem .7rem; color:{{ $imp > 5 ? '#10b981' : '#6ee7b7' }}; font-weight:800; font-variant-numeric:tabular-nums; border-bottom:1px solid rgba(255,255,255,.04);">+{{ number_format($imp, 1) }}pp</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:1rem; font-size:.7rem; color:var(--text-dim); line-height:1.6;">
+            <strong style="color:#fff;">Methodology:</strong> monthly walk-forward — refit on all data strictly before each month, predict every match in that month, measure against real results. No cherry-picking, no data leakage. Baseline = per-league historical Home/Draw/Away frequency. Full drill-down available to admin at <code>/admin/model-metrics</code>. Every live prediction is logged, and live performance is measured continuously against the backtest expectations.
+        </div>
+    </div>
+    @endif
+
     @if($total === 0)
     <div class="tr-empty">
         <div class="tr-empty-icon">⏳</div>

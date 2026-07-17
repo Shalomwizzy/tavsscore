@@ -183,11 +183,28 @@ class PredictionLogger
         if ($p->over_15_prob !== null) {
             $markets[] = [PredictionLog::MARKET_OVER15, 'Over 1.5 Goals', $p->over_15_prob / 100];
         }
+        if ($p->over_35_prob !== null) {
+            $markets[] = [PredictionLog::MARKET_OVER35, 'Over 3.5 Goals', $p->over_35_prob / 100];
+        }
 
         // Pick-specific markets: only log when a pick flag was set — these
         // represent editorialised choices, not raw model output.
         if ($p->is_draw_pick) {
             $markets[] = [PredictionLog::MARKET_DRAW, 'Draw', $p->draw_prob / 100];
+        }
+
+        // Correct-score picks: log the model's top-ranked scoreline as a
+        // single-outcome forecast. Multiple-score portfolio picks are messy
+        // for Brier scoring — the top score is the cleanest single event.
+        if ($p->is_correct_score_pick && is_array($p->likely_scores) && ! empty($p->likely_scores)) {
+            $top = collect($p->likely_scores)
+                ->sortByDesc(fn ($s) => $s['probability'] ?? 0)
+                ->first();
+            $scoreStr = $top['score'] ?? null;
+            $prob     = isset($top['probability']) ? ((float) $top['probability']) / 100 : null;
+            if ($scoreStr && $prob !== null) {
+                $markets[] = [PredictionLog::MARKET_CORRECT_SCORE, $scoreStr, $prob];
+            }
         }
 
         if ($p->is_double_chance_pick) {

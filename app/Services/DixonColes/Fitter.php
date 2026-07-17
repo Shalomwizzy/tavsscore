@@ -42,7 +42,7 @@ class Fitter
      *   training_start: string, training_end: string, n_matches: int
      * }
      */
-    public function fit(int $maxIterations = 400, float $tolerance = 1e-6, float $learningRate = 0.05): array
+    public function fit(int $maxIterations = 800, float $tolerance = 1e-7, float $learningRate = 0.08): array
     {
         $prep = $this->prepare();
         $teams        = $prep['teams'];
@@ -63,17 +63,34 @@ class Fitter
         $prevLL = -INF;
         $converged = false;
         $iteration = 0;
+        // Decay the learning rate as we approach convergence — reduces
+        // oscillation near the optimum where the initial rate overshoots.
+        $currentLr = $learningRate;
+        $stagnation = 0;
 
         for ($iteration = 1; $iteration <= $maxIterations; $iteration++) {
             [$grads, $ll] = $this->gradients($matches, $alpha, $beta, $gamma, $rho, $totalWeight);
 
             // Update all params in one step
             foreach ($teams as $t) {
-                $alpha[$t] += $learningRate * $grads['alpha'][$t];
-                $beta[$t]  += $learningRate * $grads['beta'][$t];
+                $alpha[$t] += $currentLr * $grads['alpha'][$t];
+                $beta[$t]  += $currentLr * $grads['beta'][$t];
             }
-            $gamma += $learningRate * $grads['gamma'];
-            $rho   += $learningRate * $grads['rho'];
+            $gamma += $currentLr * $grads['gamma'];
+            $rho   += $currentLr * $grads['rho'];
+
+            // If improvement stalled for 20 iterations, halve the LR to
+            // escape a shallow oscillation. Bottoms out at 1e-4 so we don't
+            // freeze entirely — the tolerance check does the final stopping.
+            if (abs($ll - $prevLL) < $tolerance * 10 && $currentLr > 1e-4) {
+                $stagnation++;
+                if ($stagnation >= 20) {
+                    $currentLr *= 0.5;
+                    $stagnation = 0;
+                }
+            } else {
+                $stagnation = 0;
+            }
 
             // Clamp ρ into a numerically safe range that keeps τ ≥ 0 for
             // reasonable λ (up to ~4 goals/game).

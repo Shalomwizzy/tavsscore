@@ -69,6 +69,9 @@ class DcShadowLog extends Command
             $this->upsert($match, PredictionLog::MARKET_OVER15, 'Over 1.5 Goals', $forecast['over_15'], $forecast, $version);
             $logged++;
 
+            $this->upsert($match, PredictionLog::MARKET_OVER35, 'Over 3.5 Goals', $forecast['over_35'], $forecast, $version);
+            $logged++;
+
             $this->upsert($match, PredictionLog::MARKET_GG, 'Both Teams Score', $forecast['btts'], $forecast, $version);
             $logged++;
         }

@@ -123,6 +123,15 @@ class Kernel extends ConsoleKernel
         $schedule->command('coverage:report --days=7')
             ->weeklyOn(0, '07:00')
             ->timezone('Africa/Lagos');
+
+        // ── Continuous evaluation (Phase 5) ──────────────────────────────
+        // Weekly Brier / hit-rate snapshot per (model_version × market ×
+        // league). Fires degradation warnings to the log if any live DC
+        // combo drifts > 10% worse than backtest expectations.
+        $schedule->command('metrics:snapshot --days=7')
+            ->weeklyOn(1, '05:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
     }
 
     /**
