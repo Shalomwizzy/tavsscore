@@ -1807,12 +1807,14 @@ class PredictionService
 
     private function attackStrength(array $s): float
     {
-        return $s['matches_played'] === 0 ? self::NEUTRAL_GOALS_RATE : $s['goals_scored'] / $s['matches_played'];
+        $n = (int) ($s['matches_played'] ?? 0);
+        return $n === 0 ? self::NEUTRAL_GOALS_RATE : (float) ($s['goals_scored'] ?? 0) / $n;
     }
 
     private function defenseWeakness(array $s): float
     {
-        return $s['matches_played'] === 0 ? self::NEUTRAL_GOALS_RATE : max(0.20, $s['goals_conceded'] / $s['matches_played']);
+        $n = (int) ($s['matches_played'] ?? 0);
+        return $n === 0 ? self::NEUTRAL_GOALS_RATE : max(0.20, (float) ($s['goals_conceded'] ?? 0) / $n);
     }
 
     // Venue-split attack/defense — used when enough split samples exist.
@@ -2038,14 +2040,18 @@ class PredictionService
         }
 
         // ── Poor recent form proxy: might be relegation-threatened ──
-        $homeLossRate = $homeStats['matches_played'] > 0
-            ? $homeStats['losses'] / $homeStats['matches_played'] : 0;
-        $awayLossRate = $awayStats['matches_played'] > 0
-            ? $awayStats['losses'] / $awayStats['matches_played'] : 0;
+        // A team may have zero recent matches (newly promoted, mid-transfer window
+        // gap, or extendedTeamStats returned an empty shape). Guard every read.
+        $homeMatches = (int) ($homeStats['matches_played'] ?? 0);
+        $homeLosses  = (int) ($homeStats['losses']         ?? 0);
+        $awayMatches = (int) ($awayStats['matches_played'] ?? 0);
+        $awayLosses  = (int) ($awayStats['losses']         ?? 0);
+        $homeLossRate = $homeMatches > 0 ? $homeLosses / $homeMatches : 0;
+        $awayLossRate = $awayMatches > 0 ? $awayLosses / $awayMatches : 0;
 
         if ($homeLossRate >= 0.55) {
             $flags[]   = 'home_struggling';
-            $context[] = "The home team is in very poor form (losing {$homeStats['losses']} of last {$homeStats['matches_played']} matches) — may be in a relegation battle, which can produce unpredictable results driven by desperation.";
+            $context[] = "The home team is in very poor form (losing {$homeLosses} of last {$homeMatches} matches) — may be in a relegation battle, which can produce unpredictable results driven by desperation.";
         }
         if ($awayLossRate >= 0.55) {
             $flags[]   = 'away_struggling';

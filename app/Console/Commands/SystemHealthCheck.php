@@ -43,6 +43,37 @@ class SystemHealthCheck extends Command
         $this->line("<fg=cyan>═══ TavsScore health check · {$now->format('Y-m-d H:i:s')} {$tz} ═══</>");
         $this->line('');
 
+        // ── 0. Recent Laravel errors ─────────────────────────────────────
+        // Shows the most recent .ERROR / .CRITICAL entries from laravel.log
+        // so a stalled scheduled command's actual exception is one command away.
+        $this->line('<fg=yellow>[0] Recent Laravel errors (laravel.log)</>');
+        $lLog = storage_path('logs/laravel.log');
+        if (File::exists($lLog)) {
+            $tail = $this->tailLog($lLog, 30_000);
+            $lines = array_reverse(explode("\n", $tail));
+            $errors = [];
+            foreach ($lines as $line) {
+                if (str_contains($line, '.ERROR:') || str_contains($line, '.CRITICAL:')) {
+                    $errors[] = $line;
+                    if (count($errors) >= 5) break;
+                }
+            }
+            if (empty($errors)) {
+                $this->info('   ✓ No recent .ERROR / .CRITICAL entries in the last ~30KB of log.');
+            } else {
+                $this->error('   ✗ Recent errors found (most recent first):');
+                foreach ($errors as $err) {
+                    $short = substr($err, 0, 250);
+                    $this->line('     ' . $short . (strlen($err) > 250 ? '…' : ''));
+                }
+                $problems++;
+            }
+        } else {
+            $this->warn('   ⚠ storage/logs/laravel.log missing — no runtime signal to inspect.');
+            $warnings++;
+        }
+        $this->line('');
+
         // ── 1. Scheduler activity ──────────────────────────────────────────
         $this->line('<fg=yellow>[1] Scheduler activity</>');
         $log = storage_path('logs/schedule.log');
@@ -250,5 +281,20 @@ class SystemHealthCheck extends Command
         $this->line('  Verify by running:  /opt/alt/php84/usr/bin/php artisan schedule:list');
 
         return self::FAILURE;
+    }
+
+    /**
+     * Read the last N bytes of a file without loading the whole thing.
+     */
+    private function tailLog(string $path, int $bytes): string
+    {
+        $size = File::size($path);
+        $offset = max(0, $size - $bytes);
+        $fh = fopen($path, 'r');
+        if (! $fh) return '';
+        fseek($fh, $offset);
+        $data = stream_get_contents($fh);
+        fclose($fh);
+        return $data ?: '';
     }
 }
