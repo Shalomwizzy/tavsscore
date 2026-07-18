@@ -23,6 +23,13 @@ class PredictionLogSettler
     public const VOID_STATUSES = ['PST', 'CANC', 'ABD', 'AWD', 'WO'];
 
     /**
+     * A match still marked NS/TBD this many days after kickoff will never
+     * get a result from the provider — void its logs so they don't sit
+     * pending forever.
+     */
+    public const ORPHAN_VOID_DAYS = 7;
+
+    /**
      * @param  int  $sinceDays  Look-back window in days for both settle passes.
      * @return array{settled:int,voided:int}
      */
@@ -67,6 +74,27 @@ class PredictionLogSettler
                 ->whereIn('status', self::VOID_STATUSES)
                 ->where('match_time', '>=', $since),
             )
+            ->chunkById(500, function ($chunk) use (&$voided) {
+                foreach ($chunk as $log) {
+                    $log->update([
+                        'actual_result' => PredictionLog::RESULT_VOID,
+                        'settled_at'    => now(),
+                    ]);
+                    $voided++;
+                }
+            });
+
+        // ── Orphan VOID ─────────────────────────────────────────────────
+        // Matches whose result was never fetched (status still NS/TBD a week
+        // after kickoff — API quota outage on the day, league dropped by the
+        // provider, etc.) can never be graded. Leaving them pending forever
+        // pollutes the "unsettled" signal, so void them once the result is
+        // clearly unrecoverable. fetch:date can still repair a match BEFORE
+        // this window closes, and the weekly deep sweep runs it through here.
+        PredictionLog::query()
+            ->whereNull('settled_at')
+            ->where('kickoff_at', '<', now()->subDays(self::ORPHAN_VOID_DAYS))
+            ->whereHas('match', fn ($q) => $q->whereIn('status', ['NS', 'TBD']))
             ->chunkById(500, function ($chunk) use (&$voided) {
                 foreach ($chunk as $log) {
                     $log->update([

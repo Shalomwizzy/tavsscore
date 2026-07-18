@@ -132,6 +132,31 @@ class Kernel extends ConsoleKernel
             ->weeklyOn(1, '05:00')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping();
+
+        // ── Yearly season-fixture ingestion ──────────────────────────────
+        // API-Football publishes each new European season's full fixture list
+        // by mid-July (season=2026 means 2026-27). Without this, the DB has
+        // zero future fixtures for DC leagues until each matchday, which
+        // starves dc:shadow-log and ahead-of-time prediction generation.
+        // Runs monthly Jul–Sep to catch late fixture publications and
+        // schedule changes; matches:backfill is idempotent per api_id.
+        $schedule->call(function () {
+            \Illuminate\Support\Facades\Artisan::call('matches:backfill', [
+                '--seasons' => (string) now('Africa/Lagos')->year,
+            ]);
+        })->monthlyOn(15, '02:30')->timezone('Africa/Lagos')
+          ->when(fn () => in_array(now('Africa/Lagos')->month, [7, 8, 9], true))
+          ->name('yearly-season-ingest')->withoutOverlapping();
+
+        // ── Deep settlement sweep ────────────────────────────────────────
+        // The 5-minute predictions:check-outcomes only looks back 3 days.
+        // Anything that finishes while the pipeline is degraded (API outage,
+        // crash-loop) falls out of that window and would stay unsettled
+        // forever. Weekly 30-day sweep catches all stragglers.
+        $schedule->command('predictions:check-outcomes --days=30')
+            ->weeklyOn(0, '06:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
     }
 
     /**

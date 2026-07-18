@@ -331,6 +331,55 @@ class CheckPredictionOutcomesTest extends TestCase
         $this->assertNotNull($log->fresh()->settled_at);
     }
 
+    public function test_orphan_log_voided_when_result_never_arrives(): void
+    {
+        // Match kicked off 8+ days ago but is still NS — result was never
+        // fetched (quota outage, league dropped). Log must VOID, not sit
+        // pending forever.
+        $match = FootballMatch::create([
+            'api_id'         => 99401,
+            'home_team'      => 'Team O',
+            'away_team'      => 'Team P',
+            'league'         => 'Test League',
+            'league_country' => 'Ethiopia',
+            'status'         => 'NS',
+            'match_time'     => now()->subDays(8),
+        ]);
+        $pred = $this->prediction($match->id, 'Home Win');
+        $log  = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win', [
+            'kickoff_at' => now()->subDays(8),
+        ]);
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertSame(PredictionLog::RESULT_VOID, $log->fresh()->actual_result);
+        $this->assertNotNull($log->fresh()->settled_at);
+    }
+
+    public function test_recent_ns_match_is_not_orphan_voided(): void
+    {
+        // Kickoff passed only hours ago — fetch:matches may still deliver the
+        // result. Must stay pending, not VOID.
+        $match = FootballMatch::create([
+            'api_id'         => 99402,
+            'home_team'      => 'Team Q',
+            'away_team'      => 'Team R',
+            'league'         => 'Test League',
+            'league_country' => 'Kenya',
+            'status'         => 'NS',
+            'match_time'     => now()->subHours(6),
+        ]);
+        $pred = $this->prediction($match->id, 'Home Win');
+        $log  = $this->log($match->id, $pred->id, PredictionLog::MARKET_1X2, 'Home Win', [
+            'kickoff_at' => now()->subHours(6),
+        ]);
+
+        $this->artisan('predictions:check-outcomes')->assertSuccessful();
+
+        $this->assertNull($log->fresh()->actual_result);
+        $this->assertNull($log->fresh()->settled_at);
+    }
+
     public function test_in_progress_match_leaves_log_unsettled(): void
     {
         $match = FootballMatch::create([

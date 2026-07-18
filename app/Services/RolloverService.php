@@ -255,6 +255,14 @@ class RolloverService
 
         $potentialReturn = round($stake * $displayOdds, 2);
 
+        // A challenge's real clock starts with its first pick, not its row
+        // creation. Without this, a challenge created during a dry spell
+        // (e.g. off-season, or the May-July selection outage) shows a
+        // months-old start date with zero picks on the public page.
+        if ($dayNumber === 1) {
+            $challenge->update(['started_at' => $today]);
+        }
+
         $pick = RolloverPick::create([
             'challenge_id'     => $challenge->id,
             'match_id'         => $pred->match_id,
