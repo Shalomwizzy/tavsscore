@@ -51,6 +51,8 @@
 
     .al-cold-alert { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); border-radius:10px; padding:.75rem 1rem; margin-bottom:1.75rem; font-size:.78rem; color:#fca5a5; line-height:1.6; }
 
+    .al-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .al-table { min-width:560px; }
     @media(max-width:640px){ .al-strip { grid-template-columns:1fr 1fr; } }
 </style>
 @endpush
@@ -146,7 +148,7 @@
     {{-- Confidence calibration --}}
     <div class="al-section">
         <div class="al-section-title">Confidence Calibration — AI says X%, history shows Y%</div>
-        <table class="al-table">
+        <div class="al-scroll"><table class="al-table">
             <thead>
                 <tr>
                     <th>AI Confidence Band</th>
@@ -196,7 +198,7 @@
                 </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table></div>
         <p style="font-size:.68rem;color:var(--text-dim);margin-top:.6rem;">
             Calibration error = Actual Win% − Midpoint of AI confidence band. Negative = AI is overconfident.
             Minimum {{ \App\Services\AdaptiveThresholdService::CACHE_HOURS }}h cache; use Force Recalibrate to update immediately.
@@ -209,7 +211,7 @@
         @if(empty($state['market_perf']))
             <p style="color:var(--text-dim);font-size:.8rem;">No resolved picks yet — keep running predictions.</p>
         @else
-        <table class="al-table">
+        <div class="al-scroll"><table class="al-table">
             <thead>
                 <tr>
                     <th>Market</th>
@@ -257,7 +259,7 @@
                 </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table></div>
         @endif
     </div>
 
@@ -267,7 +269,7 @@
         @if(empty($state['league_perf']))
             <p style="color:var(--text-dim);font-size:.8rem;">Not enough per-league history yet.</p>
         @else
-        <table class="al-table">
+        <div class="al-scroll"><table class="al-table">
             <thead>
                 <tr>
                     <th>League</th>
@@ -300,7 +302,7 @@
                 </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table></div>
         @endif
     </div>
 
@@ -340,7 +342,7 @@
                             ({{ number_format(collect($bands)->sum('total')) }} predictions)
                         </span>
                     </div>
-                    <table class="al-table">
+                    <div class="al-scroll"><table class="al-table">
                         <thead>
                             <tr>
                                 <th>Stated confidence</th>
@@ -371,7 +373,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
             @endforeach
         </div>

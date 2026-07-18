@@ -20,7 +20,8 @@
 
     .mm-section-title { font-size:.8rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin:1.5rem 0 .5rem; border-bottom:1px solid var(--border); padding-bottom:.35rem; }
 
-    .mm-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+    .mm-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .mm-table { width:100%; min-width:640px; border-collapse:collapse; font-size:.78rem; }
     .mm-table th { text-align:left; font-size:.62rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; padding:.4rem .6rem; border-bottom:1px solid var(--border); }
     .mm-table td { padding:.45rem .6rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--text); font-variant-numeric:tabular-nums; }
     .mm-table td.num { text-align:right; }
@@ -30,6 +31,13 @@
     .mm-diag-warn { color:#fde68a; }
     .mm-diag-bad  { color:#fca5a5; }
     .mm-empty { color:var(--text-dim); font-size:.78rem; padding:.75rem; }
+
+    @media (max-width:640px) {
+        .mm-filters { flex-direction:column; align-items:stretch; }
+        .mm-filters label { width:100%; }
+        .mm-filters select { width:100%; }
+        .mm-strip { grid-template-columns:1fr 1fr; }
+    }
 </style>
 @endpush
 
@@ -97,7 +105,7 @@
 @if(empty($overview))
     <div class="mm-empty">No prediction_logs rows for the selected filters yet. Run <code>php artisan predictions:seed-logs</code> to backfill.</div>
 @else
-<table class="mm-table">
+<div class="mm-scroll"><table class="mm-table">
     <thead>
         <tr>
             <th>Model version</th>
@@ -118,14 +126,14 @@
         </tr>
     @endforeach
     </tbody>
-</table>
+</table></div>
 @endif
 
 <div class="mm-section-title">By market — Brier is primary (lower is better). Δ vs market: negative = beats the bookmaker consensus</div>
 @if(empty($byMarket))
     <div class="mm-empty">No settled logs yet.</div>
 @else
-<table class="mm-table">
+<div class="mm-scroll"><table class="mm-table">
     <thead>
         <tr>
             <th>Version</th>
@@ -155,14 +163,14 @@
         </tr>
     @endforeach
     </tbody>
-</table>
+</table></div>
 @endif
 
 <div class="mm-section-title">By league (min 20 settled) — Δ vs market identifies where edge is possible</div>
 @if(empty($byLeague))
     <div class="mm-empty">No league has 20+ settled logs yet.</div>
 @else
-<table class="mm-table">
+<div class="mm-scroll"><table class="mm-table">
     <thead>
         <tr>
             <th>Version</th>
@@ -188,12 +196,12 @@
         </tr>
     @endforeach
     </tbody>
-</table>
+</table></div>
 @endif
 
 @if(!empty($calibration))
 <div class="mm-section-title">Calibration — {{ $bucketVersion }} / {{ $bucketMarket }}</div>
-<table class="mm-table">
+<div class="mm-scroll"><table class="mm-table">
     <thead>
         <tr>
             <th>Bucket</th>
@@ -220,7 +228,7 @@
         </tr>
     @endforeach
     </tbody>
-</table>
+</table></div>
 @endif
 
 @endsection

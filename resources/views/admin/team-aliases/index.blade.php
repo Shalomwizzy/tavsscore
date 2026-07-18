@@ -16,7 +16,8 @@
     .ta-filter-btn.active { background:rgba(99,102,241,.15); border-color:rgba(99,102,241,.35); color:#c4b5fd; }
     .ta-bulk { margin-left:auto; }
 
-    .ta-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+    .ta-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .ta-table { width:100%; min-width:680px; border-collapse:collapse; font-size:.78rem; }
     .ta-table th { text-align:left; font-size:.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; padding:.4rem .7rem; border-bottom:1px solid var(--border); }
     .ta-table td { padding:.5rem .7rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--text); vertical-align:middle; }
     .ta-alias { color:#fff; font-weight:700; }
@@ -29,6 +30,13 @@
     .ta-btn-approve:hover { background:rgba(16,185,129,.25); }
     .ta-btn-merge:hover   { background:rgba(251,191,36,.25); }
     .ta-flash { padding:.6rem .9rem; background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.28); border-radius:8px; color:#6ee7b7; font-size:.78rem; margin-bottom:1rem; }
+
+    @media (max-width:640px) {
+        .ta-strip { grid-template-columns:1fr 1fr; }
+        .ta-filters { flex-wrap:wrap; }
+        .ta-bulk { margin-left:0; width:100%; }
+        .ta-bulk button { width:100%; }
+    }
 </style>
 @endpush
 
@@ -71,7 +79,7 @@
     </form>
 </div>
 
-<table class="ta-table">
+<div class="ta-scroll"><table class="ta-table">
     <thead>
         <tr>
             <th>Alias</th>
@@ -124,7 +132,7 @@
         <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-dim);">Nothing to review here.</td></tr>
         @endforelse
     </tbody>
-</table>
+</table></div>
 
 <div style="margin-top:1rem;">
     {{ $aliases->links() }}
