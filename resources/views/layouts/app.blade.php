@@ -605,6 +605,13 @@
 
     {{-- Global mobile overrides: placed after @stack so they win cascade over view-specific CSS --}}
     <style>
+    /* Media can never exceed its container; iframes/embeds included.
+       height:auto only on img — svg icons rely on their height attribute. */
+    img { max-width: 100%; height: auto; }
+    svg, video, iframe { max-width: 100%; }
+    /* Any .wrap child that overflows scrolls internally instead of pushing
+       the page wide (last-resort guard for tables/pre blocks in content). */
+    .wrap { min-width: 0; }
     @media (max-width: 640px) {
         .pick-card-top { padding: 1.25rem 1rem 0 !important; }
         .pick-card-footer { padding: .75rem 1rem !important; }

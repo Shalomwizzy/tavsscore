@@ -163,6 +163,17 @@
 /* ── Community cards ── */
 .community-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .85rem; }
 
+/* Grid/flex children default to min-width:auto, which lets long content
+   push a track wider than the phone viewport and shift every section —
+   the classic "whole page broken on iPhone" failure. Force them to
+   shrink and let text wrap instead. */
+.stats-bar > *, .nsc-grid > *, .picks-grid > *, .community-grid > *,
+.afr-grid > *, .install-notif-grid > * { min-width: 0; }
+.nsc-body, .nsc-header { min-width: 0; }
+.nsc-title, .nsc-desc, .section-title, .section-desc, .hero-desc { overflow-wrap: anywhere; }
+.stat-tile > div:last-child { min-width: 0; }
+.stat-lbl { overflow-wrap: anywhere; }
+
 @media (max-width: 860px) {
     .stats-bar       { grid-template-columns: repeat(2, 1fr); }
     .nsc-grid        { grid-template-columns: 1fr 1fr; }
@@ -174,6 +185,19 @@
     .nsc-grid       { grid-template-columns: 1fr; }
     .community-grid { grid-template-columns: 1fr; }
     .install-notif-grid { grid-template-columns: 1fr !important; }
+    .hero           { padding: 2.25rem 0 2rem; }
+    .hero-ctas .btn-ts { flex: 1; text-align: center; justify-content: center; }
+    .stats-bar      { gap: .5rem; }
+    .stat-tile      { padding: .75rem .7rem; gap: .55rem; }
+    .stat-ico       { width: 32px; height: 32px; font-size: .85rem; }
+    .stat-val       { font-size: 1.2rem; }
+    .stat-lbl       { font-size: .6rem; }
+}
+@media (max-width: 400px) {
+    .stats-bar      { grid-template-columns: 1fr 1fr; }
+    .stat-tile      { padding: .6rem .6rem; }
+    .nsc-header     { padding: .9rem 1rem .7rem; }
+    .nsc-body       { padding: .1rem 1rem 1rem; }
 }
 </style>
 @endpush
