@@ -24,7 +24,9 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->when(fn () => ! \App\Models\FootballMatch::whereIn('status', ['1H','HT','2H','ET','BT','P','LIVE'])->exists());
 
-        $schedule->command('predict:matches')->everyFifteenMinutes()->withoutOverlapping();
+        // Expiry (10 min) so a killed run can't leave a stale lock that blocks
+        // predictions for the default 24h — they'd stop generating until manual clear.
+        $schedule->command('predict:matches')->everyFifteenMinutes()->withoutOverlapping(10);
         $schedule->command('predictions:check-outcomes')->everyFiveMinutes()->withoutOverlapping();
 
         // API-Football quota resets at 01:00 Lagos each day.

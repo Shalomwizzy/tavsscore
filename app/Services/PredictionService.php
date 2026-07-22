@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class PredictionService
 {
@@ -785,8 +786,24 @@ class PredictionService
 
     public function generateForUpcomingMatches(): Collection
     {
+        // One match throwing must never abort the whole daily run — log it and skip.
         return $this->upcomingMatches()
-            ->map(fn (FootballMatch $m): Prediction => $this->generateForMatch($m));
+            ->map(function (FootballMatch $m): ?Prediction {
+                try {
+                    return $this->generateForMatch($m);
+                } catch (\Throwable $e) {
+                    Log::error('Prediction generation failed for a match; skipping.', [
+                        'match_id'  => $m->id,
+                        'home_team' => $m->home_team,
+                        'away_team' => $m->away_team,
+                        'message'   => $e->getMessage(),
+                    ]);
+
+                    return null;
+                }
+            })
+            ->filter()
+            ->values();
     }
 
     /**
