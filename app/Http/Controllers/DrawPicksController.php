@@ -58,7 +58,9 @@ class DrawPicksController extends Controller
                 : null,
         ];
 
-        return view('draw-picks.index', compact('formatted', 'accuracy', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('draw-picks.index', compact('formatted', 'accuracy', 'dateMeta', 'offWindow'));
     }
 
     private function autoResolve(EloquentCollection $picks): void

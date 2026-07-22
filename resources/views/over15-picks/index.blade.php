@@ -201,11 +201,15 @@
                 </div>
             </div>
             @empty
+            @if($dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+            @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+            @else
             <div class="empty-state">
                 <div style="font-size:2.5rem; margin-bottom:1rem;">⚽</div>
                 <h3>No Over 1.5 Picks Yet Today</h3>
                 <p>We only publish matches where our Poisson model gives 82%+ probability of 2 or more goals. Check back after 08:00 Lagos time.</p>
             </div>
+            @endif
             @endforelse
         </div>
 

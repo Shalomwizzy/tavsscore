@@ -59,7 +59,9 @@ class Team3PlusController extends Controller
             'pct'     => $total > 0 ? round($correct / $total * 100, 1) : null,
         ];
 
-        return view('team3plus.index', compact('formatted', 'accuracy', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('team3plus.index', compact('formatted', 'accuracy', 'dateMeta', 'offWindow'));
     }
 
     private function autoResolve(EloquentCollection $picks): void

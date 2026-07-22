@@ -244,6 +244,9 @@
             </div>
         </div>
         @empty
+        @if($dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+        @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+        @else
         <div class="lp-empty">
             @if(! $dateMeta['is_today'])
             <div class="lp-empty-icon">📁</div>
@@ -263,6 +266,7 @@
             </div>
             @endif
         </div>
+        @endif
         @endforelse
     </div>
 

@@ -123,7 +123,9 @@
         @endif
 
         {{-- Picks grid --}}
-        @if($formatted->isEmpty())
+        @if($formatted->isEmpty() && $dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+        @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+        @elseif($formatted->isEmpty())
         <div class="empty-state">
             <h3>No Double Chance Picks Yet</h3>
             <p>Today's picks are generated when predictions load. Check back shortly or refresh the page.</p>

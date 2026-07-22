@@ -54,7 +54,9 @@ class DoubleChanceController extends Controller
             'pct'     => $total > 0 ? round($correct / $total * 100, 1) : null,
         ];
 
-        return view('double-chance.index', compact('formatted', 'accuracy', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('double-chance.index', compact('formatted', 'accuracy', 'dateMeta', 'offWindow'));
     }
 
     private function autoResolve(\Illuminate\Database\Eloquent\Collection $picks): void

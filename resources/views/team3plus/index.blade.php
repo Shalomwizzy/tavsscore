@@ -223,11 +223,15 @@
                 </div>
             </div>
             @empty
+            @if($dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+            @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+            @else
             <div class="empty-state">
                 <div style="font-size:2.5rem; margin-bottom:1rem;">🚫</div>
                 <h3>No Team Goals NO Picks Yet Today</h3>
                 <p>We require a team's 2+ or 3+ goal probability to be very low before publishing a NO pick. Not every day has qualifying matches. Check back after 06:00 Lagos time.</p>
             </div>
+            @endif
             @endforelse
         </div>
 

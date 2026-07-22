@@ -56,7 +56,9 @@ class Over25PicksController extends Controller
             'pct'     => $total > 0 ? round($correct / $total * 100, 1) : null,
         ];
 
-        return view('over25-picks.index', compact('formatted', 'accuracy', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('over25-picks.index', compact('formatted', 'accuracy', 'dateMeta', 'offWindow'));
     }
 
     private function autoResolve(EloquentCollection $picks): void

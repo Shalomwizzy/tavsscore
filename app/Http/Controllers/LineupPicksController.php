@@ -44,6 +44,8 @@ class LineupPicksController extends Controller
             }
         }
 
-        return view('lineup-picks.index', compact('picks', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('lineup-picks.index', compact('picks', 'dateMeta', 'offWindow'));
     }
 }

@@ -30,6 +30,8 @@ class CorrectScoreController extends Controller
             ->get()
             ->filter(fn ($p) => ! empty($p->likely_scores));
 
-        return view('correct-score.index', compact('predictions', 'dateMeta'));
+        $offWindow = $this->offWindowState($date, $tz);
+
+        return view('correct-score.index', compact('predictions', 'dateMeta', 'offWindow'));
     }
 }

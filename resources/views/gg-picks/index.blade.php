@@ -304,11 +304,15 @@
                 </div>
             </div>
             @empty
+            @if($dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+            @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+            @else
             <div class="empty-state">
                 <div style="font-size:2.5rem; margin-bottom:1rem;">⚽</div>
                 <h3>No GG Picks Yet Today</h3>
                 <p>GG picks only appear when all three AI engines independently agree that both teams will score. That level of agreement takes time to find. Check back later today.</p>
             </div>
+            @endif
             @endforelse
         </div>
 

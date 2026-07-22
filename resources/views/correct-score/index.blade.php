@@ -173,6 +173,9 @@
             </div>
         </div>
         @empty
+        @if($dateMeta['is_today'] && ($offWindow['reason'] ?? null) === 'off_window')
+        @include('partials.off-season-empty', ['resumeDate' => $offWindow['resume_date'] ?? null])
+        @else
         <div class="cs-empty">
             <div class="cs-empty-icon">🎯</div>
             <div class="cs-empty-title">No Correct Score Predictions Yet</div>
@@ -181,6 +184,7 @@
                 Check back after predictions are loaded for today.
             </p>
         </div>
+        @endif
         @endforelse
     </div>
 
