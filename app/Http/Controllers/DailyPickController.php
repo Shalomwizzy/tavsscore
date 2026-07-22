@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FootballMatch;
 use App\Models\Prediction;
 use App\Services\CalibrationService;
+use App\Support\LeagueCoverage;
 use App\Services\GroqService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
@@ -120,6 +122,34 @@ class DailyPickController extends Controller
 
         $date = $requested->format('l, F j Y');
 
+        // ── Empty-state context ───────────────────────────────────
+        // Distinguishes "no covered fixtures at all today" (pre-season / off-day)
+        // from "matches exist but none cleared the confidence bar" so the page
+        // doesn't wrongly blame the AI during an off-window.
+        $emptyState = null;
+        if ($formatted->isEmpty() && $isToday) {
+            $coveredToday = FootballMatch::query()
+                ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+                ->whereNotIn('status', ['CANC', 'PST', 'ABD'])
+                ->whereBetween('match_time', [$start, $end])
+                ->exists();
+
+            if ($coveredToday) {
+                $emptyState = ['reason' => 'below_threshold'];
+            } else {
+                $nextKickoff = FootballMatch::query()
+                    ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+                    ->where('match_time', '>', now($tz))
+                    ->orderBy('match_time')
+                    ->value('match_time');
+
+                $emptyState = [
+                    'reason'      => 'off_window',
+                    'resume_date' => $nextKickoff ? Carbon::parse($nextKickoff)->timezone($tz)->format('l, F j') : null,
+                ];
+            }
+        }
+
         return view('picks.index', compact(
             'formatted',
             'yesterdayFormatted',
@@ -128,6 +158,7 @@ class DailyPickController extends Controller
             'date',
             'dateMeta',
             'count',
+            'emptyState',
         ));
     }
 

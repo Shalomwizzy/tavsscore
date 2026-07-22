@@ -533,7 +533,19 @@ if (! function_exists('stripTip')) {
         {{-- ── Picks for selected date ── --}}
         @if($formatted->isEmpty())
         <div class="picks-empty">
-            @if($dateMeta['is_today'])
+            @if($dateMeta['is_today'] && ($emptyState['reason'] ?? null) === 'off_window')
+                <div class="picks-empty-icon">🌱</div>
+                <div class="picks-empty-title">Top leagues are between seasons</div>
+                <p class="picks-empty-desc">
+                    No fixtures from our covered leagues are scheduled today — most of Europe is still in pre-season.
+                    @if(!empty($emptyState['resume_date']))
+                        Regular predictions resume <strong style="color:var(--text);">{{ $emptyState['resume_date'] }}</strong>.
+                    @else
+                        Predictions resume as soon as the new season's fixtures kick off.
+                    @endif
+                    In the meantime, browse past picks with the date picker above.
+                </p>
+            @elseif($dateMeta['is_today'])
                 <div class="picks-empty-icon">🔍</div>
                 <div class="picks-empty-title">No high-confidence picks today</div>
                 <p class="picks-empty-desc">
