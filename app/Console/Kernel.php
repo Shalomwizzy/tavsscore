@@ -202,6 +202,22 @@ class Kernel extends ConsoleKernel
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();
+
+        // Post-match statistics (shots/corners/cards/xG) for finished fixtures —
+        // daily 07:00, after results settle. Quota-light (only new fixtures).
+        $schedule->command('stats:fetch-fixture-stats --days=3')
+            ->dailyAt('07:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
+
+        // Transfers + coaches — weekly (Tue 21:00, quiet window). Feeds the blog
+        // writer and manager context. Quota-heavy (1-2 calls per team).
+        $schedule->command('stats:fetch-team-meta')
+            ->weeklyOn(2, '21:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(120)
+            ->runInBackground();
     }
 
     /**
