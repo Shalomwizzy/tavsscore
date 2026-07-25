@@ -9,23 +9,27 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Third AI for triple cross-validation. Only fires if MISTRAL_API_KEY is set.
+ * Fourth AI for the consensus cross-validation. Only fires if ANTHROPIC_API_KEY
+ * is set. Like Gemini and Mistral, Claude receives ONLY raw match stats, H2H,
+ * and (optionally) live standings context — never Groq's, Gemini's, or Mistral's
+ * output. It votes independently on the outcome; it never generates probabilities.
  *
- * Mistral is OpenAI-compatible and free-tier friendly (console.mistral.ai).
- * Like Gemini, it receives ONLY raw stats and H2H — never Groq's or Gemini's
- * output. All three AIs must independently reach the same conclusion before
- * a prediction is published or a rollover pick is placed.
+ * Uses the Anthropic Messages API directly via Laravel's HTTP client to match the
+ * pattern of the other three AI services (no extra SDK dependency).
  */
-class MistralService
+class ClaudeService
 {
+    private const API_URL = 'https://api.anthropic.com/v1/messages';
+    private const API_VERSION = '2023-06-01';
+
     public function isConfigured(): bool
     {
-        return ! blank(config('services.mistral.key'));
+        return ! blank(config('services.anthropic.key'));
     }
 
     /**
-     * Completely independent prediction — Mistral receives only raw match
-     * stats and H2H, with NO knowledge of what Groq or Gemini concluded.
+     * Completely independent verdict — Claude sees only raw match data, with no
+     * knowledge of what the other AIs concluded.
      * Returns ['outcome' => string, 'confidence' => int] or null on failure.
      */
     public function independentVerdict(
@@ -59,7 +63,7 @@ Instructions:
 - Select the SINGLE outcome you are most confident about from the list below.
 - Do NOT guess — only pick what the data genuinely supports.
 - Rate your confidence from 0 to 100. If you are not at least 60% confident, reflect that in your score.
-- Never use em dashes (—) in any text. Use commas, colons, or full stops instead.
+- Never use em dashes in any text. Use commas, colons, or full stops instead.
 
 Respond with ONLY valid JSON (no markdown, no code fences):
 {"outcome":"Home Win","confidence":76}
@@ -69,26 +73,30 @@ Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12
 PROMPT;
 
         try {
-            $response = Http::timeout(25)
-                ->withToken(config('services.mistral.key'))
-                ->post(config('services.mistral.url', 'https://api.mistral.ai/v1/chat/completions'), [
-                    'model'       => config('services.mistral.model', 'mistral-small-latest'),
-                    'messages'    => [['role' => 'user', 'content' => $prompt]],
-                    'temperature' => 0.10,
-                    'max_tokens'  => 80,
+            $response = Http::timeout(30)
+                ->withHeaders([
+                    'x-api-key'         => config('services.anthropic.key'),
+                    'anthropic-version' => self::API_VERSION,
+                ])
+                ->acceptJson()
+                ->post(self::API_URL, [
+                    'model'      => config('services.anthropic.model', 'claude-opus-4-8'),
+                    'max_tokens' => 100,
+                    'messages'   => [['role' => 'user', 'content' => $prompt]],
                 ]);
         } catch (ConnectionException | Throwable $e) {
-            Log::info('MistralService independentVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
+            Log::info('ClaudeService independentVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
             return null;
         }
 
         if ($response->failed()) {
-            Log::info('MistralService HTTP error', ['match' => $match->id, 'status' => $response->status()]);
+            Log::info('ClaudeService HTTP error', ['match' => $match->id, 'status' => $response->status()]);
             return null;
         }
 
-        $raw  = trim((string) data_get($response->json(), 'choices.0.message.content'));
-        $raw  = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $raw);
+        // Anthropic returns content as an array of blocks; the text is in the first text block.
+        $raw = trim((string) data_get($response->json(), 'content.0.text'));
+        $raw = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $raw);
         $data = json_decode(trim($raw), true);
 
         if (! is_array($data) || empty($data['outcome'])) return null;

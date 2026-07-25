@@ -172,6 +172,7 @@ PROMPT;
         array         $homeStats = [],
         array         $awayStats = [],
         array         $h2h = [],
+        string        $statsContext = '',
     ): ?array {
         if (! $this->isConfigured()) return null;
 
@@ -190,7 +191,7 @@ KICKOFF: {$match->match_time?->format('Y-m-d H:i')} UTC
 
 {$awayBlock}
 
-{$h2hBlock}
+{$h2hBlock}{$statsContext}
 
 Instructions:
 - Analyse the data carefully: recent form, goals scored/conceded, H2H record, home/away patterns.

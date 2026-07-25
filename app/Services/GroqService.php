@@ -41,6 +41,7 @@ class GroqService
         array $importance     = [],
         string $leagueDrawDesc = '',
         ?string $modelOverride = null,
+        string $statsContext = '',
     ): ?array {
         $apiKey = config('services.groq.key');
 
@@ -388,7 +389,7 @@ KICKOFF: {$kickoff}
   Goals:      Over 1.5 Goals {$o15}% | Under 1.5 Goals {$u15}% | Over 2.5 Goals {$o25}% | Under 2.5 Goals {$u25}% | Over 3.5 Goals {$o35}%
   BTTS:       Both Teams Score {$btt}%
   Clean Sheet: Home Clean Sheet {$homeClean} | Away Clean Sheet {$awayClean}
-{$drawRateBlock}{$importanceBlock}{$newsBlock}{$previewBlock}{$lineupBlock}
+{$drawRateBlock}{$importanceBlock}{$statsContext}{$newsBlock}{$previewBlock}{$lineupBlock}
 
 ═══ YOUR ANALYSIS TASK ═══
 Using ALL data above PLUS your deep knowledge of these clubs (playing style, key players, manager tactics, stadium atmosphere, historical tendencies):

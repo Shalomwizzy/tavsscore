@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\FootballMatch;
 use App\Models\Prediction;
 use App\Support\LeagueCoverage;
+use App\Support\MatchStatsContext;
 use App\Support\PickHelpers;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -29,6 +30,7 @@ class PredictionService
         private readonly OddsService              $oddsService,
         private readonly GeminiService            $geminiService,
         private readonly MistralService           $mistralService,
+        private readonly ClaudeService            $claudeService,
         private readonly NewsService              $newsService,
         private readonly LineupService            $lineupService,
         private readonly AdaptiveThresholdService $adaptive,
@@ -138,6 +140,10 @@ class PredictionService
         // ── Fetch confirmed lineup if within kickoff window ───────
         $lineupData = $this->lineupService->getLineup($match);
 
+        // ── Live API-Football context (standings + season stats) ──
+        // Fed to every LLM as extra signal; never touches the Poisson/DC numbers.
+        $statsContext = MatchStatsContext::build($match);
+
         // ── Call Groq with full context ───────────────────────────
         $groq = $this->groqService->getPrediction(
             $match, $poisson,
@@ -152,6 +158,7 @@ class PredictionService
             $awayXg,
             $importance,
             $leagueDrawDesc,
+            statsContext: $statsContext,
         );
 
         // Respect 30 RPM: 2.1 s between calls
@@ -159,8 +166,9 @@ class PredictionService
 
         if ($groq === null) {
             // Groq failed — try Gemini then Mistral for at least an outcome verdict
-            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h)
-                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h);
+            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext)
+                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext)
+                ?? $this->claudeService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext);
 
             if ($fallback !== null) {
                 $groq = [
@@ -254,7 +262,7 @@ class PredictionService
         // market agrees. AI tips that disagree by >15pp with bookmakers get
         // flagged; users see "⚠️ market disagrees" badge.
         $tips = $this->annotateWithMarketConsensus($tips, $match);
-        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h);
+        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h, $statsContext);
 
         // Snapshot bookmaker implied probabilities at prediction time.
         // Cached by OddsService, so no extra API call if annotateWithMarketConsensus
@@ -430,6 +438,7 @@ class PredictionService
         array         $homeStats = [],
         array         $awayStats = [],
         array         $h2h = [],
+        string        $statsContext = '',
     ): array {
         if (empty($tips)) return $tips;
 
@@ -448,7 +457,7 @@ class PredictionService
         if ($this->geminiService->isConfigured()) {
             try {
                 $geminiVerdict = $this->geminiService->independentVerdict(
-                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h,
+                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h, statsContext: $statsContext,
                 );
             } catch (\Throwable) {}
         }
@@ -458,7 +467,17 @@ class PredictionService
         if ($this->mistralService->isConfigured()) {
             try {
                 $mistralVerdict = $this->mistralService->independentVerdict(
-                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h,
+                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h, statsContext: $statsContext,
+                );
+            } catch (\Throwable) {}
+        }
+
+        // ── Call Claude independently ─────────────────────────────
+        $claudeVerdict = null;
+        if ($this->claudeService->isConfigured()) {
+            try {
+                $claudeVerdict = $this->claudeService->independentVerdict(
+                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h, statsContext: $statsContext,
                 );
             } catch (\Throwable) {}
         }
@@ -472,6 +491,10 @@ class PredictionService
             $tips[0]['mistral_tip']  = $mistralVerdict['outcome'];
             $tips[0]['mistral_conf'] = $mistralVerdict['confidence'];
         }
+        if ($claudeVerdict !== null) {
+            $tips[0]['claude_tip']  = $claudeVerdict['outcome'];
+            $tips[0]['claude_conf'] = $claudeVerdict['confidence'];
+        }
 
         $groqNorm = mb_strtolower(trim($groqOutcome));
 
@@ -480,14 +503,17 @@ class PredictionService
             || (mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm && $geminiVerdict['confidence']  >= 60);
         $mistralOk = $mistralVerdict === null
             || (mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm && $mistralVerdict['confidence'] >= 60);
+        $claudeOk  = $claudeVerdict  === null
+            || (mb_strtolower(trim($claudeVerdict['outcome']))  === $groqNorm && $claudeVerdict['confidence']  >= 60);
 
-        $allAgree      = $geminiOk && $mistralOk;
-        $configuredAIs = 1 + ($geminiVerdict !== null ? 1 : 0) + ($mistralVerdict !== null ? 1 : 0);
+        $allAgree      = $geminiOk && $mistralOk && $claudeOk;
+        $configuredAIs = 1 + ($geminiVerdict !== null ? 1 : 0) + ($mistralVerdict !== null ? 1 : 0) + ($claudeVerdict !== null ? 1 : 0);
 
         // Collect confidences from agreeing AIs only (Groq always included)
         $confs = [$groqConfidence];
         if ($geminiOk  && $geminiVerdict  !== null) $confs[] = $geminiVerdict['confidence'];
         if ($mistralOk && $mistralVerdict !== null)  $confs[] = $mistralVerdict['confidence'];
+        if ($claudeOk  && $claudeVerdict  !== null)  $confs[] = $claudeVerdict['confidence'];
         $avgAgreeConf = (int) round(array_sum($confs) / count($confs));
 
         // ── Calibrated confidence + agreement level ───────────────
@@ -681,6 +707,7 @@ class PredictionService
         $piRatings      = $this->piRating->ratingsFor($match->home_team, $match->away_team);
         $importance     = $this->matchImportanceContext($match, $homeForm, $awayForm);
         $leagueDrawDesc = \App\Support\LeagueCalibration::drawRateDescription((int) $match->league_id);
+        $statsContext   = MatchStatsContext::build($match);
 
         $groq = $this->groqService->getPrediction(
             $match, $poisson,
@@ -695,12 +722,14 @@ class PredictionService
             $awayXgBase,
             $importance,
             $leagueDrawDesc,
+            statsContext: $statsContext,
         );
 
         if (! $groq) {
-            // Groq failed — try Gemini then Mistral for a fallback verdict
-            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h)
-                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h);
+            // Groq failed — try Gemini, then Mistral, then Claude for a fallback verdict
+            $fallback = $this->geminiService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext)
+                ?? $this->mistralService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext)
+                ?? $this->claudeService->independentVerdict($match, $homeStats, $awayStats, $h2h, $statsContext);
 
             if (! $fallback) {
                 return false;
@@ -721,7 +750,7 @@ class PredictionService
         usleep(2_100_000);
 
         $tips = $this->annotateWithMarketConsensus($groq['tips'] ?? [], $match);
-        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h);
+        $tips = $this->annotateWithGeminiConsensus($tips, $match, $homeStats, $awayStats, $h2h, $statsContext);
 
         $primaryOutcome = ! empty($tips) ? $tips[0]['market']     : ($groq['predicted_outcome'] ?? $existing?->predicted_outcome ?? 'Competitive Match');
         $primaryConf    = ! empty($tips) ? $tips[0]['confidence'] : ($existing?->confidence ?? null);

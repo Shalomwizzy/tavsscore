@@ -36,6 +36,11 @@ return [
         'url' => env('FOOTBALL_API_URL', 'https://v3.football.api-sports.io'),
     ],
 
+    'anthropic' => [
+        'key'   => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),
+    ],
+
     'groq' => [
         'key' => env('GROQ_API_KEY'),
         'url' => env('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions'),
