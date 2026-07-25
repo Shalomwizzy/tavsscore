@@ -472,17 +472,7 @@ class PredictionService
             } catch (\Throwable) {}
         }
 
-        // ── Call Claude independently ─────────────────────────────
-        $claudeVerdict = null;
-        if ($this->claudeService->isConfigured()) {
-            try {
-                $claudeVerdict = $this->claudeService->independentVerdict(
-                    match: $match, homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h, statsContext: $statsContext,
-                );
-            } catch (\Throwable) {}
-        }
-
-        // Store each AI's raw verdict for audit / display
+        // Store the panel's raw verdicts for audit / display
         if ($geminiVerdict !== null) {
             $tips[0]['gemini_tip']  = $geminiVerdict['outcome'];
             $tips[0]['gemini_conf'] = $geminiVerdict['confidence'];
@@ -491,11 +481,60 @@ class PredictionService
             $tips[0]['mistral_tip']  = $mistralVerdict['outcome'];
             $tips[0]['mistral_conf'] = $mistralVerdict['confidence'];
         }
-        if ($claudeVerdict !== null) {
-            $tips[0]['claude_tip']  = $claudeVerdict['outcome'];
-            $tips[0]['claude_conf'] = $claudeVerdict['confidence'];
+
+        // ── Claude is the ARBITER ─────────────────────────────────
+        // It reviews the data AND the whole panel, then issues the final call.
+        // If Claude is unavailable/over-limit we fall through to the raw
+        // Groq+Gemini+Mistral consensus so predictions never stop.
+        $arbiter = null;
+        if ($this->claudeService->isConfigured()) {
+            try {
+                $arbiter = $this->claudeService->finalVerdict(
+                    match: $match,
+                    panel: [
+                        'groq'    => ['outcome' => $groqOutcome, 'confidence' => $groqConfidence],
+                        'gemini'  => $geminiVerdict,
+                        'mistral' => $mistralVerdict,
+                    ],
+                    homeStats: $homeStats, awayStats: $awayStats, h2h: $h2h, statsContext: $statsContext,
+                );
+            } catch (\Throwable) {}
         }
 
+        if ($arbiter !== null) {
+            $finalMarket = $arbiter['outcome'];
+            $finalNorm   = mb_strtolower(trim($finalMarket));
+
+            // How much of the panel backs Claude's final pick (≥60% confident)?
+            $supporters = 0;
+            foreach ([
+                ['outcome' => $groqOutcome, 'confidence' => $groqConfidence],
+                $geminiVerdict,
+                $mistralVerdict,
+            ] as $v) {
+                if ($v !== null && mb_strtolower(trim($v['outcome'])) === $finalNorm && $v['confidence'] >= 60) {
+                    $supporters++;
+                }
+            }
+
+            $tips[0]['market']       = $finalMarket;
+            $tips[0]['confidence']   = $arbiter['confidence'];
+            $tips[0]['claude_tip']   = $finalMarket;
+            $tips[0]['claude_conf']  = $arbiter['confidence'];
+            $tips[0]['decided_by']   = 'claude';
+            if (! blank($arbiter['rationale'])) {
+                $tips[0]['claude_rationale'] = $arbiter['rationale'];
+            }
+            $tips[0]['agreement_level'] = $supporters >= 3 ? 'strong'
+                : ($supporters === 2 ? 'partial'
+                : ($arbiter['confirmed'] ? 'partial' : 'arbiter-call'));
+            // Publish unless it's a low-support contrarian call at low confidence
+            $tips[0]['gemini_agrees'] = $supporters >= 2 || $arbiter['confidence'] >= 70;
+
+            return $tips;
+        }
+
+        // ── Fallback: raw Groq+Gemini+Mistral consensus (Claude unavailable) ──
         $groqNorm = mb_strtolower(trim($groqOutcome));
 
         // An AI "agrees" only when it reaches the same outcome AND is ≥60% confident
@@ -503,40 +542,33 @@ class PredictionService
             || (mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm && $geminiVerdict['confidence']  >= 60);
         $mistralOk = $mistralVerdict === null
             || (mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm && $mistralVerdict['confidence'] >= 60);
-        $claudeOk  = $claudeVerdict  === null
-            || (mb_strtolower(trim($claudeVerdict['outcome']))  === $groqNorm && $claudeVerdict['confidence']  >= 60);
 
-        $allAgree      = $geminiOk && $mistralOk && $claudeOk;
-        $configuredAIs = 1 + ($geminiVerdict !== null ? 1 : 0) + ($mistralVerdict !== null ? 1 : 0) + ($claudeVerdict !== null ? 1 : 0);
+        $allAgree      = $geminiOk && $mistralOk;
+        $configuredAIs = 1 + ($geminiVerdict !== null ? 1 : 0) + ($mistralVerdict !== null ? 1 : 0);
 
         // Collect confidences from agreeing AIs only (Groq always included)
         $confs = [$groqConfidence];
         if ($geminiOk  && $geminiVerdict  !== null) $confs[] = $geminiVerdict['confidence'];
         if ($mistralOk && $mistralVerdict !== null)  $confs[] = $mistralVerdict['confidence'];
-        if ($claudeOk  && $claudeVerdict  !== null)  $confs[] = $claudeVerdict['confidence'];
         $avgAgreeConf = (int) round(array_sum($confs) / count($confs));
 
         // ── Calibrated confidence + agreement level ───────────────
         if ($configuredAIs === 1) {
-            // Only Groq is configured — no external validation available
             $agreementLevel = 'unverified';
             $finalConf      = $groqConfidence;
         } elseif ($allAgree) {
-            // Every configured AI independently reached the same outcome
             $agreementLevel = 'strong';
             $finalConf      = $avgAgreeConf;
         } elseif (count($confs) >= 2) {
-            // Groq + at least one other AI agree; remainder disagree
             $agreementLevel = 'partial';
             $finalConf      = max(0, $avgAgreeConf - 10);
         } else {
-            // Groq alone — all other configured AIs disagree
             $agreementLevel = 'conflict';
             $finalConf      = (int) round($groqConfidence * 0.75);
         }
 
         $tips[0]['agreement_level'] = $agreementLevel;
-        $tips[0]['gemini_agrees']   = $allAgree; // kept for picks-selection backward compat
+        $tips[0]['gemini_agrees']   = $allAgree;
         $tips[0]['confidence']      = $finalConf;
 
         return $tips;

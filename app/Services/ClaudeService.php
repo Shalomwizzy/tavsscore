@@ -107,6 +107,105 @@ PROMPT;
         ];
     }
 
+    /**
+     * Final arbiter. Claude reviews the match data AND what every other AI
+     * concluded, then issues the definitive call — confirm the panel's pick,
+     * override it, or adjust confidence. This is the top of the decision chain;
+     * callers fall back to the raw consensus if this returns null.
+     *
+     * @param  array<string, array{outcome:string, confidence:int}|null>  $panel  keyed by ai name (groq/gemini/mistral)
+     * @return array{outcome:string, confidence:int, confirmed:bool, rationale:string}|null
+     */
+    public function finalVerdict(
+        FootballMatch $match,
+        array         $panel,
+        array         $homeStats = [],
+        array         $awayStats = [],
+        array         $h2h = [],
+        string        $statsContext = '',
+    ): ?array {
+        if (! $this->isConfigured()) return null;
+
+        $homeBlock = $this->buildStatsBlock($match->home_team, $homeStats);
+        $awayBlock = $this->buildStatsBlock($match->away_team, $awayStats);
+        $h2hBlock  = $this->buildH2HBlock($h2h);
+
+        $panelLines = [];
+        foreach ($panel as $ai => $verdict) {
+            if ($verdict === null) {
+                $panelLines[] = strtoupper($ai) . ': (no verdict — unavailable)';
+                continue;
+            }
+            $panelLines[] = sprintf('%s: %s (%d%% confident)', strtoupper($ai), $verdict['outcome'], $verdict['confidence']);
+        }
+        $panelBlock = implode("\n", $panelLines);
+
+        $prompt = <<<PROMPT
+You are the HEAD betting analyst. Three junior analysts (AI models) have each independently predicted this match. Your job is to make the FINAL decision on the single best betting outcome, using the raw data AND their opinions.
+
+FIXTURE: {$match->home_team} vs {$match->away_team}
+LEAGUE:  {$match->league} ({$match->league_country})
+KICKOFF: {$match->match_time?->format('Y-m-d H:i')} UTC
+
+{$homeBlock}
+
+{$awayBlock}
+
+{$h2hBlock}{$statsContext}
+
+═══ WHAT THE OTHER ANALYSTS PREDICTED ═══
+{$panelBlock}
+
+Instructions:
+- Weigh the data yourself; do not just follow the majority. If they are right, confirm. If the data contradicts them, override with the outcome the data genuinely supports.
+- Pick the SINGLE outcome you are most confident about from the allowed list.
+- Set "confirmed" to true if your final pick matches what most analysts said, false if you are overriding them.
+- Rate your final confidence 0 to 100. Be honest — if the panel disagrees and the data is murky, lower it.
+- Give a one-sentence rationale. Never use em dashes; use commas or full stops.
+
+Respond with ONLY valid JSON (no markdown, no code fences):
+{"outcome":"Home Win","confidence":74,"confirmed":true,"rationale":"Home side unbeaten at home and away team missing key defenders."}
+
+Allowed outcomes (use EXACT label):
+Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12), Over 1.5 Goals, Over 2.5 Goals, Under 2.5 Goals, Both Teams Score (GG), No Both Teams Score (NG), Draw No Bet - Home, Draw No Bet - Away
+PROMPT;
+
+        try {
+            $response = Http::timeout(35)
+                ->withHeaders([
+                    'x-api-key'         => config('services.anthropic.key'),
+                    'anthropic-version' => self::API_VERSION,
+                ])
+                ->acceptJson()
+                ->post(self::API_URL, [
+                    'model'      => config('services.anthropic.model', 'claude-opus-4-8'),
+                    'max_tokens' => 250,
+                    'messages'   => [['role' => 'user', 'content' => $prompt]],
+                ]);
+        } catch (ConnectionException | Throwable $e) {
+            Log::info('ClaudeService finalVerdict failed', ['match' => $match->id, 'error' => $e->getMessage()]);
+            return null;
+        }
+
+        if ($response->failed()) {
+            Log::info('ClaudeService finalVerdict HTTP error', ['match' => $match->id, 'status' => $response->status()]);
+            return null;
+        }
+
+        $raw  = trim((string) data_get($response->json(), 'content.0.text'));
+        $raw  = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $raw);
+        $data = json_decode(trim($raw), true);
+
+        if (! is_array($data) || empty($data['outcome'])) return null;
+
+        return [
+            'outcome'    => trim((string) $data['outcome']),
+            'confidence' => (int) ($data['confidence'] ?? 70),
+            'confirmed'  => (bool) ($data['confirmed'] ?? true),
+            'rationale'  => trim((string) ($data['rationale'] ?? '')),
+        ];
+    }
+
     private function buildStatsBlock(string $team, array $s): string
     {
         if (empty($s) || ($s['matches_played'] ?? 0) === 0) {
