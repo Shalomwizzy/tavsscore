@@ -159,6 +159,35 @@ class Kernel extends ConsoleKernel
             ->weeklyOn(0, '06:00')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping();
+
+        // ── API-Football stats ingestion ─────────────────────────────────
+        // Scheduled into quiet windows so they never starve the API quota that
+        // pick-selection (03:00) and odds (10:00/14:00) depend on. Each fetcher
+        // short-circuits the moment the daily quota flag trips.
+        //
+        // Standings change every matchday → refresh daily at 06:00 (~1 call/league).
+        $schedule->command('stats:fetch-standings')
+            ->dailyAt('06:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
+
+        // Team season stats → twice weekly (Mon/Thu 06:20), after standings load
+        // (it reads team IDs from the standings table). ~1 call per team.
+        $schedule->command('stats:fetch-teams')
+            ->days([1, 4])
+            ->at('06:20')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(60)
+            ->runInBackground();
+
+        // Player stats are quota-heavy (paginated per league) → weekly, Sunday
+        // 20:00, well clear of every critical API window for the day.
+        $schedule->command('stats:fetch-players')
+            ->weeklyOn(0, '20:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(120)
+            ->runInBackground();
     }
 
     /**

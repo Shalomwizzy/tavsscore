@@ -69,6 +69,25 @@ class LeagueCoverage
     }
 
     /**
+     * Distinct league IDs we've actually ingested that fall inside coverage.
+     * Combines explicit Euro/continental IDs with country-covered African
+     * leagues (whose IDs aren't hardcoded) by reading the matches table —
+     * so stat fetchers can enumerate every real league we track.
+     *
+     * @return array<int, int>
+     */
+    public static function coveredLeagueIds(): array
+    {
+        return \App\Models\FootballMatch::query()
+            ->where(fn ($q) => self::scopeCovered($q))
+            ->whereNotNull('league_id')
+            ->distinct()
+            ->pluck('league_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    /**
      * Eloquent constraint for "anything in our coverage set".
      * Pass to ->where(fn ($q) => LeagueCoverage::scopeCovered($q)).
      */
