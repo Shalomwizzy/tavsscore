@@ -255,6 +255,9 @@
             <a href="{{ route('admin.predictions') }}" class="sb-link {{ request()->routeIs('admin.predictions') ? 'active' : '' }}">
                 <span class="sb-icon">📈</span> Predictions
             </a>
+            <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}">
+                <span class="sb-icon">📊</span> API Stats
+            </a>
             <a href="{{ route('admin.picks') }}" class="sb-link {{ request()->routeIs('admin.picks') ? 'active' : '' }}">
                 <span class="sb-icon">⭐</span> Daily Picks
             </a>

@@ -43,6 +43,8 @@ Route::get('/double-chance',  [DoubleChanceController::class,  'index'])->name('
 Route::get('/rollover',           [RolloverController::class, 'index'])->name('rollover.index');
 Route::get('/rollover/{date}',    [RolloverController::class, 'show'])->name('rollover.show')->where('date', '\d{4}-\d{2}-\d{2}');
 Route::get('/stats',        [StatsController::class, 'index'])->name('stats.index');
+Route::get('/standings',    [App\Http\Controllers\LeagueStatsController::class, 'standings'])->name('standings.index');
+Route::get('/top-scorers',  [App\Http\Controllers\LeagueStatsController::class, 'topScorers'])->name('top-scorers.index');
 Route::get('/track-record', [TrackRecordController::class, 'index'])->name('track-record.index');
 Route::get('/results',     [ResultsController::class, 'index'])->name('results.index');
 Route::get('/africa',      [AfricaController::class, 'index'])->name('africa.index');
@@ -119,6 +121,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Stats */
         Route::get('/stats', [\App\Http\Controllers\Admin\StatsAdminController::class, 'index'])->name('stats.index');
+
+        /* API-Football stats — standings, team stats, player stats */
+        Route::get('/api-stats',            [Admin\ApiStatsAdminController::class, 'index'])->name('api-stats.index');
+        Route::post('/api-stats/standings', [Admin\ApiStatsAdminController::class, 'fetchStandings'])->name('api-stats.standings');
+        Route::post('/api-stats/teams',     [Admin\ApiStatsAdminController::class, 'fetchTeams'])->name('api-stats.teams');
+        Route::post('/api-stats/players',   [Admin\ApiStatsAdminController::class, 'fetchPlayers'])->name('api-stats.players');
 
         /* AI Learning — self-calibration dashboard */
         Route::get('/ai-learning',      [Admin\AILearningController::class, 'index'])->name('ai-learning.index');

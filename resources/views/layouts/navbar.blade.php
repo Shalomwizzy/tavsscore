@@ -90,6 +90,14 @@
                         <span class="ndi-icon">📊</span>
                         <span><span class="ndi-label">Stats</span><span class="ndi-sub">AI accuracy & records</span></span>
                     </a>
+                    <a href="{{ route('standings.index') }}" class="nav-drop-item {{ request()->routeIs('standings.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🏆</span>
+                        <span><span class="ndi-label">Standings</span><span class="ndi-sub">League tables & form</span></span>
+                    </a>
+                    <a href="{{ route('top-scorers.index') }}" class="nav-drop-item {{ request()->routeIs('top-scorers.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">⚽</span>
+                        <span><span class="ndi-label">Top Scorers</span><span class="ndi-sub">Goals & assist leaders</span></span>
+                    </a>
                     <a href="{{ route('track-record.index') }}" class="nav-drop-item {{ request()->routeIs('track-record.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📈</span>
                         <span><span class="ndi-label">Track Record</span><span class="ndi-sub">Verified results over time</span></span>
@@ -251,6 +259,14 @@
         <a href="{{ route('stats.index') }}" class="drawer-item {{ request()->routeIs('stats.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📊</span>
             <span class="di-text">Stats</span>
+        </a>
+        <a href="{{ route('standings.index') }}" class="drawer-item {{ request()->routeIs('standings.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🏆</span>
+            <span class="di-text">Standings</span>
+        </a>
+        <a href="{{ route('top-scorers.index') }}" class="drawer-item {{ request()->routeIs('top-scorers.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">⚽</span>
+            <span class="di-text">Top Scorers</span>
         </a>
         <a href="{{ route('track-record.index') }}" class="drawer-item {{ request()->routeIs('track-record.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📈</span>
