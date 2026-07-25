@@ -188,6 +188,20 @@ class Kernel extends ConsoleKernel
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(120)
             ->runInBackground();
+
+        // Fixture intel (injuries + API-Football predictions) feeds the LLM
+        // arbiter chain. Refreshed before the primary pick-selection at 03:00
+        // and again mid-morning so late injury/suspension news is captured.
+        $schedule->command('stats:fetch-fixture-intel --hours-ahead=48')
+            ->dailyAt('02:40')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
+        $schedule->command('stats:fetch-fixture-intel --hours-ahead=48')
+            ->dailyAt('09:30')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
     }
 
     /**

@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Models\ApiPrediction;
 use App\Models\FootballMatch;
+use App\Models\MatchInjury;
 use App\Models\Standing;
 use App\Models\TeamStatistic;
 
@@ -18,6 +20,17 @@ use App\Models\TeamStatistic;
 class MatchStatsContext
 {
     public static function build(FootballMatch $match): string
+    {
+        $blocks = array_filter([
+            self::seasonStatsBlock($match),
+            self::injuriesBlock($match),
+            self::apiPredictionBlock($match),
+        ]);
+
+        return empty($blocks) ? '' : "\n\n".implode("\n\n", $blocks);
+    }
+
+    private static function seasonStatsBlock(FootballMatch $match): string
     {
         $leagueId = (int) ($match->league_id ?? 0);
         if ($leagueId === 0) {
@@ -46,7 +59,47 @@ class MatchStatsContext
             $lines[] = 'AWAY — '.$away;
         }
 
-        return "\n\n".implode("\n", $lines);
+        return implode("\n", $lines);
+    }
+
+    private static function injuriesBlock(FootballMatch $match): string
+    {
+        $injuries = MatchInjury::query()->where('match_id', $match->id)->get();
+        if ($injuries->isEmpty()) {
+            return '';
+        }
+
+        $lines = ['═══ INJURIES & SUSPENSIONS (API-Football) ═══'];
+        foreach ($injuries->groupBy('team_name') as $team => $rows) {
+            $players = $rows->map(function (MatchInjury $i): string {
+                $reason = $i->reason ? " ({$i->reason})" : '';
+                return $i->player_name.$reason;
+            })->implode(', ');
+            $lines[] = "{$team}: {$players}";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private static function apiPredictionBlock(FootballMatch $match): string
+    {
+        $p = ApiPrediction::query()->where('match_id', $match->id)->first();
+        if ($p === null) {
+            return '';
+        }
+
+        $lines = ['═══ API-FOOTBALL MODEL PREDICTION ═══'];
+        if ($p->percent_home || $p->percent_draw || $p->percent_away) {
+            $lines[] = "Win probability — Home {$p->percent_home} / Draw {$p->percent_draw} / Away {$p->percent_away}";
+        }
+        if ($p->goals_home !== null && $p->goals_away !== null) {
+            $lines[] = "Expected goals — Home {$p->goals_home} / Away {$p->goals_away}";
+        }
+        if (! blank($p->advice)) {
+            $lines[] = "Their advice: {$p->advice}";
+        }
+
+        return count($lines) > 1 ? implode("\n", $lines) : '';
     }
 
     private static function teamLine(int $leagueId, int $season, string $teamName): ?string
