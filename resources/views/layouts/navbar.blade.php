@@ -79,8 +79,13 @@
                 🌍 Africa
             </a>
 
+            <a href="{{ route('blog.index') }}"
+               class="nav-pill {{ request()->routeIs('blog.*') ? 'active' : '' }}">
+                📰 Blog
+            </a>
+
             {{-- More dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','winners.*','hall-of-fame.*','blog.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
+            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','winners.*','hall-of-fame.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     More
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -116,10 +121,6 @@
                         <span><span class="ndi-label">Hall of Fame</span><span class="ndi-sub">Top earners leaderboard</span></span>
                     </a>
                     <div class="nav-drop-divider"></div>
-                    <a href="{{ route('blog.index') }}" class="nav-drop-item {{ request()->routeIs('blog.*') ? 'active' : '' }}" role="menuitem">
-                        <span class="ndi-icon">📝</span>
-                        <span><span class="ndi-label">Blog</span><span class="ndi-sub">Football analysis & news</span></span>
-                    </a>
                     <a href="{{ route('about') }}" class="nav-drop-item {{ request()->routeIs('about') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">ℹ️</span>
                         <span><span class="ndi-label">About</span><span class="ndi-sub">About TavsScore</span></span>

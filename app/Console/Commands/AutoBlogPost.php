@@ -3,7 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Models\BlogPost;
+use App\Models\Coach;
 use App\Models\FootballMatch;
+use App\Models\MatchInjury;
+use App\Models\PlayerStatistic;
+use App\Models\Standing;
+use App\Models\Transfer;
+use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -63,8 +69,9 @@ class AutoBlogPost extends Command
             return self::SUCCESS;
         }
 
-        $matchList = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
-        $dateStr   = $today->format('l, F j Y');
+        $matchList   = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
+        $dateStr     = $today->format('l, F j Y');
+        $newsContext = $this->buildNewsContext($matches);
 
         try {
             $this->info("Generating AI article for {$dateStr}…");
@@ -84,7 +91,7 @@ class AutoBlogPost extends Command
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.",
+                            'content' => "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.",
                         ],
                     ],
                 ]);
@@ -133,6 +140,102 @@ class AutoBlogPost extends Command
             $this->error('Failed: ' . $e->getMessage());
             return self::FAILURE;
         }
+    }
+
+    /**
+     * Aggregate ALL the football news we hold into a single briefing for the AI
+     * writer: recent transfers, injuries/suspensions, standings movers, top
+     * scorers, recent results and coach news for the teams and leagues in play.
+     */
+    private function buildNewsContext($matches): string
+    {
+        $teamNames = $matches->flatMap(fn ($m) => [$m->home_team, $m->away_team])->filter()->unique()->values();
+        $leagueIds = $matches->pluck('league_id')->filter()->unique()->values();
+        $season    = (int) (Standing::query()->whereIn('league_id', $leagueIds)->max('season') ?: now('Africa/Lagos')->year);
+
+        $sections = [];
+
+        // ── Recent transfers (last 21 days) ──
+        $transfers = Transfer::query()
+            ->where(fn ($q) => $q->whereIn('team_in_name', $teamNames)->orWhereIn('team_out_name', $teamNames))
+            ->where('transfer_date', '>=', now()->subDays(21)->toDateString())
+            ->orderByDesc('transfer_date')->limit(15)->get();
+        if ($transfers->isNotEmpty()) {
+            $lines = ['TRANSFERS:'];
+            foreach ($transfers as $t) {
+                $lines[] = "- {$t->player_name}: ".($t->team_out_name ?? '?')." to ".($t->team_in_name ?? '?')
+                    .($t->type ? " ({$t->type})" : '');
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        // ── Injuries / suspensions for today's fixtures ──
+        $injuries = MatchInjury::query()->whereIn('match_id', $matches->pluck('id'))->get();
+        if ($injuries->isNotEmpty()) {
+            $lines = ['INJURIES & SUSPENSIONS:'];
+            foreach ($injuries->groupBy('team_name') as $team => $rows) {
+                $players = $rows->map(fn ($i) => $i->player_name.($i->reason ? " ({$i->reason})" : ''))->implode(', ');
+                $lines[] = "- {$team}: {$players}";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        // ── Standings movers (leaders + strugglers per league) ──
+        foreach ($leagueIds as $lid) {
+            $rows = Standing::query()->where('league_id', $lid)->where('season', $season)
+                ->orderBy('rank')->get();
+            if ($rows->isEmpty()) continue;
+            $leagueName = LeagueCoverage::formatName(
+                optional($matches->firstWhere('league_id', $lid))->league,
+                optional($matches->firstWhere('league_id', $lid))->league_country,
+            );
+            $top    = $rows->take(3)->map(fn ($s) => "{$s->rank}. {$s->team_name} ({$s->points}pts)")->implode(', ');
+            $sections[] = "STANDINGS - {$leagueName}: {$top}";
+        }
+
+        // ── Top scorers in the leagues in play ──
+        $scorers = PlayerStatistic::query()->whereIn('league_id', $leagueIds)->where('season', $season)
+            ->where('goals', '>', 0)->orderByDesc('goals')->limit(6)->get();
+        if ($scorers->isNotEmpty()) {
+            $lines = ['TOP SCORERS:'];
+            foreach ($scorers as $p) {
+                $lines[] = "- {$p->player_name} ({$p->team_name}): {$p->goals} goals";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        // ── Recent results (last 3 days) for context ──
+        $results = FootballMatch::query()
+            ->whereIn('status', ['FT', 'AET', 'PEN'])
+            ->where(fn ($q) => $q->whereIn('home_team', $teamNames)->orWhereIn('away_team', $teamNames))
+            ->whereBetween('match_time', [now()->subDays(4), now()])
+            ->orderByDesc('match_time')->limit(8)->get();
+        if ($results->isNotEmpty()) {
+            $lines = ['RECENT RESULTS:'];
+            foreach ($results as $r) {
+                $lines[] = "- {$r->home_team} {$r->home_score}-{$r->away_score} {$r->away_team}";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        // ── Coach news ──
+        $coaches = Coach::query()->whereIn('team_name', $teamNames)->where('is_current', true)->get();
+        if ($coaches->isNotEmpty()) {
+            $lines = ['MANAGERS:'];
+            foreach ($coaches as $c) {
+                $lines[] = "- {$c->team_name}: {$c->name}".($c->nationality ? " ({$c->nationality})" : '');
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        if (empty($sections)) {
+            return '';
+        }
+
+        return "\n\nREAL FOOTBALL NEWS & FACTS (sourced from live data — transfers, injuries, form, scorers, results, managers).\n"
+            ."Base the article on these REAL facts. Rephrase them in your own words for original, plagiarism-free copy. "
+            ."Do NOT copy any wording verbatim, and do NOT invent facts, stats, transfers or injuries that are not listed here:\n\n"
+            .implode("\n\n", $sections);
     }
 
     private function pickImage(string $title, string $matchList): string
