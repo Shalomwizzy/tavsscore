@@ -320,6 +320,35 @@
                 <div class="pp-stat-row"><span>Both teams to score</span><span>{{ number_format($btts,1) }}%</span></div>
             </div>
 
+            @if(!empty($pred->market_board))
+            <div class="pp-card" style="margin-top:1rem;">
+                <h2>🎯 Full Market Board</h2>
+                <p style="font-size:.78rem; color:var(--text-dim); margin:-.3rem 0 .9rem;">
+                    Our model's probability across every market, ranked most likely first.
+                </p>
+                @php
+                    $board = $pred->market_board;
+                    arsort($board);
+                    $best = array_slice(array_filter($board, fn ($p) => $p <= 92), 0, 3, true);
+                @endphp
+                @if(!empty($best))
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    @foreach($best as $label => $prob)
+                    <div style="background:var(--green-dim); border:1px solid var(--green-border); border-radius:10px; padding:.5rem .8rem;">
+                        <div style="font-size:.68rem; color:var(--text-dim);">{{ $label }}</div>
+                        <div style="font-weight:800; color:#6ee7b7;">{{ number_format($prob,1) }}%</div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+                <div style="max-height:340px; overflow-y:auto;">
+                    @foreach($board as $label => $prob)
+                    <div class="pp-stat-row"><span>{{ $label }}</span><span>{{ number_format($prob,1) }}%</span></div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <div class="pp-card" style="margin-top:1rem; font-size:.78rem; color:var(--text-dim); line-height:1.6;">
                 <strong style="color:var(--text);">How we predict:</strong>
                 Probabilities come from a Poisson goal-expectation model fed by recent form, attack/defence ratings and home advantage. The AI summary is generated from the same numerical inputs and recent context.

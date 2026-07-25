@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\FootballMatch;
 use App\Models\Prediction;
+use App\Services\Markets\MarketEngine;
 use App\Support\LeagueCoverage;
 use App\Support\MatchStatsContext;
 use App\Support\PickHelpers;
@@ -291,6 +292,7 @@ class PredictionService
 
         [$homeXgScore, $awayXgScore] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
         $likelyScores = $this->topScorelines($homeXgScore, $awayXgScore);
+        $marketBoard  = MarketEngine::fromExpectedGoals($homeXgScore, $awayXgScore);
 
         return Prediction::query()->updateOrCreate(
             ['match_id' => $match->id],
@@ -312,6 +314,7 @@ class PredictionService
                 'pi_rating_diff'    => $piRatings['diff'],
                 'analysis'          => $analysis,
                 'likely_scores'     => $likelyScores,
+                'market_board'      => $marketBoard,
                 'opening_odds'      => $openingOdds,
             ]
         );
@@ -809,6 +812,7 @@ class PredictionService
 
         $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
         $data['likely_scores'] = $likelyScores;
+        $data['market_board']  = MarketEngine::fromExpectedGoals($homeXgFinal, $awayXgFinal);
 
         if ($existing) {
             $existing->update($data);
