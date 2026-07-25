@@ -14,10 +14,105 @@ use App\Services\DixonColes\Model;
  */
 class MarketEngine
 {
-    /** Build the matrix from expected goals, then derive all markets. */
+    /** Empirical share of goals scored in the first half (~45/55 split). */
+    private const FIRST_HALF_SHARE = 0.45;
+
+    /** Build the matrix from expected goals, then derive all markets (FT + HT). */
     public static function fromExpectedGoals(float $lambdaHome, float $lambdaAway, float $rho = 0.0): array
     {
-        return self::fromMatrix(Model::matrix($lambdaHome, $lambdaAway, $rho));
+        $ft = self::fromMatrix(Model::matrix($lambdaHome, $lambdaAway, $rho));
+
+        return array_merge($ft, self::halfTimeMarkets($lambdaHome, $lambdaAway, $rho));
+    }
+
+    /**
+     * Half-time and HT/FT markets. Splits each team's expected goals into a
+     * first-half and second-half Poisson process (~45/55) and derives HT
+     * result, HT over/under, HT BTTS, both-halves, highest-scoring-half and all
+     * nine HT/FT combinations.
+     *
+     * @return array<string, float>
+     */
+    public static function halfTimeMarkets(float $lambdaHome, float $lambdaAway, float $rho = 0.0): array
+    {
+        $s        = self::FIRST_HALF_SHARE;
+        $htMatrix = Model::matrix($lambdaHome * $s, $lambdaAway * $s, $rho);
+        $shMatrix = Model::matrix($lambdaHome * (1 - $s), $lambdaAway * (1 - $s), $rho);
+        $pct      = fn (float $x): float => round($x * 100, 1);
+        $sign     = fn (int $x, int $y): string => $x > $y ? 'H' : ($x === $y ? 'D' : 'A');
+
+        $htHome = $htDraw = $htAway = $htOver05 = $htOver15 = $htBtts = 0.0;
+        $htTotalDist = [];
+        foreach ($htMatrix as $h => $row) {
+            foreach ($row as $a => $p) {
+                if ($p <= 0) continue;
+                if ($h > $a) $htHome += $p; elseif ($h === $a) $htDraw += $p; else $htAway += $p;
+                $t = $h + $a;
+                if ($t > 0.5) $htOver05 += $p;
+                if ($t > 1.5) $htOver15 += $p;
+                if ($h >= 1 && $a >= 1) $htBtts += $p;
+                $htTotalDist[$t] = ($htTotalDist[$t] ?? 0) + $p;
+            }
+        }
+
+        $shTotalDist = [];
+        foreach ($shMatrix as $h => $row) {
+            foreach ($row as $a => $p) {
+                if ($p <= 0) continue;
+                $t = $h + $a;
+                $shTotalDist[$t] = ($shTotalDist[$t] ?? 0) + $p;
+            }
+        }
+
+        $bothHalves = (1 - ($htTotalDist[0] ?? 0)) * (1 - ($shTotalDist[0] ?? 0));
+
+        $firstMore = $secondMore = $equalHalves = 0.0;
+        foreach ($htTotalDist as $i => $pi) {
+            foreach ($shTotalDist as $j => $pj) {
+                if ($i > $j) $firstMore += $pi * $pj;
+                elseif ($j > $i) $secondMore += $pi * $pj;
+                else $equalHalves += $pi * $pj;
+            }
+        }
+
+        // HT/FT — joint over both half matrices (FT = HT + 2H per team)
+        $htft = [];
+        foreach ($htMatrix as $h1 => $r1) {
+            foreach ($r1 as $a1 => $p1) {
+                if ($p1 <= 0) continue;
+                $htRes = $sign($h1, $a1);
+                foreach ($shMatrix as $h2 => $r2) {
+                    foreach ($r2 as $a2 => $p2) {
+                        if ($p2 <= 0) continue;
+                        $k = $htRes.'/'.$sign($h1 + $h2, $a1 + $a2);
+                        $htft[$k] = ($htft[$k] ?? 0) + $p1 * $p2;
+                    }
+                }
+            }
+        }
+
+        $m = [];
+        $m['HT Home Win'] = $pct($htHome);
+        $m['HT Draw']     = $pct($htDraw);
+        $m['HT Away Win'] = $pct($htAway);
+        $m['HT Over 0.5'] = $pct($htOver05);
+        $m['HT Under 0.5'] = $pct(1 - $htOver05);
+        $m['HT Over 1.5'] = $pct($htOver15);
+        $m['HT Under 1.5'] = $pct(1 - $htOver15);
+        $m['HT Both Teams Score'] = $pct($htBtts);
+        $m['Both Halves Over 0.5'] = $pct($bothHalves);
+        $m['Goal in Both Halves']  = $pct($bothHalves);
+        $m['1st Half More Goals']  = $pct($firstMore);
+        $m['2nd Half More Goals']  = $pct($secondMore);
+        $m['Equal Goals Each Half'] = $pct($equalHalves);
+
+        $names = ['H' => 'Home', 'D' => 'Draw', 'A' => 'Away'];
+        foreach ($htft as $k => $p) {
+            [$ht, $ft] = explode('/', $k);
+            $m["HT/FT {$names[$ht]}/{$names[$ft]}"] = $pct($p);
+        }
+
+        return $m;
     }
 
     /**
@@ -147,6 +242,77 @@ class MarketEngine
         $m['Away Over 0.5'] = $pct($bucketAtLeast($awayGoalsDist, 1));
         $m['Away Over 1.5'] = $pct($bucketAtLeast($awayGoalsDist, 2));
         $m['Away Over 2.5'] = $pct($bucketAtLeast($awayGoalsDist, 3));
+
+        // ── Exact team goals ──
+        $m['Home Exactly 0'] = $pct($homeGoalsDist[0] ?? 0);
+        $m['Home Exactly 1'] = $pct($homeGoalsDist[1] ?? 0);
+        $m['Home Exactly 2'] = $pct($homeGoalsDist[2] ?? 0);
+        $m['Home 3+ Goals']  = $pct($bucketAtLeast($homeGoalsDist, 3));
+        $m['Away Exactly 0'] = $pct($awayGoalsDist[0] ?? 0);
+        $m['Away Exactly 1'] = $pct($awayGoalsDist[1] ?? 0);
+        $m['Away Exactly 2'] = $pct($awayGoalsDist[2] ?? 0);
+        $m['Away 3+ Goals']  = $pct($bucketAtLeast($awayGoalsDist, 3));
+
+        // ── Handicaps, winning margin & combo markets (joint pass) ──
+        $ahHomeM15 = $ahHomeP15 = $ahAwayM15 = $ahAwayP15 = $ahHomeM25 = $ahAwayM25 = 0.0;
+        $mH1 = $mH2 = $mH3 = $mA1 = $mA2 = $mA3 = 0.0;
+        $hwO = $hwU = $dO = $dU = $awO = $awU = 0.0;               // result × O/U 2.5
+        $hwBt = $hwNb = $awBt = $awNb = $drawBt = 0.0;              // result × BTTS
+        $btO = $btU = $nbO = $nbU = 0.0;                           // BTTS × O/U 2.5
+        foreach ($matrix as $h => $row) {
+            foreach ($row as $a => $p) {
+                if ($p <= 0) continue;
+                $d = $h - $a; $over = ($h + $a) > 2.5; $bt = ($h >= 1 && $a >= 1);
+
+                if ($d >= 2)  $ahHomeM15 += $p;   // Home -1.5
+                if ($d >= -1) $ahHomeP15 += $p;   // Home +1.5
+                if (-$d >= 2) $ahAwayM15 += $p;   // Away -1.5
+                if (-$d >= -1) $ahAwayP15 += $p;  // Away +1.5
+                if ($d >= 3)  $ahHomeM25 += $p;   // Home -2.5
+                if (-$d >= 3) $ahAwayM25 += $p;   // Away -2.5
+
+                if ($d === 1) $mH1 += $p; elseif ($d === 2) $mH2 += $p; elseif ($d >= 3) $mH3 += $p;
+                elseif ($d === -1) $mA1 += $p; elseif ($d === -2) $mA2 += $p; elseif ($d <= -3) $mA3 += $p;
+
+                if ($h > $a)       { $over ? $hwO += $p : $hwU += $p; $bt ? $hwBt += $p : $hwNb += $p; }
+                elseif ($h === $a) { $over ? $dO += $p : $dU += $p;  if ($bt) $drawBt += $p; }
+                else               { $over ? $awO += $p : $awU += $p; $bt ? $awBt += $p : $awNb += $p; }
+
+                if ($bt) { $over ? $btO += $p : $btU += $p; } else { $over ? $nbO += $p : $nbU += $p; }
+            }
+        }
+
+        $m['Home -1.5 (Handicap)'] = $pct($ahHomeM15);
+        $m['Home +1.5 (Handicap)'] = $pct($ahHomeP15);
+        $m['Away -1.5 (Handicap)'] = $pct($ahAwayM15);
+        $m['Away +1.5 (Handicap)'] = $pct($ahAwayP15);
+        $m['Home -2.5 (Handicap)'] = $pct($ahHomeM25);
+        $m['Away -2.5 (Handicap)'] = $pct($ahAwayM25);
+
+        $m['Home to win by 1']  = $pct($mH1);
+        $m['Home to win by 2']  = $pct($mH2);
+        $m['Home to win by 3+'] = $pct($mH3);
+        $m['Away to win by 1']  = $pct($mA1);
+        $m['Away to win by 2']  = $pct($mA2);
+        $m['Away to win by 3+'] = $pct($mA3);
+
+        $m['Home & Over 2.5'] = $pct($hwO);
+        $m['Home & Under 2.5'] = $pct($hwU);
+        $m['Draw & Over 2.5'] = $pct($dO);
+        $m['Draw & Under 2.5'] = $pct($dU);
+        $m['Away & Over 2.5'] = $pct($awO);
+        $m['Away & Under 2.5'] = $pct($awU);
+
+        $m['Home & BTTS'] = $pct($hwBt);
+        $m['Home & No BTTS'] = $pct($hwNb);
+        $m['Away & BTTS'] = $pct($awBt);
+        $m['Away & No BTTS'] = $pct($awNb);
+        $m['Draw & BTTS'] = $pct($drawBt);
+
+        $m['BTTS & Over 2.5'] = $pct($btO);
+        $m['BTTS & Under 2.5'] = $pct($btU);
+        $m['No BTTS & Over 2.5'] = $pct($nbO);
+        $m['No BTTS & Under 2.5'] = $pct($nbU);
 
         return $m;
     }
