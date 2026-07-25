@@ -18,6 +18,11 @@
     <div class="stat-card"><span class="stat-val">{{ number_format($summary['team_rows']) }}</span><span class="stat-lbl">Team-stat rows</span></div>
     <div class="stat-card"><span class="stat-val">{{ number_format($summary['player_rows']) }}</span><span class="stat-lbl">Player-stat rows</span></div>
     <div class="stat-card"><span class="stat-val">{{ $summary['leagues'] }}</span><span class="stat-lbl">Leagues · Season {{ $season }}</span></div>
+    <div class="stat-card"><span class="stat-val">{{ number_format($summary['injuries']) }}</span><span class="stat-lbl">Injury rows</span></div>
+    <div class="stat-card"><span class="stat-val">{{ number_format($summary['api_predictions']) }}</span><span class="stat-lbl">API predictions</span></div>
+    <div class="stat-card"><span class="stat-val">{{ number_format($summary['fixture_stats']) }}</span><span class="stat-lbl">Fixture-stat rows</span></div>
+    <div class="stat-card"><span class="stat-val">{{ number_format($summary['transfers']) }}</span><span class="stat-lbl">Transfers</span></div>
+    <div class="stat-card"><span class="stat-val">{{ number_format($summary['coaches']) }}</span><span class="stat-lbl">Coaches</span></div>
 </div>
 
 {{-- League selector + fetch controls --}}

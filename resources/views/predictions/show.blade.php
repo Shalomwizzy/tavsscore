@@ -349,6 +349,38 @@
             </div>
             @endif
 
+            @if(!empty($injuries) && $injuries->isNotEmpty())
+            <div class="pp-card" style="margin-top:1rem;">
+                <h2>🏥 Injuries & Suspensions</h2>
+                @foreach($injuries as $team => $rows)
+                <div style="margin-bottom:.6rem;">
+                    <div style="font-weight:700; color:var(--text); font-size:.85rem; margin-bottom:.25rem;">{{ $team }}</div>
+                    @foreach($rows as $i)
+                    <div class="pp-stat-row" style="font-size:.8rem;">
+                        <span>{{ $i->player_name }}</span>
+                        <span style="color:#fca5a5;">{{ $i->reason ?? $i->type ?? 'Out' }}</span>
+                    </div>
+                    @endforeach
+                </div>
+                @endforeach
+            </div>
+            @endif
+
+            @if(!empty($apiPrediction))
+            <div class="pp-card" style="margin-top:1rem;">
+                <h2>🔎 API-Football Model</h2>
+                <p style="font-size:.78rem; color:var(--text-dim); margin:-.3rem 0 .8rem;">An independent statistical model, shown for comparison.</p>
+                @if($apiPrediction->percent_home || $apiPrediction->percent_draw || $apiPrediction->percent_away)
+                <div class="pp-stat-row"><span>{{ $match->home_team }} win</span><span>{{ $apiPrediction->percent_home ?? '—' }}</span></div>
+                <div class="pp-stat-row"><span>Draw</span><span>{{ $apiPrediction->percent_draw ?? '—' }}</span></div>
+                <div class="pp-stat-row"><span>{{ $match->away_team }} win</span><span>{{ $apiPrediction->percent_away ?? '—' }}</span></div>
+                @endif
+                @if($apiPrediction->advice)
+                <div class="pp-stat-row"><span>Advice</span><span style="color:#6ee7b7;">{{ $apiPrediction->advice }}</span></div>
+                @endif
+            </div>
+            @endif
+
             <div class="pp-card" style="margin-top:1rem; font-size:.78rem; color:var(--text-dim); line-height:1.6;">
                 <strong style="color:var(--text);">How we predict:</strong>
                 Probabilities come from a Poisson goal-expectation model fed by recent form, attack/defence ratings and home advantage. The AI summary is generated from the same numerical inputs and recent context.

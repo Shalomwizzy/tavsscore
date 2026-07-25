@@ -29,6 +29,11 @@ class ApiStatsAdminController extends Controller
             'team_rows'      => TeamStatistic::query()->where('season', $season)->count(),
             'player_rows'    => PlayerStatistic::query()->where('season', $season)->count(),
             'leagues'        => count($leagues),
+            'injuries'       => \App\Models\MatchInjury::query()->count(),
+            'api_predictions'=> \App\Models\ApiPrediction::query()->count(),
+            'fixture_stats'  => \App\Models\FixtureStatistic::query()->count(),
+            'transfers'      => \App\Models\Transfer::query()->count(),
+            'coaches'        => \App\Models\Coach::query()->count(),
         ];
 
         $standings = $leagueId
