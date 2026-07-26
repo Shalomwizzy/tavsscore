@@ -60,18 +60,34 @@ class AutoBlogPost extends Command
             }
         }
 
+        $dateStr = $today->format('l, F j Y');
+
+        // Prefer top-league matches today; broaden to any covered league; else
+        // fall back to a news roundup so the blog never fails to post.
         $matches = FootballMatch::whereDate('match_time', $today->toDateString())
             ->whereIn('league_id', self::TOP_LEAGUE_IDS)
             ->orderBy('match_time')->limit(10)->get();
 
         if ($matches->isEmpty()) {
-            $this->warn('No top-league matches today - skipping auto-post.');
-            return self::SUCCESS;
+            $matches = FootballMatch::whereDate('match_time', $today->toDateString())
+                ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+                ->orderBy('match_time')->limit(10)->get();
         }
 
-        $matchList   = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
-        $dateStr     = $today->format('l, F j Y');
-        $newsContext = $this->buildNewsContext($matches);
+        if ($matches->isEmpty()) {
+            // Roundup mode — no fixtures today, write from the football news we hold.
+            $newsContext = $this->buildGeneralNewsContext();
+            if (blank($newsContext)) {
+                $this->warn('No matches and no football news available today — skipping auto-post.');
+                return self::SUCCESS;
+            }
+            $matchList  = 'football news, transfers and league form';
+            $userPrompt = "Write a football NEWS ROUNDUP article for {$dateStr}. There are no major fixtures today, so cover the latest transfers, standings/form, top scorers and recent results below.{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words.\n- Open with a punchy, opinionated hook.\n- Organise into <h2> themed sections (transfers, title race / form, top scorers, results talking points) using the REAL facts below.\n- Base everything on the facts provided; rephrase in your own words, do not invent facts.\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only.\n- Real human journalist voice: varied sentences, genuine opinions, take sides.\n- No AI filler ('it is worth noting', 'furthermore', 'in conclusion', 'delve'). Do NOT use em dashes.";
+        } else {
+            $matchList   = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
+            $newsContext = $this->buildNewsContext($matches);
+            $userPrompt  = "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.";
+        }
 
         try {
             $this->info("Generating AI article for {$dateStr}…");
@@ -91,7 +107,7 @@ class AutoBlogPost extends Command
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.",
+                            'content' => $userPrompt,
                         ],
                     ],
                 ]);
@@ -235,6 +251,69 @@ class AutoBlogPost extends Command
         return "\n\nREAL FOOTBALL NEWS & FACTS (sourced from live data — transfers, injuries, form, scorers, results, managers).\n"
             ."Base the article on these REAL facts. Rephrase them in your own words for original, plagiarism-free copy. "
             ."Do NOT copy any wording verbatim, and do NOT invent facts, stats, transfers or injuries that are not listed here:\n\n"
+            .implode("\n\n", $sections);
+    }
+
+    /**
+     * News roundup context when there are no fixtures today: recent transfers,
+     * standings leaders, top scorers and recent results across covered leagues.
+     */
+    private function buildGeneralNewsContext(): string
+    {
+        $tz        = config('app.timezone');
+        $leagueIds = LeagueCoverage::coveredLeagueIds();
+        $season    = (int) (Standing::query()->max('season') ?: now($tz)->year);
+        $sections  = [];
+
+        $transfers = Transfer::query()
+            ->whereNotNull('team_in_name')
+            ->where('transfer_date', '>=', now()->subDays(21)->toDateString())
+            ->orderByDesc('transfer_date')->limit(15)->get();
+        if ($transfers->isNotEmpty()) {
+            $lines = ['TRANSFERS:'];
+            foreach ($transfers as $t) {
+                $lines[] = "- {$t->player_name}: ".($t->team_out_name ?? '?')." to ".($t->team_in_name ?? '?').($t->type ? " ({$t->type})" : '');
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        $leaders = Standing::query()->where('season', $season)->where('rank', 1)->limit(8)->get();
+        if ($leaders->isNotEmpty()) {
+            $lines = ['LEAGUE LEADERS:'];
+            foreach ($leaders as $s) {
+                $lines[] = "- {$s->team_name}: {$s->points} pts, {$s->win}W-{$s->draw}D-{$s->lose}L";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        $scorers = PlayerStatistic::query()->where('season', $season)
+            ->where('goals', '>', 0)->orderByDesc('goals')->limit(8)->get();
+        if ($scorers->isNotEmpty()) {
+            $lines = ['TOP SCORERS:'];
+            foreach ($scorers as $p) {
+                $lines[] = "- {$p->player_name} ({$p->team_name}): {$p->goals} goals";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        $results = FootballMatch::query()
+            ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+            ->whereIn('status', ['FT', 'AET', 'PEN'])
+            ->whereBetween('match_time', [now()->subDays(3), now()])
+            ->orderByDesc('match_time')->limit(10)->get();
+        if ($results->isNotEmpty()) {
+            $lines = ['RECENT RESULTS:'];
+            foreach ($results as $r) {
+                $lines[] = "- {$r->home_team} {$r->home_score}-{$r->away_score} {$r->away_team}";
+            }
+            $sections[] = implode("\n", $lines);
+        }
+
+        if (empty($sections)) {
+            return '';
+        }
+
+        return "\n\nREAL FOOTBALL NEWS & FACTS (from live data). Base the article on these; rephrase in your own words, do not invent facts:\n\n"
             .implode("\n\n", $sections);
     }
 
