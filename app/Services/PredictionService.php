@@ -475,6 +475,51 @@ class PredictionService
         );
     }
 
+    /**
+     * Model probability of a prediction's own market, read from its stored
+     * board. Null when the board or key is missing.
+     */
+    private function pickBoardProbability(Prediction $p): ?float
+    {
+        $board = is_array($p->market_board) ? $p->market_board : null;
+        if (empty($board) || blank($p->predicted_outcome)) {
+            return null;
+        }
+
+        $map = [
+            'Both Teams Score'    => 'Both Teams Score (GG)',
+            'No Both Teams Score' => 'No Both Teams Score (NG)',
+        ];
+        $key = $map[$p->predicted_outcome] ?? $p->predicted_outcome;
+
+        return isset($board[$key]) ? (float) $board[$key] : null;
+    }
+
+    /**
+     * Quality multiplier that rewards strong 4-AI agreement and the model's own
+     * conviction (board probability of the pick). Used to rank the best picks
+     * first without hard-excluding, so pages stay populated.
+     */
+    private function pickQualityMultiplier(Prediction $p): float
+    {
+        $tips  = is_array($p->tips) ? $p->tips : [];
+        $level = $tips[0]['agreement_level'] ?? null;
+
+        $mult = match ($level) {
+            'strong'                    => 1.15,
+            'partial'                   => 1.00,
+            'conflict', 'arbiter-call'  => 0.85,
+            default                     => 0.95,   // unverified / speculative
+        };
+
+        $boardProb = $this->pickBoardProbability($p);
+        if ($boardProb !== null) {
+            $mult *= 0.6 + 0.4 * (min(100.0, $boardProb) / 100);   // 0.6–1.0 by conviction
+        }
+
+        return $mult;
+    }
+
     private function marketBoardBlock(array $board): string
     {
         if (empty($board)) {
@@ -1095,6 +1140,10 @@ class PredictionService
                 $score *= 0.60;
             }
 
+            // Reward strong 4-AI consensus + high model board conviction so the
+            // very best picks rise to the top 3.
+            $score *= $this->pickQualityMultiplier($p);
+
             return [
                 'prediction' => $p,
                 'score'      => $score,
@@ -1216,7 +1265,7 @@ class PredictionService
         // Merge: primary first, then secondary, deduplicated by match_id
         $candidates = $primary->merge($secondary)
             ->unique('match_id')
-            ->sortByDesc(fn (Prediction $p) => (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (int) $p->draw_prob)
+            ->sortByDesc(fn (Prediction $p) => ((in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + (int) $p->draw_prob) * $this->pickQualityMultiplier($p))
             ->take(5)
             ->values();
 
@@ -1291,8 +1340,9 @@ class PredictionService
         $candidates = $primary->merge($secondary)
             ->unique('match_id')
             ->sortByDesc(fn (Prediction $p) =>
-                (in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
-                + (int) max($p->confidence, (float) ($p->btts_prob ?? 0))
+                ((in_array((int) $p->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0)
+                + (int) max($p->confidence, (float) ($p->btts_prob ?? 0)))
+                * $this->pickQualityMultiplier($p)
             )
             ->take(5)
             ->values();
