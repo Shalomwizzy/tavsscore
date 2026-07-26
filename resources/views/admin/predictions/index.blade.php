@@ -115,6 +115,22 @@
                                     <div class="pred-detail-empty">Not yet translated. Cached on first user click on /picks.</div>
                                 @endif
                             </div>
+                            <div class="pred-detail-block" style="grid-column:1/-1;">
+                                <div class="pred-detail-label">🎯 Market Board @if(!empty($pred->market_board))({{ count($pred->market_board) }} markets)@endif</div>
+                                @if(!empty($pred->market_board))
+                                    @php $board = $pred->market_board; arsort($board); @endphp
+                                    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:.15rem .9rem; max-height:260px; overflow-y:auto;">
+                                        @foreach($board as $label => $prob)
+                                        <div style="display:flex; justify-content:space-between; font-size:.74rem; border-bottom:1px solid rgba(255,255,255,.04); padding:.15rem 0;">
+                                            <span style="color:var(--text);">{{ $label }}</span>
+                                            <span style="color:#6ee7b7; font-weight:700;">{{ number_format($prob,1) }}%</span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="pred-detail-empty">No market board yet — regenerates on the next predict:matches run.</div>
+                                @endif
+                            </div>
                         </div>
                     </td>
                 </tr>

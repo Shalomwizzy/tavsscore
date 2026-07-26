@@ -165,9 +165,10 @@ class Kernel extends ConsoleKernel
         // pick-selection (03:00) and odds (10:00/14:00) depend on. Each fetcher
         // short-circuits the moment the daily quota flag trips.
         //
-        // Standings change every matchday → refresh daily at 06:00 (~1 call/league).
+        // Standings change every matchday → refresh at 02:30, before the 03:00
+        // pick selection, so daily picks always use same-day league tables.
         $schedule->command('stats:fetch-standings')
-            ->dailyAt('06:00')
+            ->dailyAt('02:30')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();

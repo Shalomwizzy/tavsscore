@@ -130,6 +130,12 @@ class PredictionService
                 } catch (\Throwable) {}
             }
 
+            // Ensure every prediction has the full market board, even cached ones.
+            if (blank($existing->market_board)) {
+                [$hxs, $axs] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
+                $updates['market_board'] = MarketEngine::fromExpectedGoals($hxs, $axs);
+            }
+
             return Prediction::query()->updateOrCreate(['match_id' => $match->id], $updates);
         }
 
