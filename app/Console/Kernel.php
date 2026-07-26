@@ -37,6 +37,15 @@ class Kernel extends ConsoleKernel
             \Illuminate\Support\Facades\Cache::forget('api_football_quota_exhausted');
         })->dailyAt('01:30')->timezone('Africa/Lagos')->name('clear-quota-flag');
 
+        // FIRST thing after the quota resets: reconcile any past match whose
+        // result was missed (quota was down when it finished) and settle every
+        // pending outcome, so nothing is left ungraded. 14-day catch-up window.
+        $schedule->command('results:catch-up --days=14')
+            ->dailyAt('01:35')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
+
         // Picks: force-select at 03:00 (fixtures loaded, predictions generated).
         // Silent re-runs at 05:00, 08:00, 10:00 — these are blocked by the
         // "picks_sent_{type}_{date}" cache flags so notified picks are never replaced.
