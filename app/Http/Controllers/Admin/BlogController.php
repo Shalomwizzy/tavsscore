@@ -108,77 +108,32 @@ class BlogController extends Controller
 
     public function autoGenerate(): RedirectResponse
     {
-        $apiKey = config('services.groq.key');
-
-        if (blank($apiKey) || $apiKey === 'your_api_key_here') {
+        if (blank(config('services.groq.key')) || config('services.groq.key') === 'your_api_key_here') {
             return redirect()->route('admin.blog.index')
                 ->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
         }
 
-        $today   = CarbonImmutable::now(config('app.timezone'));
-        $matches = FootballMatch::whereDate('match_time', $today->toDateString())
-            ->whereIn('league_id', [2, 3, 39, 61, 78, 135, 140, 848])
-            ->orderBy('match_time')
-            ->limit(6)
-            ->get();
+        $before = BlogPost::max('id');
 
-        if ($matches->isEmpty()) {
-            return redirect()->route('admin.blog.index')
-                ->with('error', 'No top-league matches found for today to generate a post about.');
-        }
-
-        $matchList = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
-        $dateStr   = $today->format('l, F j Y');
-
+        // Delegate to the robust command: prefers today's fixtures, broadens to
+        // any covered league, then falls back to a news roundup — and feeds real
+        // transfers/injuries/standings/scorers so it never dead-ends on off-days.
         try {
-            $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
-                ->acceptJson()->asJson()->timeout(30)
-                ->post(config('services.groq.url'), [
-                    'model'       => config('services.groq.model'),
-                    'temperature' => 0.7,
-                    'max_tokens'  => 900,
-                    'messages'    => [
-                        [
-                            'role'    => 'system',
-                            'content' => 'You are a professional football journalist writing for TavsScore, a football live scores and predictions website. Write engaging, SEO-friendly football news articles. Always return valid JSON with "title" and "content" fields. The content should be formatted as clean HTML paragraphs using <p> tags. Do not include <html>, <head>, or <body> tags.',
-                        ],
-                        [
-                            'role'    => 'user',
-                            'content' => "Write a football preview article for {$dateStr} covering these matches: {$matchList}.\n\nReturn JSON: {\"title\": \"...\", \"content\": \"<p>...</p><p>...</p>...\"}\n\nInclude: exciting intro paragraph, brief preview of each match, key storylines, what to watch. Keep it around 400-500 words. Make it SEO-friendly with natural keywords.",
-                        ],
-                    ],
-                ]);
-
-            $text = trim((string) data_get($response->json(), 'choices.0.message.content'));
-            $text = preg_replace('/^```json\s*/i', '', $text);
-            $text = preg_replace('/\s*```$/', '', $text);
-
-            $json = json_decode($text, true);
-
-            if (! $json || empty($json['title']) || empty($json['content'])) {
-                throw new \RuntimeException('Groq returned invalid JSON structure.');
-            }
-
-            $post = BlogPost::create([
-                'title'          => $json['title'],
-                'slug'           => BlogPost::generateSlug($json['title']),
-                'excerpt'        => strip_tags(substr($json['content'], 0, 200)).'…',
-                'content'        => $json['content'],
-                'category'       => 'Match Previews',
-                'author'         => 'TavsScore AI',
-                'is_published'   => true,
-                'is_ai_generated'=> true,
-                'published_at'   => now(),
-            ]);
-
-            return redirect()->route('admin.blog.edit', $post)
-                ->with('success', 'AI blog post generated and published successfully!');
+            \Illuminate\Support\Facades\Artisan::call('blog:auto-post', ['--force' => true]);
         } catch (\Throwable $e) {
             Log::error('Auto blog generation failed.', ['message' => $e->getMessage()]);
-
-            return redirect()->route('admin.blog.index')
-                ->with('error', 'AI generation failed: '.$e->getMessage());
+            return redirect()->route('admin.blog.index')->with('error', 'AI generation failed: '.$e->getMessage());
         }
+
+        $post = BlogPost::query()->where('id', '>', (int) $before)->latest('id')->first();
+
+        if (! $post) {
+            return redirect()->route('admin.blog.index')
+                ->with('error', 'Could not generate a post right now — no fixtures and no football news available yet. Try after stats have been fetched.');
+        }
+
+        return redirect()->route('admin.blog.edit', $post)
+            ->with('success', 'AI blog post generated and published successfully!');
     }
 
     private function saveImage(\Illuminate\Http\UploadedFile $file): string

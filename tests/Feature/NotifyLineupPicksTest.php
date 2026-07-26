@@ -19,7 +19,9 @@ class NotifyLineupPicksTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->oneSignal = $this->mock(OneSignalService::class);
+        // Ignore-missing so incidental push calls (e.g. notifyLineupUpdated) are
+        // no-ops; these tests assert on Telegram + explicit expectations only.
+        $this->oneSignal = $this->mock(OneSignalService::class)->shouldIgnoreMissing();
         $this->telegram  = $this->mock(TelegramService::class);
     }
 
@@ -58,9 +60,8 @@ class NotifyLineupPicksTest extends TestCase
         $this->predictionWithLineup($match->id);
 
         $this->oneSignal
-            ->shouldReceive('sendMatchAlert')
-            ->once()
-            ->withArgs(fn ($title) => str_contains($title, 'Lineup'));
+            ->shouldReceive('notifyLineupUpdated')
+            ->once();
 
         $this->telegram
             ->shouldReceive('sendLineupPicks')
@@ -115,9 +116,9 @@ class NotifyLineupPicksTest extends TestCase
         $this->predictionWithLineup($match2->id, ['confidence' => 85]);
 
         $this->oneSignal
-            ->shouldReceive('sendMatchAlert')
+            ->shouldReceive('notifyLineupUpdated')
             ->once()
-            ->withArgs(fn ($title, $message) => str_contains($message, 'Real Madrid'));
+            ->withArgs(fn ($topMatch) => str_contains($topMatch, 'Real Madrid'));
 
         $this->telegram->shouldReceive('sendLineupPicks')->once();
 
