@@ -15,6 +15,11 @@ class RolloverService
 {
     private const TZ           = 'Africa/Lagos';
     private const MIN_CONF     = 78;
+
+    // Rollover legs must clear a high model-probability floor from the market
+    // board — this is the real safety metric (not just the AI's self-rated
+    // confidence). Only genuinely high-probability legs go into the accumulator.
+    private const MIN_BOARD_PROB = 80.0;
     private const DAYS_PER_RUN = 10;
 
     // Safe markets for rollover — avoid exotic/unpredictable markets.
@@ -27,7 +32,14 @@ class RolloverService
         'Home Win', 'Away Win', 'Draw',
         'Home or Draw (1X)', 'Draw or Away (X2)', 'Home or Away (12)',
         'Both Teams Score', 'No Both Teams Score',
-        'Over 1.5 Goals', 'Over 2.5 Goals',
+        'Over 0.5 Goals', 'Over 1.5 Goals', 'Over 2.5 Goals',
+        'Draw No Bet - Home', 'Draw No Bet - Away',
+    ];
+
+    /** predicted_outcome label -> market_board key, where they differ. */
+    private const BOARD_KEY_MAP = [
+        'Both Teams Score'    => 'Both Teams Score (GG)',
+        'No Both Teams Score' => 'No Both Teams Score (NG)',
     ];
 
     public function __construct(
@@ -208,10 +220,18 @@ class RolloverService
                 continue;
             }
 
+            // Safety floor: the pick's own market must clear a high model
+            // probability on the board. This is the real "will it win" metric.
+            $boardProb = $this->boardProbabilityFor($pred);
+            if ($boardProb !== null && $boardProb < self::MIN_BOARD_PROB) {
+                continue;
+            }
+
             $qualifiedPicks[] = [
                 'prediction'     => $pred,
                 'geminiVerdict'  => $geminiVerdict,
                 'mistralVerdict' => $mistralVerdict,
+                'boardProb'      => $boardProb ?? (float) $pred->confidence,
                 'allAgree'       => true,
             ];
         }
@@ -231,11 +251,12 @@ class RolloverService
         $repeatPicks = array_values(array_filter($qualifiedPicks, fn ($p) => $p['prediction']->predicted_outcome === $yesterdayMarket));
 
         // Within each bucket sort by: used in last 3 days → confidence desc
+        // Sort by: not-recently-used → highest model board probability (safest leg).
         $sortFn = function (array $a, array $b) use ($recentMarkets): int {
             $aUsed = in_array($a['prediction']->predicted_outcome, $recentMarkets, true);
             $bUsed = in_array($b['prediction']->predicted_outcome, $recentMarkets, true);
             if ($aUsed !== $bUsed) return $aUsed ? 1 : -1;
-            return $b['prediction']->confidence <=> $a['prediction']->confidence;
+            return $b['boardProb'] <=> $a['boardProb'];
         };
         usort($freshPicks,  $sortFn);
         usort($repeatPicks, $sortFn);
@@ -296,6 +317,23 @@ class RolloverService
         );
 
         return $pick;
+    }
+
+    /**
+     * Model probability of a prediction's own market, read from its stored
+     * market board. Returns null if the board or the market key is missing
+     * (caller then falls back to the AI confidence).
+     */
+    private function boardProbabilityFor(Prediction $pred): ?float
+    {
+        $board = $pred->market_board;
+        if (empty($board) || ! is_array($board) || blank($pred->predicted_outcome)) {
+            return null;
+        }
+
+        $key = self::BOARD_KEY_MAP[$pred->predicted_outcome] ?? $pred->predicted_outcome;
+
+        return isset($board[$key]) ? (float) $board[$key] : null;
     }
 
     // ──────────────────────────────────────────────────────────────
