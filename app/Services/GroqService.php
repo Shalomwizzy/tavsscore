@@ -62,7 +62,7 @@ class GroqService
                     'response_format' => ['type' => 'json_object'],
                     'messages'        => [
                         ['role' => 'system', 'content' => $this->systemPrompt()],
-                        ['role' => 'user',   'content' => $this->userPrompt($match, $poissonFallback, $homeStats, $awayStats, $homeForm, $awayForm, $homeNews, $awayNews, $lineupData, $h2h, $matchPreview, $piRatings, $homeXg, $awayXg, $importance, $leagueDrawDesc)],
+                        ['role' => 'user',   'content' => $this->userPrompt($match, $poissonFallback, $homeStats, $awayStats, $homeForm, $awayForm, $homeNews, $awayNews, $lineupData, $h2h, $matchPreview, $piRatings, $homeXg, $awayXg, $importance, $leagueDrawDesc, $statsContext)],
                     ],
                 ]);
         } catch (ConnectionException $e) {
@@ -290,6 +290,7 @@ SYSTEM;
         float $awayXg         = 0.0,
         array $importance     = [],
         string $leagueDrawDesc = '',
+        string $statsContext  = '',
     ): string {
         $kickoff = $match->match_time?->format('l, d M Y, H:i') ?? 'Today';
         $home    = $match->home_team;
@@ -395,7 +396,7 @@ KICKOFF: {$kickoff}
 Using ALL data above PLUS your deep knowledge of these clubs (playing style, key players, manager tactics, stadium atmosphere, historical tendencies):
 
 1. Set final match probabilities — adjust Poisson where pi-ratings, news, lineups or your knowledge justifies it.
-2. Choose your 1 STRONGEST tip from the markets list. This is what users stake money on.
+2. Choose your 1 STRONGEST tip. If an "OUR MODEL — PROBABILITY ACROSS ALL MARKETS" section is shown above, pick the market there with the best mix of high probability and value (you may use ANY market from that board, not just 1X2). This is what users stake money on.
 3. Add up to 2 genuine alternatives (only if you are truly confident).
 4. Mention specific players by name in the analysis when relevant.
 5. Apply market selection rules from your training — do NOT default to Home Win / Away Win every time.

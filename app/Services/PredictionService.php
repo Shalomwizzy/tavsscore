@@ -145,6 +145,12 @@ class PredictionService
         // Fed to every LLM as extra signal; never touches the Poisson/DC numbers.
         $statsContext = MatchStatsContext::build($match);
 
+        // Our model's probability across ALL 103 markets — fed to every AI so
+        // they choose their tip from the full board, not a fixed shortlist.
+        [$homeXgScore, $awayXgScore] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
+        $marketBoard  = MarketEngine::fromExpectedGoals($homeXgScore, $awayXgScore);
+        $statsContext .= $this->marketBoardBlock($marketBoard);
+
         // ── Call Groq with full context ───────────────────────────
         $groq = $this->groqService->getPrediction(
             $match, $poisson,
@@ -290,9 +296,8 @@ class PredictionService
                 );
         }
 
-        [$homeXgScore, $awayXgScore] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
+        // $homeXgScore / $awayXgScore and $marketBoard were computed above (fed to the AIs).
         $likelyScores = $this->topScorelines($homeXgScore, $awayXgScore);
-        $marketBoard  = MarketEngine::fromExpectedGoals($homeXgScore, $awayXgScore);
 
         return Prediction::query()->updateOrCreate(
             ['match_id' => $match->id],
@@ -435,6 +440,37 @@ class PredictionService
      * Cross-validate the headline tip against Gemini. Skips silently if Gemini
      * isn't configured.
      */
+    /**
+     * Format our model's full market board for the AI prompts. Lists the most
+     * decision-relevant markets (skips near-certainties and dead markets) so the
+     * AIs pick their tip from the whole board, not a fixed shortlist.
+     *
+     * @param  array<string, float>  $board  market label => probability %
+     */
+    private function marketBoardBlock(array $board): string
+    {
+        if (empty($board)) {
+            return '';
+        }
+
+        arsort($board);
+        $lines = [];
+        foreach ($board as $label => $prob) {
+            if ($prob > 95 || $prob < 8) continue;   // skip near-certain / dead markets
+            $lines[] = sprintf('  %s: %.0f%%', $label, $prob);
+            if (count($lines) >= 30) break;
+        }
+
+        if (empty($lines)) {
+            return '';
+        }
+
+        return "\n\n═══ OUR MODEL — PROBABILITY ACROSS ALL MARKETS ═══\n"
+            ."You may pick your tip from ANY market below (these are our own model's probabilities across every market we offer). "
+            ."Choose the market with the best mix of high probability and genuine value, not just 1X2:\n"
+            .implode("\n", $lines);
+    }
+
     private function annotateWithGeminiConsensus(
         array         $tips,
         FootballMatch $match,
@@ -743,6 +779,7 @@ class PredictionService
         $importance     = $this->matchImportanceContext($match, $homeForm, $awayForm);
         $leagueDrawDesc = \App\Support\LeagueCalibration::drawRateDescription((int) $match->league_id);
         $statsContext   = MatchStatsContext::build($match);
+        $statsContext  .= $this->marketBoardBlock(MarketEngine::fromExpectedGoals($homeXgBase, $awayXgBase));
 
         $groq = $this->groqService->getPrediction(
             $match, $poisson,

@@ -158,15 +158,16 @@ KICKOFF: {$match->match_time?->format('Y-m-d H:i')} UTC
 
 Instructions:
 - Weigh the data yourself; do not just follow the majority. If they are right, confirm. If the data contradicts them, override with the outcome the data genuinely supports.
-- Pick the SINGLE outcome you are most confident about from the allowed list.
+- Pick the SINGLE outcome you are most confident about. You may choose ANY market from the "OUR MODEL — PROBABILITY ACROSS ALL MARKETS" section above (handicaps, half-time, HT/FT, combos, exact goals, etc.), not only the standard shortlist. Use the exact market label shown there.
+- Prefer the market with the best mix of high probability and genuine value over a bare 1X2 pick.
 - Set "confirmed" to true if your final pick matches what most analysts said, false if you are overriding them.
 - Rate your final confidence 0 to 100. Be honest — if the panel disagrees and the data is murky, lower it.
 - Give a one-sentence rationale. Never use em dashes; use commas or full stops.
 
 Respond with ONLY valid JSON (no markdown, no code fences):
-{"outcome":"Home Win","confidence":74,"confirmed":true,"rationale":"Home side unbeaten at home and away team missing key defenders."}
+{"outcome":"Home & Over 2.5","confidence":74,"confirmed":true,"rationale":"Home side unbeaten at home and both teams scoring freely."}
 
-Allowed outcomes (use EXACT label):
+Standard shortlist (you are NOT limited to these — any market from the model board above is valid):
 Home Win, Draw, Away Win, Home or Draw (1X), Draw or Away (X2), Home or Away (12), Over 1.5 Goals, Over 2.5 Goals, Under 2.5 Goals, Both Teams Score (GG), No Both Teams Score (NG), Draw No Bet - Home, Draw No Bet - Away
 PROMPT;
 
