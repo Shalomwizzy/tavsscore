@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\FootballMatch;
 use App\Models\Prediction;
+use App\Services\Markets\EventMarketEngine;
 use App\Services\Markets\MarketEngine;
 use App\Support\LeagueCoverage;
+use App\Support\TeamEventAverages;
 use App\Support\MatchStatsContext;
 use App\Support\PickHelpers;
 use Carbon\CarbonImmutable;
@@ -133,7 +135,7 @@ class PredictionService
             // Ensure every prediction has the full market board, even cached ones.
             if (blank($existing->market_board)) {
                 [$hxs, $axs] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
-                $updates['market_board'] = MarketEngine::fromExpectedGoals($hxs, $axs);
+                $updates['market_board'] = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($hxs, $axs), $match);
             }
 
             return Prediction::query()->updateOrCreate(['match_id' => $match->id], $updates);
@@ -154,7 +156,7 @@ class PredictionService
         // Our model's probability across ALL 103 markets — fed to every AI so
         // they choose their tip from the full board, not a fixed shortlist.
         [$homeXgScore, $awayXgScore] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
-        $marketBoard  = MarketEngine::fromExpectedGoals($homeXgScore, $awayXgScore);
+        $marketBoard  = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($homeXgScore, $awayXgScore), $match);
         $statsContext .= $this->marketBoardBlock($marketBoard);
 
         // ── Call Groq with full context ───────────────────────────
@@ -453,6 +455,26 @@ class PredictionService
      *
      * @param  array<string, float>  $board  market label => probability %
      */
+    /**
+     * Merge corners + cards markets into the board when there is enough
+     * post-match fixture-stat history for both teams. Graceful — returns the
+     * board unchanged when the data isn't there yet.
+     */
+    private function appendEventMarkets(array $board, FootballMatch $match): array
+    {
+        $home = TeamEventAverages::for($match->home_team);
+        $away = TeamEventAverages::for($match->away_team);
+        if ($home === null || $away === null) {
+            return $board;
+        }
+
+        return array_merge(
+            $board,
+            EventMarketEngine::corners($home['corners_for'], $home['corners_against'], $away['corners_for'], $away['corners_against']),
+            EventMarketEngine::cards($home['cards_for'], $home['cards_against'], $away['cards_for'], $away['cards_against']),
+        );
+    }
+
     private function marketBoardBlock(array $board): string
     {
         if (empty($board)) {
@@ -785,7 +807,7 @@ class PredictionService
         $importance     = $this->matchImportanceContext($match, $homeForm, $awayForm);
         $leagueDrawDesc = \App\Support\LeagueCalibration::drawRateDescription((int) $match->league_id);
         $statsContext   = MatchStatsContext::build($match);
-        $statsContext  .= $this->marketBoardBlock(MarketEngine::fromExpectedGoals($homeXgBase, $awayXgBase));
+        $statsContext  .= $this->marketBoardBlock($this->appendEventMarkets(MarketEngine::fromExpectedGoals($homeXgBase, $awayXgBase), $match));
 
         $groq = $this->groqService->getPrediction(
             $match, $poisson,
@@ -855,7 +877,7 @@ class PredictionService
 
         $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
         $data['likely_scores'] = $likelyScores;
-        $data['market_board']  = MarketEngine::fromExpectedGoals($homeXgFinal, $awayXgFinal);
+        $data['market_board']  = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($homeXgFinal, $awayXgFinal), $match);
 
         if ($existing) {
             $existing->update($data);
