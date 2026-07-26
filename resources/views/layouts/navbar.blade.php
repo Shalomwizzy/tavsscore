@@ -70,6 +70,10 @@
                         <span class="ndi-icon">🎯</span>
                         <span><span class="ndi-label">Double Chance</span><span class="ndi-sub">1X & 2X daily picks</span></span>
                     </a>
+                    <a href="{{ route('goalscorer-picks.index') }}" class="nav-drop-item {{ request()->routeIs('goalscorer-picks.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">⚽</span>
+                        <span><span class="ndi-label">Goalscorer Picks</span><span class="ndi-sub">Anytime scorer tips</span></span>
+                    </a>
                 </div>
             </div>
 
@@ -251,6 +255,13 @@
             <span class="di-text">
                 Double Chance
                 <small>1X & 2X daily picks</small>
+            </span>
+        </a>
+        <a href="{{ route('goalscorer-picks.index') }}" class="drawer-item {{ request()->routeIs('goalscorer-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">⚽</span>
+            <span class="di-text">
+                Goalscorer Picks
+                <small>Anytime scorer tips</small>
             </span>
         </a>
 
