@@ -82,6 +82,21 @@
 
         .sb-icon { font-size: .95rem; flex-shrink: 0; width: 18px; text-align: center; }
 
+        /* Collapsible groups */
+        .sb-group { margin-bottom: .1rem; }
+        .sb-group > summary {
+            list-style: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: .55rem .5rem; border-radius: 7px;
+            font-size: .63rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: .07em; user-select: none;
+        }
+        .sb-group > summary::-webkit-details-marker { display: none; }
+        .sb-group > summary:hover { color: var(--text); background: rgba(255,255,255,.03); }
+        .sb-caret { font-size: .55rem; transition: transform .15s ease; opacity: .7; }
+        .sb-group[open] > summary .sb-caret { transform: rotate(90deg); }
+        .sb-group-body { padding: 0 0 .35rem; }
+
         .sb-footer {
             padding: .75rem 1rem;
             border-top: 1px solid var(--border);
@@ -226,6 +241,14 @@
             <span class="sb-brand-icon">⚽</span> TavsScore
         </a>
 
+        @php
+            $isPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.over15.*','admin.over25.*','admin.team3plus.*','admin.double-chance.*','admin.correct-score.*','admin.lineup-picks.*','admin.booking-code.*','admin.rollover.*');
+            $isData  = request()->routeIs('admin.matches','admin.predictions','admin.api-stats.*');
+            $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
+            $isContent = request()->routeIs('admin.blog.*');
+            $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*','admin.winners.*');
+            $isRevenue = request()->routeIs('admin.affiliate-links.*','admin.settings.*');
+        @endphp
         <nav class="sb-nav">
             <div class="sb-section-label">Main</div>
             <a href="{{ route('admin.dashboard') }}" class="sb-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -240,124 +263,87 @@
             </a>
             @endif
 
-            <div class="sb-section-label">Content</div>
-            <a href="{{ route('admin.blog.index') }}" class="sb-link {{ request()->routeIs('admin.blog.*') ? 'active' : '' }}">
-                <span class="sb-icon">📝</span> Blog Posts
-            </a>
-            <a href="{{ route('admin.blog.create') }}" class="sb-link {{ request()->routeIs('admin.blog.create') ? 'active' : '' }}">
-                <span class="sb-icon">✏️</span> New Post
-            </a>
+            {{-- Picks & Rollover --}}
+            <details class="sb-group" {{ $isPicks ? 'open' : '' }}>
+                <summary><span>⭐ Picks &amp; Rollover</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.picks') }}" class="sb-link {{ request()->routeIs('admin.picks') ? 'active' : '' }}"><span class="sb-icon">⭐</span> Daily Picks</a>
+                    <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}"><span class="sb-icon">🔄</span> Rollover</a>
+                    <a href="{{ route('admin.draw-picks.index') }}" class="sb-link {{ request()->routeIs('admin.draw-picks.*') ? 'active' : '' }}"><span class="sb-icon">🤝</span> Draw Picks</a>
+                    <a href="{{ route('admin.gg-picks.index') }}" class="sb-link {{ request()->routeIs('admin.gg-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> GG Picks</a>
+                    <a href="{{ route('admin.over15.index') }}" class="sb-link {{ request()->routeIs('admin.over15.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Over 1.5 Picks</a>
+                    <a href="{{ route('admin.over25.index') }}" class="sb-link {{ request()->routeIs('admin.over25.*') ? 'active' : '' }}"><span class="sb-icon">🔥</span> Over 2.5 Picks</a>
+                    <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}"><span class="sb-icon">🚫</span> Team 3+ NO</a>
+                    <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Double Chance</a>
+                    <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Correct Score</a>
+                    <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Lineup Picks</a>
+                    <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}"><span class="sb-icon">🎟️</span> Booking Code</a>
+                </div>
+            </details>
 
-            <div class="sb-section-label">Football Data</div>
-            <a href="{{ route('admin.matches') }}" class="sb-link {{ request()->routeIs('admin.matches') ? 'active' : '' }}">
-                <span class="sb-icon">⚽</span> Matches
-            </a>
-            <a href="{{ route('admin.predictions') }}" class="sb-link {{ request()->routeIs('admin.predictions') ? 'active' : '' }}">
-                <span class="sb-icon">📈</span> Predictions
-            </a>
-            <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}">
-                <span class="sb-icon">📊</span> API Stats
-            </a>
-            <a href="{{ route('admin.picks') }}" class="sb-link {{ request()->routeIs('admin.picks') ? 'active' : '' }}">
-                <span class="sb-icon">⭐</span> Daily Picks
-            </a>
-            <a href="{{ route('admin.draw-picks.index') }}" class="sb-link {{ request()->routeIs('admin.draw-picks.*') ? 'active' : '' }}">
-                <span class="sb-icon">🤝</span> Draw Picks
-            </a>
-            <a href="{{ route('admin.gg-picks.index') }}" class="sb-link {{ request()->routeIs('admin.gg-picks.*') ? 'active' : '' }}">
-                <span class="sb-icon">⚽</span> GG Picks
-            </a>
-            <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
-                <span class="sb-icon">📬</span> Newsletter
-            </a>
-            <a href="{{ route('admin.broadcast.index') }}" class="sb-link {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
-                <span class="sb-icon">📢</span> Broadcast
-            </a>
-            <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}">
-                <span class="sb-icon">🏆</span> Winners Wall
-            </a>
-            <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}">
-                <span class="sb-icon">⚡</span> Lineup Picks
-            </a>
-            <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}">
-                <span class="sb-icon">🎯</span> Correct Score
-            </a>
-            <a href="{{ route('admin.over15.index') }}" class="sb-link {{ request()->routeIs('admin.over15.*') ? 'active' : '' }}">
-                <span class="sb-icon">⚽</span> Over 1.5 Picks
-            </a>
-            <a href="{{ route('admin.over25.index') }}" class="sb-link {{ request()->routeIs('admin.over25.*') ? 'active' : '' }}">
-                <span class="sb-icon">🔥</span> Over 2.5 Picks
-            </a>
-            <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}">
-                <span class="sb-icon">🚫</span> Team 3+ NO
-            </a>
-            <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}">
-                <span class="sb-icon">🎯</span> Double Chance
-            </a>
-            <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}">
-                <span class="sb-icon">🎟️</span> Booking Code
-            </a>
-            <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}">
-                <span class="sb-icon">🔄</span> Rollover
-            </a>
+            {{-- Football Data --}}
+            <details class="sb-group" {{ $isData ? 'open' : '' }}>
+                <summary><span>⚽ Football Data</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.matches') }}" class="sb-link {{ request()->routeIs('admin.matches') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Matches</a>
+                    <a href="{{ route('admin.predictions') }}" class="sb-link {{ request()->routeIs('admin.predictions') ? 'active' : '' }}"><span class="sb-icon">📈</span> Predictions</a>
+                    <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> API Stats</a>
+                </div>
+            </details>
 
-            <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}">
-                <span class="sb-icon">📊</span> Stats
-            </a>
+            {{-- Model & Accuracy --}}
+            <details class="sb-group" {{ $isModel ? 'open' : '' }}>
+                <summary><span>🧠 Model &amp; Accuracy</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Stats</a>
+                    <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Model Metrics</a>
+                    <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}"><span class="sb-icon">🧠</span> AI Learning</a>
+                    <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Pi-Ratings</a>
+                    <a href="{{ route('admin.team-aliases.index') }}" class="sb-link {{ request()->routeIs('admin.team-aliases.*') ? 'active' : '' }}"><span class="sb-icon">🏷️</span> Team Aliases</a>
+                </div>
+            </details>
 
-            <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}">
-                <span class="sb-icon">🧠</span> AI Learning
-            </a>
-            <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}">
-                <span class="sb-icon">⚡</span> Pi-Ratings
-            </a>
-            <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}">
-                <span class="sb-icon">📊</span> Model Metrics
-            </a>
-            <a href="{{ route('admin.team-aliases.index') }}" class="sb-link {{ request()->routeIs('admin.team-aliases.*') ? 'active' : '' }}">
-                <span class="sb-icon">🏷️</span> Team Aliases
-            </a>
+            {{-- Content --}}
+            <details class="sb-group" {{ $isContent ? 'open' : '' }}>
+                <summary><span>📝 Content</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.blog.index') }}" class="sb-link {{ request()->routeIs('admin.blog.index','admin.blog.edit') ? 'active' : '' }}"><span class="sb-icon">📝</span> Blog Posts</a>
+                    <a href="{{ route('admin.blog.create') }}" class="sb-link {{ request()->routeIs('admin.blog.create') ? 'active' : '' }}"><span class="sb-icon">✏️</span> New Post</a>
+                </div>
+            </details>
 
-            <div class="sb-section-label">Revenue</div>
-            <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}">
-                <span class="sb-icon">💰</span> Affiliate Links
-            </a>
+            {{-- Engagement --}}
+            <details class="sb-group" {{ $isEngage ? 'open' : '' }}>
+                <summary><span>📢 Engagement</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}"><span class="sb-icon">📬</span> Newsletter</a>
+                    <a href="{{ route('admin.broadcast.index') }}" class="sb-link {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}"><span class="sb-icon">📢</span> Broadcast</a>
+                    <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}"><span class="sb-icon">🏆</span> Winners Wall</a>
+                </div>
+            </details>
 
-            <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <span class="sb-icon">⚙️</span> Settings
-            </a>
+            {{-- Revenue & Settings --}}
+            <details class="sb-group" {{ $isRevenue ? 'open' : '' }}>
+                <summary><span>💰 Revenue &amp; Settings</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}"><span class="sb-icon">💰</span> Affiliate Links</a>
+                    <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><span class="sb-icon">⚙️</span> Settings</a>
+                </div>
+            </details>
 
-            <div class="sb-section-label">Site</div>
-            <a href="{{ route('home.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">🌐</span> View Site
-            </a>
-            <a href="{{ route('picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Picks
-            </a>
-            <a href="{{ route('draw-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Draw Picks
-            </a>
-            <a href="{{ route('gg-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public GG Picks
-            </a>
-            <a href="{{ route('over15-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Over 1.5
-            </a>
-            <a href="{{ route('over25-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Over 2.5
-            </a>
-            <a href="{{ route('team3plus-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Team 3+
-            </a>
-            <a href="{{ route('correct-score.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Correct Score
-            </a>
-            <a href="{{ route('lineup-picks.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">↗</span> Public Lineup Picks
-            </a>
-            <a href="{{ route('blog.index') }}" target="_blank" class="sb-link">
-                <span class="sb-icon">📰</span> View Blog
-            </a>
+            {{-- Public Site (collapsed) --}}
+            <details class="sb-group">
+                <summary><span>🌐 View Public Site</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('home.index') }}" target="_blank" class="sb-link"><span class="sb-icon">🌐</span> Home ↗</a>
+                    <a href="{{ route('picks.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Picks</a>
+                    <a href="{{ route('standings.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Standings</a>
+                    <a href="{{ route('top-scorers.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Top Scorers</a>
+                    <a href="{{ route('gg-picks.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> GG Picks</a>
+                    <a href="{{ route('rollover.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Rollover</a>
+                    <a href="{{ route('blog.index') }}" target="_blank" class="sb-link"><span class="sb-icon">📰</span> Blog</a>
+                </div>
+            </details>
         </nav>
 
         <div class="sb-footer">
