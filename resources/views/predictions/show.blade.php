@@ -330,6 +330,7 @@
                     $board = $pred->market_board;
                     arsort($board);
                     $best = array_slice(array_filter($board, fn ($p) => $p <= 92), 0, 3, true);
+                    $grouped = \App\Support\MarketCategories::group($pred->market_board);
                 @endphp
                 @if(!empty($best))
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;">
@@ -341,11 +342,18 @@
                     @endforeach
                 </div>
                 @endif
-                <div style="max-height:340px; overflow-y:auto;">
-                    @foreach($board as $label => $prob)
-                    <div class="pp-stat-row"><span>{{ $label }}</span><span>{{ number_format($prob,1) }}%</span></div>
-                    @endforeach
-                </div>
+                @foreach($grouped as $category => $markets)
+                <details style="margin-bottom:.5rem;" {{ $loop->first ? 'open' : '' }}>
+                    <summary style="cursor:pointer; font-weight:700; color:var(--text); font-size:.82rem; padding:.4rem 0; list-style:none;">
+                        {{ $category }} <span style="color:var(--text-dim); font-weight:500;">({{ count($markets) }})</span>
+                    </summary>
+                    <div style="padding-left:.2rem;">
+                        @foreach($markets as $label => $prob)
+                        <div class="pp-stat-row"><span>{{ $label }}</span><span>{{ number_format($prob,1) }}%</span></div>
+                        @endforeach
+                    </div>
+                </details>
+                @endforeach
             </div>
             @endif
 
