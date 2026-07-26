@@ -184,6 +184,8 @@ class RolloverService
         $yesterdayMarket  = $recentPicks->first()?->groq_verdict;
         $recentMarkets    = $recentPicks->pluck('groq_verdict')->toArray();
 
+        $minBoardProb = (float) \App\Models\Setting::get('rollover_min_board_prob', (string) self::MIN_BOARD_PROB);
+
         $qualifiedPicks = [];
 
         foreach ($candidates as $pred) {
@@ -222,8 +224,9 @@ class RolloverService
 
             // Safety floor: the pick's own market must clear a high model
             // probability on the board. This is the real "will it win" metric.
+            // Floor is admin-tunable (Settings › Prediction Tuning).
             $boardProb = $this->boardProbabilityFor($pred);
-            if ($boardProb !== null && $boardProb < self::MIN_BOARD_PROB) {
+            if ($boardProb !== null && $boardProb < $minBoardProb) {
                 continue;
             }
 

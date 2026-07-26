@@ -495,6 +495,13 @@ class PredictionService
         return isset($board[$key]) ? (float) $board[$key] : null;
     }
 
+    /** Memoized admin-tunable numeric setting (falls back to the default). */
+    private array $tuningCache = [];
+    private function tuning(string $key, float $default): float
+    {
+        return $this->tuningCache[$key] ??= (float) \App\Models\Setting::get($key, (string) $default);
+    }
+
     /**
      * Quality multiplier that rewards strong 4-AI agreement and the model's own
      * conviction (board probability of the pick). Used to rank the best picks
@@ -506,9 +513,9 @@ class PredictionService
         $level = $tips[0]['agreement_level'] ?? null;
 
         $mult = match ($level) {
-            'strong'                    => 1.15,
+            'strong'                    => $this->tuning('pick_strong_bonus', 1.15),
             'partial'                   => 1.00,
-            'conflict', 'arbiter-call'  => 0.85,
+            'conflict', 'arbiter-call'  => $this->tuning('pick_conflict_penalty', 0.85),
             default                     => 0.95,   // unverified / speculative
         };
 

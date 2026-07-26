@@ -77,6 +77,40 @@
 
         </div>
 
+        <h2 style="font-size:1rem; font-weight:700; margin:2rem 0 1rem;">⚙️ Prediction Tuning</h2>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem;">
+            <div>
+                <label style="display:block; font-size:.78rem; font-weight:600; color:var(--dim); margin-bottom:.4rem;">
+                    Rollover safety floor (%)
+                </label>
+                <input type="number" name="rollover_min_board_prob" min="50" max="99" step="1"
+                       value="{{ old('rollover_min_board_prob', $settings['rollover_min_board_prob']->value ?? '80') }}"
+                       style="width:100%; padding:.55rem .75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.85rem; box-sizing:border-box;">
+                <p style="color:var(--dim); font-size:.7rem; margin:.3rem 0 0;">Min model probability a rollover leg must clear (default 80).</p>
+                @error('rollover_min_board_prob')<p style="color:#f87171; font-size:.75rem; margin:.3rem 0 0;">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label style="display:block; font-size:.78rem; font-weight:600; color:var(--dim); margin-bottom:.4rem;">
+                    Strong-consensus bonus (×)
+                </label>
+                <input type="number" name="pick_strong_bonus" min="1" max="2" step="0.05"
+                       value="{{ old('pick_strong_bonus', $settings['pick_strong_bonus']->value ?? '1.15') }}"
+                       style="width:100%; padding:.55rem .75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.85rem; box-sizing:border-box;">
+                <p style="color:var(--dim); font-size:.7rem; margin:.3rem 0 0;">Boost when all 4 AIs agree (default 1.15).</p>
+                @error('pick_strong_bonus')<p style="color:#f87171; font-size:.75rem; margin:.3rem 0 0;">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label style="display:block; font-size:.78rem; font-weight:600; color:var(--dim); margin-bottom:.4rem;">
+                    Conflict penalty (×)
+                </label>
+                <input type="number" name="pick_conflict_penalty" min="0.4" max="1" step="0.05"
+                       value="{{ old('pick_conflict_penalty', $settings['pick_conflict_penalty']->value ?? '0.85') }}"
+                       style="width:100%; padding:.55rem .75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.85rem; box-sizing:border-box;">
+                <p style="color:var(--dim); font-size:.7rem; margin:.3rem 0 0;">Down-weight when the arbiter overrode the panel (default 0.85).</p>
+                @error('pick_conflict_penalty')<p style="color:#f87171; font-size:.75rem; margin:.3rem 0 0;">{{ $message }}</p>@enderror
+            </div>
+        </div>
+
         <div style="margin-top:1.25rem;">
             <button type="submit"
                     style="background:var(--accent); color:#fff; border:none; border-radius:7px; padding:.6rem 1.4rem; font-size:.85rem; font-weight:600; cursor:pointer;">
