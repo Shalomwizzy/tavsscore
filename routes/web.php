@@ -123,6 +123,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Stats */
         Route::get('/stats', [\App\Http\Controllers\Admin\StatsAdminController::class, 'index'])->name('stats.index');
 
+        /* Goalscorer Picks (read-only — computed live from player stats) */
+        Route::get('/goalscorer-picks', [Admin\GoalscorerPicksAdminController::class, 'index'])->name('goalscorer-picks.index');
+
         /* API-Football stats — standings, team stats, player stats */
         Route::get('/api-stats',            [Admin\ApiStatsAdminController::class, 'index'])->name('api-stats.index');
         Route::post('/api-stats/standings', [Admin\ApiStatsAdminController::class, 'fetchStandings'])->name('api-stats.standings');

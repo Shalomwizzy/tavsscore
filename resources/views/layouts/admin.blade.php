@@ -242,7 +242,7 @@
         </a>
 
         @php
-            $isPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.over15.*','admin.over25.*','admin.team3plus.*','admin.double-chance.*','admin.correct-score.*','admin.lineup-picks.*','admin.booking-code.*','admin.rollover.*');
+            $isPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.over15.*','admin.over25.*','admin.team3plus.*','admin.double-chance.*','admin.correct-score.*','admin.lineup-picks.*','admin.booking-code.*','admin.rollover.*','admin.goalscorer-picks.*');
             $isData  = request()->routeIs('admin.matches','admin.predictions','admin.api-stats.*');
             $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
             $isContent = request()->routeIs('admin.blog.*');
@@ -275,6 +275,7 @@
                     <a href="{{ route('admin.over25.index') }}" class="sb-link {{ request()->routeIs('admin.over25.*') ? 'active' : '' }}"><span class="sb-icon">🔥</span> Over 2.5 Picks</a>
                     <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}"><span class="sb-icon">🚫</span> Team 3+ NO</a>
                     <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Double Chance</a>
+                    <a href="{{ route('admin.goalscorer-picks.index') }}" class="sb-link {{ request()->routeIs('admin.goalscorer-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Goalscorer Picks</a>
                     <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Correct Score</a>
                     <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Lineup Picks</a>
                     <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}"><span class="sb-icon">🎟️</span> Booking Code</a>

@@ -15,6 +15,15 @@ class GoalscorerPicksController extends Controller
 {
     public function index(Request $request): View
     {
+        return view('goalscorer-picks.index', $this->buildPicks());
+    }
+
+    /**
+     * Today's ranked anytime-goalscorer picks. Reused by the admin view.
+     * @return array{picks:\Illuminate\Support\Collection, season:int, date:string}
+     */
+    public function buildPicks(int $limit = 24): array
+    {
         $tz     = config('app.timezone');
         $start  = now($tz)->startOfDay();
         $end    = now($tz)->endOfDay();
@@ -39,13 +48,11 @@ class GoalscorerPicksController extends Controller
                 ->merge($this->playersFor($match, $match->away_team, $match->home_team, $homeConceded, $season));
         }
 
-        $picks = $picks->sortByDesc('probability')->take(24)->values();
-
-        return view('goalscorer-picks.index', [
-            'picks'  => $picks,
+        return [
+            'picks'  => $picks->sortByDesc('probability')->take($limit)->values(),
             'season' => $season,
             'date'   => now($tz)->format('l, F j Y'),
-        ]);
+        ];
     }
 
     private function playersFor(FootballMatch $match, string $team, string $opponent, float $oppConceded, int $season): \Illuminate\Support\Collection
