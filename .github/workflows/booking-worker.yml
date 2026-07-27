@@ -22,8 +22,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install deps + Chromium
+      - name: Install deps
         run: npm install
+
+      - name: Install Chromium + system libraries
+        run: npx playwright install --with-deps chromium
 
       - name: Build booking codes
         env:
