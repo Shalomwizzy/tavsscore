@@ -13,7 +13,27 @@ const BASE = normaliseBase(process.env.TAVS_BASE_URL);
 const TOKEN = (process.env.BOOKING_WORKER_TOKEN || '').trim();
 
 function headers() {
-  return { 'X-Worker-Token': TOKEN, 'Content-Type': 'application/json', Accept: 'application/json' };
+  return {
+    'X-Worker-Token': TOKEN,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    // Some shared hosts (incl. Hostinger) block requests with no browser-like
+    // User-Agent as suspected bots. Present a normal UA so we're not filtered.
+    'User-Agent': 'Mozilla/5.0 (compatible; TavsScoreBookingWorker/1.0)',
+  };
+}
+
+// Surface the REAL low-level reason behind Node's generic "fetch failed"
+// (DNS miss, refused connection, TLS error, timeout) so the log is actionable.
+function reachError(base, e) {
+  const cause = e?.cause;
+  const detail = cause?.code || cause?.message || e?.message || 'unknown';
+  let hint = '';
+  if (/ENOTFOUND|EAI_AGAIN/.test(detail)) hint = ' → the domain in TAVS_BASE_URL is misspelled or not resolving.';
+  else if (/ECONNREFUSED/.test(detail))   hint = ' → the server refused the connection (wrong port/host).';
+  else if (/CERT|TLS|SSL/i.test(detail))  hint = ' → SSL certificate problem on the site.';
+  else if (/TIMEOUT|ETIMEDOUT/i.test(detail)) hint = ' → the host is not answering GitHub — Hostinger may be blocking datacenter IPs.';
+  return new Error(`Could not reach ${base} (${detail})${hint}`);
 }
 
 // Turn the raw HTTP result into a plain-English, actionable error so the CI log
@@ -40,7 +60,7 @@ export async function fetchSpec() {
   try {
     res = await fetch(`${BASE}/api/worker/betslip-spec`, { headers: headers() });
   } catch (e) {
-    throw new Error(`Could not reach ${BASE} — check TAVS_BASE_URL is your real site URL. (${e.message})`);
+    throw reachError(BASE, e);
   }
   if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/betslip-spec`) + ` — body: ${(await res.text()).slice(0, 200)}`);
   return res.json();
