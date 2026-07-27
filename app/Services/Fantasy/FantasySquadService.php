@@ -24,25 +24,41 @@ class FantasySquadService
     // FPL points per goal by position.
     private const GOAL_PTS = ['GK' => 6, 'DEF' => 6, 'MID' => 5, 'FWD' => 4];
 
-    // Club kit colours [body, sleeves/collar] for the jersey graphic, matched
-    // by substring on the team name. Unknown clubs fall back to a neutral kit.
+    // Club kit as [body, sleeves/trim, pattern] where pattern is 'solid',
+    // 'stripes' (vertical) or 'sash' (diagonal). Matched by substring on the
+    // team name; unknown clubs fall back to a neutral solid kit.
     private const KITS = [
-        'arsenal' => ['#EF0107', '#FFFFFF'],   'aston villa' => ['#670E36', '#95BFE5'],
-        'bournemouth' => ['#DA291C', '#111111'], 'brentford' => ['#D20000', '#FFFFFF'],
-        'brighton' => ['#0057B8', '#FFFFFF'],  'burnley' => ['#6C1D45', '#99D6EA'],
-        'chelsea' => ['#034694', '#FFFFFF'],   'crystal palace' => ['#1B458F', '#C4122E'],
-        'everton' => ['#003399', '#FFFFFF'],   'fulham' => ['#EFEFEF', '#111111'],
-        'ipswich' => ['#3A64A3', '#FFFFFF'],   'leeds' => ['#EFEFEF', '#1D428A'],
-        'leicester' => ['#003090', '#FDBE11'], 'liverpool' => ['#C8102E', '#FFFFFF'],
-        'manchester city' => ['#6CABDD', '#FFFFFF'], 'man city' => ['#6CABDD', '#FFFFFF'],
-        'manchester united' => ['#DA291C', '#111111'], 'man united' => ['#DA291C', '#111111'],
-        'man utd' => ['#DA291C', '#111111'],   'newcastle' => ['#241F20', '#FFFFFF'],
-        'nottingham' => ['#DD0000', '#FFFFFF'], 'forest' => ['#DD0000', '#FFFFFF'],
-        'southampton' => ['#D71920', '#FFFFFF'], 'sunderland' => ['#EB172B', '#FFFFFF'],
-        'tottenham' => ['#EFEFEF', '#132257'], 'spurs' => ['#EFEFEF', '#132257'],
-        'west ham' => ['#7A263A', '#1BB1E7'],  'wolverhampton' => ['#FDB913', '#231F20'],
-        'wolves' => ['#FDB913', '#231F20'],    'luton' => ['#F78F1E', '#FFFFFF'],
-        'sheffield' => ['#EE2737', '#FFFFFF'],
+        'arsenal'           => ['#EF0107', '#FFFFFF', 'solid'],
+        'aston villa'       => ['#670E36', '#95BFE5', 'solid'],
+        'bournemouth'       => ['#D0021B', '#111111', 'stripes'],
+        'brentford'         => ['#D20000', '#FFFFFF', 'stripes'],
+        'brighton'          => ['#0057B8', '#FFFFFF', 'stripes'],
+        'burnley'           => ['#6C1D45', '#99D6EA', 'solid'],
+        'chelsea'           => ['#034694', '#FFFFFF', 'solid'],
+        'crystal palace'    => ['#1B458F', '#C4122E', 'sash'],
+        'everton'           => ['#003399', '#FFFFFF', 'solid'],
+        'fulham'            => ['#EFEFEF', '#111111', 'solid'],
+        'ipswich'           => ['#3A64A3', '#FFFFFF', 'solid'],
+        'leeds'             => ['#EFEFEF', '#1D428A', 'solid'],
+        'leicester'         => ['#003090', '#FDBE11', 'solid'],
+        'liverpool'         => ['#C8102E', '#FFFFFF', 'solid'],
+        'manchester city'   => ['#6CABDD', '#FFFFFF', 'solid'],
+        'man city'          => ['#6CABDD', '#FFFFFF', 'solid'],
+        'manchester united' => ['#DA291C', '#111111', 'solid'],
+        'man united'        => ['#DA291C', '#111111', 'solid'],
+        'man utd'           => ['#DA291C', '#111111', 'solid'],
+        'newcastle'         => ['#241F20', '#FFFFFF', 'stripes'],
+        'nottingham'        => ['#DD0000', '#FFFFFF', 'solid'],
+        'forest'            => ['#DD0000', '#FFFFFF', 'solid'],
+        'southampton'       => ['#D71920', '#FFFFFF', 'stripes'],
+        'sunderland'        => ['#EB172B', '#FFFFFF', 'stripes'],
+        'tottenham'         => ['#EFEFEF', '#132257', 'solid'],
+        'spurs'             => ['#EFEFEF', '#132257', 'solid'],
+        'west ham'          => ['#7A263A', '#1BB1E7', 'solid'],
+        'wolverhampton'     => ['#FDB913', '#231F20', 'solid'],
+        'wolves'            => ['#FDB913', '#231F20', 'solid'],
+        'luton'             => ['#EFEFEF', '#F78F1E', 'solid'],
+        'sheffield'         => ['#EE2737', '#FFFFFF', 'stripes'],
     ];
 
     public function build(int $leagueId = 39, ?int $season = null): ?FantasySquad
@@ -146,16 +162,16 @@ class FantasySquadService
         ];
     }
 
-    /** [body, sleeves] kit colours for a club name, neutral fallback. */
+    /** [body, sleeves, pattern] kit for a club name, neutral solid fallback. */
     private function kitFor(?string $team): array
     {
         $t = mb_strtolower($team ?? '');
-        foreach (self::KITS as $needle => $colours) {
+        foreach (self::KITS as $needle => $kit) {
             if (str_contains($t, $needle)) {
-                return $colours;
+                return $kit;
             }
         }
-        return ['#334155', '#94a3b8'];
+        return ['#334155', '#94a3b8', 'solid'];
     }
 
     /** Prices derived sub-linearly from points so cheap performers offer value. */

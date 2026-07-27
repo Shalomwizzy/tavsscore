@@ -61,15 +61,39 @@
 
 @section('content')
 @php
-    // A team-kit jersey SVG (body + sleeves + collar) coloured by the club.
-    $jersey = function (array $kit) {
-        [$body, $trim] = $kit ?: ['#334155', '#94a3b8'];
+    // A team-kit jersey SVG coloured (and patterned) by the club: solid with
+    // contrasting sleeves, vertical stripes, or a diagonal sash.
+    $bodyPath = 'M17,7 L23,13 Q30,17 37,13 L43,7 L41,17 L41,50 Q30,54 19,50 L19,17 Z';
+    $jersey = function (array $kit) use ($bodyPath) {
+        [$body, $trim, $pattern] = array_pad($kit ?: [], 3, null);
+        $body ??= '#334155'; $trim ??= '#94a3b8'; $pattern ??= 'solid';
         $b = e($body); $s = e($trim);
+        // Striped/sash kits keep sleeves in the body colour so the pattern reads
+        // only on the torso; solid kits get contrasting sleeves.
+        $sleeve = $pattern === 'solid' ? $s : $b;
+        $uid = 'k'.\Illuminate\Support\Str::random(6);
+
+        $fill = '';
+        if ($pattern === 'stripes') {
+            foreach ([20.5, 27.5, 34.5] as $x) {
+                $fill .= '<rect x="'.$x.'" y="6" width="3.4" height="48" fill="'.$s.'"/>';
+            }
+        } elseif ($pattern === 'sash') {
+            $fill = '<path d="M15,15 L22,11 L45,49 L38,53 Z" fill="'.$s.'"/>';
+        }
+
+        $overlay = $fill
+            ? '<g clip-path="url(#'.$uid.')" stroke="none">'.$fill.'</g>'
+              .'<path d="'.$bodyPath.'" fill="none"/>'
+            : '';
+
         return '<svg viewBox="0 0 60 58" aria-hidden="true">'
+            .'<defs><clipPath id="'.$uid.'"><path d="'.$bodyPath.'"/></clipPath></defs>'
             .'<g stroke="rgba(0,0,0,.22)" stroke-width="0.7" stroke-linejoin="round">'
-            .'<path d="M2,21 L17,7 L23,16 L9,29 Z" fill="'.$s.'"/>'
-            .'<path d="M58,21 L43,7 L37,16 L51,29 Z" fill="'.$s.'"/>'
-            .'<path d="M17,7 L23,13 Q30,17 37,13 L43,7 L41,17 L41,50 Q30,54 19,50 L19,17 Z" fill="'.$b.'"/>'
+            .'<path d="M2,21 L17,7 L23,16 L9,29 Z" fill="'.$sleeve.'"/>'
+            .'<path d="M58,21 L43,7 L37,16 L51,29 Z" fill="'.$sleeve.'"/>'
+            .'<path d="'.$bodyPath.'" fill="'.$b.'"/>'
+            .$overlay
             .'<path d="M23,13 Q30,17 37,13 L35,9 Q30,13 25,9 Z" fill="'.$s.'" stroke="none"/>'
             .'</g></svg>';
     };
