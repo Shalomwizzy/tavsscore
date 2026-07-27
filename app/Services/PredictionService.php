@@ -304,6 +304,12 @@ class PredictionService
                 );
         }
 
+        // Platform policy: the headline pick is chosen from the ENTIRE 103-market
+        // board — whenever a genuinely playable market clears the safety floor and
+        // beats the AI's headline, we surface that safer market instead of always
+        // defaulting to 1X2 / O2.5 / BTTS.
+        [$primaryOutcome, $primaryConfidence] = $this->boardHeadline($marketBoard, $primaryOutcome, $primaryConfidence);
+
         // $homeXgScore / $awayXgScore and $marketBoard were computed above (fed to the AIs).
         $likelyScores = $this->topScorelines($homeXgScore, $awayXgScore);
 
@@ -331,6 +337,26 @@ class PredictionService
                 'opening_odds'      => $openingOdds,
             ]
         );
+    }
+
+    /**
+     * Choose the headline pick from the ENTIRE market board. Returns the safest
+     * genuinely-playable market that clears the floor and beats the AI's own
+     * headline confidence; otherwise keeps the AI pick. Floor is admin-tunable
+     * via the `headline_min_board_prob` setting.
+     *
+     * @return array{0: ?string, 1: ?int}  [outcome, confidence]
+     */
+    private function boardHeadline(?array $board, ?string $aiOutcome, $aiConf): array
+    {
+        $floor = (float) \App\Models\Setting::get('headline_min_board_prob', '88');
+        $safe  = PickHelpers::safestBoardMarket($board, $floor, PickHelpers::headlineBlock());
+
+        if ($safe !== null && $safe['prob'] >= max($floor, (float) ($aiConf ?? 0))) {
+            return [$safe['market'], (int) round($safe['prob'])];
+        }
+
+        return [$aiOutcome, $aiConf === null ? null : (int) $aiConf];
     }
 
     /**
@@ -907,6 +933,20 @@ class PredictionService
         $primaryOutcome = ! empty($tips) ? $tips[0]['market']     : ($groq['predicted_outcome'] ?? $existing?->predicted_outcome ?? 'Competitive Match');
         $primaryConf    = ! empty($tips) ? $tips[0]['confidence'] : ($existing?->confidence ?? null);
 
+        $homeXgBase = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
+        $awayXgBase = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
+
+        // Refine xG with lineup context: more starters = more attacking threat
+        [$homeXgFinal, $awayXgFinal] = $this->lineupAdjustedXg($homeXgBase, $awayXgBase, $lineupData);
+        [$homeXgFinal, $awayXgFinal] = $this->h2hXgCalibration($h2h, $homeXgFinal, $awayXgFinal);
+
+        $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
+        $marketBoard  = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($homeXgFinal, $awayXgFinal), $match);
+
+        // Same whole-board headline policy as the main path — post-lineup board is
+        // sharper, so re-derive the safest playable pick from all 103 markets.
+        [$primaryOutcome, $primaryConf] = $this->boardHeadline($marketBoard, $primaryOutcome, $primaryConf);
+
         $data = [
             'home_win_prob'     => $groq['home_win'],
             'draw_prob'         => $groq['draw'],
@@ -918,18 +958,9 @@ class PredictionService
             'confidence'        => $primaryConf,
             'analysis'          => $groq['analysis'],
             'has_lineup'        => true,
+            'likely_scores'     => $likelyScores,
+            'market_board'      => $marketBoard,
         ];
-
-        $homeXgBase = $this->clampXg($this->attackStrength($homeStats) * $this->defenseWeakness($awayStats) * self::HOME_ADVANTAGE);
-        $awayXgBase = $this->clampXg($this->attackStrength($awayStats) * $this->defenseWeakness($homeStats));
-
-        // Refine xG with lineup context: more starters = more attacking threat
-        [$homeXgFinal, $awayXgFinal] = $this->lineupAdjustedXg($homeXgBase, $awayXgBase, $lineupData);
-        [$homeXgFinal, $awayXgFinal] = $this->h2hXgCalibration($h2h, $homeXgFinal, $awayXgFinal);
-
-        $likelyScores = $this->topScorelines($homeXgFinal, $awayXgFinal);
-        $data['likely_scores'] = $likelyScores;
-        $data['market_board']  = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($homeXgFinal, $awayXgFinal), $match);
 
         if ($existing) {
             $existing->update($data);

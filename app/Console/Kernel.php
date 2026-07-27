@@ -85,8 +85,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:fetch-closing-odds')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:fetch-closing-odds')->dailyAt('14:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Select today's rollover pick at 10:30 Lagos — after the 10:00 odds fetch
-        // so impliedOdds() finds real bookmaker prices instead of AI-derived ones.
+        // Select today's rollover ticket (1-5 safest legs, ≤2.00 combined odds)
+        // at 10:30 Lagos — after the 03:00-10:00 prediction runs have boards stored.
         $schedule->command('rollover:select')->dailyAt('10:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Post today's pick results to Telegram at 23:00 Lagos

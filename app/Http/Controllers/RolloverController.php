@@ -36,22 +36,52 @@ class RolloverController extends Controller
             ->latest('started_at')
             ->first();
 
-        $todayPick = null;
+        $todayLegs = collect();
         $allPicks  = collect();
+        $dayGroups = collect();
 
         if ($challenge) {
-            $todayPick = RolloverPick::query()
+            $todayLegs = RolloverPick::query()
                 ->with(['match', 'prediction'])
                 ->where('challenge_id', $challenge->id)
                 ->where('pick_date', $viewDate->toDateString())
-                ->first();
+                ->orderByDesc('implied_odds')
+                ->get();
 
             $allPicks = RolloverPick::query()
                 ->with(['match'])
                 ->where('challenge_id', $challenge->id)
                 ->orderBy('day_number')
                 ->get();
+
+            // Legs grouped into daily tickets, newest day first.
+            $dayGroups = $allPicks->groupBy('day_number')->sortKeysDesc();
         }
+
+        // A day counts as a single rollover step: won when it has legs and none
+        // lost or still pending (voids-only days push and continue).
+        $dayStat = static function (Collection $legs): string {
+            if ($legs->contains(fn ($l) => $l->status === 'lost'))    return 'lost';
+            if ($legs->contains(fn ($l) => $l->status === 'pending')) return 'pending';
+            return 'won';
+        };
+
+        // Day-level tallies drive the hero + progress dots (a day = one step,
+        // regardless of how many legs the ticket held).
+        $wonDays   = $dayGroups->filter(fn ($legs) => $dayStat($legs) === 'won')->count();
+        $totalDays = $dayGroups->count();
+
+        // Current winning streak, counted over settled days newest-first.
+        $streak = 0;
+        foreach ($dayGroups as $legs) {
+            $s = $dayStat($legs);
+            if ($s === 'won') { $streak++; }
+            elseif ($s === 'pending') { continue; }
+            else { break; }
+        }
+
+        // Per-day status map for the 10 progress dots (day_number => status).
+        $dayStatuses = $dayGroups->mapWithKeys(fn ($legs, $day) => [$day => $dayStat($legs)]);
 
         // Date navigation: find previous and next pick dates globally
         $prevPick = RolloverPick::query()
@@ -74,7 +104,8 @@ class RolloverController extends Controller
             ->get();
 
         return view('rollover.index', compact(
-            'challenge', 'todayPick', 'allPicks', 'viewDate', 'prevPick', 'nextPick', 'pastChallenges'
+            'challenge', 'todayLegs', 'allPicks', 'dayGroups', 'viewDate', 'prevPick', 'nextPick',
+            'pastChallenges', 'wonDays', 'totalDays', 'streak', 'dayStatuses'
         ));
     }
 }

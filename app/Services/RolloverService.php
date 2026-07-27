@@ -13,41 +13,22 @@ use Illuminate\Support\Facades\Log;
 
 class RolloverService
 {
-    private const TZ           = 'Africa/Lagos';
-    private const MIN_CONF     = 78;
+    private const TZ = 'Africa/Lagos';
 
-    // Rollover legs must clear a high model-probability floor from the market
-    // board — this is the real safety metric (not just the AI's self-rated
-    // confidence). Only genuinely high-probability legs go into the accumulator.
-    private const MIN_BOARD_PROB = 80.0;
-    private const DAYS_PER_RUN = 10;
+    // Rollover legs must clear a high model-probability floor. 90% so a 10-day
+    // run has a real chance of surviving. Admin-tunable in Settings.
+    private const MIN_BOARD_PROB = 90.0;
+    private const DAYS_PER_RUN   = 10;
 
-    // Safe markets for rollover — avoid exotic/unpredictable markets.
-    // Strings must match the exact predicted_outcome values PredictionService
-    // emits (see PickHelpers::resolveForMatch for the canonical list). The
-    // (GG)/(NG) suffixed variants used to be here but were causing every BTTS
-    // pick to be filtered out — the pipeline stopped emitting them in early
-    // May 2026 which is when rollover automation silently stalled.
-    private const SAFE_MARKETS = [
-        'Home Win', 'Away Win', 'Draw',
-        'Home or Draw (1X)', 'Draw or Away (X2)', 'Home or Away (12)',
-        'Both Teams Score', 'No Both Teams Score',
-        'Over 0.5 Goals', 'Over 1.5 Goals', 'Over 2.5 Goals',
-        'Draw No Bet - Home', 'Draw No Bet - Away',
-    ];
-
-    /** predicted_outcome label -> market_board key, where they differ. */
-    private const BOARD_KEY_MAP = [
-        'Both Teams Score'    => 'Both Teams Score (GG)',
-        'No Both Teams Score' => 'No Both Teams Score (NG)',
-    ];
+    // A day's pick is a small accumulator, not necessarily one match: 1-5 of
+    // the safest legs combined, targeting (but never exceeding) ~2.00 total
+    // odds. Both admin-tunable in Settings.
+    private const MAX_LEGS_PER_DAY = 5;
+    private const TARGET_DAY_ODDS  = 2.0;
 
     public function __construct(
-        private readonly GeminiService     $gemini,
-        private readonly MistralService    $mistral,
-        private readonly PredictionService $predictionService,
-        private readonly TelegramService   $telegram,
-        private readonly OneSignalService  $oneSignal,
+        private readonly TelegramService  $telegram,
+        private readonly OneSignalService $oneSignal,
     ) {}
 
     // ──────────────────────────────────────────────────────────────
@@ -99,7 +80,8 @@ class RolloverService
             ->first();
 
         if ($lastComplete) {
-            $allWon     = $lastComplete->picks()->where('status', 'won')->count() >= self::DAYS_PER_RUN;
+            $allWon = $lastComplete->picks()->where('status', 'lost')->doesntExist()
+                && $lastComplete->picks()->where('day_number', self::DAYS_PER_RUN)->where('status', 'won')->exists();
             $updatedToday = $lastComplete->updated_at?->timezone($tz)->toDateString() === $today;
             if ($allWon && $updatedToday) {
                 Log::info('RolloverService: rest day after 10-win challenge — no pick today.');
@@ -109,12 +91,13 @@ class RolloverService
 
         $challenge = $this->getOrCreateChallenge();
 
-        // Already have a pick today
+        // Already have a ticket today
         if ($challenge->picks()->where('pick_date', $today)->exists()) {
             return null;
         }
 
-        $dayNumber = $challenge->picks()->count() + 1;
+        // A day may hold several legs, so day number = highest day so far + 1.
+        $dayNumber = (int) ($challenge->picks()->max('day_number') ?? 0) + 1;
 
         // Challenge already ran its 10 days
         if ($dayNumber > self::DAYS_PER_RUN) {
@@ -122,15 +105,15 @@ class RolloverService
             return null;
         }
 
-        // Previous day must have won before we can continue
+        // Previous day's whole ticket must have settled without a loss first.
         if ($dayNumber > 1) {
-            $prevPick = $challenge->picks()->where('day_number', $dayNumber - 1)->first();
-            if ($prevPick && $prevPick->status === 'lost') {
+            $prevLegs = $challenge->picks()->where('day_number', $dayNumber - 1)->get();
+            if ($prevLegs->contains(fn ($leg) => $leg->status === 'lost')) {
                 $challenge->update(['status' => 'complete']);
                 return null;
             }
-            if ($prevPick && $prevPick->status === 'pending') {
-                // Previous pick not settled yet — wait
+            if ($prevLegs->contains(fn ($leg) => $leg->status === 'pending')) {
+                // Previous ticket not fully settled yet — wait
                 return null;
             }
         }
@@ -146,13 +129,11 @@ class RolloverService
             \App\Support\LeagueCoverage::africaContinental(),
         );
 
-        // Selection is driven by AI confidence + dual-AI agreement, NOT odds
+        // Safety-first: consider every covered fixture that has a market board;
+        // we derive the leg from the board, not from the arbiter's headline pick.
         $candidates = Prediction::query()
             ->with('match')
-            ->whereNotNull('confidence')
-            ->whereNotNull('predicted_outcome')
-            ->where('confidence', '>=', self::MIN_CONF)
-            ->whereIn('predicted_outcome', self::SAFE_MARKETS)
+            ->whereNotNull('market_board')
             ->whereHas('match', fn ($q) => $q
                 ->whereBetween('match_time', [
                     CarbonImmutable::now($tz)->startOfDay(),
@@ -161,8 +142,6 @@ class RolloverService
                 ->whereNotIn('status', ['CANC', 'PST', 'FT', 'AET', 'PEN', 'ABD'])
                 ->whereIn('league_id', $eligibleLeagues)
             )
-            ->orderByDesc('confidence')
-            ->limit(20)
             ->get();
 
         // Diagnostic: log the funnel size at each step. Silent misses are the
@@ -171,7 +150,6 @@ class RolloverService
         Log::info('RolloverService: candidate funnel', [
             'day_number'         => $dayNumber,
             'eligible_leagues'   => count($eligibleLeagues),
-            'min_confidence'     => self::MIN_CONF,
             'candidates_found'   => $candidates->count(),
         ]);
 
@@ -189,95 +167,85 @@ class RolloverService
         $qualifiedPicks = [];
 
         foreach ($candidates as $pred) {
-            // Collect up to 8 candidates so we have enough diversity options
-            if (count($qualifiedPicks) >= 8) break;
-
             $match = $pred->match;
             if (! $match) continue;
 
-            // Triple-AI cross-validation: all three AIs analyse independently
-            $cacheKey = 'rollover_stats_' . $match->id;
-            [$homeStats, $awayStats, $h2h] = Cache::remember($cacheKey, now()->addHours(3), function () use ($match) {
-                return [
-                    $this->predictionService->extendedTeamStats($match->home_team, $match->match_time, $match->id),
-                    $this->predictionService->extendedTeamStats($match->away_team, $match->match_time, $match->id),
-                    $this->predictionService->headToHead($match->home_team, $match->away_team, $match->match_time, $match->id),
-                ];
-            });
+            // Skip fixtures the panel flagged as genuinely uncertain.
+            $tips  = is_array($pred->tips) ? $pred->tips : [];
+            if (($tips[0]['agreement_level'] ?? null) === 'conflict') continue;
 
-            $geminiVerdict  = $this->gemini->independentVerdict($match, $homeStats, $awayStats, $h2h);
-            $mistralVerdict = $this->mistral->independentVerdict($match, $homeStats, $awayStats, $h2h);
-
-            $groqNorm = mb_strtolower(trim($pred->predicted_outcome));
-
-            // Any AI below 60% confidence → skip this match
-            if ($geminiVerdict  !== null && $geminiVerdict['confidence']  < 60) continue;
-            if ($mistralVerdict !== null && $mistralVerdict['confidence'] < 60) continue;
-
-            // Every configured AI must independently reach the same outcome as Groq
-            $geminiOk  = $geminiVerdict  === null || mb_strtolower(trim($geminiVerdict['outcome']))  === $groqNorm;
-            $mistralOk = $mistralVerdict === null || mb_strtolower(trim($mistralVerdict['outcome'])) === $groqNorm;
-
-            if (! $geminiOk || ! $mistralOk) {
-                continue;
-            }
-
-            // Safety floor: the pick's own market must clear a high model
-            // probability on the board. This is the real "will it win" metric.
-            // Floor is admin-tunable (Settings › Prediction Tuning).
-            $boardProb = $this->boardProbabilityFor($pred);
-            if ($boardProb !== null && $boardProb < $minBoardProb) {
-                continue;
-            }
+            // Take the SAFEST market on this fixture's board that clears the floor.
+            $leg = $this->safestLeg($pred, $minBoardProb);
+            if ($leg === null) continue;
 
             $qualifiedPicks[] = [
-                'prediction'     => $pred,
-                'geminiVerdict'  => $geminiVerdict,
-                'mistralVerdict' => $mistralVerdict,
-                'boardProb'      => $boardProb ?? (float) $pred->confidence,
-                'allAgree'       => true,
+                'prediction' => $pred,
+                'market'     => $leg['market'],
+                'boardProb'  => $leg['prob'],
+                'allAgree'   => ($tips[0]['agreement_level'] ?? null) === 'strong',
             ];
         }
 
+        Log::info('RolloverService: candidate funnel', [
+            'day_number'       => $dayNumber,
+            'min_board_prob'   => $minBoardProb,
+            'candidates_found' => $candidates->count(),
+            'qualified'        => count($qualifiedPicks),
+        ]);
+
         if (empty($qualifiedPicks)) {
-            Log::info('RolloverService: no match had triple-AI agreement today — no pick selected.', [
+            Log::info('RolloverService: no fixture cleared the safety floor today — no pick selected.', [
                 'candidates_examined' => $candidates->count(),
+                'floor'               => $minBoardProb,
             ]);
             return null;
         }
 
-        // Market diversity — hard-split into "fresh market" vs "repeat market" buckets.
-        // A pick whose market was used yesterday is put in the fallback bucket.
-        // We always pick from the fresh bucket first; only fall back if it's empty,
-        // ensuring the same market never repeats on consecutive days unless unavoidable.
-        $freshPicks  = array_values(array_filter($qualifiedPicks, fn ($p) => $p['prediction']->predicted_outcome !== $yesterdayMarket));
-        $repeatPicks = array_values(array_filter($qualifiedPicks, fn ($p) => $p['prediction']->predicted_outcome === $yesterdayMarket));
+        // Market diversity — legs whose market was used yesterday sort last, so
+        // the ticket leads with fresh markets but can still use a repeat when
+        // it's the only way to fill the day. Safest (highest board prob) first.
+        $freshPicks  = array_values(array_filter($qualifiedPicks, fn ($p) => $p['market'] !== $yesterdayMarket));
+        $repeatPicks = array_values(array_filter($qualifiedPicks, fn ($p) => $p['market'] === $yesterdayMarket));
 
-        // Within each bucket sort by: used in last 3 days → confidence desc
         // Sort by: not-recently-used → highest model board probability (safest leg).
         $sortFn = function (array $a, array $b) use ($recentMarkets): int {
-            $aUsed = in_array($a['prediction']->predicted_outcome, $recentMarkets, true);
-            $bUsed = in_array($b['prediction']->predicted_outcome, $recentMarkets, true);
+            $aUsed = in_array($a['market'], $recentMarkets, true);
+            $bUsed = in_array($b['market'], $recentMarkets, true);
             if ($aUsed !== $bUsed) return $aUsed ? 1 : -1;
             return $b['boardProb'] <=> $a['boardProb'];
         };
         usort($freshPicks,  $sortFn);
         usort($repeatPicks, $sortFn);
 
-        $pool = ! empty($freshPicks) ? $freshPicks : $repeatPicks;
+        // Build the day's ticket: greedily stack the safest legs (one per match)
+        // until we approach — but never exceed — the target combined odds, or
+        // run out of legs / hit the per-day cap. Each leg's odds come from its
+        // own board probability (90% → 1.11), so 4-5 safe legs ≈ 1.5-1.8 total.
+        $maxLegs    = (int) \App\Models\Setting::get('rollover_max_legs', (string) self::MAX_LEGS_PER_DAY);
+        $targetOdds = (float) \App\Models\Setting::get('rollover_target_odds', (string) self::TARGET_DAY_ODDS);
 
-        if (! empty($freshPicks)) {
-            Log::info('RolloverService: selected from fresh-market pool (avoided ' . $yesterdayMarket . ').');
-        } else {
-            Log::info('RolloverService: no fresh-market alternative — falling back to ' . $yesterdayMarket . '.');
+        $ordered = array_merge($freshPicks, $repeatPicks);
+
+        $legs         = [];
+        $combinedOdds = 1.0;
+        $usedMatches  = [];
+
+        foreach ($ordered as $candidate) {
+            if (count($legs) >= $maxLegs) break;
+
+            $matchId = $candidate['prediction']->match_id;
+            if (isset($usedMatches[$matchId])) continue;
+
+            $legOdds = round(1 / ($candidate['boardProb'] / 100), 2);
+            if (! empty($legs) && $combinedOdds * $legOdds > $targetOdds) continue;
+
+            $legs[] = array_merge($candidate, ['odds' => $legOdds]);
+            $combinedOdds *= $legOdds;
+            $usedMatches[$matchId] = true;
         }
 
-        $best = $pool[0];
-
-        $pred        = $best['prediction'];
-        $displayOdds = $this->impliedOdds($pred); // display only, not selection criteria
-
-        $potentialReturn = round($stake * $displayOdds, 2);
+        $combinedOdds    = round($combinedOdds, 2);
+        $potentialReturn = round($stake * $combinedOdds, 2);
 
         // A challenge's real clock starts with its first pick, not its row
         // creation. Without this, a challenge created during a dry spell
@@ -287,31 +255,54 @@ class RolloverService
             $challenge->update(['started_at' => $today]);
         }
 
-        $pick = RolloverPick::create([
-            'challenge_id'     => $challenge->id,
-            'match_id'         => $pred->match_id,
-            'prediction_id'    => $pred->id,
-            'day_number'       => $dayNumber,
-            'pick_date'        => $today,
-            'implied_odds'     => $displayOdds,
-            'stake_amount'     => $stake,
-            'potential_return' => $potentialReturn,
-            'groq_verdict'     => $pred->predicted_outcome,
-            'gemini_verdict'   => $best['geminiVerdict']['outcome']  ?? null,
-            'both_agree'       => $best['allAgree'],
-            'status'           => 'pending',
+        // One row per leg. stake_amount and potential_return are DAY-level values
+        // (identical on every leg of the ticket) so the next day's stake carries
+        // the full combo return; implied_odds is the leg's own price.
+        $firstPick = null;
+        foreach ($legs as $leg) {
+            $pick = RolloverPick::create([
+                'challenge_id'     => $challenge->id,
+                'match_id'         => $leg['prediction']->match_id,
+                'prediction_id'    => $leg['prediction']->id,
+                'day_number'       => $dayNumber,
+                'pick_date'        => $today,
+                'implied_odds'     => $leg['odds'],
+                'stake_amount'     => $stake,
+                'potential_return' => $potentialReturn,
+                'groq_verdict'     => $leg['market'],
+                'gemini_verdict'   => null,
+                'both_agree'       => $leg['allAgree'],
+                'status'           => 'pending',
+            ]);
+            $firstPick ??= $pick;
+        }
+
+        Log::info('RolloverService: ticket built', [
+            'day_number'    => $dayNumber,
+            'legs'          => count($legs),
+            'combined_odds' => $combinedOdds,
+            'target_odds'   => $targetOdds,
         ]);
 
-        // Notify users about the new rollover pick
-        $matchLabel = "{$pred->match?->home_team} vs {$pred->match?->away_team}";
-        $league     = LeagueCoverage::formatName($pred->match?->league, $pred->match?->league_country);
-        $siteUrl    = config('app.url');
+        // Notify users about the day's ticket (single message covering all legs).
+        $legLines = array_map(
+            fn ($leg) => "{$leg['prediction']->match?->home_team} vs {$leg['prediction']->match?->away_team} — {$leg['market']} @ {$leg['odds']}",
+            $legs,
+        );
+        $matchLabel  = implode("\n", $legLines);
+        $marketLabel = count($legs) > 1
+            ? count($legs) . "-leg ticket @ {$combinedOdds} odds"
+            : $legs[0]['market'];
+        $league  = count($legs) === 1
+            ? LeagueCoverage::formatName($legs[0]['prediction']->match?->league, $legs[0]['prediction']->match?->league_country)
+            : 'Multi-league ticket';
+        $siteUrl = config('app.url');
 
-        $this->oneSignal->notifyRolloverPick($dayNumber, $matchLabel, $pred->predicted_outcome, $stake, $potentialReturn);
+        $this->oneSignal->notifyRolloverPick($dayNumber, $matchLabel, $marketLabel, $stake, $potentialReturn);
 
         $this->telegram->sendRolloverPick(
             $matchLabel,
-            $pred->predicted_outcome,
+            $marketLabel,
             $dayNumber,
             $stake,
             $potentialReturn,
@@ -319,24 +310,18 @@ class RolloverService
             $league,
         );
 
-        return $pick;
+        return $firstPick;
     }
 
     /**
-     * Model probability of a prediction's own market, read from its stored
-     * market board. Returns null if the board or the market key is missing
-     * (caller then falls back to the AI confidence).
+     * The safest gradeable leg on a fixture's board: highest-probability market
+     * from the ENTIRE board that clears the floor. Uses the same "meaningful
+     * markets only" blocklist as the headline pick so a leg is both ~90%+ safe
+     * AND carries real odds — never a valueless "Under 5.5 Goals" at 1.02.
      */
-    private function boardProbabilityFor(Prediction $pred): ?float
+    private function safestLeg(Prediction $pred, float $minProb): ?array
     {
-        $board = $pred->market_board;
-        if (empty($board) || ! is_array($board) || blank($pred->predicted_outcome)) {
-            return null;
-        }
-
-        $key = self::BOARD_KEY_MAP[$pred->predicted_outcome] ?? $pred->predicted_outcome;
-
-        return isset($board[$key]) ? (float) $board[$key] : null;
+        return PickHelpers::safestBoardMarket($pred->market_board, $minProb, PickHelpers::headlineBlock());
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -365,7 +350,27 @@ class RolloverService
             $wasCorrect = PickHelpers::resolveForMatch($match, $tip);
 
             if ($wasCorrect === null) {
-                Log::info("RolloverService: pick {$pick->id} tip='{$tip}' — outcome unresolvable, skipping.");
+                // Void / push (e.g. Draw No Bet on a draw, postponed leg): the leg
+                // drops out of the ticket at odds 1.0 — the day's potential return
+                // shrinks accordingly on EVERY leg of that day, and the challenge
+                // continues. It is settled, not a loss, not left pending.
+                $pick->update([
+                    'result_score' => "{$match->home_score}-{$match->away_score}",
+                    'status'       => 'void',
+                ]);
+
+                $legOdds = max(1.0, (float) $pick->implied_odds);
+                if ($legOdds > 1.0) {
+                    RolloverPick::query()
+                        ->where('challenge_id', $pick->challenge_id)
+                        ->where('day_number', $pick->day_number)
+                        ->get()
+                        ->each(fn (RolloverPick $leg) => $leg->update([
+                            'potential_return' => round((float) $leg->potential_return / $legOdds, 2),
+                        ]));
+                }
+
+                Log::info("RolloverService: pick {$pick->id} tip='{$tip}' voided (push) — day return adjusted, challenge continues.");
                 continue;
             }
 
@@ -378,84 +383,119 @@ class RolloverService
                 'status'       => $newStatus,
             ]);
 
-            // If it's a loss and this was the active challenge's pick, mark challenge complete
+            // Any lost leg kills the whole ticket — challenge over.
             if ($newStatus === 'lost' && $pick->challenge?->status === 'active') {
                 $pick->challenge->update(['status' => 'complete']);
             }
 
-            // If day 10 won, mark complete and schedule rest
+            // Day 10 completes the challenge only once EVERY leg of the final
+            // ticket has settled without a loss.
             if ($newStatus === 'won' && $pick->day_number >= self::DAYS_PER_RUN) {
-                $pick->challenge?->update(['status' => 'complete']);
+                $finalDayOpen = RolloverPick::query()
+                    ->where('challenge_id', $pick->challenge_id)
+                    ->where('day_number', $pick->day_number)
+                    ->where('status', 'pending')
+                    ->exists();
+                if (! $finalDayOpen) {
+                    $pick->challenge?->update(['status' => 'complete']);
+                }
             }
 
-            // Notify — once per pick
-            $cacheKey = "rollover_notified_{$pick->id}";
-            if (! Cache::has($cacheKey)) {
-                $matchLabel = "{$match->home_team} vs {$match->away_team}";
-                $tip        = $pick->groq_verdict ?? $pick->gemini_verdict ?? '—';
-                $siteUrl    = config('app.url');
-                $league     = LeagueCoverage::formatName($match->league, $match->league_country);
-
-                if ($newStatus === 'won') {
-                    $this->oneSignal->notifyRolloverWon($pick->day_number, $matchLabel, $score, (float) $pick->potential_return);
-                } else {
-                    $this->oneSignal->notifyRolloverLost($pick->day_number, $matchLabel, $score);
-                }
-
-                $this->telegram->sendRolloverOutcome(
-                    match:   $matchLabel,
-                    tip:     $tip,
-                    score:   $score,
-                    status:  $newStatus,
-                    day:     $pick->day_number,
-                    stake:   (float) $pick->stake_amount,
-                    returns: (float) $pick->potential_return,
-                    siteUrl: $siteUrl,
-                    league:  $league,
-                );
-
-                // Winner upload reminder — DB flag so it survives cache:clear and deploys
-                if ($newStatus === 'won' && ! $pick->winner_reminder_sent) {
-                    $this->oneSignal->notifyWinnerReminder();
-                    $this->telegram->sendWinnerUploadReminder($siteUrl);
-                    $pick->update(['winner_reminder_sent' => true]);
-                }
-
-                Cache::put($cacheKey, true, now()->addDays(3));
-            }
+            $this->notifyDayOutcome($pick);
         }
+    }
+
+    /**
+     * Notify ONCE per day, after the day's whole ticket has settled — with
+     * multi-leg tickets, per-leg pushes would spam users and misreport the day
+     * as won while sibling legs were still open. A lost leg triggers the loss
+     * notification immediately (the day is decided the moment one leg dies).
+     */
+    private function notifyDayOutcome(RolloverPick $pick): void
+    {
+        $legs = RolloverPick::query()
+            ->with('match')
+            ->where('challenge_id', $pick->challenge_id)
+            ->where('day_number', $pick->day_number)
+            ->get();
+
+        $anyLost = $legs->contains(fn ($l) => $l->status === 'lost');
+        $allDone = $legs->every(fn ($l) => $l->status !== 'pending');
+
+        if (! $anyLost && ! $allDone) {
+            return; // ticket still open and not yet dead — wait for remaining legs
+        }
+
+        $cacheKey = "rollover_notified_day_{$pick->challenge_id}_{$pick->day_number}";
+        if (Cache::has($cacheKey)) {
+            return;
+        }
+
+        $dayStatus  = $anyLost ? 'lost' : 'won';
+        $legLines   = $legs->map(function (RolloverPick $l) {
+            $icon = match ($l->status) { 'won' => '✅', 'lost' => '❌', 'void' => '↩️', default => '⏳' };
+            return "{$l->match?->home_team} vs {$l->match?->away_team} — {$l->groq_verdict} ({$l->result_score}) {$icon}";
+        })->implode("\n");
+        $tipLabel = $legs->count() > 1 ? $legs->count() . '-leg ticket' : ($legs->first()?->groq_verdict ?? '—');
+        $scoreLbl = $legs->count() > 1 ? '—' : (string) ($legs->first()?->result_score ?? '—');
+        $siteUrl  = config('app.url');
+        $league   = $legs->count() > 1
+            ? 'Multi-league ticket'
+            : LeagueCoverage::formatName($legs->first()?->match?->league, $legs->first()?->match?->league_country);
+
+        if ($dayStatus === 'won') {
+            $this->oneSignal->notifyRolloverWon($pick->day_number, $legLines, $scoreLbl, (float) $pick->potential_return);
+        } else {
+            $this->oneSignal->notifyRolloverLost($pick->day_number, $legLines, $scoreLbl);
+        }
+
+        $this->telegram->sendRolloverOutcome(
+            match:   $legLines,
+            tip:     $tipLabel,
+            score:   $scoreLbl,
+            status:  $dayStatus,
+            day:     $pick->day_number,
+            stake:   (float) $pick->stake_amount,
+            returns: (float) $pick->potential_return,
+            siteUrl: $siteUrl,
+            league:  $league,
+        );
+
+        // Winner upload reminder — DB flag so it survives cache:clear and deploys
+        if ($dayStatus === 'won' && ! $pick->winner_reminder_sent) {
+            $this->oneSignal->notifyWinnerReminder();
+            $this->telegram->sendWinnerUploadReminder($siteUrl);
+            $pick->update(['winner_reminder_sent' => true]);
+        }
+
+        Cache::put($cacheKey, true, now()->addDays(3));
     }
 
     // ──────────────────────────────────────────────────────────────
     //  Helpers
     // ──────────────────────────────────────────────────────────────
 
+    /**
+     * Day N's stake = day N-1's full ticket return. potential_return is stored
+     * day-level (identical on every leg), so any won leg carries it. If every
+     * leg voided, the stake simply carries over unchanged.
+     */
     private function calculateStake(RolloverChallenge $challenge, int $dayNumber): float
     {
         if ($dayNumber === 1) return (float) $challenge->initial_stake;
 
-        $lastWon = $challenge->picks()
-            ->where('day_number', $dayNumber - 1)
-            ->where('status', 'won')
-            ->first();
-
-        return $lastWon ? (float) $lastWon->potential_return : (float) $challenge->initial_stake;
-    }
-
-    private function impliedOdds(Prediction $pred): float
-    {
-        // Try bookmaker odds embedded in the tips array first
-        $tips = is_array($pred->tips) ? $pred->tips : [];
-        foreach ($tips as $tip) {
-            if (($tip['market'] ?? '') === $pred->predicted_outcome && isset($tip['bookmaker_odds'])) {
-                $o = (float) $tip['bookmaker_odds'];
-                if ($o >= 1.01) return round($o, 2);
-            }
+        $prevLegs = $challenge->picks()->where('day_number', $dayNumber - 1)->get();
+        if ($prevLegs->isEmpty() || $prevLegs->contains(fn ($l) => $l->status === 'lost')) {
+            return (float) $challenge->initial_stake;
         }
 
-        // Derive from AI confidence: e.g. 80% → 1/0.80 = 1.25
-        $conf = max(1, (float) $pred->confidence);
-        return round(1 / ($conf / 100), 2);
+        $won = $prevLegs->firstWhere('status', 'won');
+        if ($won) {
+            return (float) $won->potential_return;
+        }
+
+        // All legs voided — stake rolls forward untouched.
+        return (float) $prevLegs->first()->stake_amount;
     }
 
 }

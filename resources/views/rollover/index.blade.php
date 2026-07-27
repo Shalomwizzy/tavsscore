@@ -140,8 +140,9 @@
     $tz         = 'Africa/Lagos';
     $todayDate  = \Carbon\CarbonImmutable::now($tz)->toDateString();
     $isToday    = $viewDate->toDateString() === $todayDate;
-    $wonPicks   = $allPicks->where('status', 'won')->count();
-    $totalPicks = $allPicks->count();
+    // Day-level tallies (a day = one rollover step, however many legs it holds).
+    $wonPicks   = $wonDays;
+    $totalPicks = $totalDays;
 @endphp
 
 <div class="wrap" style="padding-top:1.5rem; padding-bottom:3rem;">
@@ -188,10 +189,6 @@
     @else
 
     {{-- Challenge hero --}}
-    @php
-        $displayDay = $totalPicks > 0 ? $totalPicks : ($isToday && $todayPick ? 1 : 0);
-    @endphp
-
     @if($challenge->status === 'complete' && $wonPicks >= 10)
     <div class="rv-complete">
         <div class="rv-complete-icon">🏆</div>
@@ -226,7 +223,6 @@
                 <span class="rv-bal-lbl">Days remaining</span>
             </div>
             <div class="rv-bal-item">
-                @php $streak = 0; foreach($allPicks->sortByDesc('day_number') as $sp) { if($sp->status === 'won') $streak++; else break; } @endphp
                 <span class="rv-bal-val" style="color:#6ee7b7;">{{ $streak }}</span>
                 <span class="rv-bal-lbl">Current streak</span>
             </div>
@@ -236,74 +232,77 @@
         <div class="rv-progress">
             @for($d = 1; $d <= 10; $d++)
             @php
-                $dp = $allPicks->firstWhere('day_number', $d);
+                $ds       = $dayStatuses[$d] ?? null;
                 $dotClass = 'rv-dot';
                 $label    = $d;
-                if ($dp) {
-                    if ($dp->status === 'won')  { $dotClass .= ' won';  $label = '✓'; }
-                    elseif ($dp->status === 'lost') { $dotClass .= ' lost'; $label = '✗'; }
-                    elseif ($dp->status === 'void') { $dotClass .= ' void'; }
-                    elseif ($isToday && $dp->pick_date->toDateString() === $todayDate) { $dotClass .= ' today'; }
-                    else { $dotClass .= ' today'; }
-                }
+                if ($ds === 'won')       { $dotClass .= ' won';  $label = '✓'; }
+                elseif ($ds === 'lost')  { $dotClass .= ' lost'; $label = '✗'; }
+                elseif ($ds === 'pending'){ $dotClass .= ' today'; }
             @endphp
             <div class="{{ $dotClass }}" title="Day {{ $d }}">{{ $label }}</div>
             @endfor
         </div>
     </div>
 
-    {{-- Today's pick --}}
-    @if($todayPick)
+    {{-- Today's ticket (1-5 legs) --}}
+    @if($todayLegs->isNotEmpty())
     @php
-        $m         = $todayPick->match;
-        $kickoff   = $m?->match_time?->setTimezone($tz)->format('H:i') . ' Lagos';
-        $waText    = urlencode("🎯 TavsScore Rollover Day {$todayPick->day_number}/10\n{$m?->home_team} vs {$m?->away_team}\nTip: {$todayPick->groq_verdict} @ {$todayPick->implied_odds} odds\nKickoff: {$kickoff}\n🔗 " . url('/rollover'));
-        $cardExtra = $todayPick->status === 'won' ? 'rv-result-won' : ($todayPick->status === 'lost' ? 'rv-result-lost' : '');
+        $dayNo        = $todayLegs->first()->day_number;
+        $ticketStatus = $todayLegs->contains(fn ($l) => $l->status === 'lost') ? 'lost'
+                        : ($todayLegs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
+        $combinedOdds = round($todayLegs->reduce(fn ($c, $l) => $c * max(1.0, (float) $l->implied_odds), 1.0), 2);
+        $dayReturn    = (float) $todayLegs->first()->potential_return;
+        $waLines      = $todayLegs->map(fn ($l) => "{$l->match?->home_team} vs {$l->match?->away_team} — {$l->groq_verdict} @ {$l->implied_odds}")->implode("\n");
+        $waText       = urlencode("🎯 TavsScore Rollover Day {$dayNo}/10\n{$waLines}\nTotal odds: {$combinedOdds}\n🔗 " . url('/rollover'));
+        $cardExtra    = $ticketStatus === 'won' ? 'rv-result-won' : ($ticketStatus === 'lost' ? 'rv-result-lost' : '');
     @endphp
     <div class="rv-pick-card {{ $cardExtra }}">
         <div class="rv-pick-badge">
-            📅 Day {{ $todayPick->day_number }} of 10 · {{ $todayPick->pick_date->format('M d, Y') }}
+            📅 Day {{ $dayNo }} of 10 · {{ $todayLegs->first()->pick_date->format('M d, Y') }}
+            · {{ $todayLegs->count() }} {{ Str::plural('leg', $todayLegs->count()) }} @ {{ $combinedOdds }} odds
         </div>
 
-        @if($todayPick->status === 'won')
-        <div class="rv-result-banner won">✅ Pick Won! {{ $todayPick->result_score }} — challenge continues to Day {{ $todayPick->day_number + 1 }}</div>
-        @elseif($todayPick->status === 'lost')
-        <div class="rv-result-banner lost">❌ Pick Lost {{ $todayPick->result_score }}. Challenge resets tomorrow</div>
+        @if($ticketStatus === 'won')
+        <div class="rv-result-banner won">✅ Ticket Won! — challenge continues to Day {{ $dayNo + 1 }}</div>
+        @elseif($ticketStatus === 'lost')
+        <div class="rv-result-banner lost">❌ Ticket Lost. Challenge resets tomorrow</div>
         @endif
 
-        <div class="rv-pick-teams">{{ $m?->home_team }} vs {{ $m?->away_team }}</div>
-        <div class="rv-pick-league">{{ $m?->league }}{{ $m?->league_country ? ' · ' . $m->league_country : '' }}</div>
-
-        <div class="rv-pick-tip">
-            ✅ {{ $todayPick->groq_verdict }}
+        @foreach($todayLegs as $leg)
+        @php
+            $m       = $leg->match;
+            $kickoff = $m?->match_time?->setTimezone($tz)->format('H:i') . ' Lagos';
+            $legIcon = match($leg->status) { 'won' => '✅', 'lost' => '❌', 'void' => '↩️', default => '⏳' };
+        @endphp
+        <div class="rv-leg" style="border-top:1px solid var(--border); padding:.85rem 0;">
+            <div class="rv-pick-teams" style="font-size:.95rem;">{{ $m?->home_team }} vs {{ $m?->away_team }}</div>
+            <div class="rv-pick-league">{{ $m?->league }}{{ $m?->league_country ? ' · ' . $m->league_country : '' }} · 🕐 {{ $kickoff }}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-top:.4rem;">
+                <span class="rv-pick-tip" style="margin:0;">{{ $legIcon }} {{ $leg->groq_verdict }}</span>
+                <span class="rv-odds-val" style="color:#fcd34d; font-weight:700;">@ {{ $leg->implied_odds }}
+                    @if($leg->result_score)<span style="color:var(--text-dim); font-weight:500; font-size:.72rem;"> ({{ $leg->result_score }})</span>@endif
+                </span>
+            </div>
         </div>
+        @endforeach
 
-        <div class="rv-ai-badges">
-            <span class="rv-ai-badge rv-ai-groq">🤖 AI #1: {{ $todayPick->groq_verdict }}</span>
-            @if($todayPick->gemini_verdict)
-            <span class="rv-ai-badge rv-ai-gemini">🤖 AI #2: {{ $todayPick->gemini_verdict }}</span>
-            @endif
-            @if($todayPick->mistral_verdict)
-            <span class="rv-ai-badge rv-ai-gemini">🤖 AI #3: {{ $todayPick->mistral_verdict }}</span>
-            @endif
-            @if($todayPick->both_agree)
-            <span class="rv-ai-badge rv-ai-agreed">✓ All 3 engines agree</span>
-            @endif
-        </div>
-
-        <div class="rv-odds-row">
+        <div class="rv-odds-row" style="border-top:1px solid var(--border); padding-top:.85rem;">
             <div class="rv-odds-item">
-                <span class="rv-odds-val">{{ $todayPick->implied_odds }}</span>
-                <span class="rv-odds-lbl">Implied odds</span>
+                <span class="rv-odds-val">{{ $combinedOdds }}</span>
+                <span class="rv-odds-lbl">Combined odds</span>
             </div>
             <div class="rv-odds-item">
-                <span class="rv-odds-val">Day {{ $todayPick->day_number }}</span>
+                <span class="rv-odds-val" style="color:#6ee7b7;">₦{{ number_format($dayReturn) }}</span>
+                <span class="rv-odds-lbl">Ticket returns</span>
+            </div>
+            <div class="rv-odds-item">
+                <span class="rv-odds-val">Day {{ $dayNo }}</span>
                 <span class="rv-odds-lbl">of 10</span>
             </div>
         </div>
 
         <div class="rv-kickoff">
-            <span>🕐 Kickoff {{ $kickoff }}</span>
+            <span>🎟 {{ $todayLegs->count() }}-leg safe ticket</span>
             <a href="https://wa.me/?text={{ $waText }}" target="_blank" rel="noopener"
                style="display:inline-flex;align-items:center;gap:.35rem;background:#25D366;color:#fff;font-size:.68rem;font-weight:700;padding:4px 12px;border-radius:999px;text-decoration:none;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.534 5.845L.055 23.454l5.742-1.505A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.372l-.36-.214-3.71.972.989-3.615-.234-.371A9.818 9.818 0 012.182 12C2.182 6.575 6.575 2.182 12 2.182c5.424 0 9.818 4.393 9.818 9.818 0 5.424-4.394 9.818-9.818 9.818z"/></svg>
@@ -314,8 +313,8 @@
     @else
     <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:2rem; text-align:center; margin-bottom:1.5rem;">
         <div style="font-size:2rem; margin-bottom:.5rem;">⏳</div>
-        <div style="font-weight:800; color:#fff; margin-bottom:.35rem;">Today's Pick Not Yet Selected</div>
-        <p style="font-size:.8rem; color:var(--text-dim);">The AI selects the safest game each day at 10:30 Lagos time. Check back soon.</p>
+        <div style="font-weight:800; color:#fff; margin-bottom:.35rem;">Today's Ticket Not Yet Selected</div>
+        <p style="font-size:.8rem; color:var(--text-dim);">Each day at 10:30 Lagos time we build a ticket of the safest picks (up to ~2.00 combined odds). Check back soon.</p>
     </div>
     @endif
 
@@ -345,15 +344,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($allPicks as $rp)
+                    @foreach($dayGroups->sortKeys() as $day => $legs)
+                    @php
+                        $dayStatus = $legs->contains(fn ($l) => $l->status === 'lost') ? 'lost'
+                                     : ($legs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
+                        $dayOdds   = round($legs->reduce(fn ($c, $l) => $c * max(1.0, (float) $l->implied_odds), 1.0), 2);
+                    @endphp
+                    @foreach($legs as $i => $rp)
                     @php $rm = $rp->match; @endphp
-                    <tr>
-                        <td>
+                    <tr @if($dayStatus === 'lost') style="background:rgba(239,68,68,.06);" @endif>
+                        @if($i === 0)
+                        <td rowspan="{{ $legs->count() }}" style="vertical-align:top;">
                             <a href="{{ route('rollover.show', $rp->pick_date->format('Y-m-d')) }}">
-                                Day {{ $rp->day_number }}<br>
+                                Day {{ $day }}<br>
                                 <span style="color:var(--text-dim); font-size:.65rem;">{{ $rp->pick_date->format('M d') }}</span>
+                                @if($legs->count() > 1)<br><span style="color:var(--text-dim); font-size:.62rem;">{{ $legs->count() }} legs @ {{ $dayOdds }}</span>@endif
                             </a>
                         </td>
+                        @endif
                         <td style="color:#fff; font-weight:600; white-space:nowrap;">
                             {{ $rm?->home_team }} vs {{ $rm?->away_team }}
                             @if($rp->result_score)
@@ -378,6 +386,7 @@
                         </td>
                     </tr>
                     @endforeach
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -389,9 +398,12 @@
     <div style="font-size:.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.75rem;">🗂 Previous Challenges</div>
     @foreach($pastChallenges as $pc)
     @php
-        $pcWon   = $pc->picks->where('status', 'won')->count();
-        $pcTotal = $pc->picks->count();
-        $pcResult = $pcWon >= 10 ? '🏆 Completed 10/10' : ($pcWon . '/' . $pcTotal . ' won — bust day ' . ($pcWon + 1));
+        $pcDays  = $pc->picks->groupBy('day_number');
+        $pcDayStatus = fn ($legs) => $legs->contains(fn ($l) => $l->status === 'lost') ? 'lost'
+                        : ($legs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
+        $pcWon   = $pcDays->filter(fn ($legs) => $pcDayStatus($legs) === 'won')->count();
+        $pcTotal = $pcDays->count();
+        $pcResult = $pcWon >= 10 ? '🏆 Completed 10/10' : ($pcWon . '/' . $pcTotal . ' days won — bust day ' . ($pcWon + 1));
         $pcStart = $pc->started_at instanceof \Carbon\Carbon ? $pc->started_at : \Carbon\Carbon::parse($pc->started_at);
     @endphp
     <details class="rv-table-wrap" style="margin-bottom:1rem;" {{ $loop->first ? 'open' : '' }}>
@@ -411,15 +423,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($pc->picks as $rp)
+                    @foreach($pcDays->sortKeys() as $day => $legs)
+                    @php $dOdds = round($legs->reduce(fn ($c, $l) => $c * max(1.0, (float) $l->implied_odds), 1.0), 2); @endphp
+                    @foreach($legs as $i => $rp)
                     @php $rm = $rp->match; @endphp
-                    <tr>
-                        <td>
+                    <tr @if($pcDayStatus($legs) === 'lost') style="background:rgba(239,68,68,.06);" @endif>
+                        @if($i === 0)
+                        <td rowspan="{{ $legs->count() }}" style="vertical-align:top;">
                             <a href="{{ route('rollover.show', $rp->pick_date->format('Y-m-d')) }}">
-                                Day {{ $rp->day_number }}<br>
+                                Day {{ $day }}<br>
                                 <span style="color:var(--text-dim); font-size:.65rem;">{{ $rp->pick_date->format('M d') }}</span>
+                                @if($legs->count() > 1)<br><span style="color:var(--text-dim); font-size:.62rem;">{{ $legs->count() }} legs @ {{ $dOdds }}</span>@endif
                             </a>
                         </td>
+                        @endif
                         <td style="color:#fff; font-weight:600; white-space:nowrap;">
                             {{ $rm?->home_team }} vs {{ $rm?->away_team }}
                             @if($rp->result_score)
@@ -438,6 +455,7 @@
                             @endif
                         </td>
                     </tr>
+                    @endforeach
                     @endforeach
                 </tbody>
             </table>

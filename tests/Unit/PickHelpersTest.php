@@ -198,6 +198,121 @@ class PickHelpersTest extends TestCase
         $this->assertFalse(PickHelpers::resolveForMatch($this->match(2, 1), 'Home -1 Handicap'));
     }
 
+    // ── Full-board markets (added so the grader drops nothing) ───────
+
+    public function test_over_15_and_under_15(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 1), 'Over 1.5 Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 0), 'Under 1.5 Goals'));
+    }
+
+    public function test_over_under_45_55(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(3, 2), 'Over 4.5 Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 2), 'Under 4.5 Goals'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(3, 2), 'Over 5.5 Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(3, 2), 'Under 5.5 Goals'));
+    }
+
+    public function test_total_goals_odd_even(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Total Goals Odd'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 1), 'Total Goals Even'));
+    }
+
+    public function test_exact_and_range_totals(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 1), 'Exactly 2 Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(3, 1), '4+ Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), '2-3 Goals'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(3, 2), '2-3 Goals'));
+    }
+
+    public function test_team_totals(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 0), 'Home Over 1.5'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(1, 0), 'Home Over 1.5'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 3), 'Away 3+ Goals'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 0), 'Home Exactly 0'));
+    }
+
+    public function test_dot5_handicaps(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(3, 1), 'Home -1.5 (Handicap)'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(2, 1), 'Home -1.5 (Handicap)'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 1), 'Home +1.5 (Handicap)'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 2), 'Away -1.5 (Handicap)'));
+    }
+
+    public function test_winning_margin(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Home to win by 1'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(3, 1), 'Home to win by 1'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(4, 1), 'Home to win by 3+'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 2), 'Away to win by 2'));
+    }
+
+    public function test_result_and_goals_combos(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Home & Over 2.5'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 0), 'Home & Under 2.5'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Home & BTTS'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'BTTS & Over 2.5'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(2, 0), 'Home & BTTS'));
+    }
+
+    public function test_ht_markets(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1, 1, 0), 'HT Home Win'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 1, 0, 0), 'HT Under 0.5'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 2, 1, 1), 'HT Both Teams Score'));
+        $this->assertNull(PickHelpers::resolveForMatch($this->match(2, 1), 'HT Home Win'));
+    }
+
+    public function test_halves_and_htft(): void
+    {
+        // HT 1-0, FT 2-1 → 2nd half also scored → goal in both halves
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1, 1, 0), 'Goal in Both Halves'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1, 1, 0), 'HT/FT Home/Home'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1, 0, 0), 'HT/FT Draw/Home'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(2, 1, 1, 0), 'HT/FT Draw/Home'));
+    }
+
+    public function test_dnb_voids_on_draw(): void
+    {
+        $this->assertNull(PickHelpers::resolveForMatch($this->match(1, 1), 'Draw No Bet - Home'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Draw No Bet - Home'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(0, 1), 'Draw No Bet - Home'));
+    }
+
+    // ── safestBoardMarket() — whole-board selection ──────────────────
+
+    public function test_safest_board_market_picks_highest_over_floor(): void
+    {
+        $board = ['Home Win' => 60, 'Over 1.5 Goals' => 91, 'Over 2.5 Goals' => 72];
+        $safe  = PickHelpers::safestBoardMarket($board, 90.0, []);
+        $this->assertSame('Over 1.5 Goals', $safe['market']);
+    }
+
+    public function test_safest_board_market_returns_null_when_none_clear_floor(): void
+    {
+        $board = ['Home Win' => 60, 'Over 2.5 Goals' => 72];
+        $this->assertNull(PickHelpers::safestBoardMarket($board, 90.0, []));
+    }
+
+    public function test_headline_block_excludes_trivial_certainties(): void
+    {
+        $board = ['Over 0.5 Goals' => 97, 'Under 5.5 Goals' => 99, 'Over 1.5 Goals' => 91];
+        $safe  = PickHelpers::safestBoardMarket($board, 88.0, PickHelpers::headlineBlock());
+        $this->assertSame('Over 1.5 Goals', $safe['market']);
+    }
+
+    public function test_safest_board_market_null_on_empty_board(): void
+    {
+        $this->assertNull(PickHelpers::safestBoardMarket(null, 90.0, []));
+        $this->assertNull(PickHelpers::safestBoardMarket([], 90.0, []));
+    }
+
     // ── confidenceBand() ────────────────────────────────────────────
 
     public function test_confidence_band_high(): void
