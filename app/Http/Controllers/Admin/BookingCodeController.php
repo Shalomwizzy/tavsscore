@@ -40,4 +40,11 @@ class BookingCodeController extends Controller
 
         return back()->with('success', "Booking code sent to Telegram and push notifications.");
     }
+
+    public function destroy(BookingCode $bookingCode)
+    {
+        $bookingCode->delete();
+
+        return back()->with('success', 'Booking code deleted.');
+    }
 }

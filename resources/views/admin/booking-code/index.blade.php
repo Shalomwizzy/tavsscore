@@ -84,6 +84,9 @@
                         <th>Platform</th>
                         <th>Code</th>
                         <th>Note</th>
+                        <th>Odds</th>
+                        <th>Source</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,6 +104,19 @@
                             {{ strtoupper($item->code) }}
                         </td>
                         <td style="color:var(--dim); font-size:.78rem;">{{ $item->note ?: '—' }}</td>
+                        <td style="color:#fcd34d; font-size:.78rem; font-weight:700;">{{ $item->total_odds ? number_format((float) $item->total_odds, 2) : '—' }}</td>
+                        <td style="font-size:.72rem;">
+                            <span style="color:{{ $item->source === 'auto' ? '#6ee7b7' : 'var(--dim)' }};">{{ $item->source ?? 'manual' }}</span>
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ route('admin.booking-code.destroy', $item) }}"
+                                  onsubmit="return confirm('Delete this booking code?');" style="margin:0;">
+                                @csrf @method('DELETE')
+                                <button type="submit" style="background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.3); padding:2px 10px; border-radius:6px; font-size:.72rem; cursor:pointer;">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>

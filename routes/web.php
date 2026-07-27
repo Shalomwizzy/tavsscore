@@ -185,6 +185,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Booking Code */
         Route::get('/booking-code',      [\App\Http\Controllers\Admin\BookingCodeController::class, 'index'])->name('booking-code.index');
         Route::post('/booking-code/send',[\App\Http\Controllers\Admin\BookingCodeController::class, 'send'])->name('booking-code.send');
+        Route::delete('/booking-code/{bookingCode}', [\App\Http\Controllers\Admin\BookingCodeController::class, 'destroy'])->name('booking-code.destroy');
 
         /* Broadcast */
         Route::get('/broadcast',      [\App\Http\Controllers\Admin\BroadcastController::class, 'index'])->name('broadcast.index');
