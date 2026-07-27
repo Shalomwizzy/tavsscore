@@ -1,939 +1,368 @@
 @extends('layouts.app')
 
-@section('title', 'TavsScore | Live Football Scores & AI Predictions')
+@section('title', 'TavsScore | AI Football Predictions, Live Scores & Daily Picks')
+@section('meta_description', 'AI-powered football predictions across 100+ markets, verified daily. Today\'s pick of the day, live scores, the rollover challenge and goalscorer tips — all on TavsScore.')
+@section('og_title', 'TavsScore — Football, called before kickoff')
 
 @push('styles')
 <style>
-/* ── v2 launch banner ── */
-.v2-banner {
-    background: linear-gradient(90deg, rgba(16,185,129,.12) 0%, rgba(59,130,246,.10) 100%);
-    border-bottom: 1px solid rgba(16,185,129,.25);
-    padding: .55rem 0;
-    position: relative;
-}
-.v2-banner-inner {
-    display: flex; align-items: center; gap: .85rem;
-    text-decoration: none; color: inherit;
-    max-width: 100%;
-}
-.v2-badge {
-    flex-shrink: 0;
-    background: linear-gradient(135deg, #10b981, #3b82f6);
-    color: #fff;
-    font-size: .68rem;
-    font-weight: 900;
-    letter-spacing: .04em;
-    padding: 3px 10px;
-    border-radius: 999px;
-    text-transform: uppercase;
-}
-.v2-text {
-    flex: 1;
-    display: flex; flex-direction: column;
-    line-height: 1.35;
-    min-width: 0;
-}
-.v2-text strong { color: #fff; font-size: .82rem; font-weight: 700; }
-.v2-text span   { color: var(--text-dim); font-size: .72rem; }
-.v2-text .v2-cta { color: #6ee7b7; font-weight: 600; }
-.v2-dismiss {
-    background: transparent; border: 0; color: var(--text-dim);
-    font-size: 1.2rem; line-height: 1; cursor: pointer;
-    padding: 4px 8px; border-radius: 6px;
-    flex-shrink: 0;
-}
-.v2-dismiss:hover { background: rgba(255,255,255,.05); color: #fff; }
-@media (max-width: 640px) {
-    .v2-text strong { font-size: .78rem; }
-    .v2-text span   { font-size: .66rem; }
-    .v2-banner      { padding: .5rem 0; }
-}
+    .hm {
+        --acc: #10b981; --mint: #6ee7b7; --ground: #080b0f; --panel: #121a23; --panel2: #16212c;
+        --line: rgba(255,255,255,.08); --line2: rgba(255,255,255,.15); --ink: #eaf1f6; --mute: #8b98a5;
+        --accdim: rgba(16,185,129,.13); --accbrd: rgba(16,185,129,.30); --live: #f5484b; --amber: #f59e0b;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+        background: var(--ground); color: var(--ink); overflow-x: hidden;
+    }
+    .hm .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem; }
 
-/* ── Hero ── */
-.hero {
-    padding: 4.5rem 0 3rem;
-    background:
-        radial-gradient(ellipse 80% 50% at 50% -5%, rgba(16,185,129,.14), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 80%,  rgba(59,130,246,.07), transparent);
-}
-.hero-eyebrow {
-    display: inline-flex; align-items: center; gap: .45rem;
-    padding: 3px 12px; border-radius: 999px;
-    background: var(--green-dim); border: 1px solid var(--green-border);
-    color: #6ee7b7; font-size: .72rem; font-weight: 700;
-    letter-spacing: .05em; text-transform: uppercase; margin-bottom: 1.25rem;
-}
-.hero-title {
-    font-size: clamp(2.1rem, 6vw, 4.2rem); font-weight: 900;
-    line-height: 1.06; letter-spacing: -.03em; color: #fff; margin-bottom: 1.1rem;
-}
-.hero-title .grad {
-    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.hero-desc { font-size: 1rem; color: var(--text-dim); max-width: 500px; line-height: 1.75; margin-bottom: 1.75rem; }
-.hero-ctas { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 2.75rem; }
+    /* Hero */
+    .hm-hero { position: relative; padding: 5rem 0 3.5rem; overflow: hidden; }
+    .hm-flood { position: absolute; inset: -30% -10% auto -10%; height: 130%; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(52% 46% at 20% 6%, rgba(16,185,129,.22), transparent 70%),
+          radial-gradient(46% 50% at 90% 16%, rgba(59,130,246,.13), transparent 72%),
+          radial-gradient(60% 55% at 60% 100%, rgba(16,185,129,.10), transparent 70%);
+        animation: hm-drift 18s ease-in-out infinite alternate; }
+    @keyframes hm-drift { from { transform: translate3d(-2%,-1%,0) scale(1); } to { transform: translate3d(3%,2%,0) scale(1.08); } }
+    .hm-lines { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+        background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px); background-size: 100% 46px;
+        -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 58%, transparent);
+        mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 58%, transparent); }
+    .hm-hgrid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 3rem; align-items: center; }
+    @media (max-width: 900px) { .hm-hgrid { grid-template-columns: 1fr; gap: 2.25rem; } .hm-hero { padding: 3rem 0 2.25rem; } }
 
-/* ── Stats bar ── */
-.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; }
-.stat-tile {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 1rem; display: flex; align-items: center; gap: .75rem;
-    text-decoration: none; transition: border-color 160ms, transform 160ms;
-}
-.stat-tile:hover { transform: translateY(-2px); }
-.stat-ico {
-    width: 38px; height: 38px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; flex-shrink: 0;
-}
-.ico-red   { background: var(--red-dim); }
-.ico-blue  { background: var(--blue-dim); }
-.ico-gray  { background: rgba(107,114,128,.12); }
-.ico-green { background: var(--green-dim); }
-.stat-val  { font-size: 1.45rem; font-weight: 800; color: #fff; line-height: 1; display: block; }
-.stat-lbl  { font-size: .68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; display: block; }
+    .hm-eyebrow { display: inline-flex; align-items: center; gap: .5rem; font-size: .71rem; font-weight: 700;
+        letter-spacing: .15em; text-transform: uppercase; color: var(--mint);
+        background: var(--accdim); border: 1px solid var(--accbrd); padding: .35rem .8rem; border-radius: 999px; }
+    .hm-pdot { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); animation: hm-pulse 2s infinite; }
+    @keyframes hm-pulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.55);} 70%{box-shadow:0 0 0 9px rgba(16,185,129,0);} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0);} }
+    .hm-title { font-size: clamp(2.5rem,6vw,4.2rem); font-weight: 850; line-height: 1.02; letter-spacing: -.035em; margin: 1.25rem 0 1.1rem; text-wrap: balance; }
+    .hm-title .g { background: linear-gradient(100deg, var(--mint), var(--acc) 60%, #38bdf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hm-sub { font-size: 1.05rem; color: var(--mute); max-width: 30rem; line-height: 1.7; margin-bottom: 1.9rem; }
+    .hm-ctas { display: flex; gap: .8rem; flex-wrap: wrap; align-items: center; }
+    .hm-btn { font-weight: 750; font-size: .95rem; padding: .85rem 1.5rem; border-radius: 12px;
+        background: linear-gradient(135deg, var(--acc), #059669); color: #052018;
+        box-shadow: 0 8px 30px rgba(16,185,129,.35); transition: transform .16s, box-shadow .16s; }
+    .hm-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(16,185,129,.5); color: #052018; }
+    .hm-ghost { font-weight: 650; font-size: .92rem; padding: .85rem 1.1rem; color: var(--ink); }
+    .hm-ghost:hover { color: var(--mint); }
 
-/* ── Section headings ── */
-.section-label {
-    font-size: .72rem; font-weight: 700; color: var(--green);
-    text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem;
-}
-.section-title  { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -.02em; margin-bottom: .5rem; }
-.section-desc   { font-size: .88rem; color: var(--text-dim); max-width: 540px; line-height: 1.7; margin-bottom: 2rem; }
+    /* Pick of the day */
+    .hm-pick { position: relative; background: linear-gradient(180deg, var(--panel2), var(--panel));
+        border: 1px solid var(--line2); border-radius: 22px; padding: 1.5rem;
+        box-shadow: 0 30px 70px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05); }
+    .hm-pick-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.1rem; }
+    .hm-pick-tag { font-size: .67rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--mint); }
+    .hm-pick-league { font-size: .7rem; color: var(--mute); font-family: var(--mono); text-align: right; }
+    .hm-teams { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; }
+    .hm-team { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 1; min-width: 0; }
+    .hm-crest { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .95rem;
+        background: radial-gradient(circle at 30% 25%, #223040, #0e1620); border: 1px solid var(--line); }
+    .hm-tname { font-size: .8rem; font-weight: 700; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hm-vs { font-family: var(--mono); font-size: .7rem; color: var(--mute); }
+    .hm-pickbody { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;
+        padding: 1.1rem; background: rgba(0,0,0,.28); border: 1px solid var(--line); border-radius: 14px; }
+    .hm-tiplabel { font-size: .66rem; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .3rem; }
+    .hm-tip { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+    .hm-tipmeta { margin-top: .5rem; font-size: .73rem; color: var(--mint); }
+    .hm-ring { position: relative; width: 78px; height: 78px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+    .hm-ring::before { content: ""; position: absolute; width: 60px; height: 60px; border-radius: 50%; background: var(--panel); }
+    .hm-ring b { position: relative; font-family: var(--mono); font-weight: 700; font-size: 1.15rem; }
+    .hm-pickfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 1.1rem; font-size: .72rem; color: var(--mute); flex-wrap: wrap; gap: .5rem; }
+    .hm-cons { display: inline-flex; gap: .3rem; align-items: center; }
+    .hm-aidot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px rgba(16,185,129,.6); }
+    .hm-pick-empty { text-align: center; padding: 2rem 1rem; color: var(--mute); }
+    .hm-pick-empty .i { font-size: 2rem; margin-bottom: .5rem; }
 
-/* ── Nav-section feature cards ── */
-.nsc-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: .85rem;
-}
-.nsc-card {
-    display: flex; flex-direction: column;
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    overflow: hidden; text-decoration: none;
-    transition: border-color 200ms, transform 200ms;
-}
-.nsc-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.12); }
-.nsc-header {
-    padding: 1.1rem 1.2rem .9rem;
-    display: flex; align-items: center; justify-content: space-between;
-}
-.nsc-emoji { font-size: 1.8rem; line-height: 1; }
-.nsc-live-tag {
-    font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 999px;
-}
-.nsc-body { padding: .1rem 1.2rem 1.2rem; flex: 1; display: flex; flex-direction: column; }
-.nsc-title { font-size: .95rem; font-weight: 800; color: #fff; margin-bottom: .45rem; }
-.nsc-desc  { font-size: .78rem; color: var(--text-dim); line-height: 1.68; flex: 1; }
-.nsc-cta   { font-size: .75rem; font-weight: 700; margin-top: .85rem; }
+    /* Scoreboard */
+    .hm-sb { position: relative; z-index: 1; margin-top: 3.25rem; display: grid; grid-template-columns: repeat(4,1fr); gap: 1px;
+        background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .hm-sbcell { background: #0b1117; padding: 1.25rem 1rem; text-align: center; }
+    .hm-sbnum { font-family: var(--mono); font-size: clamp(1.5rem,4vw,2.3rem); font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--mint); }
+    .hm-sblabel { font-size: .66rem; color: var(--mute); text-transform: uppercase; letter-spacing: .1em; margin-top: .3rem; }
+    @media (max-width: 620px) { .hm-sb { grid-template-columns: repeat(2,1fr); } }
 
-/* ── Live Picks section ── */
-.picks-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .85rem; align-items: start; }
+    /* Slate ticker */
+    .hm-slate { position: relative; z-index: 1; margin-top: 1rem; display: flex; gap: .6rem; overflow-x: auto; padding-bottom: .4rem; scrollbar-width: none; }
+    .hm-slate::-webkit-scrollbar { display: none; }
+    .hm-chip { flex: 0 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: .55rem .8rem; font-size: .78rem; color: var(--mute); white-space: nowrap; }
+    .hm-chip b { color: var(--ink); font-weight: 650; }
+    .hm-chip .t { font-family: var(--mono); color: var(--mint); margin-right: .5rem; }
 
-/* ── African spotlight ── */
-.afr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .65rem; }
-.afr-card {
-    display: block; text-decoration: none;
-    background: linear-gradient(135deg, rgba(16,185,129,.06), rgba(16,185,129,.02));
-    border: 1px solid rgba(16,185,129,.18); border-radius: 11px;
-    padding: .85rem .95rem;
-    transition: transform 160ms, border-color 160ms, background 160ms;
-}
-.afr-card:hover { transform: translateY(-2px); border-color: rgba(16,185,129,.4); background: linear-gradient(135deg, rgba(16,185,129,.10), rgba(16,185,129,.04)); }
-.afr-league { display: flex; align-items: center; gap: .45rem; font-size: .7rem; font-weight: 700; color: #6ee7b7; margin-bottom: .45rem; }
-.afr-teams  { display: flex; align-items: center; color: #fff; font-weight: 700; font-size: .85rem; line-height: 1.3; }
-.afr-teams > div:first-child, .afr-teams > div:last-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.afr-teams > div:last-child { text-align: right; }
-.afr-meta   { font-size: .7rem; color: var(--text-dim); margin-top: .55rem; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
-.afr-tip    { display: inline-block; padding: 1px 7px; border-radius: 999px; background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.25); color: #fcd34d; font-weight: 700; font-size: .65rem; margin-left: auto; }
+    /* Sections */
+    .hm-band { padding: 4rem 0; }
+    .hm-reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s ease, transform .7s ease; }
+    .hm-reveal.in { opacity: 1; transform: none; }
+    .hm-eye { font-size: .71rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--mute); }
+    .hm-h2 { font-size: clamp(1.7rem,3.5vw,2.5rem); font-weight: 800; letter-spacing: -.03em; margin: .55rem 0 0; text-wrap: balance; }
+    .hm-desc { color: var(--mute); max-width: 34rem; margin-top: .8rem; line-height: 1.7; }
 
-/* ── League pills ── */
-.leagues-strip { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.25rem; }
-.league-pill {
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: 5px 11px; border-radius: 999px;
-    background: var(--surface); border: 1px solid var(--border);
-    font-size: .75rem; font-weight: 600; color: var(--text-dim);
-    transition: color 160ms, border-color 160ms;
-}
-.league-pill:hover { color: var(--text); border-color: rgba(99,179,237,.25); }
+    .hm-proof { display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
+        background: linear-gradient(120deg, var(--accdim), transparent 70%); border: 1px solid var(--accbrd); border-radius: 18px; padding: 2rem; }
+    .hm-proofbig { font-family: var(--mono); font-weight: 700; font-size: clamp(2.3rem,6vw,3.3rem); color: var(--mint); font-variant-numeric: tabular-nums; }
+    .hm-verified { display: inline-flex; align-items: center; gap: .4rem; font-size: .73rem; color: var(--mint); border: 1px solid var(--accbrd); border-radius: 999px; padding: .25rem .7rem; margin-top: .5rem; }
 
-/* ── Community cards ── */
-.community-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .85rem; }
+    .hm-props { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-top: 2.25rem; }
+    @media (max-width: 900px) { .hm-props { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 520px) { .hm-props { grid-template-columns: 1fr; } }
+    .hm-prop { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.4rem; transition: transform .18s, border-color .18s; display: block; }
+    .hm-prop:hover { transform: translateY(-4px); border-color: var(--accbrd); }
+    .hm-propico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 1.1rem; background: var(--accdim); border: 1px solid var(--accbrd); margin-bottom: .9rem; }
+    .hm-prop h3 { font-size: 1rem; font-weight: 750; margin: 0 0 .4rem; letter-spacing: -.01em; color: var(--ink); }
+    .hm-prop p { font-size: .83rem; color: var(--mute); margin: 0; line-height: 1.6; }
+    .hm-prop .m { display: inline-block; margin-top: .8rem; font-size: .77rem; color: var(--mint); font-weight: 650; }
 
-/* Grid/flex children default to min-width:auto, which lets long content
-   push a track wider than the phone viewport and shift every section —
-   the classic "whole page broken on iPhone" failure. Force them to
-   shrink and let text wrap instead. */
-.stats-bar > *, .nsc-grid > *, .picks-grid > *, .community-grid > *,
-.afr-grid > *, .install-notif-grid > * { min-width: 0; }
-.nsc-body, .nsc-header { min-width: 0; }
-.nsc-title, .nsc-desc, .section-title, .section-desc, .hero-desc { overflow-wrap: anywhere; }
-.stat-tile > div:last-child { min-width: 0; }
-.stat-lbl { overflow-wrap: anywhere; }
+    .hm-roll { position: relative; overflow: hidden; background: #0b1117; border: 1px solid var(--line); border-radius: 22px; padding: 2.5rem;
+        display: grid; grid-template-columns: 1.1fr .9fr; gap: 2.5rem; align-items: center; }
+    .hm-roll::after { content: ""; position: absolute; right: -20%; top: -40%; width: 60%; height: 180%; background: radial-gradient(circle, rgba(16,185,129,.14), transparent 65%); pointer-events: none; }
+    @media (max-width: 820px) { .hm-roll { grid-template-columns: 1fr; gap: 1.75rem; } }
+    .hm-track { display: flex; gap: .4rem; margin: 1.3rem 0 .6rem; }
+    .hm-td { flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); }
+    .hm-td.won { background: linear-gradient(90deg, var(--acc), var(--mint)); box-shadow: 0 0 10px rgba(16,185,129,.5); }
+    .hm-td.today { background: rgba(245,158,11,.55); box-shadow: 0 0 10px rgba(245,158,11,.5); }
+    .hm-rollbig { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 3.4rem; font-weight: 700; color: var(--mint); }
 
-@media (max-width: 860px) {
-    .stats-bar       { grid-template-columns: repeat(2, 1fr); }
-    .nsc-grid        { grid-template-columns: 1fr 1fr; }
-    .picks-grid      { grid-template-columns: 1fr; }
-    .community-grid  { grid-template-columns: 1fr 1fr; }
-    .hero            { padding: 3rem 0 2.5rem; }
-}
-@media (max-width: 540px) {
-    .nsc-grid       { grid-template-columns: 1fr; }
-    .community-grid { grid-template-columns: 1fr; }
-    .install-notif-grid { grid-template-columns: 1fr !important; }
-    .hero           { padding: 2.25rem 0 2rem; }
-    .hero-ctas .btn-ts { flex: 1; text-align: center; justify-content: center; }
-    .stats-bar      { gap: .5rem; }
-    .stat-tile      { padding: .75rem .7rem; gap: .55rem; }
-    .stat-ico       { width: 32px; height: 32px; font-size: .85rem; }
-    .stat-val       { font-size: 1.2rem; }
-    .stat-lbl       { font-size: .6rem; }
-}
-@media (max-width: 400px) {
-    .stats-bar      { grid-template-columns: 1fr 1fr; }
-    .stat-tile      { padding: .6rem .6rem; }
-    .nsc-header     { padding: .9rem 1rem .7rem; }
-    .nsc-body       { padding: .1rem 1rem 1rem; }
-}
+    .hm-explore { display: grid; grid-template-columns: repeat(4,1fr); gap: .7rem; margin-top: 1.8rem; }
+    @media (max-width: 820px) { .hm-explore { grid-template-columns: repeat(2,1fr); } }
+    .hm-ex { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; display: flex; align-items: center; gap: .6rem; font-size: .85rem; font-weight: 650; color: var(--mute); transition: color .15s, border-color .15s; }
+    .hm-ex:hover { color: var(--ink); border-color: var(--line2); }
+
+    .hm-footcta { text-align: center; padding: 5rem 0; position: relative; overflow: hidden; }
+    .hm-footcta h2 { font-size: clamp(2rem,5vw,3.1rem); font-weight: 850; letter-spacing: -.035em; text-wrap: balance; margin: 0 0 1rem; }
+    .hm-footcta p { color: var(--mute); max-width: 30rem; margin: 0 auto 2rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .hm-flood { animation: none; } .hm-pdot { animation: none; }
+        .hm-reveal { opacity: 1; transform: none; transition: none; }
+    }
 </style>
 @endpush
 
 @section('content')
+@php
+    $confPct   = $topPick ? (int) round($topPick->confidence ?? 0) : 0;
+    $tips      = $topPick && is_array($topPick->tips) ? $topPick->tips : [];
+    $agreement = $tips[0]['agreement_level'] ?? null;
+    $winRate   = $last7Acc ?? $overallAcc;
+    $crest     = fn ($name) => strtoupper(mb_substr(preg_replace('/[^A-Za-z ]/', '', (string) $name), 0, 3));
+@endphp
+<div class="hm">
 
-{{-- ══════════════════════════════════════════
-     v2.0 LAUNCH BANNER (dismissible)
-══════════════════════════════════════════ --}}
-<section class="v2-banner" id="v2-banner" style="display:none;">
-    <div class="wrap">
-        <div class="v2-banner-inner">
-            <span class="v2-badge">2.0</span>
-            <a href="{{ route('track-record.index') }}" class="v2-text" style="text-decoration:none;">
-                <strong>TavsScore 2.0 — new statistical engine now powers Home / Draw / Away picks</strong>
-                <span>Backtested on 9,691 matches across 9 top European leagues. <span class="v2-cta">See our track record →</span></span>
-            </a>
-            <button class="v2-dismiss" onclick="dismissV2Banner()" aria-label="Dismiss">×</button>
-        </div>
-    </div>
-</section>
-<script>
-(function () {
-    // Show only if the user hasn't dismissed it yet
-    if (! localStorage.getItem('tavs_v2_banner_dismissed')) {
-        document.getElementById('v2-banner').style.display = '';
-    }
-    window.dismissV2Banner = function () {
-        localStorage.setItem('tavs_v2_banner_dismissed', '1');
-        document.getElementById('v2-banner').style.display = 'none';
-    };
-})();
-</script>
-
-{{-- ══════════════════════════════════════════
-     HERO
-══════════════════════════════════════════ --}}
-<section class="hero">
-    <div class="wrap">
-        <div class="hero-eyebrow">
-            <span class="live-dot"></span>
-            Live Football Platform
-        </div>
-        <h1 class="hero-title">
-            The Smartest Way<br>to Follow <span class="grad">Football</span>
-        </h1>
-        <p class="hero-desc">
-            Live scores, triple-AI match predictions, daily picks, rollover challenges,
-            and full African football coverage all updated in real time.
-        </p>
-        <div class="hero-ctas">
-            <a href="{{ route('live.index') }}"        class="btn-ts btn-green">⚡ View Live Scores</a>
-            <a href="{{ route('predictions.index') }}" class="btn-ts btn-outline">📊 Match Predictions</a>
-        </div>
-
-        {{-- Live stats bar — all tiles are clickable links ── --}}
-        <div class="stats-bar">
-            <a href="{{ route('live.index') }}" class="stat-tile" style="border-color:transparent;" onmouseover="this.style.borderColor='rgba(239,68,68,.3)'" onmouseout="this.style.borderColor='transparent'">
-                <div class="stat-ico ico-red">🔴</div>
-                <div><span class="stat-val" id="h-live">–</span><span class="stat-lbl">Live now</span></div>
-            </a>
-            <a href="{{ route('predictions.index') }}" class="stat-tile" style="border-color:transparent;" onmouseover="this.style.borderColor='rgba(59,130,246,.3)'" onmouseout="this.style.borderColor='transparent'">
-                <div class="stat-ico ico-blue">📅</div>
-                <div><span class="stat-val" id="h-today">–</span><span class="stat-lbl">Upcoming today</span></div>
-            </a>
-            <a href="{{ route('results.index') }}" class="stat-tile" style="border-color:transparent;" onmouseover="this.style.borderColor='rgba(107,114,128,.3)'" onmouseout="this.style.borderColor='transparent'">
-                <div class="stat-ico ico-gray">✅</div>
-                <div><span class="stat-val" id="h-finished">–</span><span class="stat-lbl">Finished today</span></div>
-            </a>
-            <a href="{{ route('picks.index') }}" class="stat-tile" style="border-color:transparent;" onmouseover="this.style.borderColor='rgba(16,185,129,.3)'" onmouseout="this.style.borderColor='transparent'">
-                <div class="stat-ico ico-green">⭐</div>
-                <div><span class="stat-val">{{ $todayPickCount ?: '–' }}</span><span class="stat-lbl">Picks today</span></div>
-            </a>
-        </div>
-    </div>
-</section>
-
-
-{{-- ══════════════════════════════════════════
-     PLATFORM SECTIONS — one card per nav item
-══════════════════════════════════════════ --}}
-<section style="padding: 3rem 0 0;">
-    <div class="wrap">
-        <div class="section-label">Everything on TavsScore</div>
-        <h2 class="section-title">Every section, explained</h2>
-        <p class="section-desc">
-            Click any section below to go directly to that page. Here's exactly what each one does.
-        </p>
-
-        <div class="nsc-grid">
-
-            {{-- ── 1. LIVE SCORES ── --}}
-            <a href="{{ route('live.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(239,68,68,.12), rgba(239,68,68,.04));">
-                    <span class="nsc-emoji">🔴</span>
-                    <span class="nsc-live-tag" style="background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:#fca5a5;">
-                        <span class="live-dot" style="width:6px;height:6px;margin-right:4px;"></span>Live
-                    </span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Live Scores</div>
-                    <p class="nsc-desc">
-                        Real-time match scores from 25+ competitions updated every 30 seconds no refresh needed.
-                        See live minute-by-minute updates, goals, cards, and substitutions as they happen,
-                        grouped by league so you never lose track of your match.
-                    </p>
-                    <div class="nsc-cta" style="color:#fca5a5;">Watch Live Scores →</div>
-                </div>
-            </a>
-
-            {{-- ── 2. PREDICTIONS ── --}}
-            <a href="{{ route('predictions.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(59,130,246,.04));">
-                    <span class="nsc-emoji">📊</span>
-                    <span class="nsc-live-tag" style="background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25); color:#93c5fd;" id="preds-badge">Loading…</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Match Predictions</div>
-                    <p class="nsc-desc">
-                        Our triple-AI engine runs three completely independent analyses on every upcoming match: team form, head-to-head records,
-                        injury reports, confirmed lineups, and real-time news. All three must reach the same conclusion before a prediction
-                        is published, with a confidence score and full reasoning you can read in plain English.
-                    </p>
-                    <div class="nsc-cta" style="color:#93c5fd;">See All Predictions →</div>
-                </div>
-            </a>
-
-            {{-- ── 3. DAILY PICKS ── --}}
-            <a href="{{ route('picks.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(245,158,11,.04));">
-                    <span class="nsc-emoji">⭐</span>
-                    @if($todayPickCount > 0)
-                    <span class="nsc-live-tag" style="background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#fcd34d;">{{ $todayPickCount }} today</span>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Daily Picks</div>
-                    <p class="nsc-desc">
-                        Every morning the AI curates the top 3 best-value bets from all of today's fixtures,
-                        ranked #1 to #3 by confidence. Pick #1 is the single strongest selection of the day.
-                        Each pick includes the full AI analysis exactly why it chose that market and what the data says.
-                    </p>
-                    @if($topPick)
-                    <div style="background:rgba(245,158,11,.07); border:1px solid rgba(245,158,11,.18); border-radius:9px; padding:.55rem .75rem; margin-top:.65rem; font-size:.78rem;">
-                        <div style="color:#fbbf24; font-weight:700; font-size:.65rem; text-transform:uppercase; margin-bottom:.25rem;">Today's #1 Pick</div>
-                        <div style="color:#fff; font-weight:700; line-height:1.3;">{{ $topPick->match?->home_team }} vs {{ $topPick->match?->away_team }}</div>
-                        <div style="color:#fcd34d; font-weight:800; margin-top:.2rem;">{{ $topPick->predicted_outcome }}
-                            @if($topPick->confidence)<span style="color:var(--text-dim); font-weight:600;"> · {{ $topPick->confidence }}% conf.</span>@endif
-                        </div>
+    {{-- ── HERO ── --}}
+    <header class="hm-hero">
+        <div class="hm-flood"></div>
+        <div class="hm-lines"></div>
+        <div class="wrap">
+            <div class="hm-hgrid">
+                <div>
+                    <span class="hm-eyebrow"><span class="hm-pdot"></span> AI-Powered Football Predictions</span>
+                    <h1 class="hm-title">Every match.<br>Every market.<br><span class="g">Called before kickoff.</span></h1>
+                    <p class="hm-sub">A four-model AI engine crunches the numbers, cross-checks every fixture, and makes one final call — across 100+ markets, verified every single day.</p>
+                    <div class="hm-ctas">
+                        <a href="{{ route('picks.index') }}" class="hm-btn">See today's picks →</a>
+                        <a href="{{ route('track-record.index') }}" class="hm-ghost">View track record</a>
                     </div>
-                    @endif
-                    <div class="nsc-cta" style="color:#fcd34d;">View Today's Picks →</div>
                 </div>
-            </a>
 
-            {{-- ── 4. DRAW PICKS ── --}}
-            <a href="{{ route('draw-picks.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(245,158,11,.12), rgba(245,158,11,.04));">
-                    <span class="nsc-emoji">🤝</span>
-                    <span class="nsc-live-tag" style="background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:#fcd34d;">Triple AI</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Draw Picks</div>
-                    <p class="nsc-desc">
-                        Draws are the hardest market to get right, so we hold them to a higher standard.
-                        A draw pick only appears here when all three independent AI engines separately analyse the match
-                        and all three reach the same conclusion: it will end level. Triple agreement, no exceptions.
-                    </p>
-                    <div class="nsc-cta" style="color:#fcd34d;">View Draw Picks →</div>
-                </div>
-            </a>
-
-            {{-- ── 5. GG PICKS ── --}}
-            <a href="{{ route('gg-picks.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(59,130,246,.06));">
-                    <span class="nsc-emoji">⚽</span>
-                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#6ee7b7;">Triple AI</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">GG Picks</div>
-                    <p class="nsc-desc">
-                        Both teams to score is one of the most popular outcomes to follow in African football.
-                        Our GG picks are only published when all three AI engines independently predict
-                        that both sides will get on the scoresheet. High conviction, nothing speculative.
-                    </p>
-                    <div class="nsc-cta" style="color:#6ee7b7;">View GG Picks →</div>
-                </div>
-            </a>
-
-            {{-- ── 6. ROLLOVER CHALLENGE ── --}}
-            <a href="{{ route('rollover.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(99,102,241,.04));">
-                    <span class="nsc-emoji">🔄</span>
-                    @if($rollover)
-                    <span class="nsc-live-tag" style="background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); color:#a5b4fc;">Day {{ $rolloverDay }}/10</span>
-                    @else
-                    <span class="nsc-live-tag" style="background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); color:#818cf8;">Active</span>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Rollover Challenge</div>
-                    <p class="nsc-desc">
-                        A 10-day prediction tracker. Our AI selects one ultra-safe pick per day and we follow the chain —
-                        three independent engines must all agree before any pick is made. One wrong pick resets the challenge.
-                        Follow along to see how far the streak goes.
-                    </p>
-                    @if($rollover)
-                    <div style="margin-top:.6rem;">
-                        <div style="display:flex; justify-content:space-between; font-size:.72rem; margin-bottom:.3rem;">
-                            <span style="color:var(--text-dim);">Day {{ $rolloverDay }}/10</span>
-                            <span style="color:#a5b4fc; font-weight:800;">{{ $rollover->picks()->where('status','won')->count() }} picks correct</span>
-                        </div>
-                        @php $pct = $rolloverDay > 0 ? round($rolloverDay / 10 * 100) : 0; @endphp
-                        <div style="height:5px; background:rgba(99,102,241,.15); border-radius:999px; overflow:hidden;">
-                            <div style="height:100%; width:{{ $pct }}%; background:linear-gradient(90deg,#6366f1,#a5b4fc); border-radius:999px;"></div>
-                        </div>
-                        <div style="font-size:.63rem; color:var(--text-dim); margin-top:.25rem;">{{ $pct }}% of challenge complete</div>
-                    </div>
-                    @endif
-                    <div class="nsc-cta" style="color:#a5b4fc;">Follow the Challenge →</div>
-                </div>
-            </a>
-
-            {{-- ── 5. LINEUP PICKS ── --}}
-            <a href="{{ route('lineup-picks.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(16,185,129,.04));">
-                    <span class="nsc-emoji">⚡</span>
-                    @if($lineupPickCount > 0)
-                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#6ee7b7;">{{ $lineupPickCount }} confirmed</span>
-                    @else
-                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.18); color:#34d399;">Updated daily</span>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Lineup Picks</div>
-                    <p class="nsc-desc">
-                        Standard predictions are made hours before kick-off. Lineup Picks are different: they're generated
-                        only <strong style="color:#fff;">after official starting XIs are confirmed</strong>, typically 60 minutes before the match.
-                        This means the AI knows exactly who's playing, who's missing, and adjusts its pick accordingly.
-                    </p>
-                    <div class="nsc-cta" style="color:#6ee7b7;">View Lineup Picks →</div>
-                </div>
-            </a>
-
-            {{-- ── 6. CORRECT SCORE ── --}}
-            <a href="{{ route('correct-score.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(139,92,246,.04));">
-                    <span class="nsc-emoji">🎯</span>
-                    @if($correctScoreCount > 0)
-                    <span class="nsc-live-tag" style="background:rgba(139,92,246,.12); border:1px solid rgba(139,92,246,.3); color:#c4b5fd;">{{ $correctScoreCount }} today</span>
-                    @else
-                    <span class="nsc-live-tag" style="background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); color:#a78bfa;">Daily</span>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Correct Score</div>
-                    <p class="nsc-desc">
-                        Using Poisson distribution mathematics, we calculate the probability of every possible scoreline
-                        for each match and surface the top 3 most likely exact scores.
-                        Instead of just "home win"  we tell you it's most likely to end 2–1, with the probability percentage.
-                        Perfect for exact score and scorecast markets.
-                    </p>
-                    <div class="nsc-cta" style="color:#c4b5fd;">See Score Predictions →</div>
-                </div>
-            </a>
-
-            {{-- ── 7. DOUBLE CHANCE ── --}}
-            <a href="{{ route('double-chance.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(59,130,246,.04));">
-                    <span class="nsc-emoji">🎯</span>
-                    <span class="nsc-live-tag" style="background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.3); color:#93c5fd;">5 Daily</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Double Chance</div>
-                    <p class="nsc-desc">
-                        <strong style="color:#fff;">1X</strong> (Home Win or Draw) and <strong style="color:#fff;">2X</strong> (Away Win or Draw) — the safest way to back a team without needing an outright win.
-                        Our AI picks 5 matches daily where the combined probability is highest, giving you maximum coverage with minimum risk.
-                    </p>
-                    <div class="nsc-cta" style="color:#93c5fd;">View Double Chance Picks →</div>
-                </div>
-            </a>
-
-            {{-- ── 8. AFRICAN FOOTBALL ── --}}
-            <a href="{{ route('africa.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.1), rgba(251,191,36,.06));">
-                    <span class="nsc-emoji">🌍</span>
-                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#6ee7b7;">10+ leagues</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">African Football</div>
-                    <p class="nsc-desc">
-                        The only predictions platform with dedicated African football coverage.
-                        We follow the NPFL, PSL, Ghana Premier League, Egyptian Premier, CAF Champions League,
-                        AFCON, Botola Pro, FKF Premier, and more with AI match analysis written in
-                        <strong style="color:#fff;">Pidgin English and Swahili</strong> for local fans.
-                    </p>
-                    <div class="nsc-cta" style="color:#6ee7b7;">Explore African Football →</div>
-                </div>
-            </a>
-
-            {{-- ── 8. STATS ── --}}
-            <a href="{{ route('stats.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(59,130,246,.12), rgba(99,102,241,.06));">
-                    <span class="nsc-emoji">📈</span>
-                    @if($overallAcc !== null)
-                    <span class="nsc-live-tag" style="background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25); color:#93c5fd;">{{ $overallAcc }}% accuracy</span>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">AI Stats & Accuracy</div>
-                    <p class="nsc-desc">
-                        Full transparency into our AI's prediction performance. See the all-time accuracy rate,
-                        last-7-day rolling performance, breakdown by market type (e.g. 1X2, BTTS, Over 2.5),
-                        and a complete timeline of every pick with its result. We show both the wins and the losses.
-                    </p>
-                    @if($overallAcc !== null || $last7Acc !== null)
-                    <div style="display:flex; gap:.5rem; margin-top:.6rem;">
-                        @if($overallAcc !== null)
-                        <div style="flex:1; background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.15); border-radius:8px; padding:.5rem; text-align:center;">
-                            <div style="font-size:1.2rem; font-weight:900; color:{{ $overallAcc >= 60 ? '#6ee7b7' : ($overallAcc >= 45 ? '#fcd34d' : '#fca5a5') }};">{{ $overallAcc }}%</div>
-                            <div style="font-size:.6rem; color:var(--text-dim); font-weight:700;">All-time</div>
-                        </div>
-                        @endif
-                        @if($last7Acc !== null)
-                        <div style="flex:1; background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.15); border-radius:8px; padding:.5rem; text-align:center;">
-                            <div style="font-size:1.2rem; font-weight:900; color:{{ $last7Acc >= 60 ? '#6ee7b7' : ($last7Acc >= 45 ? '#fcd34d' : '#fca5a5') }};">{{ $last7Acc }}%</div>
-                            <div style="font-size:.6rem; color:var(--text-dim); font-weight:700;">Last 7 days</div>
-                        </div>
+                {{-- Pick of the Day --}}
+                <div class="hm-pick">
+                    <div class="hm-pick-head">
+                        <span class="hm-pick-tag">★ Pick of the Day</span>
+                        @if($topPick && $topPick->match)
+                            <span class="hm-pick-league">{{ \App\Support\LeagueCoverage::formatName($topPick->match->league, $topPick->match->league_country) }}<br>{{ $topPick->match->match_time?->timezone('Africa/Lagos')->format('D H:i') }}</span>
                         @endif
                     </div>
-                    @endif
-                    <div class="nsc-cta" style="color:#93c5fd;">View Full Stats →</div>
-                </div>
-            </a>
 
-            {{-- ── 9. RESULTS ── --}}
-            <a href="{{ route('results.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(107,114,128,.12), rgba(75,85,99,.06));">
-                    <span class="nsc-emoji">📜</span>
-                    @if($recentResults->isNotEmpty())
-                    <div style="display:flex; gap:3px;">
-                        @foreach($recentResults->take(5) as $r)
-                        <span style="width:14px; height:14px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; font-size:.5rem; font-weight:900; background:{{ $r->was_correct ? 'rgba(16,185,129,.25)' : 'rgba(239,68,68,.2)' }}; color:{{ $r->was_correct ? '#6ee7b7' : '#fca5a5' }};">{{ $r->was_correct ? 'W' : 'L' }}</span>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Past Results</div>
-                    <p class="nsc-desc">
-                        A complete archive of every prediction we've made and how it ended.
-                        Browse by date or league see the AI's predicted market, the actual final score,
-                        and whether the pick was correct. No cherry-picking, no hidden losses. Full history, always.
-                    </p>
-                    @if($recentResults->isNotEmpty())
-                    <div style="margin-top:.6rem;">
-                        <div style="font-size:.62rem; color:var(--text-dim); font-weight:700; margin-bottom:.3rem;">RECENT PICKS</div>
-                        <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                            @foreach($recentResults as $r)
-                            <span title="{{ $r->was_correct ? 'Win' : 'Loss' }}" style="width:22px; height:22px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; background:{{ $r->was_correct ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.18)' }}; color:{{ $r->was_correct ? '#6ee7b7' : '#fca5a5' }};">{{ $r->was_correct ? 'W' : 'L' }}</span>
-                            @endforeach
+                    @if($topPick && $topPick->match)
+                        <div class="hm-teams">
+                            <div class="hm-team"><div class="hm-crest">{{ $crest($topPick->match->home_team) }}</div><div class="hm-tname">{{ $topPick->match->home_team }}</div></div>
+                            <div class="hm-vs">VS</div>
+                            <div class="hm-team"><div class="hm-crest">{{ $crest($topPick->match->away_team) }}</div><div class="hm-tname">{{ $topPick->match->away_team }}</div></div>
                         </div>
-                    </div>
-                    @endif
-                    <div class="nsc-cta" style="color:#9ca3af;">Browse All Results →</div>
-                </div>
-            </a>
-
-            {{-- ── 10. WINNERS ── --}}
-            <a href="{{ route('winners.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(251,191,36,.12), rgba(245,158,11,.04));">
-                    <span class="nsc-emoji">🏆</span>
-                    <span class="nsc-live-tag" style="background:rgba(251,191,36,.12); border:1px solid rgba(251,191,36,.3); color:#fcd34d;">Submit your win</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Winners</div>
-                    <p class="nsc-desc">
-                        Won money using one of our picks? We want to celebrate with you.
-                        Upload a screenshot of your winning bet slip, add your story, and get featured on the platform.
-                        Real wins from real people every submission is reviewed before going live.
-                    </p>
-                    <div class="nsc-cta" style="color:#fcd34d;">Submit Your Win →</div>
-                </div>
-            </a>
-
-            {{-- ── 11. HALL OF FAME ── --}}
-            <a href="{{ route('hall-of-fame.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(251,191,36,.1), rgba(245,158,11,.06));">
-                    <span class="nsc-emoji">🥇</span>
-                    <span class="nsc-live-tag" style="background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.25); color:#fbbf24;">Leaderboard</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Hall of Fame</div>
-                    <p class="nsc-desc">
-                        The leaderboard of top earners ranked by their single biggest verified win.
-                        Every entry is a real bettor who used TavsScore picks and posted their winning slip.
-                        Can you make it to the top? Submit a win on the Winners page to claim your spot.
-                    </p>
-                    <div class="nsc-cta" style="color:#fbbf24;">See the Leaderboard →</div>
-                </div>
-            </a>
-
-            {{-- ── 12. BLOG ── --}}
-            <a href="{{ route('blog.index') }}" class="nsc-card">
-                <div class="nsc-header" style="background: linear-gradient(135deg, rgba(16,185,129,.08), rgba(59,130,246,.06));">
-                    <span class="nsc-emoji">📝</span>
-                    <span class="nsc-live-tag" style="background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.22); color:#6ee7b7;">Analysis</span>
-                </div>
-                <div class="nsc-body">
-                    <div class="nsc-title">Blog</div>
-                    <p class="nsc-desc">
-                        In-depth football analysis articles, match previews, tactical breakdowns, and prediction model guides
-                        written by the TavsScore team with AI assistance. Learn how our models work,
-                        and get expert insight on the biggest fixtures.
-                    </p>
-                    <div class="nsc-cta" style="color:#6ee7b7;">Read the Blog →</div>
-                </div>
-            </a>
-
-        </div>
-    </div>
-</section>
-
-
-{{-- ══════════════════════════════════════════
-     TODAY'S LIVE PICKS — detailed data cards
-══════════════════════════════════════════ --}}
-<section style="padding: 3rem 0 0;">
-    <div class="wrap">
-        <div class="section-label">Updated live</div>
-        <h2 class="section-title">Today's picks at a glance</h2>
-        <p class="section-desc">Real data from our AI engine refreshed throughout the day.</p>
-
-        <div class="picks-grid">
-
-            {{-- Today's Top Pick --}}
-            <a href="{{ route('picks.index') }}" style="display:block; text-decoration:none; background:var(--card); border:1px solid rgba(245,158,11,.25); border-radius:16px; padding:1.25rem; transition:transform 160ms,border-color 160ms;" onmouseover="this.style.transform='translateY(-2px)';this.style.borderColor='rgba(245,158,11,.5)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(245,158,11,.25)'">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
-                    <span style="font-size:.65rem; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:.06em;">⭐ Today's Top Pick</span>
-                    @if($todayPickCount > 0)
-                    <span style="font-size:.65rem; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.25); color:#fcd34d; border-radius:999px; padding:2px 8px; font-weight:700;">{{ $todayPickCount }} pick{{ $todayPickCount > 1 ? 's' : '' }}</span>
-                    @endif
-                </div>
-                @if($topPick)
-                @php
-                    $isAi  = !blank($topPick->analysis) && $topPick->analysis !== 'Prediction pending';
-                    $isLive = in_array($topPick->match?->status, ['1H','2H','HT','ET','BT','P','LIVE']);
-                    $isFt   = in_array($topPick->match?->status, ['FT','AET','PEN']);
-                @endphp
-                <div style="font-size:.95rem; font-weight:800; color:#fff; margin-bottom:.2rem; line-height:1.3;">
-                    {{ $topPick->match?->home_team }} <span style="color:var(--text-dim); font-size:.8rem; font-weight:500;">vs</span> {{ $topPick->match?->away_team }}
-                </div>
-                <div style="font-size:.7rem; color:var(--text-dim); margin-bottom:.75rem;">
-                    {{ \App\Support\LeagueCoverage::formatName($topPick->match?->league, $topPick->match?->league_country) }}
-                    · KO {{ $topPick->match?->match_time?->format('H:i') }}
-                </div>
-                <div style="display:inline-flex; align-items:center; gap:.5rem; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:8px; padding:.5rem .75rem; margin-bottom:.75rem;">
-                    <span style="font-size:.9rem; font-weight:800; color:#fcd34d;">{{ $topPick->predicted_outcome }}</span>
-                    @if($topPick->confidence)<span style="font-size:.7rem; color:#fbbf24; font-weight:700;">{{ $topPick->confidence }}% confidence</span>@endif
-                </div>
-                @if($isLive)
-                <div style="font-size:.72rem; color:#ef4444; font-weight:700; margin-bottom:.4rem;">● LIVE {{ $topPick->match->elapsed }}'  {{ $topPick->match->home_score }}–{{ $topPick->match->away_score }}</div>
-                @elseif($isFt)
-                @php $wc = $topPick->was_correct; @endphp
-                <div style="font-size:.72rem; font-weight:700; margin-bottom:.4rem; color:{{ $wc === true ? '#6ee7b7' : ($wc === false ? '#fca5a5' : '#94a3b8') }};">
-                    {{ $wc === true ? '✅ Correct' : ($wc === false ? '❌ Incorrect' : '') }} · FT: {{ $topPick->match->home_score }}–{{ $topPick->match->away_score }}
-                </div>
-                @endif
-                @if($isAi)
-                <span style="font-size:.63rem; color:#6ee7b7; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.2); border-radius:999px; padding:2px 7px;">🤖 AI Verified</span>
-                @endif
-                @else
-                <div style="padding:.75rem 0; color:var(--text-dim); font-size:.82rem; line-height:1.6;">
-                    Picks are published every morning before 9am.<br>Check back shortly.
-                </div>
-                @endif
-                <div style="margin-top:.9rem; font-size:.73rem; font-weight:700; color:#fbbf24;">View all today's picks →</div>
-            </a>
-
-            {{-- Rollover Challenge --}}
-            <a href="{{ route('rollover.index') }}" style="display:block; text-decoration:none; background:var(--card); border:1px solid rgba(99,102,241,.25); border-radius:16px; padding:1.25rem; transition:transform 160ms,border-color 160ms;" onmouseover="this.style.transform='translateY(-2px)';this.style.borderColor='rgba(99,102,241,.5)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(99,102,241,.25)'">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
-                    <span style="font-size:.65rem; font-weight:800; color:#a5b4fc; text-transform:uppercase; letter-spacing:.06em;">🔄 Rollover Challenge</span>
-                    @if($rollover)
-                    <span style="font-size:.65rem; background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.25); color:#a5b4fc; border-radius:999px; padding:2px 8px; font-weight:700;">Day {{ $rolloverDay }} of 10</span>
-                    @endif
-                </div>
-                @if($rollover)
-                <div style="margin-bottom:.65rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.25rem;">
-                        <span style="font-size:.7rem; color:var(--text-dim);">Day</span>
-                        <span style="font-size:.78rem; color:#fff; font-weight:700;">{{ $rolloverDay }} of 10</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.5rem;">
-                        <span style="font-size:.7rem; color:var(--text-dim);">Picks correct</span>
-                        <span style="font-size:1.1rem; color:#a5b4fc; font-weight:900;">{{ $rollover->picks()->where('status','won')->count() }}/{{ $rollover->picks()->count() }}</span>
-                    </div>
-                    @php $pct = $rolloverDay > 0 ? round($rolloverDay / 10 * 100) : 0; @endphp
-                    <div style="height:5px; background:rgba(99,102,241,.15); border-radius:999px; overflow:hidden;">
-                        <div style="height:100%; width:{{ $pct }}%; background:linear-gradient(90deg,#6366f1,#a5b4fc); border-radius:999px;"></div>
-                    </div>
-                    <div style="font-size:.63rem; color:var(--text-dim); margin-top:.3rem;">{{ $pct }}% of the challenge complete</div>
-                </div>
-                @if($rolloverPick)
-                <div style="background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); border-radius:8px; padding:.55rem .7rem; margin-bottom:.5rem;">
-                    <div style="font-size:.63rem; color:#a5b4fc; font-weight:800; text-transform:uppercase; margin-bottom:.25rem;">Today's Rollover Pick</div>
-                    <div style="font-size:.82rem; font-weight:700; color:#fff;">{{ $rolloverPick->groq_verdict }}</div>
-                    <div style="font-size:.7rem; color:var(--text-dim); margin-top:.15rem;">Implied odds: {{ $rolloverPick->implied_odds }}</div>
-                    @if($rolloverPick->both_agree)<div style="font-size:.63rem; color:#6ee7b7; margin-top:.3rem;">✓ All 3 AI engines agree on this pick</div>@endif
-                </div>
-                @else
-                <div style="font-size:.78rem; color:var(--text-dim); padding:.4rem 0;">Today's pick is selected at 10:30am Lagos time.</div>
-                @endif
-                @else
-                <div style="padding:.5rem 0; color:var(--text-dim); font-size:.82rem; line-height:1.6;">
-                    No active challenge running right now.<br>A new one starts automatically when the last ends.
-                </div>
-                @endif
-                <div style="margin-top:.75rem; font-size:.73rem; font-weight:700; color:#a5b4fc;">Follow the full challenge →</div>
-            </a>
-
-            {{-- AI Track Record --}}
-            <a href="{{ route('stats.index') }}" style="display:block; text-decoration:none; background:var(--card); border:1px solid rgba(59,130,246,.25); border-radius:16px; padding:1.25rem; transition:transform 160ms,border-color 160ms;" onmouseover="this.style.transform='translateY(-2px)';this.style.borderColor='rgba(59,130,246,.5)'" onmouseout="this.style.transform='none';this.style.borderColor='rgba(59,130,246,.25)'">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
-                    <span style="font-size:.65rem; font-weight:800; color:#93c5fd; text-transform:uppercase; letter-spacing:.06em;">📈 AI Track Record</span>
-                    @if($totalResolved > 0)
-                    <span style="font-size:.65rem; background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.2); color:#93c5fd; border-radius:999px; padding:2px 8px; font-weight:700;">{{ $totalResolved }} picks graded</span>
-                    @endif
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.85rem;">
-                    <div style="background:rgba(59,130,246,.06); border:1px solid rgba(59,130,246,.12); border-radius:10px; padding:.65rem; text-align:center;">
-                        <div style="font-size:1.5rem; font-weight:900; color:{{ ($overallAcc ?? 0) >= 60 ? '#6ee7b7' : (($overallAcc ?? 0) >= 45 ? '#fcd34d' : '#fca5a5') }};">{{ $overallAcc !== null ? $overallAcc.'%' : '—' }}</div>
-                        <div style="font-size:.62rem; color:var(--text-dim); margin-top:2px; font-weight:700;">All-time accuracy</div>
-                    </div>
-                    <div style="background:rgba(59,130,246,.06); border:1px solid rgba(59,130,246,.12); border-radius:10px; padding:.65rem; text-align:center;">
-                        <div style="font-size:1.5rem; font-weight:900; color:{{ ($last7Acc ?? 0) >= 60 ? '#6ee7b7' : (($last7Acc ?? 0) >= 45 ? '#fcd34d' : '#fca5a5') }};">{{ $last7Acc !== null ? $last7Acc.'%' : '—' }}</div>
-                        <div style="font-size:.62rem; color:var(--text-dim); margin-top:2px; font-weight:700;">Last 7 days</div>
-                    </div>
-                </div>
-                @if($recentResults->isNotEmpty())
-                <div style="margin-bottom:.6rem;">
-                    <div style="font-size:.62rem; color:var(--text-dim); margin-bottom:.35rem; font-weight:700;">LAST 10 RESULTS</div>
-                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                        @foreach($recentResults as $r)
-                        <span style="width:22px; height:22px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; background:{{ $r->was_correct ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.18)' }}; color:{{ $r->was_correct ? '#6ee7b7' : '#fca5a5' }};">{{ $r->was_correct ? 'W' : 'L' }}</span>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                @if($streak >= 2)
-                <div style="font-size:.72rem; color:{{ $streakType ? '#6ee7b7' : '#fca5a5' }}; font-weight:700;">
-                    {{ $streakType ? '🔥 ' . $streak . '-pick winning streak' : '❄️ ' . $streak . '-pick losing run' }}
-                </div>
-                @endif
-                <div style="margin-top:.75rem; font-size:.73rem; font-weight:700; color:#93c5fd;">Full stats & breakdown →</div>
-            </a>
-
-        </div>
-    </div>
-</section>
-
-
-{{-- ══════════════════════════════════════════
-     AFRICAN FOOTBALL SPOTLIGHT
-══════════════════════════════════════════ --}}
-@if($africanMatches->isNotEmpty())
-<section style="padding: 3rem 0 0;">
-    <div class="wrap">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem;">
-            <div>
-                <div class="section-label" style="margin-bottom:.3rem;">🌍 African Football</div>
-                <h2 class="section-title" style="margin-bottom:.3rem;">Coverage no other site has</h2>
-                <p style="font-size:.82rem; color:var(--text-dim); margin:0;">Predictions in Pidgin English & Swahili. Live + upcoming African fixtures.</p>
-            </div>
-            <a href="{{ route('africa.index') }}" class="btn-ts btn-outline" style="font-size:.8rem;">Explore African Football →</a>
-        </div>
-
-        <div class="afr-grid">
-            @foreach($africanMatches as $am)
-            @php
-                $flag = ['Nigeria'=>'🇳🇬','South Africa'=>'🇿🇦','Ghana'=>'🇬🇭','Egypt'=>'🇪🇬','Morocco'=>'🇲🇦',
-                         'Tunisia'=>'🇹🇳','Algeria'=>'🇩🇿','Kenya'=>'🇰🇪','Tanzania'=>'🇹🇿','Senegal'=>'🇸🇳',
-                         'Ivory Coast'=>'🇨🇮','Cameroon'=>'🇨🇲','Zambia'=>'🇿🇲','Uganda'=>'🇺🇬','Ethiopia'=>'🇪🇹','Sudan'=>'🇸🇩'][$am->league_country] ?? '🌍';
-                $isLive  = in_array($am->status, ['1H','2H','HT','ET','BT','P','LIVE']);
-                $isFt    = in_array($am->status, ['FT','AET','PEN']);
-                $hasPred = $am->prediction && $am->prediction->predicted_outcome;
-                $linkUrl = $hasPred ? route('predictions.show', $am->slug) : route('africa.index');
-            @endphp
-            <a href="{{ $linkUrl }}" class="afr-card">
-                <div class="afr-league">
-                    <span class="afr-flag">{{ $flag }}</span>
-                    <span>{{ \App\Support\LeagueCoverage::formatName($am->league, $am->league_country) }}</span>
-                </div>
-                <div class="afr-teams">
-                    <div>{{ $am->home_team }}</div>
-                    <div style="color:var(--text-muted); font-weight:600; padding:0 .25rem;">vs</div>
-                    <div>{{ $am->away_team }}</div>
-                </div>
-                <div class="afr-meta">
-                    @if($isLive)
-                        <span style="color:#ef4444;">● LIVE {{ $am->elapsed }}'</span>
-                        <strong style="margin-left:.4rem; color:#fff;">{{ $am->home_score ?? 0 }}–{{ $am->away_score ?? 0 }}</strong>
-                    @elseif($isFt)
-                        <strong style="color:#fff;">{{ $am->home_score }}–{{ $am->away_score }}</strong>
-                        <span style="color:var(--text-dim);"> FT</span>
+                        <div class="hm-pickbody">
+                            <div>
+                                <div class="hm-tiplabel">Best bet</div>
+                                <div class="hm-tip">{{ $topPick->predicted_outcome }}</div>
+                                @if($agreement === 'strong')
+                                    <div class="hm-tipmeta">◆ Strong AI consensus</div>
+                                @else
+                                    <div class="hm-tipmeta">◆ Confirmed by our AI panel</div>
+                                @endif
+                            </div>
+                            <div class="hm-ring" style="background: conic-gradient(var(--mint) {{ $confPct }}%, rgba(255,255,255,.09) 0);"><b>{{ $confPct }}%</b></div>
+                        </div>
+                        <div class="hm-pickfoot">
+                            <span class="hm-cons"><span class="hm-aidot"></span><span class="hm-aidot"></span><span class="hm-aidot"></span><span class="hm-aidot"></span> 4-model consensus</span>
+                            <a href="{{ route('picks.index') }}" style="color:var(--mint); font-weight:650;">All picks →</a>
+                        </div>
                     @else
-                        KO {{ $am->match_time?->format('H:i') }} · {{ $am->match_time?->format('M j') }}
+                        <div class="hm-pick-empty">
+                            <div class="i">🌙</div>
+                            <p>Today's picks drop at <strong style="color:var(--ink);">03:00 WAT</strong>. Our AI is still crunching the fixtures — check back shortly.</p>
+                            <a href="{{ route('picks.index') }}" class="hm-btn" style="margin-top:.5rem; display:inline-block;">Browse picks →</a>
+                        </div>
                     @endif
-                    @if($hasPred)
-                        <span class="afr-tip">📊 {{ $am->prediction->predicted_outcome }}</span>
-                    @endif
-                </div>
-            </a>
-            @endforeach
-        </div>
-
-        <div style="display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.85rem; align-items:center;">
-            <span style="font-size:.7rem; color:var(--text-dim);">Leagues covered:</span>
-            <span class="league-pill">🇳🇬 NPFL</span>
-            <span class="league-pill">🇿🇦 PSL</span>
-            <span class="league-pill">🇬🇭 Ghana Premier</span>
-            <span class="league-pill">🇪🇬 Egyptian Premier</span>
-            <span class="league-pill">🇲🇦 Botola Pro</span>
-            <span class="league-pill">🇰🇪 FKF Premier</span>
-            <span class="league-pill">🌍 CAF Champions League</span>
-            <span class="league-pill">🌍 AFCON</span>
-        </div>
-    </div>
-</section>
-@endif
-
-
-{{-- ══════════════════════════════════════════
-     COMPETITIONS COVERED
-══════════════════════════════════════════ --}}
-<section style="padding: 3rem 0 4rem;">
-    <div class="wrap">
-        <div class="section-label">Global coverage</div>
-        <h2 class="section-title">25+ competitions tracked live</h2>
-        <div class="leagues-strip">
-            <span class="league-pill">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</span>
-            <span class="league-pill">🌍 Champions League</span>
-            <span class="league-pill">🇪🇸 La Liga</span>
-            <span class="league-pill">🇩🇪 Bundesliga</span>
-            <span class="league-pill">🇮🇹 Serie A</span>
-            <span class="league-pill">🇫🇷 Ligue 1</span>
-            <span class="league-pill">🌍 Europa League</span>
-            <span class="league-pill">🌍 Conference League</span>
-            <span class="league-pill">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship</span>
-            <span class="league-pill">🇳🇱 Eredivisie</span>
-            <span class="league-pill">🇵🇹 Primeira Liga</span>
-            <span class="league-pill">🇹🇷 Süper Lig</span>
-            <span class="league-pill">🇳🇬 NPFL</span>
-            <span class="league-pill">🇿🇦 PSL</span>
-            <span class="league-pill">🌍 CAF CL</span>
-            <span class="league-pill">+ more</span>
-        </div>
-    </div>
-</section>
-
-{{-- ══════════════════════════════════════════
-     INSTALL APP + NOTIFICATIONS CTA
-══════════════════════════════════════════ --}}
-<section style="padding: 3rem 0 4rem;">
-    <div class="wrap">
-        <div class="install-notif-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; margin:0 auto;">
-
-            {{-- Install card --}}
-            <div style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02)); border:1px solid rgba(16,185,129,.2); border-radius:18px; padding:1.75rem;">
-                <div style="font-size:2rem; margin-bottom:.75rem;">📲</div>
-                <h3 style="font-size:1.1rem; font-weight:900; color:#fff; letter-spacing:-.02em; margin-bottom:.5rem;">Add to Your Home Screen</h3>
-                <p style="font-size:.85rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
-                    TavsScore works like a native app. Add it to your phone's home screen for one-tap access to live scores and daily picks. No app store, no installs.
-                </p>
-                <div style="font-size:.8rem; color:var(--text-dim); margin-bottom:.6rem; font-weight:700;">How to install:</div>
-                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:.5rem;">
-                    <strong style="color:var(--text);">iPhone (Safari):</strong> Tap the Share button ⬆️ → "Add to Home Screen" → Add
-                </div>
-                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
-                    <strong style="color:var(--text);">Android (Chrome):</strong> Tap the ⋮ menu → "Add to Home screen" → Install
-                </div>
-                <button onclick="openInstallGuide()" style="display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1.1rem; border-radius:9px; background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:#6ee7b7; font-size:.82rem; font-weight:700; cursor:pointer;">
-                    Full install guide →
-                </button>
-            </div>
-
-            {{-- Notifications card --}}
-            <div style="background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.02)); border:1px solid rgba(59,130,246,.2); border-radius:18px; padding:1.75rem;">
-                <div style="font-size:2rem; margin-bottom:.75rem;">🔔</div>
-                <h3 style="font-size:1.1rem; font-weight:900; color:#fff; letter-spacing:-.02em; margin-bottom:.5rem;">Get Free Pick Alerts</h3>
-                <p style="font-size:.85rem; color:var(--text-dim); line-height:1.7; margin-bottom:1.1rem;">
-                    Never miss a pick. Subscribe to push notifications and we'll send you today's AI picks at 08:00 Lagos every morning, plus live goal alerts and outcome results.
-                </p>
-                <div style="font-size:.8rem; color:var(--text-dim); line-height:1.7; margin-bottom:.5rem;">
-                    <strong style="color:var(--text);">What you get:</strong>
-                </div>
-                <ul style="font-size:.8rem; color:var(--text-dim); line-height:1.8; margin:0 0 1.1rem; padding-left:1.25rem;">
-                    <li>🎯 Daily picks at 08:00 every morning</li>
-                    <li>⚽ Goal alerts for live matches</li>
-                    <li>✅ Outcome notifications when picks settle</li>
-                    <li>🔄 Rollover pick updates</li>
-                </ul>
-                <button onclick="requestPushPermission()" style="display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1.1rem; border-radius:9px; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); color:#93c5fd; font-size:.82rem; font-weight:700; cursor:pointer;">
-                    🔔 Enable notifications →
-                </button>
-                <div style="font-size:.72rem; color:var(--text-dim); margin-top:.65rem;">
-                    Already subscribed? The bell icon 🔔 in the bottom-right lets you manage preferences.
                 </div>
             </div>
 
-        </div>
-    </div>
-</section>
+            {{-- Scoreboard --}}
+            <div class="hm-sb">
+                <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) round($winRate ?? 0) }}" data-suffix="%">{{ $winRate !== null ? '0%' : '—' }}</div><div class="hm-sblabel">{{ $last7Acc !== null ? '7-day win rate' : 'Win rate' }}</div></div>
+                <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) $liveCount }}">0</div><div class="hm-sblabel">Live now</div></div>
+                <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) $todayPickCount }}">0</div><div class="hm-sblabel">Picks today</div></div>
+                <div class="hm-sbcell"><div class="hm-sbnum" data-count="103">0</div><div class="hm-sblabel">Markets / match</div></div>
+            </div>
 
+            {{-- Today's slate ticker --}}
+            @if($upcoming->isNotEmpty())
+            <div class="hm-slate">
+                @foreach($upcoming as $m)
+                <div class="hm-chip"><span class="t">{{ $m->match_time?->timezone('Africa/Lagos')->format('H:i') }}</span><b>{{ $m->home_team }}</b> v <b>{{ $m->away_team }}</b></div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+    </header>
+
+    {{-- ── VERIFIED PROOF ── --}}
+    @if($overallAcc !== null && $totalResolved > 0)
+    <section class="hm-band">
+        <div class="wrap hm-reveal">
+            <div class="hm-proof">
+                <div>
+                    <div class="hm-eye">Verified track record</div>
+                    <div class="hm-proofbig">{{ $overallAcc }}% <span style="font-size:.9rem; color:var(--mute); font-family:inherit; font-weight:600;">hit rate</span></div>
+                    <span class="hm-verified">✓ {{ number_format($totalResolved) }} picks graded &amp; scored — nothing hidden</span>
+                </div>
+                <a href="{{ route('track-record.index') }}" class="hm-ghost" style="border:1px solid var(--line2); border-radius:12px;">See the full record →</a>
+            </div>
+        </div>
+    </section>
+    @endif
+
+    {{-- ── VALUE PROPS ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal">
+            <div class="hm-eye">What you get</div>
+            <h2 class="hm-h2">Not tips. A prediction engine.</h2>
+            <div class="hm-props">
+                <a href="{{ route('predictions.index') }}" class="hm-prop">
+                    <div class="hm-propico">🧠</div>
+                    <h3>Multi-AI consensus</h3>
+                    <p>Four AI models analyse each match independently, then one makes the final, reasoned call.</p>
+                    <span class="m">See predictions →</span>
+                </a>
+                <a href="{{ route('predictions.index') }}" class="hm-prop">
+                    <div class="hm-propico">🎯</div>
+                    <h3>103 markets a match</h3>
+                    <p>1X2, over/under, BTTS, handicaps, HT/FT, corners &amp; cards — ranked most likely.</p>
+                    <span class="m">Explore markets →</span>
+                </a>
+                <a href="{{ route('track-record.index') }}" class="hm-prop">
+                    <div class="hm-propico">📈</div>
+                    <h3>Verified daily</h3>
+                    <p>Every pick graded win or loss. The whole track record is public.</p>
+                    <span class="m">Track record →</span>
+                </a>
+                <a href="{{ route('goalscorer-picks.index') }}" class="hm-prop">
+                    <div class="hm-propico">⚽</div>
+                    <h3>Goalscorer picks</h3>
+                    <p>The most likely scorers, from player form vs the opponent's defence.</p>
+                    <span class="m">Today's scorers →</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- ── ROLLOVER ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal">
+            <div class="hm-roll">
+                <div>
+                    <div class="hm-eye" style="color:var(--mint);">The Rollover Challenge</div>
+                    <h2 class="hm-h2" style="margin-top:.5rem;">One carefully-picked leg a day. Ten days.</h2>
+                    <p class="hm-desc">Our safest, highest-conviction selection each day — every leg must clear an 80% model probability with full AI agreement.</p>
+                    <div class="hm-track">
+                        @for($d = 1; $d <= 10; $d++)
+                            <div class="hm-td {{ $d <= $rolloverWon ? 'won' : ($d === $rolloverDay ? 'today' : '') }}"></div>
+                        @endfor
+                    </div>
+                    <div style="font-size:.8rem; color:var(--mute);">
+                        @if($rollover)
+                            <span style="color:var(--mint); font-family:var(--mono);">Day {{ max(1,$rolloverDay) }} of 10</span> · {{ $rolloverWon }} {{ \Illuminate\Support\Str::plural('leg', $rolloverWon) }} landed
+                        @else
+                            A fresh 10-day challenge starts soon.
+                        @endif
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="hm-rollbig">{{ $rollover ? max(1,$rolloverDay) : 0 }}<span style="color:var(--mute); font-size:2rem;">/10</span></div>
+                    <a href="{{ route('rollover.index') }}" class="hm-btn" style="margin-top:1rem; display:inline-block;">Follow the challenge →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ── EXPLORE ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal">
+            <div class="hm-eye">Everything else</div>
+            <h2 class="hm-h2">Explore the platform</h2>
+            <div class="hm-explore">
+                <a href="{{ route('live.index') }}" class="hm-ex">⚡ Live Scores</a>
+                <a href="{{ route('draw-picks.index') }}" class="hm-ex">🤝 Draw Picks</a>
+                <a href="{{ route('gg-picks.index') }}" class="hm-ex">⚽ GG Picks</a>
+                <a href="{{ route('over25-picks.index') }}" class="hm-ex">🔥 Over 2.5</a>
+                <a href="{{ route('correct-score.index') }}" class="hm-ex">🎯 Correct Score</a>
+                <a href="{{ route('double-chance.index') }}" class="hm-ex">🧩 Double Chance</a>
+                <a href="{{ route('standings.index') }}" class="hm-ex">🏆 Standings</a>
+                <a href="{{ route('top-scorers.index') }}" class="hm-ex">👟 Top Scorers</a>
+                <a href="{{ route('africa.index') }}" class="hm-ex">🌍 Africa</a>
+                <a href="{{ route('blog.index') }}" class="hm-ex">📰 Blog</a>
+                <a href="{{ route('winners.index') }}" class="hm-ex">🥇 Winners Wall</a>
+                <a href="{{ route('stats.index') }}" class="hm-ex">📊 Stats</a>
+            </div>
+        </div>
+    </section>
+
+    {{-- ── FOOTER CTA ── --}}
+    <section class="hm-footcta">
+        <div class="hm-flood" style="opacity:.5;"></div>
+        <div class="wrap hm-reveal" style="position:relative;">
+            <h2>Know before kickoff.</h2>
+            <p>Today's picks are already live. See what the AI engine is calling.</p>
+            <a href="{{ route('picks.index') }}" class="hm-btn">See today's picks →</a>
+        </div>
+    </section>
+</div>
 @endsection
 
 @push('scripts')
 <script>
-Promise.all([
-    fetch('/api/matches/live',     { headers: { Accept: 'application/json' } }).then(r => r.json()),
-    fetch('/api/matches/today',    { headers: { Accept: 'application/json' } }).then(r => r.json()),
-    fetch('/api/matches/finished', { headers: { Accept: 'application/json' } }).then(r => r.json()),
-    fetch('/api/predictions',      { headers: { Accept: 'application/json' } }).then(r => r.json()),
-]).then(function ([live, today, finished, preds]) {
-    document.getElementById('h-live').textContent     = Array.isArray(live.data)     ? live.data.length     : 0;
-    document.getElementById('h-today').textContent    = Array.isArray(today.data)    ? today.data.length    : 0;
-    document.getElementById('h-finished').textContent = Array.isArray(finished.data) ? finished.data.length : 0;
-    var predCount = Array.isArray(preds.data) ? preds.data.length : 0;
-    var badge = document.getElementById('preds-badge');
-    if (badge) badge.textContent = predCount + ' today';
-}).catch(function () {
-    ['h-live','h-today','h-finished'].forEach(function (id) {
-        document.getElementById(id).textContent = '0';
-    });
-    var badge = document.getElementById('preds-badge');
-    if (badge) badge.textContent = '—';
-});
+(function () {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function countUp(el) {
+        var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+        var suffix = el.getAttribute('data-suffix') || '';
+        if (reduce) { el.textContent = target + suffix; return; }
+        var start = null, dur = 1100;
+        function step(ts) {
+            if (!start) start = ts;
+            var p = Math.min((ts - start) / dur, 1);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + suffix;
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+        });
+    }, { threshold: .18 });
+    document.querySelectorAll('.hm-reveal').forEach(function (el) { io.observe(el); });
+    document.querySelectorAll('.hm-sb [data-count]').forEach(countUp);
+}());
 </script>
 @endpush

@@ -58,6 +58,19 @@ class HomeController extends Controller
             ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
             ->count();
 
+        // ── Live now + today's upcoming slate (for the cinematic hero) ──
+        $liveCount = FootballMatch::query()
+            ->whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])
+            ->count();
+
+        $upcoming = FootballMatch::query()
+            ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+            ->whereIn('status', ['NS', 'TBD'])
+            ->whereBetween('match_time', [now($tz), now($tz)->addHours(30)])
+            ->orderBy('match_time')
+            ->limit(10)
+            ->get();
+
         // ── Rollover challenge snapshot ───────────────────────────
         $rollover        = null;
         $rolloverDay     = 0;
@@ -89,6 +102,7 @@ class HomeController extends Controller
                 ->where('pick_date', now($tz)->toDateString())
                 ->first();
         }
+        $rolloverWon = $activeChallenge ? $activeChallenge->picks->where('status', 'won')->count() : 0;
 
         // ── All-time track record ─────────────────────────────────
         $allResolved = Prediction::query()
@@ -143,6 +157,9 @@ class HomeController extends Controller
             'africanMatches'    => $africanMatches,
             'topPick'           => $topPick,
             'todayPickCount'    => $todayPickCount,
+            'liveCount'         => $liveCount,
+            'upcoming'          => $upcoming,
+            'rolloverWon'       => $rolloverWon,
             'rollover'          => $rollover,
             'rolloverDay'       => $rolloverDay,
             'rolloverBalance'   => $rolloverBalance,
