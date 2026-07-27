@@ -27,15 +27,10 @@
     .fpl-row { position:relative; z-index:1; display:flex; justify-content:center; gap:clamp(.35rem,2vw,1.6rem); margin-bottom:1.1rem; flex-wrap:wrap; }
 
     .player { width:78px; text-align:center; }
-    .player-shirt { position:relative; width:52px; height:52px; margin:0 auto .3rem; border-radius:50%;
-        background:#0b1220; border:3px solid var(--ring,#10b981); overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,.35); }
-    .player-shirt img { width:100%; height:100%; object-fit:cover; }
-    .player-shirt.gk  { --ring:#fbbf24; }
-    .player-shirt.def { --ring:#38bdf8; }
-    .player-shirt.mid { --ring:#34d399; }
-    .player-shirt.fwd { --ring:#f87171; }
-    .player-cap { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
-        background:#fff; color:#0b1220; font-size:.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+    .player-shirt { position:relative; width:50px; height:47px; margin:0 auto .3rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+    .player-shirt svg { width:100%; height:100%; display:block; }
+    .player-cap { position:absolute; top:-6px; right:-2px; width:20px; height:20px; border-radius:50%;
+        background:#fff; color:#0b1220; font-size:.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.4); z-index:2; }
     .player-cap.v { background:#94a3b8; color:#0b1220; }
     .player-name { font-size:.68rem; font-weight:700; color:#fff; background:rgba(3,7,18,.72); border-radius:5px 5px 0 0;
         padding:2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -51,7 +46,8 @@
     .buy-sub { font-size:.8rem; color:var(--text-dim); margin-bottom:.9rem; }
     .buy-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:.7rem; }
     .buy-card { display:flex; align-items:center; gap:.7rem; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:.7rem .85rem; }
-    .buy-photo { width:42px; height:42px; border-radius:50%; object-fit:cover; background:#1a2230; flex-shrink:0; }
+    .buy-kit { width:38px; height:36px; flex-shrink:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+    .buy-kit svg { width:100%; height:100%; display:block; }
     .buy-name { font-weight:800; color:#fff; font-size:.85rem; }
     .buy-meta { font-size:.7rem; color:var(--text-dim); }
     .buy-val { margin-left:auto; text-align:right; }
@@ -65,15 +61,24 @@
 
 @section('content')
 @php
-    $pos = ['GK'=>'gk','DEF'=>'def','MID'=>'mid','FWD'=>'fwd'];
-    $shirt = function ($p) use ($pos) {
-        $cls = $pos[$p['position']] ?? 'mid';
+    // A team-kit jersey SVG (body + sleeves + collar) coloured by the club.
+    $jersey = function (array $kit) {
+        [$body, $trim] = $kit ?: ['#334155', '#94a3b8'];
+        $b = e($body); $s = e($trim);
+        return '<svg viewBox="0 0 60 58" aria-hidden="true">'
+            .'<g stroke="rgba(0,0,0,.22)" stroke-width="0.7" stroke-linejoin="round">'
+            .'<path d="M2,21 L17,7 L23,16 L9,29 Z" fill="'.$s.'"/>'
+            .'<path d="M58,21 L43,7 L37,16 L51,29 Z" fill="'.$s.'"/>'
+            .'<path d="M17,7 L23,13 Q30,17 37,13 L43,7 L41,17 L41,50 Q30,54 19,50 L19,17 Z" fill="'.$b.'"/>'
+            .'<path d="M23,13 Q30,17 37,13 L35,9 Q30,13 25,9 Z" fill="'.$s.'" stroke="none"/>'
+            .'</g></svg>';
+    };
+    $shirt = function ($p) use ($jersey) {
         $cap = ($p['is_captain'] ?? false) ? '<span class="player-cap">C</span>'
              : (($p['is_vice'] ?? false) ? '<span class="player-cap v">V</span>' : '');
-        $img = $p['photo'] ? '<img src="'.e($p['photo']).'" alt="'.e($p['name']).'" loading="lazy">' : '';
         $name = \Illuminate\Support\Str::of($p['name'])->afterLast(' ');
         return '<div class="player">'
-            .'<div class="player-shirt '.$cls.'">'.$img.$cap.'</div>'
+            .'<div class="player-shirt">'.$jersey($p['kit'] ?? []).$cap.'</div>'
             .'<div class="player-name">'.e($name).'</div>'
             .'<div class="player-pts">'.(int)$p['points'].' <span class="price">£'.number_format($p['price'],1).'</span></div>'
             .'</div>';
@@ -143,7 +148,7 @@
             <div class="buy-grid">
                 @foreach($squad->transfers_in as $t)
                 <div class="buy-card">
-                    <img class="buy-photo" src="{{ $t['photo'] }}" alt="{{ $t['name'] }}" loading="lazy">
+                    <div class="buy-kit">{!! $jersey($t['kit'] ?? []) !!}</div>
                     <div>
                         <div class="buy-name">{{ $t['name'] }}</div>
                         <div class="buy-meta">{{ $t['position'] }} · {{ $t['team'] }} · £{{ number_format($t['price'],1) }}m</div>
