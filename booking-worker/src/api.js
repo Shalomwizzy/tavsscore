@@ -51,24 +51,35 @@ function explain(status, where) {
   return `${status} on ${where}.`;
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Retry transient network failures (e.g. an intermittent firewall timeout).
+// Does NOT retry HTTP errors like 401/404 — those won't fix themselves.
+async function fetchWithRetry(url, options, attempts = 3, delayMs = 20000) {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fetch(url, options);
+    } catch (e) {
+      if (i === attempts) throw reachError(BASE, e);
+      console.warn(`  attempt ${i}/${attempts} failed (${e?.cause?.code || e.message}); retrying in ${delayMs / 1000}s…`);
+      await sleep(delayMs);
+    }
+  }
+}
+
 /** GET today's betslip spec (the tickets to build). */
 export async function fetchSpec() {
   if (!BASE)  throw new Error('TAVS_BASE_URL is not set. Add it as a GitHub Actions secret (e.g. https://tavsscore.com).');
   if (!TOKEN) throw new Error('BOOKING_WORKER_TOKEN is not set. Add it as a GitHub Actions secret (same value as Hostinger .env).');
 
-  let res;
-  try {
-    res = await fetch(`${BASE}/api/worker/betslip-spec`, { headers: headers() });
-  } catch (e) {
-    throw reachError(BASE, e);
-  }
+  const res = await fetchWithRetry(`${BASE}/api/worker/betslip-spec`, { headers: headers() });
   if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/betslip-spec`) + ` — body: ${(await res.text()).slice(0, 200)}`);
   return res.json();
 }
 
 /** POST a finished booking code back to the app. */
 export async function postCode(payload) {
-  const res = await fetch(`${BASE}/api/worker/booking-codes`, {
+  const res = await fetchWithRetry(`${BASE}/api/worker/booking-codes`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify(payload),
