@@ -21,11 +21,8 @@
         background:
             repeating-linear-gradient(0deg, #12A150 0 44px, #0F9648 44px 88px);
         border:1px solid rgba(255,255,255,.12); box-shadow:0 20px 50px rgba(0,0,0,.4); padding:1.4rem .5rem 1rem; }
-    .pitch::before { content:""; position:absolute; inset:0; background:
-        radial-gradient(circle at 50% 0, rgba(255,255,255,.12), transparent 60%),
-        linear-gradient(transparent 0, transparent calc(50% - 1px), rgba(255,255,255,.18) 50%, transparent calc(50% + 1px)); pointer-events:none; }
-    .pitch::after { content:""; position:absolute; left:50%; top:calc(50% - 46px); width:92px; height:92px; transform:translateX(-50%);
-        border:2px solid rgba(255,255,255,.18); border-radius:50%; pointer-events:none; }
+    /* Real FPL field lines, drawn as a crisp SVG overlay behind the players. */
+    .pitch-lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
 
     .fpl-row { position:relative; z-index:1; display:flex; justify-content:center; gap:clamp(.35rem,2vw,1.6rem); margin-bottom:1.1rem; flex-wrap:wrap; }
 
@@ -109,6 +106,20 @@
         </div>
 
         <div class="pitch">
+            <svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">
+                <g fill="none" stroke="rgba(255,255,255,.4)" stroke-width="0.5">
+                    <rect x="2" y="2" width="96" height="136" rx="1"/>
+                    {{-- Top penalty box, six-yard box, spot + D arc (the goal end) --}}
+                    <rect x="21" y="2" width="58" height="22"/>
+                    <rect x="38" y="2" width="24" height="9"/>
+                    <path d="M 38 24 A 15 15 0 0 0 62 24"/>
+                    <circle cx="50" cy="15" r="0.7" fill="rgba(255,255,255,.4)" stroke="none"/>
+                    {{-- Halfway line + centre circle at the bottom --}}
+                    <line x1="2" y1="118" x2="98" y2="118"/>
+                    <circle cx="50" cy="118" r="15"/>
+                    <circle cx="50" cy="118" r="0.7" fill="rgba(255,255,255,.4)" stroke="none"/>
+                </g>
+            </svg>
             @foreach(['GK','DEF','MID','FWD'] as $line)
                 <div class="fpl-row">
                     @foreach($rows[$line] as $p){!! $shirt($p) !!}@endforeach
