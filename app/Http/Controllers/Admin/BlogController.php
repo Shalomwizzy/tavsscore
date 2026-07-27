@@ -60,7 +60,8 @@ class BlogController extends Controller
 
     public function edit(BlogPost $blog): View
     {
-        return view('admin.blog.edit', compact('blog'));
+        $imagePreview = session('blog_image_preview_' . $blog->id);
+        return view('admin.blog.edit', compact('blog', 'imagePreview'));
     }
 
     public function update(Request $request, BlogPost $blog): RedirectResponse
@@ -169,13 +170,30 @@ class BlogController extends Controller
     public function regenerateImage(BlogPost $blog, HeroImageService $images): RedirectResponse
     {
         try {
-            $image = $images->generate($blog->title, $blog->category, $blog->slug);
-            $blog->update(['featured_image' => $image, 'image_path' => null, 'is_ai_generated' => true]);
-            return redirect()->route('admin.blog.edit', $blog)->with('success', 'Featured image regenerated with Tavs Score watermark.');
+            $previewSlug = $blog->slug . '-preview-' . now()->format('YmdHis');
+            $image = $images->generate($blog->title, $blog->category, $previewSlug);
+            session(['blog_image_preview_' . $blog->id => $image]);
+            return redirect()->route('admin.blog.edit', $blog)->with('success', 'New image generated. Compare it with the current image, then apply it only if you like it.');
         } catch (\Throwable $e) {
             Log::error('Blog image regeneration failed', ['blog_id' => $blog->id, 'error' => $e->getMessage()]);
             return back()->with('error', 'Image regeneration failed. Your current image was not changed.');
         }
+    }
+
+    public function applyImagePreview(BlogPost $blog): RedirectResponse
+    {
+        $key = 'blog_image_preview_' . $blog->id;
+        $preview = session($key);
+        if (blank($preview)) return back()->with('error', 'No generated image preview is available. Generate one first.');
+        $blog->update(['featured_image' => $preview, 'image_path' => null, 'is_ai_generated' => true]);
+        session()->forget($key);
+        return redirect()->route('admin.blog.edit', $blog)->with('success', 'New featured image applied.');
+    }
+
+    public function discardImagePreview(BlogPost $blog): RedirectResponse
+    {
+        session()->forget('blog_image_preview_' . $blog->id);
+        return redirect()->route('admin.blog.edit', $blog)->with('success', 'Generated image preview discarded. Your current image was kept.');
     }
 
     private function excerpt(string $html): string

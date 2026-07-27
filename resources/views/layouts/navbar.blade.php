@@ -22,6 +22,9 @@
             <a href="{{ route('predictions.index') }}"
                class="nav-pill {{ request()->routeIs('predictions.*') ? 'active' : '' }}">Predictions</a>
 
+            <a href="{{ route('tennis.index') }}"
+               class="nav-pill {{ request()->routeIs('tennis.*') ? 'active' : '' }}">🎾 Tennis</a>
+
             {{-- Picks dropdown --}}
             <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
@@ -182,6 +185,10 @@
         <a href="{{ route('predictions.index') }}" class="drawer-item {{ request()->routeIs('predictions.*') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🤖</span>
             <span class="di-text">Predictions</span>
+        </a>
+        <a href="{{ route('tennis.index') }}" class="drawer-item {{ request()->routeIs('tennis.*') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🎾</span>
+            <span class="di-text">Tennis Predictions</span>
         </a>
         <a href="{{ route('africa.index') }}" class="drawer-item {{ request()->routeIs('africa.index') ? 'active' : '' }}" onclick="closeDrawer()" style="{{ request()->routeIs('africa.index') ? '' : 'color:#6ee7b7;' }}">
             <span class="di-icon">🌍</span>

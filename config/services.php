@@ -70,6 +70,11 @@ return [
         'wta_url' => env('TENNIS_WTA_SOURCE_URL'),
     ],
 
+    'tennis_live' => [
+        'key' => env('TENNIS_LIVE_API_KEY'),
+        'url' => env('TENNIS_LIVE_API_URL', 'https://api.livetennisapi.com/api/public/v1'),
+    ],
+
     'gemini' => [
         // Optional second-opinion AI. Leave blank to disable.
         // Get a free key: https://aistudio.google.com/app/apikey

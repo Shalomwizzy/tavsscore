@@ -1,0 +1,15 @@
+@extends('layouts.app')
+@section('title', 'Tennis Predictions | TavsScore')
+@section('meta_description', 'Independent ATP and WTA tennis winner predictions powered by surface Elo, form, rankings and AI cross-checks.')
+
+@push('styles')
+<style>
+.tennis-hero{padding:1.5rem 0 .8rem}.tennis-hero h1{font-size:1.7rem;color:#fff;margin:0}.tennis-hero p{color:var(--text-dim);margin:.45rem 0 0;line-height:1.6}.tennis-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.85rem;margin:1rem 0 2rem}.tennis-card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;transition:.15s}.tennis-card:hover{border-color:rgba(16,185,129,.5);transform:translateY(-1px)}.tennis-meta{font-size:.7rem;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.tennis-players{font-size:1rem;font-weight:800;color:#fff;line-height:1.45;margin:.45rem 0}.tennis-pick{display:flex;justify-content:space-between;gap:.7rem;align-items:center;border-top:1px solid var(--border);padding-top:.75rem}.tennis-pick span{font-size:.76rem;color:var(--text-dim)}.tennis-pick strong{color:#6ee7b7;font-size:.8rem}.tennis-result{font-size:.72rem;margin-top:.6rem}.won{color:#6ee7b7}.lost{color:#fca5a5}.empty{padding:3rem;text-align:center;color:var(--text-dim);background:var(--card);border:1px solid var(--border);border-radius:12px}
+</style>
+@endpush
+
+@section('content')
+<div class="wrap"><header class="tennis-hero"><h1>🎾 Tennis Predictions</h1><p>ATP and WTA singles predictions, built separately from football using surface Elo, form, rankings and head-to-head evidence.</p></header>
+@if($predictions->isEmpty())<div class="empty">No tennis predictions yet. Upcoming ATP/WTA fixtures will appear here after the first sync.</div>@else
+<div class="tennis-grid">@foreach($predictions as $prediction)@php($match=$prediction->match)<a class="tennis-card" href="{{ route('tennis.show',$prediction) }}"><div class="tennis-meta">{{ $match->tour }} · {{ $match->tournament ?: 'Tennis' }} · {{ $match->surface ?: 'Surface pending' }}</div><div class="tennis-players">{{ $match->player_one }} <span style="color:var(--text-dim)">vs</span> {{ $match->player_two }}</div><div class="tennis-meta">{{ $match->scheduled_at?->timezone(config('app.timezone'))->format('D, M j · H:i') ?? $match->match_date?->format('D, M j') }}</div><div class="tennis-pick"><span>Model pick</span><strong>{{ $prediction->predicted_winner }} · {{ $prediction->confidence }}%</strong></div>@if($prediction->was_correct === true)<div class="tennis-result won">✓ Won · {{ $match->score }}</div>@elseif($prediction->was_correct === false)<div class="tennis-result lost">✗ Lost · {{ $match->score }}</div>@endif</a>@endforeach</div>{{ $predictions->links() }}@endif</div>
+@endsection

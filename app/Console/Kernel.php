@@ -96,10 +96,11 @@ class Kernel extends ConsoleKernel
 
         // Tennis source update: re-import the rolling current/previous season
         // every morning, then rebuild surface and overall Elo ratings.
-        $schedule->command('tennis:sync --ratings')
-            ->dailyAt('01:50')->timezone('Africa/Lagos')->withoutOverlapping(120);
-        $schedule->command('tennis:predict')
-            ->dailyAt('02:10')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('tennis:sync --ratings')->dailyAt('01:50')->timezone('Africa/Lagos')->withoutOverlapping(120)
+            ->when(fn () => filled(config('services.tennis_data.atp_url')) && filled(config('services.tennis_data.wta_url')));
+        $schedule->command('tennis:fetch-fixtures')->hourly()->withoutOverlapping();
+        $schedule->command('tennis:predict')->everyFifteenMinutes()->withoutOverlapping();
+        $schedule->command('tennis:settle-results')->everyTenMinutes()->withoutOverlapping();
 
         // Monthly calibration snapshot — runs on the 1st at 02:00 Lagos.
         // Builds up the public Track Record timeline that proves system improvement.

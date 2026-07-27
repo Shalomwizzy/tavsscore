@@ -115,14 +115,24 @@
 
                 <div class="a-card">
                     <div style="font-size:.78rem; font-weight:700; color:#fff; margin-bottom:.875rem;">🖼️ Featured Image</div>
-                    @if($blog->featured_image)
-                        <img src="{{ $blog->featured_image }}" alt="Current image"
+                    <div style="font-size:.68rem;font-weight:700;color:var(--dim);margin-bottom:.4rem;">CURRENT IMAGE</div>
+                    @if($blog->image_url)
+                        <img src="{{ $blog->image_url }}" alt="Current image"
                              style="width:100%; border-radius:6px; aspect-ratio:16/9; object-fit:cover; border:1px solid var(--border); margin-bottom:.75rem;"
                              id="img-preview-el" onerror="this.style.display='none'">
                     @else
                         <div id="img-preview" style="display:none; margin-bottom:.75rem;">
                             <img id="img-preview-el" src="" alt="Preview"
                                  style="width:100%; border-radius:6px; aspect-ratio:16/9; object-fit:cover; border:1px solid var(--border);">
+                        </div>
+                    @endif
+                    @if($imagePreview)
+                        <div style="border-top:1px solid var(--border);margin:1rem 0 .75rem;padding-top:.875rem;">
+                            <div style="font-size:.68rem;font-weight:700;color:#6ee7b7;margin-bottom:.4rem;">NEW AI IMAGE PREVIEW</div>
+                            <img src="{{ $imagePreview }}" alt="New generated preview"
+                                 style="width:100%;border-radius:6px;aspect-ratio:16/9;object-fit:cover;border:1px solid rgba(16,185,129,.55);margin-bottom:.6rem;">
+                            <form method="POST" action="{{ route('admin.blog.apply-image-preview', $blog) }}" style="margin-bottom:.4rem;">@csrf<button type="submit" class="btn-a btn-green" style="width:100%;justify-content:center;">✓ Use New Image</button></form>
+                            <form method="POST" action="{{ route('admin.blog.discard-image-preview', $blog) }}">@csrf<button type="submit" class="btn-a btn-gray" style="width:100%;justify-content:center;">Keep Current Image</button></form>
                         </div>
                     @endif
                     <div class="form-group">

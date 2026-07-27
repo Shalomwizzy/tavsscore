@@ -13,7 +13,7 @@ class TennisMatch extends Model
         'player_one_rank', 'player_two_rank', 'score', 'status', 'stats',
     ];
 
-    protected $casts = ['match_date' => 'date', 'stats' => 'array'];
+    protected $casts = ['match_date' => 'date', 'scheduled_at' => 'datetime', 'stats' => 'array'];
 
     public function prediction(): HasOne
     {

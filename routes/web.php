@@ -31,6 +31,8 @@ Route::get('/',            [HomeController::class, 'index'])->name('home.index')
 Route::get('/live',        [LiveScoreController::class, 'index'])->name('live.index');
 Route::get('/predictions',         [PredictionPageController::class, 'index'])->name('predictions.index');
 Route::get('/predictions/{slug}',  [PredictionPageController::class, 'show'])->name('predictions.show')->where('slug', '[A-Za-z0-9-]+');
+Route::get('/tennis', [App\Http\Controllers\TennisPredictionController::class, 'index'])->name('tennis.index');
+Route::get('/tennis/predictions/{tennisPrediction}', [App\Http\Controllers\TennisPredictionController::class, 'show'])->name('tennis.show');
 Route::get('/picks',        [DailyPickController::class, 'index'])->name('picks.index');
 Route::get('/draw-picks',   [DrawPicksController::class,  'index'])->name('draw-picks.index');
 Route::get('/gg-picks',     [GGPicksController::class,   'index'])->name('gg-picks.index');
@@ -101,6 +103,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/blog/{blog}',         [Admin\BlogController::class, 'update'])->name('blog.update');
         Route::post('/blog/{blog}/regenerate-article', [Admin\BlogController::class, 'regenerateArticle'])->name('blog.regenerate-article');
         Route::post('/blog/{blog}/regenerate-image',   [Admin\BlogController::class, 'regenerateImage'])->name('blog.regenerate-image');
+        Route::post('/blog/{blog}/apply-image-preview', [Admin\BlogController::class, 'applyImagePreview'])->name('blog.apply-image-preview');
+        Route::post('/blog/{blog}/discard-image-preview', [Admin\BlogController::class, 'discardImagePreview'])->name('blog.discard-image-preview');
         Route::delete('/blog/{blog}',      [Admin\BlogController::class, 'destroy'])->name('blog.destroy');
         Route::post('/blog/auto-generate', [Admin\BlogController::class, 'autoGenerate'])->name('blog.auto-generate');
 
@@ -111,6 +115,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Predictions */
         Route::get('/predictions',          [Admin\PredictionAdminController::class, 'index'])->name('predictions');
         Route::post('/predictions/generate',[Admin\PredictionAdminController::class, 'generate'])->name('predictions.generate');
+
+        /* Tennis (isolated from football) */
+        Route::get('/tennis', [Admin\TennisAdminController::class, 'index'])->name('tennis.index');
+        Route::post('/tennis/fetch-fixtures', [Admin\TennisAdminController::class, 'fetchFixtures'])->name('tennis.fetch');
+        Route::post('/tennis/generate', [Admin\TennisAdminController::class, 'generatePredictions'])->name('tennis.generate');
+        Route::post('/tennis/settle', [Admin\TennisAdminController::class, 'settleResults'])->name('tennis.settle');
 
         /* Analytics */
         Route::get('/analytics', [Admin\AnalyticsController::class, 'index'])->name('analytics');

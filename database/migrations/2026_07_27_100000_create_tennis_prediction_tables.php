@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('tournament')->nullable();
             $table->string('surface', 20)->nullable();
             $table->date('match_date')->nullable();
+            $table->timestamp('scheduled_at')->nullable();
             $table->string('round', 30)->nullable();
             $table->unsignedTinyInteger('best_of')->nullable();
             $table->string('player_one');
@@ -30,6 +31,7 @@ return new class extends Migration
 
             $table->unique(['source', 'source_key']);
             $table->index(['tour', 'match_date']);
+            $table->index(['status', 'scheduled_at']);
             $table->index(['player_one', 'match_date']);
             $table->index(['player_two', 'match_date']);
         });

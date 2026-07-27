@@ -293,6 +293,13 @@
                 </div>
             </details>
 
+            <details class="sb-group" {{ request()->routeIs('admin.tennis.*') ? 'open' : '' }}>
+                <summary><span>🎾 Tennis Data</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.tennis.index') }}" class="sb-link {{ request()->routeIs('admin.tennis.*') ? 'active' : '' }}"><span class="sb-icon">🎾</span> Tennis Predictions</a>
+                </div>
+            </details>
+
             {{-- Model & Accuracy --}}
             <details class="sb-group" {{ $isModel ? 'open' : '' }}>
                 <summary><span>🧠 Model &amp; Accuracy</span><span class="sb-caret">▶</span></summary>
