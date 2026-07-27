@@ -7,7 +7,12 @@ on:
   schedule:
     # 12:30 UTC = 13:30 Africa/Lagos — after the 10:30 rollover + morning picks.
     - cron: '30 12 * * *'
-  workflow_dispatch: {}   # lets you run it manually from the Actions tab
+  workflow_dispatch:      # lets you run it manually from the Actions tab
+    inputs:
+      dry_run:
+        description: 'Test mode: post MOCK codes only (no bookmaker, no browser)'
+        type: boolean
+        default: false
 
 jobs:
   build-codes:
@@ -34,4 +39,5 @@ jobs:
           BOOKING_WORKER_TOKEN: ${{ secrets.BOOKING_WORKER_TOKEN }}
           PLATFORMS: sportybet
           HEADLESS: 'true'
+          DRY_RUN: ${{ inputs.dry_run }}
         run: npm start
