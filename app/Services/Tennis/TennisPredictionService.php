@@ -16,7 +16,7 @@ class TennisPredictionService
 {
     public function __construct(private readonly OpenAiTennisOpinionService $openAi) {}
 
-    public function predict(TennisMatch $match): TennisPrediction
+    public function predict(TennisMatch $match): ?TennisPrediction
     {
         $date = $match->match_date ?: now();
         $surface = strtolower($match->surface ?: 'hard');
@@ -27,6 +27,15 @@ class TennisPredictionService
         $one = $this->form($match, $match->player_one, $date, $surface);
         $two = $this->form($match, $match->player_two, $date, $surface);
         $h2h = $this->headToHead($match, $date);
+
+        // A live fixture alone is not enough for a prediction. Until the
+        // historical importer has supplied at least a meaningful sample for
+        // both players, do not publish an arbitrary 50/50 placeholder.
+        $evidence = $one['recent_matches'] + $two['recent_matches'];
+        if ($evidence < 10) {
+            TennisPrediction::where('tennis_match_id', $match->id)->delete();
+            return null;
+        }
 
         // Only use a component with adequate evidence. This prevents a 1-0
         // surface record or a single old H2H meeting from moving the model.
@@ -47,8 +56,8 @@ class TennisPredictionService
         $weightSum = array_sum(array_column($weighted, 'weight'));
         $probability = array_sum(array_map(fn ($part) => $part['weight'] * $part['value'], $weighted)) / $weightSum;
         // Do not allow model output to look certain where the data is sparse.
-        $evidence = min(1, ($one['recent_matches'] + $two['recent_matches']) / 20);
-        $probability = 0.5 + (($probability - 0.5) * (0.55 + 0.45 * $evidence));
+        $evidenceStrength = min(1, $evidence / 20);
+        $probability = 0.5 + (($probability - 0.5) * (0.55 + 0.45 * $evidenceStrength));
         $oneProb = round(max(0.05, min(0.95, $probability)) * 100, 2);
         $twoProb = round(100 - $oneProb, 2);
         $winner = $oneProb >= $twoProb ? $match->player_one : $match->player_two;

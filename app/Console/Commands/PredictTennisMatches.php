@@ -16,11 +16,17 @@ class PredictTennisMatches extends Command
         $matches = TennisMatch::where('status', 'scheduled')
             ->whereBetween('match_date', [now()->toDateString(), now()->addHours((int) $this->option('hours-ahead'))->toDateString()])
             ->orderBy('match_date')->get();
+        $generated = 0;
         foreach ($matches as $match) {
             $prediction = $predictor->predict($match);
+            if ($prediction === null) {
+                $this->line("{$match->player_one} vs {$match->player_two}: skipped, training history not available yet.");
+                continue;
+            }
+            $generated++;
             $this->line("{$match->player_one} vs {$match->player_two}: {$prediction->predicted_winner} ({$prediction->confidence}%)");
         }
-        $this->info("Predicted {$matches->count()} tennis fixtures.");
+        $this->info("Generated {$generated} tennis predictions from {$matches->count()} fixtures.");
         return self::SUCCESS;
     }
 }
