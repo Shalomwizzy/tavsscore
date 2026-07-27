@@ -67,75 +67,67 @@ class CheckPredictionOutcomes extends Command
             $prediction->update(['was_correct' => $wasCorrect]);
             $resolved++;
 
-            $score      = (int) $match->home_score . '-' . (int) $match->away_score;
+            $home  = (int) $match->home_score;
+            $away  = (int) $match->away_score;
+            $score = "{$home}-{$away}";
+            // Each specialty market is graded from the score itself, NOT the
+            // shared $wasCorrect (which is the headline market). A 2-0 is a GG
+            // loss even when the headline "Home Win" was correct.
+            $bttsWon = $home >= 1 && $away >= 1;
+            $drawWon = $home === $away;
+
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
             $league     = LeagueCoverage::formatName($match->league, $match->league_country);
             $cacheKey   = "outcome_notified_{$prediction->id}";
 
-            if ($wasCorrect) {
-                $this->line("  ✅  {$matchLabel} → {$prediction->predicted_outcome} ({$score})");
+            $this->line(($wasCorrect ? '  ✅  ' : '  ❌  ') . "{$matchLabel} → {$prediction->predicted_outcome} ({$score})");
 
-                if (! Cache::has($cacheKey)) {
-                    if ($prediction->is_daily_pick) {
-                        $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks');
-                        $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
-                    }
-
-                    if ($prediction->has_lineup) {
-                        $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks');
-                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, true, $siteUrl, $league);
-                    }
-
-                    if ($prediction->is_draw_pick) {
-                        $oneSignal->notifyPickWon($matchLabel, 'Draw', $score, $league, '/draw-picks');
-                        $telegram->sendDrawOutcome($matchLabel, $score, true, $siteUrl, $league);
-                    }
-
-                    if ($prediction->is_gg_pick) {
-                        $oneSignal->notifyPickWon($matchLabel, 'Both Teams Scored', $score, $league, '/gg-picks');
-                        $telegram->sendGGOutcome($matchLabel, $score, true, $siteUrl, $league);
-                    }
-
-                    // Winner upload reminder — only for actual picks, never for generic predictions
-                    $isActualPick = $prediction->is_daily_pick || $prediction->is_draw_pick
-                        || $prediction->is_gg_pick || $prediction->has_lineup
-                        || $prediction->is_over15_pick || $prediction->is_over25_pick
-                        || $prediction->is_team3plus_pick || $prediction->is_correct_score_pick;
-
-                    if ($isActualPick && ! $prediction->winner_reminder_sent) {
-                        $oneSignal->notifyWinnerReminder();
-                        $telegram->sendWinnerUploadReminder($siteUrl);
-                        $prediction->update(['winner_reminder_sent' => true]);
-                    }
-
-                    Cache::put($cacheKey, true, now()->addDays(2));
+            if (! Cache::has($cacheKey)) {
+                // Daily + lineup pages track the headline market ($wasCorrect).
+                if ($prediction->is_daily_pick) {
+                    $wasCorrect
+                        ? $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks')
+                        : $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks');
+                    $wasCorrect
+                        ? $telegram->sendCorrectPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league)
+                        : $telegram->sendWrongPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
                 }
-            } else {
-                $this->line("  ❌  {$matchLabel} → predicted {$prediction->predicted_outcome}, actual {$score}");
 
-                if (! Cache::has($cacheKey)) {
-                    if ($prediction->is_daily_pick) {
-                        $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/picks');
-                        $telegram->sendWrongPick($matchLabel, $prediction->predicted_outcome, $score, $siteUrl, $league);
-                    }
-
-                    if ($prediction->has_lineup) {
-                        $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks');
-                        $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, false, $siteUrl, $league);
-                    }
-
-                    if ($prediction->is_draw_pick) {
-                        $oneSignal->notifyPickLost($matchLabel, 'Draw', $score, $league, '/draw-picks');
-                        $telegram->sendDrawOutcome($matchLabel, $score, false, $siteUrl, $league);
-                    }
-
-                    if ($prediction->is_gg_pick) {
-                        $oneSignal->notifyPickLost($matchLabel, 'Both Teams Score', $score, $league, '/gg-picks');
-                        $telegram->sendGGOutcome($matchLabel, $score, false, $siteUrl, $league);
-                    }
-
-                    Cache::put($cacheKey, true, now()->addDays(2));
+                if ($prediction->has_lineup) {
+                    $wasCorrect
+                        ? $oneSignal->notifyPickWon($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks')
+                        : $oneSignal->notifyPickLost($matchLabel, $prediction->predicted_outcome, $score, $league, '/lineup-picks');
+                    $telegram->sendLineupOutcome($matchLabel, $prediction->predicted_outcome, $score, $wasCorrect, $siteUrl, $league);
                 }
+
+                // Draw + GG pages track their OWN market, graded from the score.
+                if ($prediction->is_draw_pick) {
+                    $drawWon
+                        ? $oneSignal->notifyPickWon($matchLabel, 'Draw', $score, $league, '/draw-picks')
+                        : $oneSignal->notifyPickLost($matchLabel, 'Draw', $score, $league, '/draw-picks');
+                    $telegram->sendDrawOutcome($matchLabel, $score, $drawWon, $siteUrl, $league);
+                }
+
+                if ($prediction->is_gg_pick) {
+                    $bttsWon
+                        ? $oneSignal->notifyPickWon($matchLabel, 'Both Teams Scored', $score, $league, '/gg-picks')
+                        : $oneSignal->notifyPickLost($matchLabel, 'Both Teams Score', $score, $league, '/gg-picks');
+                    $telegram->sendGGOutcome($matchLabel, $score, $bttsWon, $siteUrl, $league);
+                }
+
+                // Winner upload reminder — fire when any of this row's markets actually won.
+                $anyWon = ($prediction->is_daily_pick && $wasCorrect)
+                    || ($prediction->has_lineup && $wasCorrect)
+                    || ($prediction->is_draw_pick && $drawWon)
+                    || ($prediction->is_gg_pick && $bttsWon);
+
+                if ($anyWon && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->notifyWinnerReminder();
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
+
+                Cache::put($cacheKey, true, now()->addDays(2));
             }
         }
 
