@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BookingWorkerController;
 use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\TranslationController;
 use App\Http\Controllers\PredictionController;
@@ -30,4 +31,10 @@ Route::get('/predictions/{match_id}', [PredictionController::class, 'show'])->wh
 Route::middleware('throttle:30,1')->group(function () {
     Route::post('/predictions/{prediction}/translate', [TranslationController::class, 'translate'])->whereNumber('prediction');
     Route::post('/blog/{post}/translate', [TranslationController::class, 'translateBlog'])->whereNumber('post');
+});
+
+// Booking-code automation worker (external, token-authenticated).
+Route::middleware('worker.token')->prefix('worker')->group(function () {
+    Route::get('/betslip-spec', [BookingWorkerController::class, 'spec']);
+    Route::post('/booking-codes', [BookingWorkerController::class, 'store']);
 });

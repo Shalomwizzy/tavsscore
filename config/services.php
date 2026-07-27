@@ -41,6 +41,12 @@ return [
         'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),
     ],
 
+    // Shared secret the external booking-code automation worker uses to pull the
+    // betslip spec and post codes back. Set BOOKING_WORKER_TOKEN in .env.
+    'booking_worker' => [
+        'token' => env('BOOKING_WORKER_TOKEN'),
+    ],
+
     'groq' => [
         'key' => env('GROQ_API_KEY'),
         'url' => env('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions'),
