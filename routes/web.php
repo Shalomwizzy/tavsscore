@@ -44,6 +44,7 @@ Route::get('/rollover',           [RolloverController::class, 'index'])->name('r
 Route::get('/rollover/{date}',    [RolloverController::class, 'show'])->name('rollover.show')->where('date', '\d{4}-\d{2}-\d{2}');
 Route::get('/stats',        [StatsController::class, 'index'])->name('stats.index');
 Route::get('/goalscorer-picks', [App\Http\Controllers\GoalscorerPicksController::class, 'index'])->name('goalscorer-picks.index');
+Route::get('/fantasy',      [App\Http\Controllers\FantasyController::class, 'index'])->name('fantasy.index');
 Route::get('/standings',    [App\Http\Controllers\LeagueStatsController::class, 'standings'])->name('standings.index');
 Route::get('/top-scorers',  [App\Http\Controllers\LeagueStatsController::class, 'topScorers'])->name('top-scorers.index');
 Route::get('/track-record', [TrackRecordController::class, 'index'])->name('track-record.index');
@@ -125,6 +126,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Goalscorer Picks (read-only — computed live from player stats) */
         Route::get('/goalscorer-picks', [Admin\GoalscorerPicksAdminController::class, 'index'])->name('goalscorer-picks.index');
+
+        /* Fantasy — best XI from player stats */
+        Route::get('/fantasy',         [Admin\FantasyAdminController::class, 'index'])->name('fantasy.index');
+        Route::post('/fantasy/rebuild',[Admin\FantasyAdminController::class, 'rebuild'])->name('fantasy.rebuild');
 
         /* API-Football stats — standings, team stats, player stats */
         Route::get('/api-stats',            [Admin\ApiStatsAdminController::class, 'index'])->name('api-stats.index');

@@ -74,6 +74,10 @@
                         <span class="ndi-icon">⚽</span>
                         <span><span class="ndi-label">Goalscorer Picks</span><span class="ndi-sub">Anytime scorer tips</span></span>
                     </a>
+                    <a href="{{ route('fantasy.index') }}" class="nav-drop-item {{ request()->routeIs('fantasy.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🏆</span>
+                        <span><span class="ndi-label">Fantasy Best XI</span><span class="ndi-sub">Weekly dream team &amp; buys</span></span>
+                    </a>
                 </div>
             </div>
 
@@ -262,6 +266,13 @@
             <span class="di-text">
                 Goalscorer Picks
                 <small>Anytime scorer tips</small>
+            </span>
+        </a>
+        <a href="{{ route('fantasy.index') }}" class="drawer-item {{ request()->routeIs('fantasy.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🏆</span>
+            <span class="di-text">
+                Fantasy Best XI
+                <small>Weekly dream team &amp; buys</small>
             </span>
         </a>
 

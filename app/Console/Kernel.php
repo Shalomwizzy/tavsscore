@@ -199,6 +199,17 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(120)
             ->runInBackground();
 
+        // Fantasy best XI — rebuilt weekly from the fresh player stats (Sunday
+        // 21:00, after stats:fetch-players and Thursday before the weekend GW).
+        $schedule->command('fantasy:build')
+            ->weeklyOn(0, '21:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+        $schedule->command('fantasy:build')
+            ->weeklyOn(4, '09:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+
         // Fixture intel (injuries + API-Football predictions) feeds the LLM
         // arbiter chain. Refreshed before the primary pick-selection at 03:00
         // and again mid-morning so late injury/suspension news is captured.

@@ -243,7 +243,7 @@
 
         @php
             $isPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.over15.*','admin.over25.*','admin.team3plus.*','admin.double-chance.*','admin.correct-score.*','admin.lineup-picks.*','admin.booking-code.*','admin.rollover.*','admin.goalscorer-picks.*');
-            $isData  = request()->routeIs('admin.matches','admin.predictions','admin.api-stats.*');
+            $isData  = request()->routeIs('admin.matches','admin.predictions','admin.api-stats.*','admin.fantasy.*');
             $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
             $isContent = request()->routeIs('admin.blog.*');
             $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*','admin.winners.*');
@@ -289,6 +289,7 @@
                     <a href="{{ route('admin.matches') }}" class="sb-link {{ request()->routeIs('admin.matches') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Matches</a>
                     <a href="{{ route('admin.predictions') }}" class="sb-link {{ request()->routeIs('admin.predictions') ? 'active' : '' }}"><span class="sb-icon">📈</span> Predictions</a>
                     <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> API Stats</a>
+                    <a href="{{ route('admin.fantasy.index') }}" class="sb-link {{ request()->routeIs('admin.fantasy.*') ? 'active' : '' }}"><span class="sb-icon">🏆</span> Fantasy XI</a>
                 </div>
             </details>
 
