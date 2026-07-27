@@ -1,8 +1,16 @@
 // Thin client for the Laravel worker endpoints. Every request carries the
 // shared X-Worker-Token header — the secret you set in BOTH .env files.
 
-const BASE = (process.env.TAVS_BASE_URL || '').replace(/\/$/, '');
-const TOKEN = process.env.BOOKING_WORKER_TOKEN || '';
+// Normalise the base URL: trim stray spaces, drop trailing slashes, and add
+// https:// if the secret was set without a scheme (e.g. "tavsscore.com").
+function normaliseBase(raw) {
+  let b = (raw || '').trim().replace(/\/+$/, '');
+  if (b && !/^https?:\/\//i.test(b)) b = 'https://' + b;
+  return b;
+}
+
+const BASE = normaliseBase(process.env.TAVS_BASE_URL);
+const TOKEN = (process.env.BOOKING_WORKER_TOKEN || '').trim();
 
 function headers() {
   return { 'X-Worker-Token': TOKEN, 'Content-Type': 'application/json', Accept: 'application/json' };
