@@ -24,14 +24,19 @@
         <div style="font-size:.82rem; color:var(--dim); max-width:34rem; line-height:1.6;">
             The best XI is rebuilt automatically each week from stored player stats.
             Use the button to rebuild it now (e.g. after a fresh <code>stats:fetch-players</code> run).
-            Public page: <a href="{{ route('fantasy.index') }}" target="_blank" style="color:#a5b4fc;">/fantasy</a>.
         </div>
-        <form method="POST" action="{{ route('admin.fantasy.rebuild') }}">
-            @csrf
-            <button type="submit" style="background:#6366f1; color:#fff; border:none; border-radius:8px; padding:.6rem 1.1rem; font-weight:700; font-size:.85rem; cursor:pointer;">
-                🔄 Rebuild now
-            </button>
-        </form>
+        <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;">
+            <a href="{{ route('fantasy.index') }}" target="_blank" rel="noopener"
+               style="background:rgba(255,255,255,.06); color:#a5b4fc; border:1px solid var(--border); border-radius:8px; padding:.55rem 1rem; font-size:.82rem; font-weight:600; text-decoration:none;">
+                👁 Preview public page ↗
+            </a>
+            <form method="POST" action="{{ route('admin.fantasy.rebuild') }}" style="margin:0;">
+                @csrf
+                <button type="submit" style="background:#6366f1; color:#fff; border:none; border-radius:8px; padding:.6rem 1.1rem; font-weight:700; font-size:.85rem; cursor:pointer;">
+                    🔄 Rebuild now
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
