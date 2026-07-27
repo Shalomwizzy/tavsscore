@@ -24,21 +24,6 @@ class AutoBlogPost extends Command
 
     private const TOP_LEAGUE_IDS = [2, 3, 39, 61, 78, 135, 140, 848];
 
-    // Picsum Photos — stable seeded URLs, no auth required, always serve correctly.
-    // Format: https://picsum.photos/seed/{seed}/1200/630
-    private const IMAGES = [
-        'champions' => 'https://picsum.photos/seed/football-champions/1200/630',
-        'trophy'    => 'https://picsum.photos/seed/football-trophy/1200/630',
-        'stadium'   => 'https://picsum.photos/seed/football-stadium/1200/630',
-        'crowd'     => 'https://picsum.photos/seed/football-crowd/1200/630',
-        'match'     => 'https://picsum.photos/seed/football-match/1200/630',
-        'pitch'     => 'https://picsum.photos/seed/football-pitch/1200/630',
-        'goal'      => 'https://picsum.photos/seed/football-goal/1200/630',
-        'transfer'  => 'https://picsum.photos/seed/football-transfer/1200/630',
-        'training'  => 'https://picsum.photos/seed/football-training/1200/630',
-        'analysis'  => 'https://picsum.photos/seed/football-analysis/1200/630',
-    ];
-
     public function handle(): int
     {
         $apiKey = config('services.groq.key');
@@ -130,13 +115,14 @@ class AutoBlogPost extends Command
             $content = preg_replace('/<img[^>]*>/i', '', $json['content']);
             $content = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $content);
 
-            $image    = $this->pickImage($json['title'], $matchList);
             $category = $this->pickCategory($matchList);
             $excerpt  = $this->buildExcerpt($content);
+            $slug     = BlogPost::generateSlug($json['title']);
+            $image    = app(\App\Services\Blog\HeroImageService::class)->generate($json['title'], $category, $slug);
 
             $post = BlogPost::create([
                 'title'           => $json['title'],
-                'slug'            => BlogPost::generateSlug($json['title']),
+                'slug'            => $slug,
                 'excerpt'         => $excerpt,
                 'content'         => $content,
                 'featured_image'  => $image,
@@ -315,31 +301,6 @@ class AutoBlogPost extends Command
 
         return "\n\nREAL FOOTBALL NEWS & FACTS (from live data). Base the article on these; rephrase in your own words, do not invent facts:\n\n"
             .implode("\n\n", $sections);
-    }
-
-    private function pickImage(string $title, string $matchList): string
-    {
-        $text = strtolower($title . ' ' . $matchList);
-
-        if (str_contains($text, 'champion') || str_contains($text, 'ucl') || str_contains($text, 'europa')) {
-            return self::IMAGES['champions'];
-        }
-        if (str_contains($text, 'transfer') || str_contains($text, 'sign')) {
-            return self::IMAGES['transfer'];
-        }
-        if (str_contains($text, 'tactic') || str_contains($text, 'analys') || str_contains($text, 'data')) {
-            return self::IMAGES['analysis'];
-        }
-        if (str_contains($text, 'train')) {
-            return self::IMAGES['training'];
-        }
-        if (str_contains($text, 'trophy') || str_contains($text, 'title') || str_contains($text, 'win')) {
-            return self::IMAGES['trophy'];
-        }
-
-        // Rotate through match images based on day of week
-        $rotation = ['match', 'stadium', 'crowd', 'pitch', 'goal'];
-        return self::IMAGES[$rotation[date('N') % count($rotation)]];
     }
 
     private function pickCategory(string $matchList): string

@@ -1,0 +1,14 @@
+{
+  "name": "tavsscore-booking-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "External Playwright worker that turns TavsScore's daily betslip spec into SportyBet / 1xBet booking codes and posts them back.",
+  "scripts": {
+    "start": "node src/index.js",
+    "postinstall": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

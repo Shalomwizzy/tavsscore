@@ -1,0 +1,34 @@
+name: Booking code worker
+
+# Builds SportyBet/1xBet booking codes from today's betslip spec.
+# Runs on GitHub's infrastructure (NOT Hostinger — shared hosting can't run a
+# headless browser). Adjust the cron to fire after picks are selected.
+on:
+  schedule:
+    # 12:30 UTC = 13:30 Africa/Lagos — after the 10:30 rollover + morning picks.
+    - cron: '30 12 * * *'
+  workflow_dispatch: {}   # lets you run it manually from the Actions tab
+
+jobs:
+  build-codes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: booking-worker
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps + Chromium
+        run: npm install
+
+      - name: Build booking codes
+        env:
+          TAVS_BASE_URL: ${{ secrets.TAVS_BASE_URL }}
+          BOOKING_WORKER_TOKEN: ${{ secrets.BOOKING_WORKER_TOKEN }}
+          PLATFORMS: sportybet
+          HEADLESS: 'true'
+        run: npm start

@@ -172,6 +172,13 @@
             <div class="bc-note">📋 {{ $bc->note }}</div>
             @endif
 
+            @if($bc->total_odds || is_array($bc->fixtures))
+            <div class="bc-note" style="display:flex; gap:.75rem; flex-wrap:wrap;">
+                @if($bc->total_odds)<span>💰 Total odds: <strong>{{ number_format((float) $bc->total_odds, 2) }}</strong></span>@endif
+                @if(is_array($bc->fixtures))<span>🎯 {{ count($bc->fixtures) }} {{ Str::plural('game', count($bc->fixtures)) }}</span>@endif
+            </div>
+            @endif
+
             <div class="bc-how">📲 <strong>How to load:</strong> {{ $howTo }}</div>
 
             <button class="bc-copy-btn" onclick="copyCode('{{ strtoupper($bc->code) }}', this)">
