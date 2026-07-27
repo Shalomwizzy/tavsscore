@@ -6,17 +6,25 @@ import { fetchSpec, postCode } from './api.js';
 import { sportybet } from './adapters/sportybet.js';
 import { onexbet } from './adapters/onexbet.js';
 import { mock } from './adapters/mock.js';
+import { demoSlips } from './demo.js';
 
 const ADAPTERS = { sportybet, '1xbet': onexbet, mock };
 
 async function run() {
   const spec = await fetchSpec();
-  const slips = spec.slips || [];
+  let slips = spec.slips || [];
   const dryRun = process.env.DRY_RUN === 'true';
   const platforms = dryRun
     ? ['mock']
     : (process.env.PLATFORMS || spec.platforms?.join(',') || 'sportybet')
         .split(',').map((p) => p.trim()).filter(Boolean);
+
+  // In test mode with no fixtures today (pre-season), fall back to a built-in
+  // demo ticket so you can see a code go all the way through to /booking-codes.
+  if (dryRun && slips.length === 0) {
+    console.log('DRY_RUN: no fixtures today — using a built-in DEMO ticket so you can see a code end-to-end.');
+    slips = demoSlips(spec.pick_date);
+  }
 
   if (!slips.length) {
     console.log('No slips in today\'s spec — nothing to build.');
