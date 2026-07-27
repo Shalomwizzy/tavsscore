@@ -2,25 +2,34 @@
 // booking code in the browser → post the code back. Adapters isolate the
 // site-specific browser steps (the only part that needs real DOM selectors).
 
-import { chromium } from 'playwright';
 import { fetchSpec, postCode } from './api.js';
 import { sportybet } from './adapters/sportybet.js';
 import { onexbet } from './adapters/onexbet.js';
+import { mock } from './adapters/mock.js';
 
-const ADAPTERS = { sportybet, '1xbet': onexbet };
+const ADAPTERS = { sportybet, '1xbet': onexbet, mock };
 
 async function run() {
   const spec = await fetchSpec();
   const slips = spec.slips || [];
-  const platforms = (process.env.PLATFORMS || spec.platforms?.join(',') || 'sportybet')
-    .split(',').map((p) => p.trim()).filter(Boolean);
+  const dryRun = process.env.DRY_RUN === 'true';
+  const platforms = dryRun
+    ? ['mock']
+    : (process.env.PLATFORMS || spec.platforms?.join(',') || 'sportybet')
+        .split(',').map((p) => p.trim()).filter(Boolean);
 
   if (!slips.length) {
     console.log('No slips in today\'s spec — nothing to build.');
     return;
   }
 
-  const browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+  // Only spin up a real browser if an adapter actually needs one.
+  const needsBrowser = platforms.some((p) => ADAPTERS[p] && ADAPTERS[p].usesBrowser !== false);
+  let browser = null;
+  if (needsBrowser) {
+    const { chromium } = await import('playwright');
+    browser = await chromium.launch({ headless: process.env.HEADLESS !== 'false' });
+  }
 
   for (const platform of platforms) {
     const adapter = ADAPTERS[platform];
@@ -29,8 +38,8 @@ async function run() {
       continue;
     }
 
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    const context = adapter.usesBrowser === false ? null : await browser.newContext();
+    const page = context ? await context.newPage() : null;
 
     for (const slip of slips) {
       const legs = slip.selections || [];
@@ -70,10 +79,10 @@ async function run() {
       }
     }
 
-    await context.close();
+    if (context) await context.close();
   }
 
-  await browser.close();
+  if (browser) await browser.close();
 }
 
 async function postFailure(platform, slip, reason) {

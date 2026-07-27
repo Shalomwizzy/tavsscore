@@ -54,7 +54,20 @@ BOOKING_WORKER_TOKEN=<your generated token>
 3. The workflow runs daily at 13:30 Lagos (`cron: '30 12 * * *'` UTC). You can
    also trigger it manually from the **Actions** tab (“Run workflow”).
 
-### 3. Fill in the SportyBet selectors
+### 3. Test the whole pipeline first (no bookmaker needed)
+Before touching any bookmaker, prove the plumbing works with the built-in
+**mock adapter** — it "books" the safest legs and posts a `MOCK-…` code back,
+so you can watch it appear on `/booking-codes`:
+```bash
+cd booking-worker
+cp .env.example .env      # fill in TAVS_BASE_URL + BOOKING_WORKER_TOKEN
+npm install
+DRY_RUN=true npm start    # no browser launched, posts mock codes
+```
+If you see codes on the site's booking-codes page, your token + endpoints are
+correct and only the SportyBet selectors remain.
+
+### 4. Fill in the SportyBet selectors
 The orchestration (fetch spec → build → post) is complete. The only site-specific
 part is in [`src/adapters/sportybet.js`](src/adapters/sportybet.js) — the two
 functions `addSelection()` and `readBookingCode()` need real DOM selectors.
