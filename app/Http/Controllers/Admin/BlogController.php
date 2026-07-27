@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
 use App\Models\FootballMatch;
+use App\Services\Blog\HeroImageService;
+use App\Services\OpenAiBlogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -108,9 +110,9 @@ class BlogController extends Controller
 
     public function autoGenerate(): RedirectResponse
     {
-        if (blank(config('services.groq.key')) || config('services.groq.key') === 'your_api_key_here') {
+        if (! app(\App\Services\OpenAiBlogService::class)->configured()) {
             return redirect()->route('admin.blog.index')
-                ->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
+                ->with('error', 'OpenAI API key is not configured. Add OPENAI_API_KEY to your .env file.');
         }
 
         $before = BlogPost::max('id');
@@ -134,6 +136,52 @@ class BlogController extends Controller
 
         return redirect()->route('admin.blog.edit', $post)
             ->with('success', 'AI blog post generated and published successfully!');
+    }
+
+    /** Replace the text only, leaving the existing image untouched. */
+    public function regenerateArticle(BlogPost $blog, OpenAiBlogService $openAi): RedirectResponse
+    {
+        if (! $openAi->configured()) {
+            return back()->with('error', 'OpenAI API key is not configured. Add OPENAI_API_KEY to your .env file.');
+        }
+
+        try {
+            $article = $openAi->writeArticle(
+                'You are a senior TavsScore football editor. Return only valid JSON with exactly "title" and "content". Use the supplied article as the only factual source. Improve clarity, originality, structure and SEO without inventing facts. Use only p, h2, h3, ul, li and strong HTML tags. Never use em dashes.',
+                "Regenerate this football news article. Keep it at least 600 words when the source contains enough factual material. Preserve every factual claim unless the source is uncertain.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
+            );
+            $content = preg_replace('/<img[^>]*>/i', '', $article['content']);
+            $content = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $content);
+            $blog->update([
+                'title' => $article['title'],
+                'content' => $content,
+                'excerpt' => $this->excerpt((string) $content),
+                'is_ai_generated' => true,
+            ]);
+            return redirect()->route('admin.blog.edit', $blog)->with('success', 'Article regenerated. The existing image was kept.');
+        } catch (\Throwable $e) {
+            Log::error('Blog article regeneration failed', ['blog_id' => $blog->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Article regeneration failed. Your current article was not changed.');
+        }
+    }
+
+    /** Replace the hero image only, leaving the article untouched. */
+    public function regenerateImage(BlogPost $blog, HeroImageService $images): RedirectResponse
+    {
+        try {
+            $image = $images->generate($blog->title, $blog->category, $blog->slug);
+            $blog->update(['featured_image' => $image, 'image_path' => null, 'is_ai_generated' => true]);
+            return redirect()->route('admin.blog.edit', $blog)->with('success', 'Featured image regenerated with Tavs Score watermark.');
+        } catch (\Throwable $e) {
+            Log::error('Blog image regeneration failed', ['blog_id' => $blog->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Image regeneration failed. Your current image was not changed.');
+        }
+    }
+
+    private function excerpt(string $html): string
+    {
+        $text = preg_replace('/\s+/', ' ', trim(strip_tags($html)));
+        return Str::limit($text, 155, '…');
     }
 
     private function saveImage(\Illuminate\Http\UploadedFile $file): string

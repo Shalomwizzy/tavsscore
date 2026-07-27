@@ -99,6 +99,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/blog',               [Admin\BlogController::class, 'store'])->name('blog.store');
         Route::get('/blog/{blog}/edit',    [Admin\BlogController::class, 'edit'])->name('blog.edit');
         Route::put('/blog/{blog}',         [Admin\BlogController::class, 'update'])->name('blog.update');
+        Route::post('/blog/{blog}/regenerate-article', [Admin\BlogController::class, 'regenerateArticle'])->name('blog.regenerate-article');
+        Route::post('/blog/{blog}/regenerate-image',   [Admin\BlogController::class, 'regenerateImage'])->name('blog.regenerate-image');
         Route::delete('/blog/{blog}',      [Admin\BlogController::class, 'destroy'])->name('blog.destroy');
         Route::post('/blog/auto-generate', [Admin\BlogController::class, 'autoGenerate'])->name('blog.auto-generate');
 

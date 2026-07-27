@@ -9,10 +9,10 @@ use App\Models\MatchInjury;
 use App\Models\PlayerStatistic;
 use App\Models\Standing;
 use App\Models\Transfer;
+use App\Services\OpenAiBlogService;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -26,10 +26,10 @@ class AutoBlogPost extends Command
 
     public function handle(): int
     {
-        $apiKey = config('services.groq.key');
+        $openAi = app(OpenAiBlogService::class);
 
-        if (blank($apiKey) || $apiKey === 'your_api_key_here') {
-            $this->error('GROQ_API_KEY not configured in .env');
+        if (! $openAi->configured()) {
+            $this->error('OPENAI_API_KEY not configured in .env');
             return self::FAILURE;
         }
 
@@ -77,38 +77,10 @@ class AutoBlogPost extends Command
         try {
             $this->info("Generating AI article for {$dateStr}…");
 
-            $response = Http::withToken($apiKey)
-                ->acceptJson()->asJson()->timeout(45)
-                ->retry(2, 1000, fn ($_, $r) => !($r && $r->status() === 429))
-                ->post(config('services.groq.url'), [
-                    'model'           => config('services.groq.model', 'llama-3.3-70b-versatile'),
-                    'temperature'     => 0.65,
-                    'max_tokens'      => 1200,
-                    'response_format' => ['type' => 'json_object'],
-                    'messages'        => [
-                        [
-                            'role'    => 'system',
-                            'content' => 'You are a senior football journalist writing for TavsScore. Write exactly like a real human sports writer: opinionated, direct, sometimes blunt, with natural rhythm and varied sentence length. Mix short punchy sentences with longer analytical ones. Use everyday football language that fans actually use. Show genuine personality, take sides, make bold calls. Avoid all AI-sounding patterns: no listing things in threes, no "it is worth noting", no "furthermore", no "in conclusion", no "delve", no "it remains to be seen", no generic filler phrases. Write like you watched the matches yourself and have a real opinion. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences. NEVER use em dashes (—). Use commas, colons, or full stops instead.',
-                        ],
-                        [
-                            'role'    => 'user',
-                            'content' => $userPrompt,
-                        ],
-                    ],
-                ]);
-
-            if ($response->failed()) {
-                throw new \RuntimeException('Groq API error: status ' . $response->status());
-            }
-
-            $raw  = trim((string) data_get($response->json(), 'choices.0.message.content'));
-            $raw  = preg_replace('/^```(?:json)?\s*/i', '', $raw);
-            $raw  = preg_replace('/\s*```\s*$/', '', $raw);
-            $json = json_decode($raw, true);
-
-            if (!$json || empty($json['title']) || empty($json['content'])) {
-                throw new \RuntimeException('Invalid JSON from Groq: ' . substr($raw, 0, 200));
-            }
+            $json = $openAi->writeArticle(
+                'You are a senior football journalist writing for TavsScore. Write exactly like a real human sports writer: opinionated, direct, sometimes blunt, with natural rhythm and varied sentence length. Mix short punchy sentences with longer analytical ones. Use everyday football language that fans actually use. Show genuine personality, take sides, make bold calls. Avoid all AI-sounding patterns: no listing things in threes, no "it is worth noting", no "furthermore", no "in conclusion", no "delve", no "it remains to be seen", no generic filler phrases. Write like you watched the matches yourself and have a real opinion. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences. NEVER use em dashes (—). Use commas, colons, or full stops instead.',
+                $userPrompt,
+            );
 
             // Strip any <img> tags and <a> tags the AI sneaks in — they reference
             // fake URLs that will 404. We provide the hero image separately.

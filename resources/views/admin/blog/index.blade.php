@@ -55,6 +55,10 @@
                         <div style="display:flex; gap:.4rem; align-items:center;">
                             <a href="{{ route('blog.show', $post->slug) }}" target="_blank" class="btn-a btn-gray" style="padding:.28rem .65rem; font-size:.72rem;">View</a>
                             <a href="{{ route('admin.blog.edit', $post) }}" class="btn-a btn-blue" style="padding:.28rem .65rem; font-size:.72rem;">Edit</a>
+                            <form method="POST" action="{{ route('admin.blog.regenerate-image', $post) }}" onsubmit="return confirm('Generate a new Tavs Score watermarked image for this post?')">
+                                @csrf
+                                <button type="submit" class="btn-a btn-gray" style="padding:.28rem .5rem; font-size:.72rem;">🖼️</button>
+                            </form>
                             <form method="POST" action="{{ route('admin.blog.destroy', $post) }}" onsubmit="return confirm('Delete this post?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn-a btn-red" style="padding:.28rem .65rem; font-size:.72rem;">Delete</button>

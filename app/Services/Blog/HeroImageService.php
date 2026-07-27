@@ -2,13 +2,15 @@
 
 namespace App\Services\Blog;
 
+use App\Services\OpenAiBlogService;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Generates a branded, self-hosted hero image for a blog post — a 1200×630 SVG
- * saved under public/images/blog/. No external service, no auth, no fonts to
- * ship: it always renders, is always football-relevant (pitch motif + the post
- * title + league), and never 404s. Replaces the old random Picsum seeds.
+ * Generates a related, self-hosted hero image for a blog post. OpenAI produces
+ * the editorial visual; a local overlay always adds the Tavs Score watermark.
+ * The existing branded SVG remains a safe fallback if the image API is not
+ * configured or temporarily unavailable.
  */
 class HeroImageService
 {
@@ -26,6 +28,65 @@ class HeroImageService
     ];
 
     public function generate(string $title, string $category, string $slug): string
+    {
+        $openAi = app(OpenAiBlogService::class);
+
+        if ($openAi->configured()) {
+            try {
+                $source = $openAi->generateImage($this->imagePrompt($title, $category));
+                return $this->saveWatermarkedImage($source, $slug);
+            } catch (\Throwable $e) {
+                Log::warning('OpenAI blog hero generation failed; using branded fallback.', [
+                    'title' => $title,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $this->generateFallback($title, $category, $slug);
+    }
+
+    private function imagePrompt(string $title, string $category): string
+    {
+        return "Create a premium editorial sports-news hero photograph for this Tavs Score football article: '{$title}'. "
+            . "Category: {$category}. Use a dramatic, believable football scene relevant to the story, cinematic stadium lighting, modern sports journalism art direction, strong composition and room near the bottom-left for a watermark. "
+            . 'Do not include words, letters, logos, watermarks, scoreboards, or brand marks in the generated image.';
+    }
+
+    private function saveWatermarkedImage(string $imageBytes, string $slug): string
+    {
+        $image = @imagecreatefromstring($imageBytes);
+        if ($image === false) {
+            throw new \RuntimeException('OpenAI returned an unsupported image format.');
+        }
+
+        imagealphablending($image, true);
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $padding = max(20, (int) round($width * 0.025));
+        $barHeight = max(56, (int) round($height * 0.115));
+        $overlay = imagecolorallocatealpha($image, 2, 6, 23, 40);
+        imagefilledrectangle($image, 0, $height - $barHeight, $width, $height, $overlay);
+
+        $font = max(4, min(5, (int) floor($width / 300)));
+        $brand = 'TAVS SCORE';
+        $subline = 'FOOTBALL PREDICTIONS & ANALYSIS';
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $accent = imagecolorallocate($image, 16, 185, 129);
+        imagestring($image, $font, $padding, $height - $barHeight + $padding - 2, $brand, $white);
+        imagestring($image, 2, $padding, $height - $padding - 12, $subline, $accent);
+
+        $dir = public_path('images/blog');
+        File::ensureDirectoryExists($dir);
+        $filename = 'hero-' . $slug . '.png';
+        $path = $dir . '/' . $filename;
+        imagepng($image, $path, 8);
+        imagedestroy($image);
+
+        return '/images/blog/' . $filename;
+    }
+
+    private function generateFallback(string $title, string $category, string $slug): string
     {
         [$accent, $top, $bottom] = self::THEMES[$category] ?? self::THEMES['default'];
 

@@ -94,6 +94,13 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('blog:auto-post')->dailyAt('08:30')->timezone('Africa/Lagos');
 
+        // Tennis source update: re-import the rolling current/previous season
+        // every morning, then rebuild surface and overall Elo ratings.
+        $schedule->command('tennis:sync --ratings')
+            ->dailyAt('01:50')->timezone('Africa/Lagos')->withoutOverlapping(120);
+        $schedule->command('tennis:predict')
+            ->dailyAt('02:10')->timezone('Africa/Lagos')->withoutOverlapping();
+
         // Monthly calibration snapshot — runs on the 1st at 02:00 Lagos.
         // Builds up the public Track Record timeline that proves system improvement.
         $schedule->command('calibration:snapshot')->monthlyOn(1, '02:00')->timezone('Africa/Lagos');

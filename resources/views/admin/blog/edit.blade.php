@@ -101,6 +101,19 @@
                 </div>
 
                 <div class="a-card">
+                    <div style="font-size:.78rem; font-weight:700; color:#fff; margin-bottom:.875rem;">✨ AI Regenerate</div>
+                    <p style="font-size:.72rem; color:var(--dim); line-height:1.5; margin:0 0 .75rem;">Replace only the part you choose. The other part stays unchanged.</p>
+                    <form method="POST" action="{{ route('admin.blog.regenerate-article', $blog) }}" onsubmit="return confirm('Replace this article with a fresh AI version? The current image will stay.');" style="margin-bottom:.5rem;">
+                        @csrf
+                        <button type="submit" class="btn-a" style="width:100%;justify-content:center;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#93c5fd;">📝 Regenerate News</button>
+                    </form>
+                    <form method="POST" action="{{ route('admin.blog.regenerate-image', $blog) }}" onsubmit="return confirm('Replace the current featured image with a new Tavs Score watermarked image?');">
+                        @csrf
+                        <button type="submit" class="btn-a" style="width:100%;justify-content:center;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;">🖼️ Regenerate Image</button>
+                    </form>
+                </div>
+
+                <div class="a-card">
                     <div style="font-size:.78rem; font-weight:700; color:#fff; margin-bottom:.875rem;">🖼️ Featured Image</div>
                     @if($blog->featured_image)
                         <img src="{{ $blog->featured_image }}" alt="Current image"
