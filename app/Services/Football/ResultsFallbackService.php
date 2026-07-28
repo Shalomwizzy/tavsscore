@@ -21,10 +21,9 @@ class ResultsFallbackService
     private const NON_FINAL = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
     /** @return array{configured:bool, pending?:int, results?:int, updated?:int, error?:mixed} */
-    public function settlePending(int $days = 2): array
+    public function settlePending(int $days = 3): array
     {
-        $key = config('services.football_data.key');
-        if (blank($key)) {
+        if (blank(config('services.football_data.key')) && blank(config('services.thesportsdb.key'))) {
             return ['configured' => false, 'updated' => 0];
         }
 
@@ -51,18 +50,62 @@ class ResultsFallbackService
         }
 
         $predicted = $pending->filter(fn (FootballMatch $m) => (bool) $m->prediction)->count();
-
-        $index = $this->fetchResults($key, $days, $tz);
-        if ($index === null) {
-            return ['configured' => true, 'pending' => $pending->count(), 'predicted' => $predicted, 'error' => 'fetch_failed', 'updated' => 0, 'predicted_updated' => 0];
-        }
-
+        $unsettled = $pending->all();
         $updated = 0;
         $predictedUpdated = 0;
-        foreach ($pending as $match) {
+        $sourceRows = 0;
+
+        // Source 1: football-data.org (top competitions).
+        $fd = $this->fetchFootballData($days, $tz);
+        if ($fd !== null) {
+            $sourceRows += count($fd);
+            [$unsettled, $u, $pu] = $this->apply($unsettled, $fd, $tz);
+            $updated += $u; $predictedUpdated += $pu;
+        }
+
+        // Source 2: TheSportsDB (broad) — only for whatever is STILL unsettled,
+        // so predicted matches football-data doesn't carry still get graded.
+        if (! empty($unsettled)) {
+            $tsdb = $this->fetchTheSportsDb($days, $tz);
+            if ($tsdb !== null) {
+                $sourceRows += count($tsdb);
+                [$unsettled, $u, $pu] = $this->apply($unsettled, $tsdb, $tz);
+                $updated += $u; $predictedUpdated += $pu;
+            }
+        }
+
+        if ($updated > 0) {
+            Log::info("ResultsFallbackService: filled {$updated} result(s) ({$predictedUpdated} predicted) from free fallback sources.");
+        }
+
+        return [
+            'configured'        => true,
+            'pending'           => $pending->count(),
+            'predicted'         => $predicted,
+            'results'           => $sourceRows,
+            'updated'           => $updated,
+            'predicted_updated' => $predictedUpdated,
+        ];
+    }
+
+    /**
+     * Apply a result index to the unsettled matches. Returns [remaining, updated,
+     * predictedUpdated] so the next source only re-checks what's still open.
+     *
+     * @param  array<int, FootballMatch>  $matches
+     * @return array{0: array<int, FootballMatch>, 1: int, 2: int}
+     */
+    private function apply(array $matches, array $index, string $tz): array
+    {
+        $remaining = [];
+        $updated = 0;
+        $predictedUpdated = 0;
+
+        foreach ($matches as $match) {
             $fixtureDate = $match->match_time?->timezone($tz)->toDateString();
             $result = $this->lookup($index, $match->home_team, $match->away_team, $fixtureDate);
             if ($result === null) {
+                $remaining[] = $match;
                 continue;
             }
 
@@ -79,18 +122,7 @@ class ResultsFallbackService
             }
         }
 
-        if ($updated > 0) {
-            Log::info("ResultsFallbackService: filled {$updated} result(s) from football-data.org ({$predictedUpdated} predicted).");
-        }
-
-        return [
-            'configured'        => true,
-            'pending'           => $pending->count(),
-            'predicted'         => $predicted,
-            'results'           => count($index),
-            'updated'           => $updated,
-            'predicted_updated' => $predictedUpdated,
-        ];
+        return [$remaining, $updated, $predictedUpdated];
     }
 
     /**
@@ -99,17 +131,19 @@ class ResultsFallbackService
      *
      * @return array<string, array{home:int, away:int, ht_home:?int, ht_away:?int, date:string}>|null
      */
-    private function fetchResults(string $key, int $days, string $tz): ?array
+    private function fetchFootballData(int $days, string $tz): ?array
     {
-        $from = now($tz)->subDays($days)->toDateString();
-        $to   = now($tz)->toDateString();
+        $key = config('services.football_data.key');
+        if (blank($key)) {
+            return null;
+        }
 
         try {
             $resp = Http::withHeaders(['X-Auth-Token' => $key])
                 ->timeout(30)
                 ->get(rtrim(config('services.football_data.url'), '/') . '/matches', [
-                    'dateFrom' => $from,
-                    'dateTo'   => $to,
+                    'dateFrom' => now($tz)->subDays($days)->toDateString(),
+                    'dateTo'   => now($tz)->toDateString(),
                     'status'   => 'FINISHED',
                 ]);
         } catch (\Throwable $e) {
@@ -140,16 +174,69 @@ class ResultsFallbackService
 
             foreach (['name', 'shortName', 'tla'] as $hk) {
                 foreach (['name', 'shortName', 'tla'] as $ak) {
-                    $h = $this->norm((string) data_get($m, "homeTeam.$hk"));
-                    $a = $this->norm((string) data_get($m, "awayTeam.$ak"));
-                    if ($h !== '' && $a !== '') {
-                        $index["$h|$a"] = $row;
-                    }
+                    $this->addToIndex($index, data_get($m, "homeTeam.$hk"), data_get($m, "awayTeam.$ak"), $row);
                 }
             }
         }
 
         return $index;
+    }
+
+    /**
+     * TheSportsDB "events on a day" — one call per date in the window covers a
+     * huge range of leagues football-data doesn't. Free test key works.
+     */
+    private function fetchTheSportsDb(int $days, string $tz): ?array
+    {
+        $key = config('services.thesportsdb.key');
+        if (blank($key)) {
+            return null;
+        }
+
+        $base = rtrim(config('services.thesportsdb.url'), '/') . '/' . $key . '/eventsday.php';
+        $index = [];
+
+        for ($i = 0; $i <= $days; $i++) {
+            $date = now($tz)->subDays($i)->toDateString();
+            try {
+                $resp = Http::timeout(30)->get($base, ['d' => $date, 's' => 'Soccer']);
+            } catch (\Throwable $e) {
+                Log::warning('ResultsFallbackService: TheSportsDB request failed — ' . $e->getMessage());
+                continue;
+            }
+            if ($resp->failed()) {
+                continue;
+            }
+
+            foreach ($resp->json('events') ?? [] as $e) {
+                $home = data_get($e, 'intHomeScore');
+                $away = data_get($e, 'intAwayScore');
+                if ($home === null || $away === null || $home === '' || $away === '') {
+                    continue; // not finished / no score yet
+                }
+
+                $row = [
+                    'home'    => (int) $home,
+                    'away'    => (int) $away,
+                    'ht_home' => null,
+                    'ht_away' => null,
+                    'date'    => (string) data_get($e, 'dateEvent', $date),
+                ];
+                $this->addToIndex($index, data_get($e, 'strHomeTeam'), data_get($e, 'strAwayTeam'), $row);
+            }
+        }
+
+        return $index;
+    }
+
+    /** Index a result under the normalised "home|away" key (if both are present). */
+    private function addToIndex(array &$index, ?string $home, ?string $away, array $row): void
+    {
+        $h = $this->norm((string) $home);
+        $a = $this->norm((string) $away);
+        if ($h !== '' && $a !== '') {
+            $index["$h|$a"] = $row;
+        }
     }
 
     /** Find a result for a fixture, requiring the date to be within a day. */

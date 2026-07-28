@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class FetchResultsFallback extends Command
 {
-    protected $signature = 'results:fallback {--days=2 : How many past days of results to reconcile}';
+    protected $signature = 'results:fallback {--days=3 : How many past days of results to reconcile}';
 
     protected $description = 'Fill pending match results from football-data.org when API-Football is unavailable, then settle outcomes.';
 

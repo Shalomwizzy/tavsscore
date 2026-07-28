@@ -18,6 +18,9 @@ class ResultsFallbackTest extends TestCase
         parent::setUp();
         Config::set('services.football_data.key', 'test-key');
         Config::set('services.football_data.url', 'https://api.football-data.org/v4');
+        // Isolate the football-data source in most tests (its own test enables it).
+        Config::set('services.thesportsdb.key', null);
+        Config::set('services.thesportsdb.url', 'https://www.thesportsdb.com/api/v1/json');
     }
 
     private function pendingMatch(string $home, string $away): FootballMatch
@@ -122,6 +125,49 @@ class ResultsFallbackTest extends TestCase
         $this->assertSame(1, $result['predicted_updated']);
         $this->assertSame('FT', $match->fresh()->status);
         $this->assertSame(3, (int) $match->fresh()->home_score);
+    }
+
+    public function test_thesportsdb_settles_predicted_match_football_data_misses(): void
+    {
+        // football-data returns nothing for this fixture; the broader TheSportsDB
+        // source must still settle it because we predicted it.
+        Config::set('services.thesportsdb.key', '3');
+
+        $match = FootballMatch::create([
+            'api_id'     => rand(10000, 99999),
+            'home_team'  => 'Botafogo',
+            'away_team'  => 'Flamengo',
+            'league'     => 'Serie A',
+            'league_id'  => 71, // Brazil — not on football-data free tier
+            'status'     => 'NS',
+            'match_time' => now()->subHours(3),
+        ]);
+        \App\Models\Prediction::create([
+            'match_id'          => $match->id,
+            'home_win_prob'     => 40.0,
+            'draw_prob'         => 30.0,
+            'away_win_prob'     => 30.0,
+            'predicted_outcome' => 'Over 2.5 Goals',
+            'confidence'        => 65,
+            'analysis'          => 'Test analysis.',
+        ]);
+
+        Http::fake([
+            'api.football-data.org/*' => Http::response(['matches' => []], 200),
+            'thesportsdb.com/*'       => Http::response(['events' => [[
+                'strHomeTeam'  => 'Botafogo',
+                'strAwayTeam'  => 'Flamengo',
+                'intHomeScore' => '2',
+                'intAwayScore' => '2',
+                'dateEvent'    => now()->toDateString(),
+            ]]], 200),
+        ]);
+
+        $result = app(ResultsFallbackService::class)->settlePending(3);
+
+        $this->assertSame(1, $result['predicted_updated']);
+        $this->assertSame('FT', $match->fresh()->status);
+        $this->assertSame(2, (int) $match->fresh()->home_score);
     }
 
     public function test_ignores_already_finished_matches(): void

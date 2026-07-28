@@ -75,6 +75,14 @@ return [
         'url' => env('FOOTBALL_DATA_URL', 'https://api.football-data.org/v4'),
     ],
 
+    // Second, broader free results source (many more leagues than football-data)
+    // used to settle predicted matches football-data doesn't carry. Free test
+    // key "3" works out of the box; set THESPORTSDB_KEY for a personal key.
+    'thesportsdb' => [
+        'key' => env('THESPORTSDB_KEY', '3'),
+        'url' => env('THESPORTSDB_URL', 'https://www.thesportsdb.com/api/v1/json'),
+    ],
+
     'gemini' => [
         // Optional second-opinion AI. Leave blank to disable.
         // Get a free key: https://aistudio.google.com/app/apikey
