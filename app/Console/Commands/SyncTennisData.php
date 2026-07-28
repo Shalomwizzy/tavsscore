@@ -25,20 +25,26 @@ class SyncTennisData extends Command
         if ($tours === []) { $this->error('Tour must be atp, wta, or both.'); return self::FAILURE; }
 
         $total = 0;
-        try {
-            foreach (range($from, $to) as $year) foreach ($tours as $tour) {
-                $count = $importer->import($tour, $year);
-                $total += $count;
-                $this->line("{$tour} {$year}: {$count} rows processed");
+        // Import each year/tour independently — a missing file (e.g. the current
+        // season isn't published yet) must not abort the whole backfill or skip
+        // the ratings rebuild.
+        foreach (range($from, $to) as $year) {
+            foreach ($tours as $tour) {
+                try {
+                    $count = $importer->import($tour, $year);
+                    $total += $count;
+                    $this->line("{$tour} {$year}: {$count} rows processed");
+                } catch (\Throwable $e) {
+                    $this->warn("{$tour} {$year}: skipped — {$e->getMessage()}");
+                }
             }
-            if ($this->option('ratings')) {
-                $this->line('Rebuilding tennis Elo ratings…');
-                $ratings->rebuild();
-            }
-        } catch (\Throwable $e) {
-            $this->error($e->getMessage());
-            return self::FAILURE;
         }
+
+        if ($this->option('ratings')) {
+            $this->line('Rebuilding tennis Elo ratings…');
+            $ratings->rebuild();
+        }
+
         $this->info("Tennis sync complete: {$total} rows processed.");
         return self::SUCCESS;
     }

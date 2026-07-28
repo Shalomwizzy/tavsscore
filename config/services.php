@@ -54,10 +54,11 @@ return [
     ],
 
     'tennis_data' => [
-        // Leave blank until a source is verified for your intended commercial use.
-        // URLs may contain {year}; the importer substitutes the requested year.
-        'atp_url' => env('TENNIS_ATP_SOURCE_URL'),
-        'wta_url' => env('TENNIS_WTA_SOURCE_URL'),
+        // Jeff Sackmann's public ATP/WTA match CSVs (CC BY-NC-SA — attribution,
+        // non-commercial, share-alike). {year} is substituted per season.
+        // Override via env to point at a differently-licensed source.
+        'atp_url' => env('TENNIS_ATP_SOURCE_URL', 'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_{year}.csv'),
+        'wta_url' => env('TENNIS_WTA_SOURCE_URL', 'https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/wta_matches_{year}.csv'),
     ],
 
     'tennis_live' => [

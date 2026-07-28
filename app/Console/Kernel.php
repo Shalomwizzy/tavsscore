@@ -190,27 +190,28 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(30)
             ->runInBackground();
 
-        // Team season stats → twice weekly (Mon/Thu 06:20), after standings load
-        // (it reads team IDs from the standings table). ~1 call per team.
+        // Season stats we already hold rarely change week-to-week, so we only
+        // refresh them ONCE a week (Monday) to conserve API quota — never daily.
+        // Team season stats: Monday 06:20, after standings load (reads team IDs
+        // from the standings table). ~1 call per team.
         $schedule->command('stats:fetch-teams')
-            ->days([1, 4])
-            ->at('06:20')
+            ->weeklyOn(1, '06:20')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(60)
             ->runInBackground();
 
-        // Player stats are quota-heavy (paginated per league) → weekly, Sunday
-        // 20:00, well clear of every critical API window for the day.
+        // Player stats are the heaviest job (paginated per league, ~1,000+ calls)
+        // → weekly, Monday 20:00, in a quiet window clear of picks/odds.
         $schedule->command('stats:fetch-players')
-            ->weeklyOn(0, '20:00')
+            ->weeklyOn(1, '20:00')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(120)
             ->runInBackground();
 
-        // Fantasy best XI — rebuilt weekly from the fresh player stats (Sunday
-        // 21:00, after stats:fetch-players and Thursday before the weekend GW).
+        // Fantasy best XI — rebuilt from the fresh player stats (Monday 20:40,
+        // after stats:fetch-players) and again Thursday before the weekend GW.
         $schedule->command('fantasy:build')
-            ->weeklyOn(0, '21:00')
+            ->weeklyOn(1, '20:40')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping();
         $schedule->command('fantasy:build')
