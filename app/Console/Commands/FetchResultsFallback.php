@@ -27,9 +27,9 @@ class FetchResultsFallback extends Command
         }
 
         $fd   = $result['fd_rows']   === null ? 'not configured' : $result['fd_rows'] . ' rows';
-        $tsdb = $result['tsdb_rows'] === null ? 'not checked (nothing left / key unset)' : $result['tsdb_rows'] . ' rows';
+        $espn = $result['espn_rows'] === null ? 'not checked (nothing left)' : $result['espn_rows'] . ' rows';
 
-        $this->info("Sources checked → football-data.org: {$fd} | TheSportsDB: {$tsdb}");
+        $this->info("Sources checked → football-data.org: {$fd} | ESPN: {$espn}");
         $this->info("Filled {$result['updated']} result(s) ({$result['predicted_updated']} predicted) "
             . "of {$result['pending']} pending ({$result['predicted']} predicted).");
 

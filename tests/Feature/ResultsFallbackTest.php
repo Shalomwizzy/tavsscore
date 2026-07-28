@@ -18,9 +18,9 @@ class ResultsFallbackTest extends TestCase
         parent::setUp();
         Config::set('services.football_data.key', 'test-key');
         Config::set('services.football_data.url', 'https://api.football-data.org/v4');
-        // Isolate the football-data source in most tests (its own test enables it).
-        Config::set('services.thesportsdb.key', null);
-        Config::set('services.thesportsdb.url', 'https://www.thesportsdb.com/api/v1/json');
+        // Isolate the football-data source in most tests (the ESPN test enables it).
+        Config::set('services.espn.leagues', []);
+        Config::set('services.espn.url', 'https://site.api.espn.com/apis/site/v2/sports/soccer');
     }
 
     private function pendingMatch(string $home, string $away): FootballMatch
@@ -127,18 +127,18 @@ class ResultsFallbackTest extends TestCase
         $this->assertSame(3, (int) $match->fresh()->home_score);
     }
 
-    public function test_thesportsdb_settles_predicted_match_football_data_misses(): void
+    public function test_espn_settles_predicted_match_football_data_misses(): void
     {
-        // football-data returns nothing for this fixture; the broader TheSportsDB
-        // source must still settle it because we predicted it.
-        Config::set('services.thesportsdb.key', '3');
+        // football-data returns nothing for this fixture; ESPN (broad) must still
+        // settle it because we predicted it — matched via a name variant.
+        Config::set('services.espn.leagues', ['uefa.champions_qual']);
 
         $match = FootballMatch::create([
             'api_id'     => rand(10000, 99999),
-            'home_team'  => 'Botafogo',
-            'away_team'  => 'Flamengo',
-            'league'     => 'Serie A',
-            'league_id'  => 71, // Brazil — not on football-data free tier
+            'home_team'  => 'KuPS',       // ESPN calls it "KuPS Kuopio" / abbr "KUPS"
+            'away_team'  => 'Sabah FA',   // ESPN calls it "Sabah FK" / short "Sabah"
+            'league'     => 'UEFA Champions League',
+            'league_id'  => 2,
             'status'     => 'NS',
             'match_time' => now()->subHours(3),
         ]);
@@ -147,19 +147,22 @@ class ResultsFallbackTest extends TestCase
             'home_win_prob'     => 40.0,
             'draw_prob'         => 30.0,
             'away_win_prob'     => 30.0,
-            'predicted_outcome' => 'Over 2.5 Goals',
-            'confidence'        => 65,
+            'predicted_outcome' => 'Away Win',
+            'confidence'        => 60,
             'analysis'          => 'Test analysis.',
         ]);
 
         Http::fake([
             'api.football-data.org/*' => Http::response(['matches' => []], 200),
-            'thesportsdb.com/*'       => Http::response(['events' => [[
-                'strHomeTeam'  => 'Botafogo',
-                'strAwayTeam'  => 'Flamengo',
-                'intHomeScore' => '2',
-                'intAwayScore' => '2',
-                'dateEvent'    => now()->toDateString(),
+            'site.api.espn.com/*'     => Http::response(['events' => [[
+                'date'         => now()->toIso8601String(),
+                'competitions' => [[
+                    'status'      => ['type' => ['completed' => true]],
+                    'competitors' => [
+                        ['homeAway' => 'home', 'score' => '0', 'team' => ['displayName' => 'KuPS Kuopio', 'shortDisplayName' => 'KuPS Kuopio', 'abbreviation' => 'KUPS']],
+                        ['homeAway' => 'away', 'score' => '2', 'team' => ['displayName' => 'Sabah FK', 'shortDisplayName' => 'Sabah', 'abbreviation' => 'SAB']],
+                    ],
+                ]],
             ]]], 200),
         ]);
 
@@ -167,7 +170,8 @@ class ResultsFallbackTest extends TestCase
 
         $this->assertSame(1, $result['predicted_updated']);
         $this->assertSame('FT', $match->fresh()->status);
-        $this->assertSame(2, (int) $match->fresh()->home_score);
+        $this->assertSame(0, (int) $match->fresh()->home_score);
+        $this->assertSame(2, (int) $match->fresh()->away_score);
     }
 
     public function test_ignores_already_finished_matches(): void

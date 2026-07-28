@@ -23,7 +23,7 @@ class ResultsFallbackService
     /** @return array{configured:bool, pending?:int, results?:int, updated?:int, error?:mixed} */
     public function settlePending(int $days = 3): array
     {
-        if (blank(config('services.football_data.key')) && blank(config('services.thesportsdb.key'))) {
+        if (blank(config('services.football_data.key')) && empty(config('services.espn.leagues'))) {
             return ['configured' => false, 'updated' => 0];
         }
 
@@ -63,14 +63,15 @@ class ResultsFallbackService
             $updated += $u; $predictedUpdated += $pu;
         }
 
-        // Source 2: TheSportsDB (broad) — always checked for whatever is STILL
-        // unsettled, so predicted matches football-data doesn't carry get graded.
-        $tsdbRows = null;
+        // Source 2: ESPN (broad, no key) — checked for whatever is STILL
+        // unsettled, so predicted matches football-data doesn't carry (UEFA
+        // qualifiers, non-European leagues) still get graded.
+        $espnRows = null;
         if (! empty($unsettled)) {
-            $tsdb = $this->fetchTheSportsDb($days, $tz);
-            $tsdbRows = $tsdb === null ? null : count($tsdb);
-            if ($tsdb !== null) {
-                [$unsettled, $u, $pu] = $this->apply($unsettled, $tsdb, $tz);
+            $espn = $this->fetchEspn($days, $tz);
+            $espnRows = $espn === null ? null : count($espn);
+            if ($espn !== null) {
+                [$unsettled, $u, $pu] = $this->apply($unsettled, $espn, $tz);
                 $updated += $u; $predictedUpdated += $pu;
             }
         }
@@ -86,7 +87,7 @@ class ResultsFallbackService
             'updated'           => $updated,
             'predicted_updated' => $predictedUpdated,
             'fd_rows'           => $fdRows,   // null = football-data key not set
-            'tsdb_rows'         => $tsdbRows, // null = not reached / key not set
+            'espn_rows'         => $espnRows, // null = not reached / no leagues configured
         ];
     }
 
@@ -185,46 +186,61 @@ class ResultsFallbackService
     }
 
     /**
-     * TheSportsDB "events on a day" — one call per date in the window covers a
-     * huge range of leagues football-data doesn't. Free test key works.
+     * ESPN public scoreboard — one call per configured league slug covers the
+     * whole date window. Covers UEFA qualifiers and many non-European leagues
+     * football-data's free tier omits. No API key required.
      */
-    private function fetchTheSportsDb(int $days, string $tz): ?array
+    private function fetchEspn(int $days, string $tz): ?array
     {
-        $key = config('services.thesportsdb.key');
-        if (blank($key)) {
+        $slugs = (array) config('services.espn.leagues', []);
+        if (empty($slugs)) {
             return null;
         }
 
-        $base = rtrim(config('services.thesportsdb.url'), '/') . '/' . $key . '/eventsday.php';
+        $base  = rtrim(config('services.espn.url'), '/');
+        $range = now($tz)->subDays($days)->format('Ymd') . '-' . now($tz)->format('Ymd');
         $index = [];
 
-        for ($i = 0; $i <= $days; $i++) {
-            $date = now($tz)->subDays($i)->toDateString();
+        foreach ($slugs as $slug) {
             try {
-                $resp = Http::timeout(30)->get($base, ['d' => $date, 's' => 'Soccer']);
-            } catch (\Throwable $e) {
-                Log::warning('ResultsFallbackService: TheSportsDB request failed — ' . $e->getMessage());
+                $resp = Http::timeout(20)->get("{$base}/{$slug}/scoreboard", ['dates' => $range]);
+            } catch (\Throwable) {
                 continue;
             }
             if ($resp->failed()) {
                 continue;
             }
 
-            foreach ($resp->json('events') ?? [] as $e) {
-                $home = data_get($e, 'intHomeScore');
-                $away = data_get($e, 'intAwayScore');
-                if ($home === null || $away === null || $home === '' || $away === '') {
-                    continue; // not finished / no score yet
+            foreach ($resp->json('events') ?? [] as $ev) {
+                $comp = data_get($ev, 'competitions.0');
+                if (! $comp || ! data_get($comp, 'status.type.completed')) {
+                    continue; // not finished yet
+                }
+
+                $home = collect(data_get($comp, 'competitors', []))->firstWhere('homeAway', 'home');
+                $away = collect(data_get($comp, 'competitors', []))->firstWhere('homeAway', 'away');
+                $hs = $home['score'] ?? null;
+                $as = $away['score'] ?? null;
+                if ($hs === null || $as === null || $hs === '' || $as === '') {
+                    continue;
                 }
 
                 $row = [
-                    'home'    => (int) $home,
-                    'away'    => (int) $away,
+                    'home'    => (int) $hs,
+                    'away'    => (int) $as,
                     'ht_home' => null,
                     'ht_away' => null,
-                    'date'    => (string) data_get($e, 'dateEvent', $date),
+                    'date'    => substr((string) data_get($ev, 'date'), 0, 10),
                 ];
-                $this->addToIndex($index, data_get($e, 'strHomeTeam'), data_get($e, 'strAwayTeam'), $row);
+
+                // Index under every name variant (incl. abbreviation) so free-form
+                // fixture names like "KuPS" or "Sabah FA" still match.
+                $fields = ['displayName', 'shortDisplayName', 'name', 'location', 'abbreviation'];
+                foreach ($fields as $hk) {
+                    foreach ($fields as $ak) {
+                        $this->addToIndex($index, data_get($home, "team.$hk"), data_get($away, "team.$ak"), $row);
+                    }
+                }
             }
         }
 
@@ -244,7 +260,25 @@ class ResultsFallbackService
     /** Find a result for a fixture, requiring the date to be within a day. */
     private function lookup(array $index, string $home, string $away, ?string $fixtureDate): ?array
     {
-        $row = $index[$this->norm($home) . '|' . $this->norm($away)] ?? null;
+        $hk = $this->norm($home);
+        $ak = $this->norm($away);
+        $row = $index["$hk|$ak"] ?? null;
+
+        // Fuzzy fallback: one provider often adds a city ("Vardar" vs "Vardar
+        // Skopje", "Dila" vs "Dila Gori"). Match when both sides' tokens are a
+        // subset of the candidate's (or vice versa).
+        if ($row === null) {
+            $ht = array_values(array_filter(explode(' ', $hk)));
+            $at = array_values(array_filter(explode(' ', $ak)));
+            foreach ($index as $keyStr => $candidate) {
+                [$ch, $ca] = array_pad(explode('|', $keyStr), 2, '');
+                if ($this->tokensContain($ht, explode(' ', $ch)) && $this->tokensContain($at, explode(' ', $ca))) {
+                    $row = $candidate;
+                    break;
+                }
+            }
+        }
+
         if ($row === null) {
             return null;
         }
@@ -252,6 +286,23 @@ class ResultsFallbackService
             return null; // a different meeting of the same two teams
         }
         return $row;
+    }
+
+    /** True when the shorter token list is fully contained in the longer one. */
+    private function tokensContain(array $a, array $b): bool
+    {
+        $a = array_values(array_filter($a));
+        $b = array_values(array_filter($b));
+        if (empty($a) || empty($b)) {
+            return false;
+        }
+        [$short, $long] = count($a) <= count($b) ? [$a, $b] : [$b, $a];
+        foreach ($short as $t) {
+            if (! in_array($t, $long, true)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -263,7 +314,7 @@ class ResultsFallbackService
     {
         $s = Str::of($name)->ascii()->lower()->replaceMatches('/[^a-z0-9 ]/', ' ')->squish();
         $stop = ['fc', 'cf', 'afc', 'sc', 'ac', 'ss', 'ssc', 'us', 'rc', 'cd', 'ca', 'ud', 'sd', 'cp',
-            'club', 'de', 'the', 'football', 'calcio', 'if', 'bk', 'fk', 'sk'];
+            'club', 'de', 'the', 'football', 'calcio', 'if', 'bk', 'fk', 'sk', 'fa', 'cfr'];
         $words = array_filter(explode(' ', (string) $s), fn ($w) => $w !== '' && ! in_array($w, $stop, true));
         return implode(' ', $words);
     }

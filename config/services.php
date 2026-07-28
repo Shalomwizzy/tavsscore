@@ -75,12 +75,20 @@ return [
         'url' => env('FOOTBALL_DATA_URL', 'https://api.football-data.org/v4'),
     ],
 
-    // Second, broader free results source (many more leagues than football-data)
-    // used to settle predicted matches football-data doesn't carry. Free test
-    // key "3" works out of the box; set THESPORTSDB_KEY for a personal key.
-    'thesportsdb' => [
-        'key' => env('THESPORTSDB_KEY', '3'),
-        'url' => env('THESPORTSDB_URL', 'https://www.thesportsdb.com/api/v1/json'),
+    // Second, broader free results source — ESPN's public scoreboard (no key).
+    // Covers the competitions football-data's free tier misses, incl. UEFA
+    // qualifiers and non-European leagues. One call per league slug per run.
+    'espn' => [
+        'url'     => env('ESPN_SOCCER_URL', 'https://site.api.espn.com/apis/site/v2/sports/soccer'),
+        'leagues' => env('ESPN_SOCCER_LEAGUES')
+            ? array_values(array_filter(array_map('trim', explode(',', (string) env('ESPN_SOCCER_LEAGUES')))))
+            : [
+                'uefa.champions_qual', 'uefa.europa_qual', 'uefa.europa.conf_qual',
+                'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'uefa.super_cup',
+                'usa.1', 'mex.1', 'bra.1', 'arg.1', 'jpn.1', 'kor.1', 'aus.1', 'ksa.1',
+                'nor.1', 'swe.1', 'den.1', 'fin.1', 'rus.1', 'tur.1', 'gre.1', 'sco.1',
+                'bel.1', 'aut.1', 'sui.1', 'pol.1', 'cze.1', 'rou.1', 'srb.1', 'cro.1',
+            ],
     ],
 
     'gemini' => [
