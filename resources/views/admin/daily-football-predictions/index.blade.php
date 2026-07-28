@@ -35,7 +35,7 @@
         <td>@if($prediction->was_correct === true)<span class="badge badge-green">✓ Won</span>@elseif($prediction->was_correct === false)<span class="badge badge-red">✗ Lost</span>@else<span class="badge badge-gray">⏳ Pending</span>@endif</td>
     </tr>
 @empty
-    <tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--dim);">No official daily football picks were published for this date.</td></tr>
+    <tr><td colspan="6" style="padding:2.5rem;text-align:center;color:var(--dim);">No football predictions were generated for this date.</td></tr>
 @endforelse
 </tbody></table></div></div>
 @endsection

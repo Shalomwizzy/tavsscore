@@ -6,7 +6,7 @@ use App\Models\Prediction;
 use App\Support\PickHelpers;
 use Carbon\CarbonImmutable;
 
-/** Builds the small, date-based table of official daily football picks. */
+/** Builds the date-based table of every generated football prediction. */
 class DailyFootballPredictionTableService
 {
     private const FINISHED_STATUSES = ['FT', 'AET', 'PEN'];
@@ -20,10 +20,11 @@ class DailyFootballPredictionTableService
 
         $predictions = Prediction::query()
             ->with('match')
-            ->where('is_daily_pick', true)
+            ->whereNotNull('predicted_outcome')
             ->whereHas('match', fn ($query) => $query->whereBetween('match_time', [$date, $end]))
-            ->orderBy('pick_rank')
-            ->get();
+            ->get()
+            ->sortBy(fn (Prediction $prediction) => $prediction->match?->match_time?->getTimestamp() ?? PHP_INT_MAX)
+            ->values();
 
         $predictions->each(fn (Prediction $prediction) => $this->settleIfFinished($prediction));
 

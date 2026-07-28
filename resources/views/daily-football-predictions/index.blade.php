@@ -35,7 +35,7 @@
 <div class="wrap">
     <header class="dfp-head">
         <h1 class="dfp-title">📅 Daily Football Predictions</h1>
-        <p class="dfp-sub">Official daily picks only. See the predicted outcome and its verified result.</p>
+        <p class="dfp-sub">Every football prediction generated for the selected date, with its predicted outcome and verified result.</p>
     </header>
 
     <nav class="dfp-date" aria-label="Prediction date">
@@ -56,7 +56,7 @@
 
     <div class="dfp-card">
         @if($predictions->isEmpty())
-            <div class="dfp-empty">No official daily football picks were published for this date.</div>
+            <div class="dfp-empty">No football predictions were generated for this date.</div>
         @else
             <table class="dfp-table"><thead><tr><th>Time</th><th>Match</th><th>Predicted outcome</th><th>Result</th></tr></thead><tbody>
             @foreach($predictions as $prediction)
