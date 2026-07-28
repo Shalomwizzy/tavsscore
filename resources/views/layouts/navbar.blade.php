@@ -96,7 +96,7 @@
             </a>
 
             {{-- More dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','winners.*','hall-of-fame.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
+            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','daily-football-predictions.*','winners.*','hall-of-fame.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     More
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
@@ -121,6 +121,10 @@
                     <a href="{{ route('results.index') }}" class="nav-drop-item {{ request()->routeIs('results.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📜</span>
                         <span><span class="ndi-label">Results</span><span class="ndi-sub">Past match outcomes</span></span>
+                    </a>
+                    <a href="{{ route('daily-football-predictions.index') }}" class="nav-drop-item {{ request()->routeIs('daily-football-predictions.*') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">📅</span>
+                        <span><span class="ndi-label">Daily Results</span><span class="ndi-sub">Today's and yesterday's picks</span></span>
                     </a>
                     <div class="nav-drop-divider"></div>
                     <a href="{{ route('winners.index') }}" class="nav-drop-item {{ request()->routeIs('winners.*') ? 'active' : '' }}" role="menuitem">
@@ -305,6 +309,10 @@
         <a href="{{ route('results.index') }}" class="drawer-item {{ request()->routeIs('results.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📜</span>
             <span class="di-text">Results</span>
+        </a>
+        <a href="{{ route('daily-football-predictions.index') }}" class="drawer-item {{ request()->routeIs('daily-football-predictions.*') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">📅</span>
+            <span class="di-text">Daily Results</span>
         </a>
         <a href="{{ route('winners.index') }}" class="drawer-item {{ request()->routeIs('winners.*') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🏆</span>

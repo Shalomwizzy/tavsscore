@@ -12,6 +12,7 @@ use App\Http\Controllers\Team3PlusController;
 use App\Http\Controllers\DoubleChanceController;
 use App\Http\Controllers\WinnersController;
 use App\Http\Controllers\DailyPickController;
+use App\Http\Controllers\DailyFootballPredictionsController;
 use App\Http\Controllers\DrawPicksController;
 use App\Http\Controllers\GGPicksController;
 use App\Http\Controllers\LineupPicksController;
@@ -34,6 +35,7 @@ Route::get('/predictions/{slug}',  [PredictionPageController::class, 'show'])->n
 Route::get('/tennis', [App\Http\Controllers\TennisPredictionController::class, 'index'])->name('tennis.index');
 Route::get('/tennis/predictions/{tennisPrediction}', [App\Http\Controllers\TennisPredictionController::class, 'show'])->name('tennis.show');
 Route::get('/picks',        [DailyPickController::class, 'index'])->name('picks.index');
+Route::get('/daily-football-predictions', [DailyFootballPredictionsController::class, 'index'])->name('daily-football-predictions.index');
 Route::get('/draw-picks',   [DrawPicksController::class,  'index'])->name('draw-picks.index');
 Route::get('/gg-picks',     [GGPicksController::class,   'index'])->name('gg-picks.index');
 Route::get('/lineup-picks',  [LineupPicksController::class, 'index'])->name('lineup-picks.index');
@@ -112,6 +114,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Predictions */
         Route::get('/predictions',          [Admin\PredictionAdminController::class, 'index'])->name('predictions');
         Route::post('/predictions/generate',[Admin\PredictionAdminController::class, 'generate'])->name('predictions.generate');
+        Route::get('/daily-football-predictions', [Admin\DailyFootballPredictionsAdminController::class, 'index'])->name('daily-football-predictions.index');
 
         /* Tennis (isolated from football) */
         Route::get('/tennis', [Admin\TennisAdminController::class, 'index'])->name('tennis.index');

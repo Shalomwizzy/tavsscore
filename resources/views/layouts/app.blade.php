@@ -682,6 +682,7 @@
                     <a href="{{ route('predictions.index') }}">🤖 Predictions</a>
                     <a href="{{ route('africa.index') }}">🌍 Africa</a>
                     <a href="{{ route('results.index') }}">📜 Results</a>
+                    <a href="{{ route('daily-football-predictions.index') }}">📅 Daily Results</a>
                     <a href="{{ route('stats.index') }}">📊 Stats</a>
                 </div>
                 <div class="footer-col">
