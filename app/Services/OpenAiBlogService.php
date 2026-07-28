@@ -76,7 +76,7 @@ class OpenAiBlogService
             ->acceptJson()
             ->asJson()
             ->timeout($timeout)
-            ->retry(2, 1000, fn ($exception, $response) => ! ($response && $response->status() === 429))
+            ->retry(2, 1000)
             ->post(rtrim(config('services.openai.url'), '/') . '/' . $path, $payload);
 
         if ($response->failed()) {

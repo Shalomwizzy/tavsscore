@@ -90,7 +90,21 @@ class AutoBlogPost extends Command
             $category = $this->pickCategory($matchList);
             $excerpt  = $this->buildExcerpt($content);
             $slug     = BlogPost::generateSlug($json['title']);
-            $image    = app(\App\Services\Blog\HeroImageService::class)->generate($json['title'], $category, $slug);
+            $image    = null;
+
+            // A missing image must never be replaced with an SVG or generic
+            // placeholder. Publish the verified article and make the missing
+            // image visible in Admin so it can be created in ChatGPT Plus and
+            // uploaded by an editor.
+            try {
+                $image = app(\App\Services\Blog\HeroImageService::class)->generate($json['title'], $category, $slug);
+            } catch (Throwable $imageError) {
+                Log::warning('Auto blog image generation failed; publishing without an image.', [
+                    'title' => $json['title'],
+                    'error' => $imageError->getMessage(),
+                ]);
+                $this->warn('Image was not generated. The article will be published as Image Needed for an admin upload.');
+            }
 
             $post = BlogPost::create([
                 'title'           => $json['title'],

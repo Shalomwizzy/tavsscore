@@ -49,6 +49,9 @@
                         @else
                             <span class="badge badge-gray">Draft</span>
                         @endif
+                        @if(! $post->image_url)
+                            <br><span class="badge" style="margin-top:.35rem;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.35);color:#fcd34d;">Image Needed</span>
+                        @endif
                     </td>
                     <td style="color:var(--dim); white-space:nowrap; font-size:.75rem;">{{ $post->created_at->format('M d, Y') }}</td>
                     <td>

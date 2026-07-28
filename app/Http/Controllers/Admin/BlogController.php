@@ -28,7 +28,7 @@ class BlogController extends Controller
         return view('admin.blog.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, HeroImageService $images): RedirectResponse
     {
         $data = $request->validate([
             'title'          => ['required', 'string', 'max:255'],
@@ -47,7 +47,7 @@ class BlogController extends Controller
         $data['published_at'] = $data['is_published'] ? now() : null;
 
         if ($request->hasFile('image_file')) {
-            $data['image_path']     = $this->saveImage($request->file('image_file'));
+            $data['image_path']     = $images->saveUploadedImage($request->file('image_file'));
             $data['featured_image'] = null;
         }
         unset($data['image_file']);
@@ -64,7 +64,7 @@ class BlogController extends Controller
         return view('admin.blog.edit', compact('blog', 'imagePreview'));
     }
 
-    public function update(Request $request, BlogPost $blog): RedirectResponse
+    public function update(Request $request, BlogPost $blog, HeroImageService $images): RedirectResponse
     {
         $data = $request->validate([
             'title'          => ['required', 'string', 'max:255'],
@@ -87,7 +87,7 @@ class BlogController extends Controller
 
         if ($request->hasFile('image_file')) {
             $this->deleteImage($blog->image_path);
-            $data['image_path']     = $this->saveImage($request->file('image_file'));
+            $data['image_path']     = $images->saveUploadedImage($request->file('image_file'));
             $data['featured_image'] = null;
         } else {
             unset($data['featured_image']);
@@ -200,13 +200,6 @@ class BlogController extends Controller
     {
         $text = preg_replace('/\s+/', ' ', trim(strip_tags($html)));
         return Str::limit($text, 155, '…');
-    }
-
-    private function saveImage(\Illuminate\Http\UploadedFile $file): string
-    {
-        $filename  = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('images/blog'), $filename);
-        return 'images/blog/' . $filename;
     }
 
     private function deleteImage(?string $imagePath): void
