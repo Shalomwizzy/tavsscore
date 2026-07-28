@@ -1503,6 +1503,77 @@ class PredictionService
     }
 
     /**
+     * Select up to 10 total-corners picks for today — the safest "Over X.5
+     * Corners" market on each fixture's board that clears the floor, ranked by
+     * probability. The chosen line is stored in corners_label. Graded post-match
+     * from fixture_statistics.
+     */
+    public function selectCornersPicks(): EloquentCollection
+    {
+        $today  = now('Africa/Lagos')->startOfDay();
+        $cutoff = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+        $floor = 70.0;
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->whereNotNull('market_board')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded)
+            )
+            ->get()
+            ->map(function (Prediction $p) use ($floor) {
+                $best = $this->bestCornersMarket($p->market_board, $floor);
+                return $best ? ['pred' => $p, 'label' => $best['market'], 'prob' => $best['prob']] : null;
+            })
+            ->filter()
+            ->sortByDesc(fn ($x) => (in_array((int) $x['pred']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + $x['prob'])
+            ->take(10)
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()
+                ->where('is_corners_pick', true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy('corners_rank')->get();
+        }
+
+        Prediction::query()
+            ->where('is_corners_pick', true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update(['is_corners_pick' => false, 'corners_rank' => null, 'corners_label' => null]);
+
+        $candidates->each(function ($x, int $idx) {
+            $x['pred']->update([
+                'is_corners_pick' => true,
+                'corners_rank'    => $idx + 1,
+                'corners_label'   => $x['label'],
+            ]);
+        });
+
+        return new EloquentCollection($candidates->pluck('pred')->all());
+    }
+
+    /** Highest-probability "Over X.5 Corners" market on a board that clears the floor. */
+    private function bestCornersMarket(?array $board, float $floor): ?array
+    {
+        if (! is_array($board)) return null;
+        $best = null;
+        foreach (['Over 8.5 Corners', 'Over 9.5 Corners', 'Over 10.5 Corners', 'Over 11.5 Corners'] as $k) {
+            $prob = isset($board[$k]) ? (float) $board[$k] : null;
+            if ($prob === null || $prob < $floor) continue;
+            if ($best === null || $prob > $best['prob']) {
+                $best = ['market' => $k, 'prob' => $prob];
+            }
+        }
+        return $best;
+    }
+
+    /**
      * Select up to 5 "A Team to Score 3+ Goals" picks for today.
      * For the "A Team to Score 3+" YES/NO market, we predict NO on the team
      * with the lowest Poisson P(goals ≥ 3) — i.e. the team we are most confident

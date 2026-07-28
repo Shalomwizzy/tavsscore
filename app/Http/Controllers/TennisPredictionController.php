@@ -9,7 +9,11 @@ class TennisPredictionController extends Controller
 {
     public function index(): View
     {
-        abort_unless(config('services.tennis.public'), 404);
+        // Predictions are hidden until the historical data is current enough to
+        // trust — show a "coming soon" teaser instead of unreliable picks.
+        if (! config('services.tennis.public')) {
+            return view('tennis.coming-soon');
+        }
 
         $predictions = TennisPrediction::query()->with('match')
             ->whereHas('match')
@@ -17,9 +21,11 @@ class TennisPredictionController extends Controller
         return view('tennis.index', compact('predictions'));
     }
 
-    public function show(TennisPrediction $tennisPrediction): View
+    public function show(TennisPrediction $tennisPrediction)
     {
-        abort_unless(config('services.tennis.public'), 404);
+        if (! config('services.tennis.public')) {
+            return redirect()->route('tennis.index');
+        }
 
         $tennisPrediction->load('match');
         return view('tennis.show', ['prediction' => $tennisPrediction, 'match' => $tennisPrediction->match]);

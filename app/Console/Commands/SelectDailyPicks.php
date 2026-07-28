@@ -110,6 +110,23 @@ class SelectDailyPicks extends Command
             }
         }
 
+        // ── Corner picks ───────────────────────────────────────────
+        if (! $force && Cache::has("picks_sent_corners_{$date}")) {
+            $this->info('Corner picks already notified — skipping re-selection.');
+        } else {
+            $this->info('Selecting Corner picks…');
+            $cornerPicks = $service->selectCornersPicks();
+            if ($cornerPicks->isEmpty()) {
+                $this->warn('No qualifying Corner picks today.');
+            } else {
+                foreach ($cornerPicks as $p) {
+                    $match = $p->match;
+                    $this->line(sprintf('  🚩 Corners #%d  %s vs %s  (%s)', $p->corners_rank, $match?->home_team ?? '?', $match?->away_team ?? '?', $p->corners_label));
+                }
+                $this->info("✅ {$cornerPicks->count()} Corner picks selected.");
+            }
+        }
+
         // ── Team 3+ picks ──────────────────────────────────────────
         if (! $force && Cache::has("picks_sent_team3plus_{$date}")) {
             $this->info('Team 3+ picks already notified — skipping re-selection.');

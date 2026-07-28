@@ -194,6 +194,7 @@ class CheckPredictionOutcomes extends Command
                 ->orWhere('is_over25_pick', true)
                 ->orWhere('is_team3plus_pick', true)
                 ->orWhere('is_double_chance_pick', true)
+                ->orWhere('is_corners_pick', true)
             )
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
@@ -298,6 +299,29 @@ class CheckPredictionOutcomes extends Command
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
                 $prediction->update(['double_chance_notified' => true]);
+            }
+
+            // Corners — graded from post-match fixture statistics against the
+            // stored line. resolveForMatch returns null until stats are fetched,
+            // so it stays pending (never a false loss) and retries next run.
+            if ($prediction->is_corners_pick && ! $prediction->corners_notified) {
+                $won = PickHelpers::resolveForMatch($match, $prediction->corners_label);
+                if ($won !== null) {
+                    $label = $prediction->corners_label ?? 'Corners';
+                    $this->line($won
+                        ? "  🚩✅  {$matchLabel} {$score} — {$label} hit"
+                        : "  🚩❌  {$matchLabel} {$score} — {$label} missed");
+
+                    $won
+                        ? $oneSignal->notifyPickWon($matchLabel, $label, $score, $league, '/corners-picks')
+                        : $oneSignal->notifyPickLost($matchLabel, $label, $score, $league, '/corners-picks');
+                    if ($won && ! $prediction->winner_reminder_sent) {
+                        $oneSignal->notifyWinnerReminder();
+                        $telegram->sendWinnerUploadReminder($siteUrl);
+                        $prediction->update(['winner_reminder_sent' => true]);
+                    }
+                    $prediction->update(['was_correct' => $won, 'corners_notified' => true]);
+                }
             }
         }
 
