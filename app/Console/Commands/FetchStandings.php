@@ -19,7 +19,7 @@ class FetchStandings extends Command
     public function handle(StandingsService $service, Client $api): int
     {
         $leagues = $this->leagues();
-        $season  = (int) ($this->option('season') ?: now('Africa/Lagos')->year);
+        $season  = (int) ($this->option('season') ?: LeagueCoverage::currentSeason());
         $sleepUs = max(0, (int) $this->option('sleep')) * 1000;
 
         if (empty($leagues)) {

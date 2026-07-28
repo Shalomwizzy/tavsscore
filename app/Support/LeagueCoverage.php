@@ -28,6 +28,23 @@ class LeagueCoverage
     }
 
     /**
+     * The football season START YEAR that currently has data, Lagos time.
+     *
+     * API-Football labels seasons by their starting year (2025 = the 2025-26
+     * season). European leagues run Aug-May, so from January through July the
+     * live/most-recent season still started LAST year. Defaulting to the raw
+     * calendar year (e.g. 2026 in mid-2026) asks the API for a season that
+     * hasn't kicked off yet — it returns nothing, wasting a request per league
+     * and leaving features (Top Scorers, Fantasy) empty. The rollover to the
+     * new season happens in August.
+     */
+    public static function currentSeason(): int
+    {
+        $now = now('Africa/Lagos');
+        return $now->month >= 8 ? $now->year : $now->year - 1;
+    }
+
+    /**
      * IDs we treat as "top European / global" - used to order the daily-pick selector.
      */
     public static function topEuropean(): array

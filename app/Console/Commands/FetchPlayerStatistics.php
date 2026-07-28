@@ -20,7 +20,7 @@ class FetchPlayerStatistics extends Command
     public function handle(PlayerStatisticsService $service, Client $api): int
     {
         $leagues  = $this->leagues();
-        $season   = (int) ($this->option('season') ?: now('Africa/Lagos')->year);
+        $season   = (int) ($this->option('season') ?: LeagueCoverage::currentSeason());
         $maxPages = max(1, (int) $this->option('max-pages'));
         $sleepUs  = max(0, (int) $this->option('sleep')) * 1000;
 

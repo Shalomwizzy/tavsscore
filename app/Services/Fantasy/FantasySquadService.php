@@ -196,7 +196,7 @@ class FantasySquadService
         // Cheapest price available in each position — used to reserve enough
         // budget for the slots we haven't filled yet, so no position starves.
         $minPrice = [];
-        foreach (self::SQUAD as $pos => $n) {
+        foreach (array_keys(self::SQUAD) as $pos) {
             $minPrice[$pos] = ($byPos[$pos] ?? collect())->min('price') ?? 4.0;
         }
 
@@ -207,7 +207,7 @@ class FantasySquadService
 
         // Best points first within each position, but only if we can still
         // afford to fill every remaining required slot at minimum price.
-        foreach (self::SQUAD as $pos => $count) {
+        foreach (array_keys(self::SQUAD) as $pos) {
             $pool = ($byPos[$pos] ?? collect())->sortByDesc('points')->values();
             foreach ($pool as $pl) {
                 if ($need[$pos] <= 0) break;
@@ -228,7 +228,7 @@ class FantasySquadService
         }
 
         // Backfill any slot still open (cheapest first) to keep the squad legal.
-        foreach (self::SQUAD as $pos => $count) {
+        foreach (array_keys(self::SQUAD) as $pos) {
             if ($need[$pos] <= 0) continue;
             $ids  = collect($squad)->pluck('id')->all();
             $pool = ($byPos[$pos] ?? collect())
@@ -332,9 +332,7 @@ class FantasySquadService
 
     private function currentSeason(): int
     {
-        // Football seasons are labelled by their starting year (Aug–May).
-        $now = now('Africa/Lagos');
-        return $now->month >= 7 ? $now->year : $now->year - 1;
+        return \App\Support\LeagueCoverage::currentSeason();
     }
 
     private function gameweekLabel(): string
