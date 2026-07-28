@@ -67,6 +67,14 @@ return [
         'url' => env('TENNIS_LIVE_API_URL', 'https://api.livetennisapi.com/api/public/v1'),
     ],
 
+    // Free fallback for match RESULTS when the API-Football quota is exhausted.
+    // Covers the top competitions on the free tier (PL, La Liga, Serie A,
+    // Bundesliga, Ligue 1, UCL, Championship, Eredivisie, Primeira, etc.).
+    'football_data' => [
+        'key' => env('FOOTBALL_DATA_KEY'),
+        'url' => env('FOOTBALL_DATA_URL', 'https://api.football-data.org/v4'),
+    ],
+
     'gemini' => [
         // Optional second-opinion AI. Leave blank to disable.
         // Get a free key: https://aistudio.google.com/app/apikey

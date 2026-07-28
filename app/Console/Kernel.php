@@ -29,6 +29,14 @@ class Kernel extends ConsoleKernel
         $schedule->command('predict:matches')->everyFifteenMinutes()->withoutOverlapping(10);
         $schedule->command('predictions:check-outcomes')->everyFiveMinutes()->withoutOverlapping();
 
+        // Free RESULTS fallback (football-data.org) — only fires when the
+        // API-Football quota is exhausted, so today's outcomes still settle
+        // instead of waiting for the next-day catch-up. No-op if nothing pending.
+        $schedule->command('results:fallback')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping()
+            ->when(fn () => (bool) \Illuminate\Support\Facades\Cache::get('api_football_quota_exhausted'));
+
         // API-Football quota resets at 01:00 Lagos each day.
         // At 01:30 we clear the quota-exhausted cache flag so fetch:matches
         // resumes immediately and has ~90 min to load today's fixtures before
