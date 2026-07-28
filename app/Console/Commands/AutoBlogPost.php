@@ -9,7 +9,7 @@ use App\Models\MatchInjury;
 use App\Models\PlayerStatistic;
 use App\Models\Standing;
 use App\Models\Transfer;
-use App\Services\OpenAiBlogService;
+use App\Services\GroqBlogService;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -26,10 +26,10 @@ class AutoBlogPost extends Command
 
     public function handle(): int
     {
-        $openAi = app(OpenAiBlogService::class);
+        $groq = app(GroqBlogService::class);
 
-        if (! $openAi->configured()) {
-            $this->error('OPENAI_API_KEY not configured in .env');
+        if (! $groq->configured()) {
+            $this->error('GROQ_API_KEY not configured in .env');
             return self::FAILURE;
         }
 
@@ -77,7 +77,7 @@ class AutoBlogPost extends Command
         try {
             $this->info("Generating AI article for {$dateStr}…");
 
-            $json = $openAi->writeArticle(
+            $json = $groq->writeArticle(
                 'You are a senior football journalist writing for TavsScore. Write exactly like a real human sports writer: opinionated, direct, sometimes blunt, with natural rhythm and varied sentence length. Mix short punchy sentences with longer analytical ones. Use everyday football language that fans actually use. Show genuine personality, take sides, make bold calls. Avoid all AI-sounding patterns: no listing things in threes, no "it is worth noting", no "furthermore", no "in conclusion", no "delve", no "it remains to be seen", no generic filler phrases. Write like you watched the matches yourself and have a real opinion. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences. NEVER use em dashes (—). Use commas, colons, or full stops instead.',
                 $userPrompt,
             );
@@ -90,21 +90,9 @@ class AutoBlogPost extends Command
             $category = $this->pickCategory($matchList);
             $excerpt  = $this->buildExcerpt($content);
             $slug     = BlogPost::generateSlug($json['title']);
-            $image    = null;
-
-            // A missing image must never be replaced with an SVG or generic
-            // placeholder. Publish the verified article and make the missing
-            // image visible in Admin so it can be created in ChatGPT Plus and
-            // uploaded by an editor.
-            try {
-                $image = app(\App\Services\Blog\HeroImageService::class)->generate($json['title'], $category, $slug);
-            } catch (Throwable $imageError) {
-                Log::warning('Auto blog image generation failed; publishing without an image.', [
-                    'title' => $json['title'],
-                    'error' => $imageError->getMessage(),
-                ]);
-                $this->warn('Image was not generated. The article will be published as Image Needed for an admin upload.');
-            }
+            // Images are uploaded manually in Admin after publication. Never
+            // publish a generated SVG or a generic substitute.
+            $image = null;
 
             $post = BlogPost::create([
                 'title'           => $json['title'],

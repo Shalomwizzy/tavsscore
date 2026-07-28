@@ -53,16 +53,6 @@ return [
         'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
     ],
 
-    'openai' => [
-        // Used by the automatic TavsScore newsroom for articles and hero images.
-        'key'           => env('OPENAI_API_KEY'),
-        'url'           => env('OPENAI_API_URL', 'https://api.openai.com/v1'),
-        'text_model'    => env('OPENAI_TEXT_MODEL', 'gpt-5-mini'),
-        'image_model'   => env('OPENAI_IMAGE_MODEL', 'gpt-image-1.5'),
-        'image_size'    => env('OPENAI_IMAGE_SIZE', '1536x1024'),
-        'image_quality' => env('OPENAI_IMAGE_QUALITY', 'medium'),
-    ],
-
     'tennis_data' => [
         // Leave blank until a source is verified for your intended commercial use.
         // URLs may contain {year}; the importer substitutes the requested year.

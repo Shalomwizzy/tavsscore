@@ -14,8 +14,6 @@ use Carbon\CarbonInterface;
  */
 class TennisPredictionService
 {
-    public function __construct(private readonly OpenAiTennisOpinionService $openAi) {}
-
     public function predict(TennisMatch $match): ?TennisPrediction
     {
         $date = $match->match_date ?: now();
@@ -63,20 +61,11 @@ class TennisPredictionService
         $winner = $oneProb >= $twoProb ? $match->player_one : $match->player_two;
         $confidence = (int) round(max($oneProb, $twoProb));
         $features = compact('oneRating', 'twoRating', 'eloProbability', 'one', 'two', 'h2h', 'surface');
-        $openAiOpinion = $this->openAi->opinion($match, $features, $oneProb / 100);
-        if ($openAiOpinion !== null) {
-            // The statistical model remains the source of probabilities. OpenAI
-            // can only corroborate or lower confidence, never fabricate an edge.
-            $confidence = $openAiOpinion['winner'] === $winner
-                ? min(95, $confidence + 2)
-                : max(50, $confidence - 5);
-        }
-
         return TennisPrediction::updateOrCreate(['tennis_match_id' => $match->id], [
             'player_one_win_prob' => $oneProb, 'player_two_win_prob' => $twoProb,
             'predicted_winner' => $winner, 'confidence' => $confidence,
-            'features' => $features, 'ai_panel' => $openAiOpinion ? ['openai' => $openAiOpinion] : null,
-            'analysis' => sprintf('%s %.0f%% vs %s %.0f%%. Surface Elo is the main signal, checked against recent form, surface record, rankings and H2H where samples are sufficient.%s', $match->player_one, $oneProb, $match->player_two, $twoProb, $openAiOpinion ? ' OpenAI independently reviewed the same supplied signals.' : ''),
+            'features' => $features, 'ai_panel' => null,
+            'analysis' => sprintf('%s %.0f%% vs %s %.0f%%. Surface Elo is the main signal, checked against recent form, surface record, rankings and H2H where samples are sufficient.', $match->player_one, $oneProb, $match->player_two, $twoProb),
         ]);
     }
 

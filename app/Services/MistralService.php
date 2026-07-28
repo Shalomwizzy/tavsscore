@@ -11,7 +11,7 @@ use Throwable;
 /**
  * Third AI for triple cross-validation. Only fires if MISTRAL_API_KEY is set.
  *
- * Mistral is OpenAI-compatible and free-tier friendly (console.mistral.ai).
+ * Mistral is API-compatible and free-tier friendly (console.mistral.ai).
  * Like Gemini, it receives ONLY raw stats and H2H — never Groq's or Gemini's
  * output. All three AIs must independently reach the same conclusion before
  * a prediction is published or a rollover pick is placed.

@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
-use App\Models\FootballMatch;
 use App\Services\Blog\HeroImageService;
-use App\Services\OpenAiBlogService;
+use App\Services\GroqBlogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,8 +59,7 @@ class BlogController extends Controller
 
     public function edit(BlogPost $blog): View
     {
-        $imagePreview = session('blog_image_preview_' . $blog->id);
-        return view('admin.blog.edit', compact('blog', 'imagePreview'));
+        return view('admin.blog.edit', compact('blog'));
     }
 
     public function update(Request $request, BlogPost $blog, HeroImageService $images): RedirectResponse
@@ -111,9 +109,9 @@ class BlogController extends Controller
 
     public function autoGenerate(): RedirectResponse
     {
-        if (! app(\App\Services\OpenAiBlogService::class)->configured()) {
+        if (! app(GroqBlogService::class)->configured()) {
             return redirect()->route('admin.blog.index')
-                ->with('error', 'OpenAI API key is not configured. Add OPENAI_API_KEY to your .env file.');
+                ->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
         }
 
         $before = BlogPost::max('id');
@@ -140,14 +138,14 @@ class BlogController extends Controller
     }
 
     /** Replace the text only, leaving the existing image untouched. */
-    public function regenerateArticle(BlogPost $blog, OpenAiBlogService $openAi): RedirectResponse
+    public function regenerateArticle(BlogPost $blog, GroqBlogService $groq): RedirectResponse
     {
-        if (! $openAi->configured()) {
-            return back()->with('error', 'OpenAI API key is not configured. Add OPENAI_API_KEY to your .env file.');
+        if (! $groq->configured()) {
+            return back()->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
         }
 
         try {
-            $article = $openAi->writeArticle(
+            $article = $groq->writeArticle(
                 'You are a senior TavsScore football editor. Return only valid JSON with exactly "title" and "content". Use the supplied article as the only factual source. Improve clarity, originality, structure and SEO without inventing facts. Use only p, h2, h3, ul, li and strong HTML tags. Never use em dashes.',
                 "Regenerate this football news article. Keep it at least 600 words when the source contains enough factual material. Preserve every factual claim unless the source is uncertain.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
             );
@@ -164,36 +162,6 @@ class BlogController extends Controller
             Log::error('Blog article regeneration failed', ['blog_id' => $blog->id, 'error' => $e->getMessage()]);
             return back()->with('error', 'Article regeneration failed. Your current article was not changed.');
         }
-    }
-
-    /** Replace the hero image only, leaving the article untouched. */
-    public function regenerateImage(BlogPost $blog, HeroImageService $images): RedirectResponse
-    {
-        try {
-            $previewSlug = $blog->slug . '-preview-' . now()->format('YmdHis');
-            $image = $images->generate($blog->title, $blog->category, $previewSlug);
-            session(['blog_image_preview_' . $blog->id => $image]);
-            return redirect()->route('admin.blog.edit', $blog)->with('success', 'New image generated. Compare it with the current image, then apply it only if you like it.');
-        } catch (\Throwable $e) {
-            Log::error('Blog image regeneration failed', ['blog_id' => $blog->id, 'error' => $e->getMessage()]);
-            return back()->with('error', 'Image regeneration failed. Your current image was not changed.');
-        }
-    }
-
-    public function applyImagePreview(BlogPost $blog): RedirectResponse
-    {
-        $key = 'blog_image_preview_' . $blog->id;
-        $preview = session($key);
-        if (blank($preview)) return back()->with('error', 'No generated image preview is available. Generate one first.');
-        $blog->update(['featured_image' => $preview, 'image_path' => null, 'is_ai_generated' => true]);
-        session()->forget($key);
-        return redirect()->route('admin.blog.edit', $blog)->with('success', 'New featured image applied.');
-    }
-
-    public function discardImagePreview(BlogPost $blog): RedirectResponse
-    {
-        session()->forget('blog_image_preview_' . $blog->id);
-        return redirect()->route('admin.blog.edit', $blog)->with('success', 'Generated image preview discarded. Your current image was kept.');
     }
 
     private function excerpt(string $html): string

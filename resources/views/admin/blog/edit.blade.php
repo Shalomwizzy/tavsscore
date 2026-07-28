@@ -107,10 +107,6 @@
                         @csrf
                         <button type="submit" class="btn-a" style="width:100%;justify-content:center;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:#93c5fd;">📝 Regenerate News</button>
                     </form>
-                    <form method="POST" action="{{ route('admin.blog.regenerate-image', $blog) }}" onsubmit="return confirm('Generate a new image preview using the OpenAI API? It will not replace the current image until you approve it.');">
-                        @csrf
-                        <button type="submit" class="btn-a" style="width:100%;justify-content:center;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;">🖼️ Regenerate Image</button>
-                    </form>
                 </div>
 
                 <div class="a-card">
@@ -123,20 +119,11 @@
                     @else
                         <div style="border:1px dashed rgba(245,158,11,.55);border-radius:6px;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem;margin-bottom:.75rem;background:rgba(245,158,11,.06);color:#fcd34d;">
                             <strong style="font-size:.85rem;">Image Needed</strong>
-                            <span style="font-size:.7rem;color:var(--dim);line-height:1.5;margin-top:.35rem;">Create the real image in ChatGPT Plus, then upload it below.</span>
+                            <span style="font-size:.7rem;color:var(--dim);line-height:1.5;margin-top:.35rem;">Create a real image, then upload it below.</span>
                         </div>
                         <div id="img-preview" style="display:none; margin-bottom:.75rem;">
                             <img id="img-preview-el" src="" alt="Preview"
                                  style="width:100%; border-radius:6px; aspect-ratio:16/9; object-fit:cover; border:1px solid var(--border);">
-                        </div>
-                    @endif
-                    @if($imagePreview)
-                        <div style="border-top:1px solid var(--border);margin:1rem 0 .75rem;padding-top:.875rem;">
-                            <div style="font-size:.68rem;font-weight:700;color:#6ee7b7;margin-bottom:.4rem;">NEW AI IMAGE PREVIEW</div>
-                            <img src="{{ $imagePreview }}" alt="New generated preview"
-                                 style="width:100%;border-radius:6px;aspect-ratio:16/9;object-fit:cover;border:1px solid rgba(16,185,129,.55);margin-bottom:.6rem;">
-                            <form method="POST" action="{{ route('admin.blog.apply-image-preview', $blog) }}" style="margin-bottom:.4rem;">@csrf<button type="submit" class="btn-a btn-green" style="width:100%;justify-content:center;">✓ Use New Image</button></form>
-                            <form method="POST" action="{{ route('admin.blog.discard-image-preview', $blog) }}">@csrf<button type="submit" class="btn-a btn-gray" style="width:100%;justify-content:center;">Keep Current Image</button></form>
                         </div>
                     @endif
                     <div class="form-group">
@@ -144,7 +131,7 @@
                         <input id="image_file" type="file" name="image_file" class="form-input"
                                accept="image/jpeg,image/png,image/webp,image/gif"
                                onchange="previewFile(this)">
-                        <div class="form-hint">JPG, PNG, WebP or GIF, up to 4 MB. Make it in ChatGPT Plus with the Tavs Score watermark, then upload it here.</div>
+                        <div class="form-hint">JPG, PNG, WebP or GIF, up to 4 MB. Tavs Score adds the watermark automatically when you upload.</div>
                     </div>
                 </div>
 
