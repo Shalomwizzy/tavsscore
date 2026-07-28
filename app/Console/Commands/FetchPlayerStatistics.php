@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 class FetchPlayerStatistics extends Command
 {
     protected $signature = 'stats:fetch-players
-                            {--leagues= : Comma-separated league IDs (default: all covered leagues)}
+                            {--leagues= : Comma-separated league IDs, or "all" (default: top European leagues)}
                             {--season= : Season start-year (default: current year, Lagos)}
                             {--max-pages=40 : Safety cap on pages per league (protects quota)}
                             {--sleep=350 : Milliseconds to wait between API calls}';
@@ -69,6 +69,11 @@ class FetchPlayerStatistics extends Command
     private function leagues(): array
     {
         $raw = (string) $this->option('leagues');
+
+        if (strtolower(trim($raw)) === 'all') {
+            return LeagueCoverage::coveredLeagueIds();
+        }
+
         if ($raw !== '') {
             return collect(explode(',', $raw))
                 ->map(fn ($x) => (int) trim($x))
@@ -77,6 +82,11 @@ class FetchPlayerStatistics extends Command
                 ->all();
         }
 
-        return LeagueCoverage::coveredLeagueIds();
+        // Player stats only power Fantasy (Premier League) and Top Scorers /
+        // Goalscorer picks (top European leagues). Paging /players for all ~56
+        // covered leagues — most of which never show a player anywhere on the
+        // site — was the main API-quota drain, so default to the top leagues.
+        // Use --leagues=all for a full pull.
+        return LeagueCoverage::topEuropean();
     }
 }

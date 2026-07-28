@@ -182,10 +182,12 @@ class Kernel extends ConsoleKernel
         // pick-selection (03:00) and odds (10:00/14:00) depend on. Each fetcher
         // short-circuits the moment the daily quota flag trips.
         //
-        // Standings change every matchday → refresh at 02:30, before the 03:00
-        // pick selection, so daily picks always use same-day league tables.
+        // Standings → weekly (Monday 02:30) to conserve quota. Tables persist in
+        // the DB between runs; the tradeoff is they can be a few matchdays stale
+        // mid-week. Runs before the Monday team/player-stat jobs that read team
+        // IDs from the standings table.
         $schedule->command('stats:fetch-standings')
-            ->dailyAt('02:30')
+            ->weeklyOn(1, '02:30')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();
