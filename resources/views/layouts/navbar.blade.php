@@ -53,8 +53,8 @@
                         <span><span class="ndi-label">Lineup Picks</span><span class="ndi-sub">After starting XI confirmed</span></span>
                     </a>
                     <a href="{{ route('correct-score.index') }}" class="nav-drop-item {{ request()->routeIs('correct-score.index') ? 'active' : '' }}" role="menuitem">
-                        <span class="ndi-icon">🎯</span>
-                        <span><span class="ndi-label">Correct Score</span><span class="ndi-sub">Poisson score predictions</span></span>
+                        <span class="ndi-icon">🎲</span>
+                        <span><span class="ndi-label">Correct Score <span style="font-size:.6rem;color:#fca5a5;font-weight:800;">HIGH RISK</span></span><span class="ndi-sub">Hardest market · big odds · for fun</span></span>
                     </a>
                     <div class="nav-drop-divider"></div>
                     <a href="{{ route('over15-picks.index') }}" class="nav-drop-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" role="menuitem">
@@ -238,10 +238,10 @@
             </span>
         </a>
         <a href="{{ route('correct-score.index') }}" class="drawer-item {{ request()->routeIs('correct-score.index') ? 'active' : '' }}" onclick="closeDrawer()">
-            <span class="di-icon">🎯</span>
+            <span class="di-icon">🎲</span>
             <span class="di-text">
-                Correct Score
-                <small>Exact score predictions</small>
+                Correct Score <small style="color:#fca5a5;font-weight:800;">HIGH RISK</small>
+                <small>Hardest market · big odds · for fun</small>
             </span>
         </a>
         <a href="{{ route('over15-picks.index') }}" class="drawer-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
