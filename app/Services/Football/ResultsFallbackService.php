@@ -31,23 +31,34 @@ class ResultsFallbackService
         $tz = config('app.timezone');
 
         // Fixtures that should be finished by wall-clock but aren't final yet.
+        // TOP PRIORITY: matches we actually predicted (so their prediction can be
+        // graded) — always included, even outside the usual covered set. We also
+        // settle other covered fixtures, but predicted ones are processed first.
         $pending = FootballMatch::query()
-            ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
+            ->with('prediction')
             ->where('match_time', '<', now()->subMinutes(150))
             ->where('match_time', '>=', now()->subDays($days + 1))
             ->whereNotIn('status', self::NON_FINAL)
-            ->get();
+            ->where(fn ($q) => $q
+                ->whereHas('prediction')
+                ->orWhere(fn ($w) => LeagueCoverage::scopeCovered($w)))
+            ->get()
+            ->sortByDesc(fn (FootballMatch $m) => $m->prediction ? 1 : 0)
+            ->values();
 
         if ($pending->isEmpty()) {
-            return ['configured' => true, 'pending' => 0, 'results' => 0, 'updated' => 0];
+            return ['configured' => true, 'pending' => 0, 'predicted' => 0, 'results' => 0, 'updated' => 0, 'predicted_updated' => 0];
         }
+
+        $predicted = $pending->filter(fn (FootballMatch $m) => (bool) $m->prediction)->count();
 
         $index = $this->fetchResults($key, $days, $tz);
         if ($index === null) {
-            return ['configured' => true, 'pending' => $pending->count(), 'error' => 'fetch_failed', 'updated' => 0];
+            return ['configured' => true, 'pending' => $pending->count(), 'predicted' => $predicted, 'error' => 'fetch_failed', 'updated' => 0, 'predicted_updated' => 0];
         }
 
         $updated = 0;
+        $predictedUpdated = 0;
         foreach ($pending as $match) {
             $fixtureDate = $match->match_time?->timezone($tz)->toDateString();
             $result = $this->lookup($index, $match->home_team, $match->away_team, $fixtureDate);
@@ -63,13 +74,23 @@ class ResultsFallbackService
                 'status'        => 'FT',
             ]);
             $updated++;
+            if ($match->prediction) {
+                $predictedUpdated++;
+            }
         }
 
         if ($updated > 0) {
-            Log::info("ResultsFallbackService: filled {$updated} result(s) from football-data.org.");
+            Log::info("ResultsFallbackService: filled {$updated} result(s) from football-data.org ({$predictedUpdated} predicted).");
         }
 
-        return ['configured' => true, 'pending' => $pending->count(), 'results' => count($index), 'updated' => $updated];
+        return [
+            'configured'        => true,
+            'pending'           => $pending->count(),
+            'predicted'         => $predicted,
+            'results'           => count($index),
+            'updated'           => $updated,
+            'predicted_updated' => $predictedUpdated,
+        ];
     }
 
     /**

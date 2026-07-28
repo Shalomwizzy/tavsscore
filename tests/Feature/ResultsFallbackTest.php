@@ -84,6 +84,46 @@ class ResultsFallbackTest extends TestCase
         $this->assertFalse($result['configured']);
     }
 
+    public function test_predicted_match_is_settled_even_outside_covered_leagues(): void
+    {
+        // A match in an unusual league (not in the covered set) but that we
+        // predicted must still be checked + settled — predicted matches are the
+        // priority.
+        $match = FootballMatch::create([
+            'api_id'     => rand(10000, 99999),
+            'home_team'  => 'Real Madrid',
+            'away_team'  => 'Barcelona',
+            'league'     => 'Friendly',
+            'league_id'  => 999999, // deliberately not a covered league
+            'status'     => 'NS',
+            'match_time' => now()->subHours(3),
+        ]);
+        \App\Models\Prediction::create([
+            'match_id'          => $match->id,
+            'home_win_prob'     => 50.0,
+            'draw_prob'         => 25.0,
+            'away_win_prob'     => 25.0,
+            'predicted_outcome' => 'Home Win',
+            'confidence'        => 70,
+            'analysis'          => 'Test analysis.',
+        ]);
+
+        $this->fakeResults([[
+            'utcDate'  => now()->toIso8601String(),
+            'status'   => 'FINISHED',
+            'homeTeam' => ['name' => 'Real Madrid CF'],
+            'awayTeam' => ['name' => 'FC Barcelona'],
+            'score'    => ['fullTime' => ['home' => 3, 'away' => 1], 'halfTime' => ['home' => 2, 'away' => 0]],
+        ]]);
+
+        $result = app(ResultsFallbackService::class)->settlePending(2);
+
+        $this->assertSame(1, $result['predicted']);
+        $this->assertSame(1, $result['predicted_updated']);
+        $this->assertSame('FT', $match->fresh()->status);
+        $this->assertSame(3, (int) $match->fresh()->home_score);
+    }
+
     public function test_ignores_already_finished_matches(): void
     {
         $match = $this->pendingMatch('Chelsea', 'Everton');

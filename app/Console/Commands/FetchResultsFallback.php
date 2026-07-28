@@ -32,7 +32,8 @@ class FetchResultsFallback extends Command
         }
 
         $this->info("Filled {$result['updated']} result(s) from football-data.org "
-            . "(pending {$result['pending']}, source rows {$result['results']}).");
+            . "({$result['predicted_updated']} predicted) — pending {$result['pending']}, "
+            . "of which {$result['predicted']} predicted; source rows {$result['results']}.");
 
         // Grade the freshly-filled results immediately.
         if (($result['updated'] ?? 0) > 0) {
