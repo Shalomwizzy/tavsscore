@@ -54,11 +54,12 @@ return [
     ],
 
     'tennis_data' => [
-        // Jeff Sackmann's public ATP/WTA match CSVs (CC BY-NC-SA — attribution,
-        // non-commercial, share-alike). {year} is substituted per season.
-        // Override via env to point at a differently-licensed source.
-        'atp_url' => env('TENNIS_ATP_SOURCE_URL', 'https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_{year}.csv'),
-        'wta_url' => env('TENNIS_WTA_SOURCE_URL', 'https://raw.githubusercontent.com/JeffSackmann/tennis_wta/master/wta_matches_{year}.csv'),
+        // Self-hosted ATP/WTA match CSVs (Jeff Sackmann format). Upload the
+        // yearly files to storage/app/tennis/ named atp_matches_{year}.csv and
+        // wta_matches_{year}.csv. {year} is substituted per season. Set the env
+        // vars to a URL instead if you'd rather serve them over HTTP.
+        'atp_url' => env('TENNIS_ATP_SOURCE_URL', storage_path('app/tennis/atp_matches_{year}.csv')),
+        'wta_url' => env('TENNIS_WTA_SOURCE_URL', storage_path('app/tennis/wta_matches_{year}.csv')),
     ],
 
     'tennis_live' => [

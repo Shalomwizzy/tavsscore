@@ -19,13 +19,12 @@ class TennisDataImporter
             throw new RuntimeException("TENNIS_{$tour}_SOURCE_URL is not configured.");
         }
 
-        $url = str_replace('{year}', (string) $year, $template);
-        $response = Http::timeout(90)->accept('text/csv,text/plain,*/*')->get($url);
-        if ($response->failed()) {
-            throw new RuntimeException("Tennis source returned HTTP {$response->status()} for {$tour} {$year}.");
-        }
+        // The source may be a remote URL or a self-hosted local file (default) —
+        // {year} is substituted either way.
+        $source = str_replace('{year}', (string) $year, $template);
+        $csv    = $this->read($source, $tour, $year);
 
-        $rows = $this->rows($response->body());
+        $rows = $this->rows($csv);
         if ($rows === []) {
             throw new RuntimeException("Tennis source returned no readable rows for {$tour} {$year}.");
         }
@@ -59,6 +58,24 @@ class TennisDataImporter
         }
 
         return $count;
+    }
+
+    /** Read the CSV from a remote URL or a self-hosted local file. */
+    private function read(string $source, string $tour, int $year): string
+    {
+        if (preg_match('#^https?://#i', $source)) {
+            $response = Http::timeout(90)->accept('text/csv,text/plain,*/*')->get($source);
+            if ($response->failed()) {
+                throw new RuntimeException("Tennis source returned HTTP {$response->status()} for {$tour} {$year}.");
+            }
+            return $response->body();
+        }
+
+        if (! is_file($source) || ! is_readable($source)) {
+            throw new RuntimeException("Tennis file not found for {$tour} {$year}: {$source}. Upload the CSV to storage/app/tennis/.");
+        }
+
+        return (string) file_get_contents($source);
     }
 
     /** @return array<int, array<string, string|null>> */
