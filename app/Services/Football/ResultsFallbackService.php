@@ -46,29 +46,30 @@ class ResultsFallbackService
             ->values();
 
         if ($pending->isEmpty()) {
-            return ['configured' => true, 'pending' => 0, 'predicted' => 0, 'results' => 0, 'updated' => 0, 'predicted_updated' => 0];
+            return ['configured' => true, 'pending' => 0, 'predicted' => 0, 'updated' => 0, 'predicted_updated' => 0,
+                'fd_rows' => null, 'tsdb_rows' => null];
         }
 
         $predicted = $pending->filter(fn (FootballMatch $m) => (bool) $m->prediction)->count();
         $unsettled = $pending->all();
         $updated = 0;
         $predictedUpdated = 0;
-        $sourceRows = 0;
 
-        // Source 1: football-data.org (top competitions).
+        // Source 1: football-data.org (top competitions). null = not configured.
         $fd = $this->fetchFootballData($days, $tz);
+        $fdRows = $fd === null ? null : count($fd);
         if ($fd !== null) {
-            $sourceRows += count($fd);
             [$unsettled, $u, $pu] = $this->apply($unsettled, $fd, $tz);
             $updated += $u; $predictedUpdated += $pu;
         }
 
-        // Source 2: TheSportsDB (broad) — only for whatever is STILL unsettled,
-        // so predicted matches football-data doesn't carry still get graded.
+        // Source 2: TheSportsDB (broad) — always checked for whatever is STILL
+        // unsettled, so predicted matches football-data doesn't carry get graded.
+        $tsdbRows = null;
         if (! empty($unsettled)) {
             $tsdb = $this->fetchTheSportsDb($days, $tz);
+            $tsdbRows = $tsdb === null ? null : count($tsdb);
             if ($tsdb !== null) {
-                $sourceRows += count($tsdb);
                 [$unsettled, $u, $pu] = $this->apply($unsettled, $tsdb, $tz);
                 $updated += $u; $predictedUpdated += $pu;
             }
@@ -82,9 +83,10 @@ class ResultsFallbackService
             'configured'        => true,
             'pending'           => $pending->count(),
             'predicted'         => $predicted,
-            'results'           => $sourceRows,
             'updated'           => $updated,
             'predicted_updated' => $predictedUpdated,
+            'fd_rows'           => $fdRows,   // null = football-data key not set
+            'tsdb_rows'         => $tsdbRows, // null = not reached / key not set
         ];
     }
 

@@ -26,14 +26,12 @@ class FetchResultsFallback extends Command
             return self::SUCCESS;
         }
 
-        if (isset($result['error'])) {
-            $this->warn("football-data.org fetch failed ({$result['error']}).");
-            return self::SUCCESS;
-        }
+        $fd   = $result['fd_rows']   === null ? 'not configured' : $result['fd_rows'] . ' rows';
+        $tsdb = $result['tsdb_rows'] === null ? 'not checked (nothing left / key unset)' : $result['tsdb_rows'] . ' rows';
 
-        $this->info("Filled {$result['updated']} result(s) from football-data.org "
-            . "({$result['predicted_updated']} predicted) — pending {$result['pending']}, "
-            . "of which {$result['predicted']} predicted; source rows {$result['results']}.");
+        $this->info("Sources checked → football-data.org: {$fd} | TheSportsDB: {$tsdb}");
+        $this->info("Filled {$result['updated']} result(s) ({$result['predicted_updated']} predicted) "
+            . "of {$result['pending']} pending ({$result['predicted']} predicted).");
 
         // Grade the freshly-filled results immediately.
         if (($result['updated'] ?? 0) > 0) {
