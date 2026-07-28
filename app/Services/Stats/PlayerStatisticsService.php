@@ -4,6 +4,7 @@ namespace App\Services\Stats;
 
 use App\Models\PlayerStatistic;
 use App\Services\ApiFootball\Client;
+use Illuminate\Support\Facades\Log;
 
 class PlayerStatisticsService
 {
@@ -41,33 +42,38 @@ class PlayerStatisticsService
                     continue;
                 }
 
-                PlayerStatistic::query()->updateOrCreate(
-                    [
-                        'player_api_id' => $pid,
-                        'team_api_id'   => $teamId,
-                        'league_id'     => $leagueId,
-                        'season'        => $season,
-                    ],
-                    [
-                        'player_name'  => (string) ($player['name'] ?? 'Unknown'),
-                        'player_photo' => $player['photo'] ?? null,
-                        'age'          => $player['age'] ?? null,
-                        'nationality'  => $player['nationality'] ?? null,
-                        'team_name'    => (string) ($stat['team']['name'] ?? 'Unknown'),
-                        'position'     => $stat['games']['position'] ?? null,
-                        'appearances'  => (int) ($stat['games']['appearences'] ?? 0),
-                        'lineups'      => (int) ($stat['games']['lineups'] ?? 0),
-                        'minutes'      => (int) ($stat['games']['minutes'] ?? 0),
-                        'goals'        => (int) ($stat['goals']['total'] ?? 0),
-                        'assists'      => (int) ($stat['goals']['assists'] ?? 0),
-                        'yellow_cards' => (int) ($stat['cards']['yellow'] ?? 0),
-                        'red_cards'    => (int) ($stat['cards']['red'] ?? 0),
-                        'rating'       => $this->toFloat($stat['games']['rating'] ?? null),
-                        'raw'          => $stat,
-                    ]
-                );
-
-                $count++;
+                // One malformed record must never abort a multi-league run that
+                // has already spent API calls — sanitise + isolate each upsert.
+                try {
+                    PlayerStatistic::query()->updateOrCreate(
+                        [
+                            'player_api_id' => $pid,
+                            'team_api_id'   => $teamId,
+                            'league_id'     => $leagueId,
+                            'season'        => $season,
+                        ],
+                        [
+                            'player_name'  => mb_substr((string) ($player['name'] ?? 'Unknown'), 0, 255),
+                            'player_photo' => $player['photo'] ?? null,
+                            'age'          => $this->saneAge($player['age'] ?? null),
+                            'nationality'  => $player['nationality'] ?? null,
+                            'team_name'    => (string) ($stat['team']['name'] ?? 'Unknown'),
+                            'position'     => $stat['games']['position'] ?? null,
+                            'appearances'  => (int) ($stat['games']['appearences'] ?? 0),
+                            'lineups'      => (int) ($stat['games']['lineups'] ?? 0),
+                            'minutes'      => (int) ($stat['games']['minutes'] ?? 0),
+                            'goals'        => (int) ($stat['goals']['total'] ?? 0),
+                            'assists'      => (int) ($stat['goals']['assists'] ?? 0),
+                            'yellow_cards' => (int) ($stat['cards']['yellow'] ?? 0),
+                            'red_cards'    => (int) ($stat['cards']['red'] ?? 0),
+                            'rating'       => $this->toFloat($stat['games']['rating'] ?? null),
+                            'raw'          => $stat,
+                        ]
+                    );
+                    $count++;
+                } catch (\Throwable $e) {
+                    Log::warning("PlayerStatistics: skipped player {$pid} ({$leagueId}/{$season}) — {$e->getMessage()}");
+                }
             }
         }
 
@@ -81,5 +87,12 @@ class PlayerStatisticsService
     private function toFloat(mixed $value): ?float
     {
         return $value === null || $value === '' ? null : (float) $value;
+    }
+
+    /** API sometimes returns junk ages (e.g. a year). Keep only plausible ones. */
+    private function saneAge(mixed $value): ?int
+    {
+        $age = (int) $value;
+        return ($age >= 10 && $age <= 70) ? $age : null;
     }
 }
