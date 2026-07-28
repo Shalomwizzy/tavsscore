@@ -67,6 +67,12 @@ return [
         'url' => env('TENNIS_LIVE_API_URL', 'https://api.livetennisapi.com/api/public/v1'),
     ],
 
+    // Public tennis is hidden until the historical data is current enough to
+    // trust the predictions. Admin tennis stays available. Flip to true via env.
+    'tennis' => [
+        'public' => filter_var(env('TENNIS_PUBLIC_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     // Free fallback for match RESULTS when the API-Football quota is exhausted.
     // Covers the top competitions on the free tier (PL, La Liga, Serie A,
     // Bundesliga, Ligue 1, UCL, Championship, Eredivisie, Primeira, etc.).

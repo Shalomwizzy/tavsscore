@@ -174,6 +174,51 @@ class ResultsFallbackTest extends TestCase
         $this->assertSame(2, (int) $match->fresh()->away_score);
     }
 
+    public function test_espn_derives_half_time_from_scoring_plays(): void
+    {
+        Config::set('services.espn.leagues', ['uefa.champions_qual']);
+
+        $match = FootballMatch::create([
+            'api_id'     => rand(10000, 99999),
+            'home_team'  => 'Riga',
+            'away_team'  => 'Vardar',
+            'league'     => 'UEFA Europa Conference League',
+            'league_id'  => 3,
+            'status'     => 'NS',
+            'match_time' => now()->subHours(3),
+        ]);
+        \App\Models\Prediction::create([
+            'match_id' => $match->id, 'home_win_prob' => 60.0, 'draw_prob' => 20.0, 'away_win_prob' => 20.0,
+            'predicted_outcome' => 'HT Over 0.5', 'confidence' => 90, 'analysis' => 'Test.',
+        ]);
+
+        Http::fake([
+            'api.football-data.org/*' => Http::response(['matches' => []], 200),
+            'site.api.espn.com/*'     => Http::response(['events' => [[
+                'date'         => now()->toIso8601String(),
+                'competitions' => [[
+                    'status'      => ['type' => ['completed' => true]],
+                    'competitors' => [
+                        ['homeAway' => 'home', 'score' => '2', 'team' => ['id' => '100', 'displayName' => 'Riga', 'abbreviation' => 'RIG']],
+                        ['homeAway' => 'away', 'score' => '1', 'team' => ['id' => '200', 'displayName' => 'Vardar', 'abbreviation' => 'VAR']],
+                    ],
+                    'details' => [
+                        ['scoringPlay' => true, 'team' => ['id' => '200'], 'clock' => ['displayValue' => "20'"]],   // away, 1st half
+                        ['scoringPlay' => true, 'team' => ['id' => '100'], 'clock' => ['displayValue' => "55'"]],   // home, 2nd half
+                        ['scoringPlay' => true, 'team' => ['id' => '100'], 'clock' => ['displayValue' => "78'"]],   // home, 2nd half
+                    ],
+                ]],
+            ]]], 200),
+        ]);
+
+        app(ResultsFallbackService::class)->settlePending(3);
+
+        $match->refresh();
+        $this->assertSame('FT', $match->status);
+        $this->assertSame(0, (int) $match->home_score_ht); // home scored both in 2nd half
+        $this->assertSame(1, (int) $match->away_score_ht); // away scored in 1st half
+    }
+
     public function test_ignores_already_finished_matches(): void
     {
         $match = $this->pendingMatch('Chelsea', 'Everton');

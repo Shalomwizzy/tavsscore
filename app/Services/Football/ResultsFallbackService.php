@@ -225,11 +225,13 @@ class ResultsFallbackService
                     continue;
                 }
 
+                [$htHome, $htAway] = $this->espnHalfTime($comp, (string) data_get($home, 'team.id'), (string) data_get($away, 'team.id'), (int) $hs, (int) $as);
+
                 $row = [
                     'home'    => (int) $hs,
                     'away'    => (int) $as,
-                    'ht_home' => null,
-                    'ht_away' => null,
+                    'ht_home' => $htHome,
+                    'ht_away' => $htAway,
                     'date'    => substr((string) data_get($ev, 'date'), 0, 10),
                 ];
 
@@ -245,6 +247,53 @@ class ResultsFallbackService
         }
 
         return $index;
+    }
+
+    /**
+     * Derive the half-time score from ESPN's scoring-play "details" (goals carry
+     * a minute). Only trusted when the derived full-time total reconciles with
+     * the actual FT score — otherwise returns [null, null] so HT markets stay
+     * pending rather than being graded on incomplete data.
+     *
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function espnHalfTime(array $comp, string $homeId, string $awayId, int $ftHome, int $ftAway): array
+    {
+        $details = data_get($comp, 'details', []);
+        if (empty($details) || $homeId === '' || $awayId === '') {
+            return [null, null];
+        }
+
+        $htHome = $htAway = 0;
+        $totHome = $totAway = 0;
+
+        foreach ($details as $d) {
+            if (! data_get($d, 'scoringPlay') || data_get($d, 'shootout')) {
+                continue;
+            }
+            $teamId  = (string) data_get($d, 'team.id');
+            $ownGoal = (bool) data_get($d, 'ownGoal');
+
+            // An own goal credits the opponent.
+            $side = $teamId === $homeId ? ($ownGoal ? 'away' : 'home')
+                : ($teamId === $awayId ? ($ownGoal ? 'home' : 'away') : null);
+            if ($side === null) {
+                continue;
+            }
+
+            // Leading minute before any "+" — "45+2'" -> 45 (first half), "52'" -> 52.
+            $base = (int) preg_replace('/\D.*$/', '', (string) data_get($d, 'clock.displayValue', ''));
+            $firstHalf = $base > 0 && $base <= 45;
+
+            if ($side === 'home') { $totHome++; if ($firstHalf) $htHome++; }
+            else                  { $totAway++; if ($firstHalf) $htAway++; }
+        }
+
+        // Only trust HT if the play-by-play reconciles with the final score.
+        if ($totHome === $ftHome && $totAway === $ftAway) {
+            return [$htHome, $htAway];
+        }
+        return [null, null];
     }
 
     /** Index a result under the normalised "home|away" key (if both are present). */
