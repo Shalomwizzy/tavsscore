@@ -26,6 +26,8 @@ class LiveTennisService
                         'match_date' => $scheduled?->toDateString(), 'scheduled_at' => $scheduled,
                         'round' => $item['round'] ?? null, 'best_of' => $this->bestOf($item['format'] ?? null),
                         'player_one' => data_get($item, 'players.p1.name'), 'player_two' => data_get($item, 'players.p2.name'),
+                        'player_one_country' => $this->countryCode(data_get($item, 'players.p1.country')),
+                        'player_two_country' => $this->countryCode(data_get($item, 'players.p2.country')),
                         'status' => 'scheduled', 'stats' => ['live_tennis_id' => $item['id']],
                     ],
                 );
@@ -76,6 +78,13 @@ class LiveTennisService
     private function bestOf(?string $format): ?int
     {
         return preg_match('/BO(\d)/i', (string) $format, $m) ? (int) $m[1] : null;
+    }
+
+    /** Normalise an ISO country code (e.g. "gre") to upper-case, or null. */
+    private function countryCode(?string $code): ?string
+    {
+        $code = strtoupper(trim((string) $code));
+        return preg_match('/^[A-Z]{2,3}$/', $code) ? $code : null;
     }
 
     private function score(mixed $score): ?string

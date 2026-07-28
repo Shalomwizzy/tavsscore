@@ -10,6 +10,7 @@ class TennisMatch extends Model
     protected $fillable = [
         'source', 'source_key', 'tour', 'tournament', 'surface', 'match_date',
         'round', 'best_of', 'player_one', 'player_two', 'winner',
+        'player_one_country', 'player_two_country',
         'player_one_rank', 'player_two_rank', 'score', 'status', 'stats',
     ];
 
