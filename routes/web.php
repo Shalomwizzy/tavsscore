@@ -254,6 +254,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/booking-code/send',[\App\Http\Controllers\Admin\BookingCodeController::class, 'send'])->name('booking-code.send');
         Route::post('/booking-code/clear',[\App\Http\Controllers\Admin\BookingCodeController::class, 'clear'])->name('booking-code.clear');
         Route::post('/booking-code/grade',[\App\Http\Controllers\Admin\BookingCodeController::class, 'grade'])->name('booking-code.grade');
+        Route::post('/booking-code/resend',[\App\Http\Controllers\Admin\BookingCodeController::class, 'resend'])->name('booking-code.resend');
         Route::delete('/booking-code/{bookingCode}', [\App\Http\Controllers\Admin\BookingCodeController::class, 'destroy'])->name('booking-code.destroy');
 
         /* Broadcast */

@@ -85,7 +85,7 @@ Then `1xbet` later — enable it in `src/adapters/onexbet.js` once SportyBet wor
 ## The tickets it builds
 
 The spec exposes one ticket per market, each built from the **safest** model
-selections first and stacked to a combined-odds band of **3.00–500.00**
+selections first and stacked to a combined-odds band of **2.00–500.00**
 (minimum 3 legs):
 
 | ref | market |

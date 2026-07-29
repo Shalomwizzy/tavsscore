@@ -950,7 +950,7 @@ class TelegramService
         );
     }
 
-    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null): void
+    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null, ?string $ticketUrl = null): void
     {
         $notePart = $note ? "\n📋 Picks: <b>{$note}</b>" : '';
         $howTo = match (strtolower($platform)) {
@@ -963,20 +963,37 @@ class TelegramService
             default => "Open {$platform} app → Booking Code → Enter <b>{$code}</b>",
         };
 
+        $safeCode = $this->escape($code);
         $msg = '🎟️ <b>BOOKING CODE — '.strtoupper($platform)."</b>\n"
             ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            ."🔑 Code: <code>{$code}</code>"
+            ."🔑 Code: <code>{$safeCode}</code>\n"
+            ."☝️ Tap <b>Copy code</b> below, then load it in {$platform}."
             .$notePart."\n\n"
             ."📲 <b>How to use:</b>\n{$howTo}\n\n"
             ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             ."⚠️ Verify odds before placing. Bet responsibly.\n"
-            ."🔗 <a href=\"{$siteUrl}/picks\">See full analysis →</a>";
+            ."🔗 <a href=\"{$siteUrl}/booking-codes\">See ticket analysis →</a>";
 
         if ($affiliateUrl) {
             $msg .= "\n📝 No {$platform} account? <a href=\"{$affiliateUrl}\">Register free →</a>";
         }
 
-        $this->send($msg);
+        $keyboard = [[[
+            'text' => '📋 COPY CODE',
+            'copy_text' => ['text' => $code],
+        ]]];
+        if ($ticketUrl) {
+            $keyboard[] = [[
+                'text' => '🎟️ OPEN TICKET IN '.strtoupper($platform),
+                'url' => $ticketUrl,
+            ]];
+        }
+        $keyboard[] = [[
+            'text' => '📊 VIEW TICKET ANALYSIS',
+            'url' => rtrim($siteUrl, '/').'/booking-codes',
+        ]];
+
+        $this->send($msg, $keyboard);
     }
 
     /** Result of a settled booking code (all legs won, or one leg lost). */

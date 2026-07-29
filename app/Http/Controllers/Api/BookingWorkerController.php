@@ -86,7 +86,13 @@ class BookingWorkerController extends Controller
         $odds  = $code->total_odds ? ' @ '.number_format((float) $code->total_odds, 2) : '';
 
         try {
-            $telegram->sendBookingCode($code->platform, strtoupper($code->code), (string) ($code->note ?? ''), config('app.url'));
+            $telegram->sendBookingCode(
+                $code->platform,
+                strtoupper($code->code),
+                (string) ($code->note ?? ''),
+                config('app.url'),
+                ticketUrl: $code->link,
+            );
         } catch (\Throwable $e) {
             report($e);
         }

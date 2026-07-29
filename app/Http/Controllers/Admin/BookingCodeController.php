@@ -80,6 +80,29 @@ class BookingCodeController extends Controller
         return back()->with('success', trim(Artisan::output()) ?: 'Booking-code outcomes checked.');
     }
 
+    /** Re-send today's active codes after a message-format or link update. */
+    public function resend(TelegramService $telegram)
+    {
+        $codes = BookingCode::query()
+            ->where('status', 'published')
+            ->where('total_odds', '>=', 2)
+            ->whereDate('pick_date', now('Africa/Lagos')->toDateString())
+            ->orderBy('id')
+            ->get();
+
+        foreach ($codes as $code) {
+            $telegram->sendBookingCode(
+                $code->platform,
+                strtoupper($code->code),
+                (string) ($code->note ?? ''),
+                config('app.url'),
+                ticketUrl: $code->link,
+            );
+        }
+
+        return back()->with('success', "Re-sent {$codes->count()} active booking code message(s) to Telegram.");
+    }
+
     public function destroy(BookingCode $bookingCode)
     {
         $bookingCode->delete();

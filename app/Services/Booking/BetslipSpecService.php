@@ -44,6 +44,11 @@ class BetslipSpecService
     // legs — forces genuine game+market variety instead of one repeated market.
     private const MAX_SAME_MARKET = 3;
 
+    // A mixed code must genuinely combine supported market types. Corners stay
+    // out until their live SportyBet market mapping has been verified; guessing
+    // an ID would risk adding the wrong selection to a user's ticket.
+    private const MIN_MIXED_MARKETS = 2;
+
     public function __construct(private readonly BookingOutcomeLearningService $bookingLearning) {}
 
     /**
@@ -177,13 +182,21 @@ class BetslipSpecService
     /** Mixed ticket: the safest genuinely-playable market on each fixture. */
     private function buildSafeBuilder(Collection $preds): ?array
     {
-        // Genuine mix: pick each game's safest bookable market, but cap how many
+        // Genuine mix: prefer an unused market for each game, then cap how many
         // legs any single market may cover so it isn't one repeated market.
         $used = [];
         $legs = [];
         foreach ($preds as $p) {
             $chosen = null;
-            foreach ($this->bookableOptions($p->market_board, 80.0) as $opt) {
+            $options = $this->bookableOptions($p->market_board, 80.0);
+            foreach ($options as $opt) {
+                if (! isset($used[$opt['market']])) {
+                    $chosen = $opt;
+                    break;
+                }
+            }
+            foreach ($options as $opt) {
+                if ($chosen !== null) break;
                 if (($used[$opt['market']] ?? 0) < self::MAX_SAME_MARKET) {
                     $chosen = $opt;
                     break;
@@ -199,7 +212,7 @@ class BetslipSpecService
             ];
         }
 
-        $selections = $this->stackToOddsBand($legs);
+        $selections = $this->stackMixedToOddsBand($legs);
         if (count($selections) < self::MIN_LEGS) {
             return null;
         }
@@ -287,6 +300,44 @@ class BetslipSpecService
         }
 
         return $selections;
+    }
+
+    /** Keep at least two market types while still building with safe legs first. */
+    private function stackMixedToOddsBand(array $legs): array
+    {
+        usort($legs, fn ($a, $b) => $b['prob'] <=> $a['prob']);
+        $seed = [];
+        $markets = [];
+        $matches = [];
+        foreach ($legs as $leg) {
+            $matchId = $leg['pred']->match_id;
+            if (isset($markets[$leg['market']]) || isset($matches[$matchId])) continue;
+            $seed[] = $leg;
+            $markets[$leg['market']] = true;
+            $matches[$matchId] = true;
+            if (count($markets) >= self::MIN_MIXED_MARKETS) break;
+        }
+        if (count($markets) < self::MIN_MIXED_MARKETS) return [];
+
+        foreach ($legs as $leg) {
+            if (count($seed) >= self::MAX_LEGS) break;
+            $matchId = $leg['pred']->match_id;
+            if (isset($matches[$matchId])) continue;
+            $seed[] = $leg;
+            $matches[$matchId] = true;
+            if (count($seed) >= self::MIN_LEGS && $this->combinedLegOdds($seed) >= self::MIN_TOTAL_ODDS) break;
+        }
+
+        return $this->stackToOddsBand($seed);
+    }
+
+    private function combinedLegOdds(array $legs): float
+    {
+        $odds = 1.0;
+        foreach ($legs as $leg) {
+            $odds *= max(1.0, (float) ($leg['odds'] ?? 1));
+        }
+        return $odds;
     }
 
     /** Top up every slip to the 2.0 minimum, recompute odds, drop those short. */
