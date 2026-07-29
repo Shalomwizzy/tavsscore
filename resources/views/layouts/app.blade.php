@@ -15,18 +15,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TavsScore">
     <meta name="description" content="@yield('meta_description', 'TavsScore delivers real-time football live scores, AI-powered match predictions and football news covering Premier League, Champions League, La Liga, Serie A, Bundesliga and more.')">
+    <meta name="robots" content="@yield('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')">
 
     {{-- Open Graph --}}
-    <meta property="og:type"        content="website">
+    <meta property="og:type"        content="@yield('og_type', 'website')">
     <meta property="og:site_name"   content="TavsScore">
     <meta property="og:title"       content="@yield('og_title', 'TavsScore | Football Live Scores & AI Predictions')">
     <meta property="og:description" content="@yield('og_description', 'Real-time football live scores, AI-powered match predictions and football news - all free on TavsScore.')">
     @hasSection('og_image')
     <meta property="og:image"       content="@yield('og_image')">
     @endif
-    @hasSection('canonical')
-    <meta property="og:url"         content="@yield('canonical')">
-    @endif
+    <meta property="og:url"         content="@hasSection('canonical')@yield('canonical')@else{{ url()->current() }}@endif">
 
     {{-- Twitter Card --}}
     <meta name="twitter:card"        content="summary_large_image">
@@ -37,12 +36,10 @@
     @endif
 
     {{-- Canonical --}}
-    @hasSection('canonical')
-    <link rel="canonical" href="@yield('canonical')">
-    @endif
+    <link rel="canonical" href="@hasSection('canonical')@yield('canonical')@else{{ url()->current() }}@endif">
 
     {{-- WebSite structured data --}}
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TavsScore","url":"{{ config('app.url') }}","description":"Real-time football live scores, AI-powered match predictions and football news.","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"{{ url('/blog') }}?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TavsScore","url":"{{ url('/') }}","description":"Real-time football live scores, AI-powered match predictions and football news.","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"{{ url('/blog') }}?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
 
     {{-- Google Analytics 4 (consent-gated) --}}
     @if(config('services.ga.id'))

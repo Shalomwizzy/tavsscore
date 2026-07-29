@@ -4,8 +4,9 @@
 @section('meta_description', $post->excerpt_or_generated)
 @section('og_title', $post->title)
 @section('og_description', $post->excerpt_or_generated)
-@section('og_image', $post->image_url ?? '')
-@section('canonical', route('blog.show', $post->slug))
+@section('og_type', 'article')
+@section('og_image', $post->absolute_image_url ?? '')
+@section('canonical', url('/blog/' . $post->slug))
 
 @push('styles')
 <style>
@@ -113,11 +114,11 @@ $jsonLd = json_encode([
     'publisher' => [
         '@type' => 'Organization',
         'name' => 'TavsScore',
-        'url' => config('app.url'),
+        'url' => url('/'),
     ],
-    'mainEntityOfPage' => route('blog.show', $post->slug),
-    'image' => $post->image_url,
-]);
+    'mainEntityOfPage' => url('/blog/' . $post->slug),
+    'image' => $post->absolute_image_url,
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 @endphp
 @endpush
 

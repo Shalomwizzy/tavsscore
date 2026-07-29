@@ -201,20 +201,31 @@ class PublicPagesTest extends TestCase
 
     public function test_blog_index_loads(): void
     {
-        $this->get('/blog')->assertStatus(200);
+        $baseUrl = config('app.url');
+
+        $this->get('/blog')
+            ->assertStatus(200)
+            ->assertSee('name="robots" content="index, follow', false)
+            ->assertSee('rel="canonical" href="' . $baseUrl . '/blog"', false);
     }
 
     public function test_blog_show_loads_for_published_post(): void
     {
+        $baseUrl = config('app.url');
+
         $post = BlogPost::create([
             'title'        => 'Test football post',
             'slug'         => 'test-football-post',
             'content'      => 'Some long content here for a football analysis article.',
             'is_published' => true,
             'published_at' => now()->subDay(),
+            'image_path'   => 'images/blog/test-football-post.png',
         ]);
 
-        $this->get('/blog/' . $post->slug)->assertStatus(200);
+        $this->get('/blog/' . $post->slug)
+            ->assertStatus(200)
+            ->assertSee('property="og:type"        content="article"', false)
+            ->assertSee($baseUrl . '/images/blog/test-football-post.png', false);
     }
 
     // ── Static pages ────────────────────────────────────────────────
@@ -243,9 +254,11 @@ class PublicPagesTest extends TestCase
 
     public function test_sitemap_returns_xml(): void
     {
+        $baseUrl = config('app.url');
         $response = $this->get('/sitemap.xml');
         $response->assertStatus(200);
         $this->assertStringContainsString('xml', $response->headers->get('Content-Type'));
+        $response->assertSee($baseUrl . '/blog', false);
     }
 
     public function test_robots_txt_loads(): void

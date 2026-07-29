@@ -59,6 +59,19 @@ class BlogPost extends Model
         return $this->featured_image ?: null;
     }
 
+    public function getAbsoluteImageUrlAttribute(): ?string
+    {
+        $imageUrl = $this->image_url;
+
+        if (blank($imageUrl)) {
+            return null;
+        }
+
+        return Str::startsWith($imageUrl, ['http://', 'https://'])
+            ? $imageUrl
+            : url($imageUrl);
+    }
+
     public function getReadingTimeAttribute(): int
     {
         $wordCount = str_word_count(strip_tags($this->content));

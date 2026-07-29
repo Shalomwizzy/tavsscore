@@ -7,13 +7,12 @@
         <loc>{{ $page['url'] }}</loc>
         <changefreq>{{ $page['freq'] }}</changefreq>
         <priority>{{ $page['priority'] }}</priority>
-        <lastmod>{{ now()->toAtomString() }}</lastmod>
     </url>
     @endforeach
 
     @foreach($matchPages as $match)
     <url>
-        <loc>{{ route('predictions.show', $match->slug) }}</loc>
+        <loc>{{ $baseUrl }}/predictions/{{ $match->slug }}</loc>
         <changefreq>daily</changefreq>
         <priority>0.6</priority>
         <lastmod>{{ $match->updated_at->toAtomString() }}</lastmod>
@@ -22,7 +21,7 @@
 
     @foreach($posts as $post)
     <url>
-        <loc>{{ route('blog.show', $post->slug) }}</loc>
+        <loc>{{ $baseUrl }}/blog/{{ $post->slug }}</loc>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
         <lastmod>{{ $post->updated_at->toAtomString() }}</lastmod>

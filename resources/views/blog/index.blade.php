@@ -3,6 +3,7 @@
 @section('title', 'Football News & Analysis | TavsScore Blog')
 @section('meta_description', 'Latest football news, match previews, transfer updates and analysis covering the Premier League, Champions League, La Liga, Serie A, Bundesliga and more.')
 @section('og_title', 'Football News & Analysis | TavsScore')
+@section('canonical', $canonical)
 
 @push('styles')
 <style>
