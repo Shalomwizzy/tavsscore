@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 /**
  * Wipes booking codes for a fresh start. With no options it deletes ALL of
- * them; --failed only removes the FAILED-* rows; --before keeps only recent days.
+ * them; --failed removes failed placeholder rows; --before keeps only recent days.
  */
 class ClearBookingCodes extends Command
 {
@@ -20,7 +20,10 @@ class ClearBookingCodes extends Command
         $query = BookingCode::query();
 
         if ($this->option('failed')) {
-            $query->where('status', 'failed');
+            $query->where(function ($failed) {
+                $failed->where('status', 'failed')
+                    ->orWhere('code', 'like', 'FAILED-%');
+            });
         }
         if ($before = $this->option('before')) {
             $query->where('pick_date', '<=', $before);

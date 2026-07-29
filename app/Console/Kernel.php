@@ -36,6 +36,10 @@ class Kernel extends ConsoleKernel
         // Settle booking codes (accumulator win/loss) + push the outcome.
         $schedule->command('booking:grade')->everyThirtyMinutes()->withoutOverlapping();
 
+        // Remove legacy failed placeholders. New worker failures are retried
+        // locally and are never stored as booking codes in the first place.
+        $schedule->command('booking:clear --failed --force')->hourly()->withoutOverlapping();
+
         // Free RESULTS fallback (football-data.org) — only fires when the
         // API-Football quota is exhausted, so today's outcomes still settle
         // instead of waiting for the next-day catch-up. No-op if nothing pending.

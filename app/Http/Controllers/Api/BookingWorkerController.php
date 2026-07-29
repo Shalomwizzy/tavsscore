@@ -33,10 +33,11 @@ class BookingWorkerController extends Controller
             'link'       => ['nullable', 'url', 'max:500'],
             'slip_ref'   => ['nullable', 'string', 'max:60'],
             'fixtures'   => ['nullable', 'array'],
-            // Failed worker attempts are logged without an odds value; every
-            // publishable ticket itself must clear the 2.00 minimum.
+            // Every publishable ticket itself must clear the 2.00 minimum.
             'total_odds' => ['nullable', 'numeric', 'min:2', 'max:500', 'required_if:status,published'],
-            'status'     => ['nullable', 'in:pending,published,failed,expired'],
+            // The browser worker retries transient errors locally. It must
+            // never turn an unsuccessful attempt into a user-visible record.
+            'status'     => ['nullable', 'in:pending,published,expired'],
             'note'       => ['nullable', 'string', 'max:500'],
             'pick_date'  => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date'],

@@ -112,7 +112,7 @@ class BookingCodeWorkflowTest extends TestCase
             ->assertJsonValidationErrors('total_odds');
     }
 
-    public function test_worker_can_log_a_failed_build_without_publishing_an_invalid_ticket(): void
+    public function test_worker_rejects_failed_placeholders(): void
     {
         config(['services.booking_worker.token' => 'test-worker-token']);
 
@@ -124,9 +124,10 @@ class BookingCodeWorkflowTest extends TestCase
                 'status' => 'failed',
                 'note' => 'Fixture moved before a code could be created.',
             ])
-            ->assertCreated();
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
 
-        $this->assertDatabaseHas('booking_codes', ['code' => 'FAILED-SAFE', 'status' => 'failed']);
+        $this->assertDatabaseMissing('booking_codes', ['code' => 'FAILED-SAFE']);
     }
 
     public function test_public_booking_page_shows_today_code_and_outcome_history(): void

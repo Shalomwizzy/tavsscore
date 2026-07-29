@@ -14,6 +14,14 @@ async function run() {
   const spec = await fetchSpec();
   let slips = spec.slips || [];
   const dryRun = process.env.DRY_RUN === 'true';
+  // A bookmaker can briefly reject a valid ticket while odds or its page are
+  // refreshing. Retry the ticket before letting run.sh retry the whole batch.
+  // Unsuccessful attempts are never saved as public booking codes.
+  const maxSlipAttempts = Math.max(
+    1,
+    Number.parseInt(process.env.BOOKING_SLIP_MAX_ATTEMPTS || '8', 10) || 8,
+  );
+  const unresolvedSlips = [];
   const platforms = dryRun
     ? ['mock']
     : (process.env.PLATFORMS || spec.platforms?.join(',') || 'sportybet')
@@ -60,22 +68,26 @@ async function run() {
         // adapter.buildCode returns { code, link, total_odds, booked } where
         // `booked` is the subset of legs it actually managed to add (some legs
         // may be missing on the bookmaker). It must respect the odds band:
-        // slip.min_total_odds .. slip.max_total_odds. Retried a few times so a
-        // transient failure (odds shift, brief block) doesn't fail the ticket.
+        // slip.min_total_odds .. slip.max_total_odds. Retrying protects against
+        // transient odds changes or a briefly blocked bookmaker page.
         let result = null;
         let lastErr = null;
-        for (let attempt = 1; attempt <= 3; attempt++) {
+        for (let attempt = 1; attempt <= maxSlipAttempts; attempt++) {
           try {
             result = await adapter.buildCode(page, slip);
             if (result && result.code) break;
           } catch (err) {
             lastErr = err;
           }
-          if (attempt < 3 && page) await page.waitForTimeout(2000 * attempt);
+          if (attempt < maxSlipAttempts && page) {
+            await page.waitForTimeout(Math.min(15000, 2000 * attempt));
+          }
         }
 
         if (!result || !result.code) {
-          await postFailure(platform, slip, lastErr ? lastErr.message : 'no code produced');
+          const reason = lastErr ? lastErr.message : 'no code produced';
+          console.error(`✗ ${platform}/${slip.ref}: no code after ${maxSlipAttempts} attempts (${reason}). No failed code was saved; the worker run will retry it.`);
+          unresolvedSlips.push(`${platform}/${slip.ref}`);
           continue;
         }
 
@@ -99,7 +111,9 @@ async function run() {
         console.log(`✓ ${platform}/${slip.ref}: ${result.code} @ ${result.total_odds || '?'}`);
       } catch (err) {
         console.error(`✗ ${platform}/${slip.ref}: ${err.message}`);
-        await postFailure(platform, slip, err.message);
+        // Never create a FAILED-* placeholder. The next run retries this
+        // ticket, while users only ever see real, usable booking codes.
+        unresolvedSlips.push(`${platform}/${slip.ref}`);
       }
     }
 
@@ -107,19 +121,11 @@ async function run() {
   }
 
   if (browser) await browser.close();
-}
 
-async function postFailure(platform, slip, reason) {
-  try {
-    await postCode({
-      platform,
-      code: `FAILED-${slip.ref}`,
-      slip_ref: slip.ref,
-      status: 'failed',
-      note: `${slip.title}: ${reason}`.slice(0, 500),
-    });
-  } catch (e) {
-    console.error(`could not report failure for ${slip.ref}: ${e.message}`);
+  // run.sh sees the non-zero exit and retries the complete run on this Mac.
+  // Successfully-created tickets are idempotent, so users are not spammed.
+  if (unresolvedSlips.length) {
+    throw new Error(`Booking codes still unresolved: ${unresolvedSlips.join(', ')}`);
   }
 }
 

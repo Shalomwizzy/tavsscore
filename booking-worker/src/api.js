@@ -32,7 +32,7 @@ function reachError(base, e) {
   if (/ENOTFOUND|EAI_AGAIN/.test(detail)) hint = ' → the domain in TAVS_BASE_URL is misspelled or not resolving.';
   else if (/ECONNREFUSED/.test(detail))   hint = ' → the server refused the connection (wrong port/host).';
   else if (/CERT|TLS|SSL/i.test(detail))  hint = ' → SSL certificate problem on the site.';
-  else if (/TIMEOUT|ETIMEDOUT/i.test(detail)) hint = ' → the host is not answering GitHub — Hostinger may be blocking datacenter IPs.';
+  else if (/TIMEOUT|ETIMEDOUT/i.test(detail)) hint = ' → the site is not answering the Mac worker.';
   return new Error(`Could not reach ${base} (${detail})${hint}`);
 }
 
@@ -40,7 +40,7 @@ function reachError(base, e) {
 // tells you what to fix instead of just "exit code 1".
 function explain(status, where) {
   if (status === 401 || status === 403) {
-    return `${status} Unauthorized on ${where}. The BOOKING_WORKER_TOKEN in GitHub does not match Hostinger .env — OR the server cached the old config. Fix: make both tokens identical, then on Hostinger run "php artisan config:clear".`;
+    return `${status} Unauthorized on ${where}. The BOOKING_WORKER_TOKEN on this Mac does not match Hostinger .env — OR the server cached the old config. Fix: make both tokens identical, then on Hostinger run "php artisan config:clear".`;
   }
   if (status === 404) {
     return `404 Not Found on ${where}. The worker routes aren't live on the site yet. Fix: deploy the latest code to Hostinger (git pull + php artisan route:clear), then retry.`;
@@ -69,8 +69,8 @@ async function fetchWithRetry(url, options, attempts = 3, delayMs = 20000) {
 
 /** GET today's betslip spec (the tickets to build). */
 export async function fetchSpec() {
-  if (!BASE)  throw new Error('TAVS_BASE_URL is not set. Add it as a GitHub Actions secret (e.g. https://tavsscore.com).');
-  if (!TOKEN) throw new Error('BOOKING_WORKER_TOKEN is not set. Add it as a GitHub Actions secret (same value as Hostinger .env).');
+  if (!BASE)  throw new Error('TAVS_BASE_URL is not set. Add it to the Mac worker .env (e.g. https://tavsscore.com).');
+  if (!TOKEN) throw new Error('BOOKING_WORKER_TOKEN is not set. Add it to the Mac worker .env (same value as Hostinger .env).');
 
   const res = await fetchWithRetry(`${BASE}/api/worker/betslip-spec`, { headers: headers() });
   if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/betslip-spec`) + ` — body: ${(await res.text()).slice(0, 200)}`);

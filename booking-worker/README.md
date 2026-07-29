@@ -2,8 +2,13 @@
 
 Turns TavsScore's daily **betslip spec** into **SportyBet / 1xBet booking codes**
 and posts them back to the site. It runs a real headless browser (Playwright), so
-it **cannot run on Hostinger shared hosting** — it runs on GitHub Actions (free)
-or any machine that can run Chromium.
+it **cannot run on Hostinger shared hosting**. Run it on the configured local
+Mac, which has a browser and the required Nigerian network access.
+
+The worker retries each ticket up to `BOOKING_SLIP_MAX_ATTEMPTS` (default: 8).
+If SportyBet still cannot make a usable ticket, no `FAILED-*` record is saved;
+the local retry runner continues until it succeeds. Set a positive
+`BOOKING_MAX_ATTEMPTS` only if you deliberately want it to stop after a limit.
 
 ```
 Laravel app  ──GET /api/worker/betslip-spec──▶  this worker
@@ -22,7 +27,7 @@ my worker" so nobody else can push fake booking codes to your site.
 You put the **same** string in **two** places:
 
 1. **Laravel `.env`** (on Hostinger): `BOOKING_WORKER_TOKEN=<the string>`
-2. **The worker** (GitHub Actions secret): `BOOKING_WORKER_TOKEN=<the same string>`
+2. **The local Mac worker `.env`**: `BOOKING_WORKER_TOKEN=<the same string>`
 
 The worker sends it on every request as the `X-Worker-Token` header; Laravel's
 `worker.token` middleware checks it matches. If they don't match → `401`.
@@ -46,13 +51,14 @@ BOOKING_WORKER_TOKEN=<your generated token>
 ```
 (`config/services.php` already reads it; the `/api/worker/*` routes are already wired.)
 
-### 2. Worker side (GitHub Actions — recommended)
-1. Push this repo to GitHub (the `booking-worker/` folder + `.github/workflows/booking-worker.yml` come with it).
-2. Repo → **Settings → Secrets and variables → Actions → New repository secret**, add:
-   - `TAVS_BASE_URL` = `https://tavsscore.com`
-   - `BOOKING_WORKER_TOKEN` = the **same** token you put in Laravel
-3. The workflow runs daily at 13:30 Lagos (`cron: '30 12 * * *'` UTC). You can
-   also trigger it manually from the **Actions** tab (“Run workflow”).
+### 2. Worker side (the local Mac)
+In `booking-worker/.env`, set:
+```
+TAVS_BASE_URL=https://tavsscore.com
+BOOKING_WORKER_TOKEN=<the same token as Hostinger>
+```
+Use `./run.sh` to create the tickets. It retries until every eligible ticket
+gets a real code, without adding failed placeholder rows to the website.
 
 ### 3. Test the whole pipeline first (no bookmaker needed)
 Before touching any bookmaker, prove the plumbing works with the built-in
