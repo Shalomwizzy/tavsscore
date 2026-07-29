@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\TelegramPickCardService;
+use App\Services\TelegramService;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -44,5 +45,22 @@ class TelegramPickCardServiceTest extends TestCase
         $this->assertNotNull($path);
         Storage::disk('public')->assertExists($path);
         $this->assertStringStartsWith("\xFF\xD8\xFF", Storage::disk('public')->get($path));
+    }
+
+    public function test_prediction_photo_caption_keeps_the_readable_pick_list(): void
+    {
+        $method = new \ReflectionMethod(TelegramService::class, 'predictionCardCaption');
+        $caption = $method->invoke(app(TelegramService::class), 'Over 2.5 Goals', [[
+            'match' => 'Manchester United vs Chelsea',
+            'league' => 'Premier League',
+            'tip' => 'Over 2.5 Goals',
+            'prob' => 82,
+        ]]);
+
+        $this->assertStringContainsString('Manchester United vs Chelsea', $caption);
+        $this->assertStringContainsString('Over 2.5 Goals', $caption);
+        $this->assertStringContainsString('82%', $caption);
+        $this->assertStringContainsString('Play responsibly', $caption);
+        $this->assertLessThanOrEqual(1024, mb_strlen($caption));
     }
 }

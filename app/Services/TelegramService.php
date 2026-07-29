@@ -127,13 +127,100 @@ class TelegramService
         }
 
         try {
-            return $this->sendPhoto($imagePath, '<b>Open the full analysis below.</b>', [[[
+            return $this->sendPhoto($imagePath, $this->predictionCardCaption($title, $picks), [[[
                 'text' => '📊 VIEW FULL ANALYSIS',
                 'url' => rtrim($siteUrl, '/').$path,
             ]]], fallbackToText: false);
         } finally {
             Storage::disk('public')->delete($imagePath);
         }
+    }
+
+    /**
+     * Telegram displays a photo caption directly below its image. Keep the
+     * useful match list there as well, rather than making users choose between
+     * a visual card and the readable text details they already know.
+     *
+     * @param array<int, array<string, mixed>> $picks
+     */
+    private function predictionCardCaption(string $title, array $picks): string
+    {
+        $lines = [
+            '⚽ <b>TAVSSCORE — '.$this->escape($title).'</b>',
+            '<i>'.now('Africa/Lagos')->format('l, d M Y · H:i').' Lagos</i>',
+            '━━━━━━━━━━━━━━━━━━━━',
+        ];
+
+        foreach (array_values($picks) as $index => $pick) {
+            $match = trim((string) ($pick['match'] ?? ''));
+            if ($match === '') {
+                continue;
+            }
+
+            $league = trim((string) ($pick['league'] ?? $pick['tournament'] ?? ''));
+            $tip = $this->captionTip($pick);
+            $probability = $pick['confidence'] ?? $pick['prob'] ?? null;
+            $parts = ["\n<b>".($index + 1).'. '.$this->escape($this->captionShorten($match, 48)).'</b>'];
+
+            if ($league !== '') {
+                $parts[] = '🏟️ <i>'.$this->escape($this->captionShorten($league, 38)).'</i>';
+            }
+            $parts[] = '📌 '.$this->escape($this->captionShorten($tip, 50));
+            if ($probability !== null && $probability !== '') {
+                $parts[] = '📊 <b>'.$this->escape((string) $probability).'%</b>';
+            }
+
+            $candidate = implode("\n", $parts);
+            // Telegram photo captions have a 1,024-character limit. Preserve
+            // complete rows and a proper closing disclaimer instead of cutting
+            // a match or an HTML tag in half.
+            if (mb_strlen(implode("\n", $lines).$candidate) > 810) {
+                break;
+            }
+            $lines[] = $candidate;
+        }
+
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = '<i>Model analysis, not a guarantee. Play responsibly.</i>';
+
+        return implode("\n", $lines);
+    }
+
+    /** @param array<string, mixed> $pick */
+    private function captionTip(array $pick): string
+    {
+        foreach (['tip', 'line', 'label', 'winner'] as $field) {
+            if (filled($pick[$field] ?? null)) {
+                return (string) $pick[$field];
+            }
+        }
+
+        if (filled($pick['player'] ?? null)) {
+            return (string) $pick['player'].' — Anytime goalscorer';
+        }
+        if (filled($pick['team'] ?? null) && filled($pick['market'] ?? null)) {
+            return (string) $pick['team'].' — '.(string) $pick['market'];
+        }
+        if (isset($pick['scores']) && is_array($pick['scores'])) {
+            $scores = collect($pick['scores'])->take(2)->map(function ($score): string {
+                $value = (string) ($score['score'] ?? '');
+                $pct = $score['pct'] ?? null;
+
+                return $pct !== null ? $value.' ('.$pct.'%)' : $value;
+            })->filter()->implode(' · ');
+            if ($scores !== '') {
+                return 'Top score: '.$scores;
+            }
+        }
+
+        return 'Model selection';
+    }
+
+    private function captionShorten(string $value, int $limit): string
+    {
+        $value = trim(preg_replace('/\s+/', ' ', $value) ?: '');
+
+        return mb_strlen($value) > $limit ? mb_substr($value, 0, $limit - 1).'…' : $value;
     }
 
     public function sendLineupPicks(array $picks, string $siteUrl): void
