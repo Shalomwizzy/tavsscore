@@ -9,7 +9,7 @@ use App\Models\MatchInjury;
 use App\Models\PlayerStatistic;
 use App\Models\Standing;
 use App\Models\Transfer;
-use App\Services\GroqBlogService;
+use App\Services\Blog\BlogArticleWriter;
 use App\Services\Blog\EditorialQualityGate;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
@@ -27,10 +27,10 @@ class AutoBlogPost extends Command
 
     public function handle(): int
     {
-        $groq = app(GroqBlogService::class);
+        $writer = app(BlogArticleWriter::class);
 
-        if (! $groq->configured()) {
-            $this->error('GROQ_API_KEY not configured in .env');
+        if (! $writer->configured()) {
+            $this->error('No blog-writing AI is configured. Add GROQ_API_KEY, GEMINI_API_KEY or MISTRAL_API_KEY to .env.');
             return self::FAILURE;
         }
 
@@ -83,7 +83,7 @@ class AutoBlogPost extends Command
             $this->info("Generating AI article for {$dateStr}…");
 
             $quality = app(EditorialQualityGate::class);
-            $json = $this->writeApprovedArticle($groq, $quality, $userPrompt);
+            $json = $this->writeApprovedArticle($writer, $quality, $userPrompt);
             $content = $quality->sanitise($json['content']);
 
             $category = $this->pickCategory($matchList);
@@ -291,12 +291,12 @@ class AutoBlogPost extends Command
     }
 
     /** @return array{title:string, content:string} */
-    private function writeApprovedArticle(GroqBlogService $groq, EditorialQualityGate $quality, string $userPrompt): array
+    private function writeApprovedArticle(BlogArticleWriter $writer, EditorialQualityGate $quality, string $userPrompt): array
     {
         $revisionNote = '';
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $article = $groq->writeArticle(
+            $article = $writer->writeArticle(
                 $quality->systemPrompt(),
                 $userPrompt . $revisionNote . "\n\nRequired output quality: write at least 750 useful words, use at least three H2 headings and five substantive paragraphs. Every claim must come from the supplied briefing.",
             );

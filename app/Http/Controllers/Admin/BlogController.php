@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
 use App\Services\Blog\HeroImageService;
+use App\Services\Blog\BlogArticleWriter;
 use App\Services\Blog\EditorialQualityGate;
-use App\Services\GroqBlogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -110,9 +110,9 @@ class BlogController extends Controller
 
     public function autoGenerate(): RedirectResponse
     {
-        if (! app(GroqBlogService::class)->configured()) {
+        if (! app(BlogArticleWriter::class)->configured()) {
             return redirect()->route('admin.blog.index')
-                ->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
+                ->with('error', 'No blog-writing AI is configured. Add GROQ_API_KEY, GEMINI_API_KEY or MISTRAL_API_KEY to your .env file.');
         }
 
         $before = BlogPost::max('id');
@@ -139,14 +139,14 @@ class BlogController extends Controller
     }
 
     /** Replace the text only, leaving the existing image untouched. */
-    public function regenerateArticle(BlogPost $blog, GroqBlogService $groq, EditorialQualityGate $quality): RedirectResponse
+    public function regenerateArticle(BlogPost $blog, BlogArticleWriter $writer, EditorialQualityGate $quality): RedirectResponse
     {
-        if (! $groq->configured()) {
-            return back()->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
+        if (! $writer->configured()) {
+            return back()->with('error', 'No blog-writing AI is configured. Add GROQ_API_KEY, GEMINI_API_KEY or MISTRAL_API_KEY to your .env file.');
         }
 
         try {
-            $article = $groq->writeArticle(
+            $article = $writer->writeArticle(
                 $quality->systemPrompt(),
                 "Regenerate this TavsScore football article. The current article below is the only factual briefing available. Preserve confirmed facts, remove unsupported claims, improve the reader value and structure, and do not invent new facts. Write at least 750 useful words, with at least three H2 headings and five substantive paragraphs.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
             );

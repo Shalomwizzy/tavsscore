@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\BlogPost;
 use App\Services\Blog\EditorialQualityGate;
 use App\Services\Blog\GroqRateLimitException;
-use App\Services\GroqBlogService;
+use App\Services\Blog\BlogArticleWriter;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -20,12 +20,12 @@ class AuditBlogEditorialQuality extends Command
 
     protected $description = 'Audit published blog articles and safely improve eligible low-quality AI drafts.';
 
-    public function handle(GroqBlogService $groq, EditorialQualityGate $quality): int
+    public function handle(BlogArticleWriter $writer, EditorialQualityGate $quality): int
     {
         $fix = (bool) $this->option('fix');
 
-        if ($fix && ! $groq->configured()) {
-            $this->error('GROQ_API_KEY not configured in .env');
+        if ($fix && ! $writer->configured()) {
+            $this->error('No blog-writing AI is configured. Add GROQ_API_KEY, GEMINI_API_KEY or MISTRAL_API_KEY to .env.');
             return self::FAILURE;
         }
 
@@ -67,7 +67,7 @@ class AuditBlogEditorialQuality extends Command
                     sleep($delay);
                 }
                 $rewritesAttempted++;
-                $article = $this->rewriteUntilApproved($groq, $quality, $post);
+                $article = $this->rewriteUntilApproved($writer, $quality, $post);
                 $post->update([
                     // Keep the existing slug so links already crawled by Google
                     // continue to work even when the headline is improved.
@@ -99,12 +99,12 @@ class AuditBlogEditorialQuality extends Command
     }
 
     /** @return array{title:string, content:string} */
-    private function rewriteUntilApproved(GroqBlogService $groq, EditorialQualityGate $quality, BlogPost $post): array
+    private function rewriteUntilApproved(BlogArticleWriter $writer, EditorialQualityGate $quality, BlogPost $post): array
     {
         $revisionNote = '';
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $article = $groq->writeArticle(
+            $article = $writer->writeArticle(
                 $quality->systemPrompt(),
                 "Improve the published TavsScore article below. It is the only factual briefing available, so preserve confirmed facts, remove unsupported claims, and do not add new facts, quotes, statistics or sources. Write an original reader-first article of at least 750 useful words, with at least three H2 headings and five substantive paragraphs.\n\nCURRENT TITLE: {$post->title}\n\nCURRENT ARTICLE HTML:\n{$post->content}{$revisionNote}",
             );

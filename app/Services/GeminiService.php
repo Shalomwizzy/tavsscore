@@ -6,6 +6,7 @@ use App\Models\FootballMatch;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -22,6 +23,41 @@ class GeminiService
     public function isConfigured(): bool
     {
         return ! blank(config('services.gemini.key'));
+    }
+
+    /** @return array{title:string, content:string} */
+    public function writeArticle(string $systemPrompt, string $userPrompt): array
+    {
+        if (! $this->isConfigured()) {
+            throw new RuntimeException('GEMINI_API_KEY is not configured.');
+        }
+
+        $response = Http::timeout(90)
+            ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
+            ->post('https://generativelanguage.googleapis.com/v1beta/models/' . config('services.gemini.model') . ':generateContent', [
+                'systemInstruction' => ['parts' => [['text' => $systemPrompt]]],
+                'contents' => [['role' => 'user', 'parts' => [['text' => $userPrompt]]]],
+                'generationConfig' => [
+                    'temperature' => 0.45,
+                    'maxOutputTokens' => 2000,
+                    'responseMimeType' => 'application/json',
+                ],
+            ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Gemini API error: status ' . $response->status());
+        }
+
+        $raw = trim((string) data_get($response->json(), 'candidates.0.content.parts.0.text'));
+        $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw);
+        $raw = preg_replace('/\s*```\s*$/', '', $raw);
+        $article = json_decode($raw, true);
+
+        if (! is_array($article) || blank($article['title'] ?? null) || blank($article['content'] ?? null)) {
+            throw new RuntimeException('Gemini returned an invalid article response.');
+        }
+
+        return ['title' => trim($article['title']), 'content' => trim($article['content'])];
     }
 
     /**

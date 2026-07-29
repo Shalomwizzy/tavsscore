@@ -6,6 +6,7 @@ use App\Models\FootballMatch;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -21,6 +22,42 @@ class MistralService
     public function isConfigured(): bool
     {
         return ! blank(config('services.mistral.key'));
+    }
+
+    /** @return array{title:string, content:string} */
+    public function writeArticle(string $systemPrompt, string $userPrompt): array
+    {
+        if (! $this->isConfigured()) {
+            throw new RuntimeException('MISTRAL_API_KEY is not configured.');
+        }
+
+        $response = Http::timeout(90)
+            ->withToken(config('services.mistral.key'))
+            ->post(config('services.mistral.url'), [
+                'model' => config('services.mistral.model'),
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+                'temperature' => 0.45,
+                'max_tokens' => 2000,
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Mistral API error: status ' . $response->status());
+        }
+
+        $raw = trim((string) data_get($response->json(), 'choices.0.message.content'));
+        $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw);
+        $raw = preg_replace('/\s*```\s*$/', '', $raw);
+        $article = json_decode($raw, true);
+
+        if (! is_array($article) || blank($article['title'] ?? null) || blank($article['content'] ?? null)) {
+            throw new RuntimeException('Mistral returned an invalid article response.');
+        }
+
+        return ['title' => trim($article['title']), 'content' => trim($article['content'])];
     }
 
     /**
