@@ -8,6 +8,8 @@
     "start": "node src/index.js",
     "watch": "node src/watch.js",
     "capture": "node src/capture.js",
+    "login-setup": "node src/login-setup.js",
+    "capture-bet": "node src/capture-bet.js",
     "postinstall": "playwright install chromium"
   },
   "dependencies": {

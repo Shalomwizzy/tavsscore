@@ -3,4 +3,6 @@ node_modules/
 playwright-report/
 test-results/
 capture.log.json
+capture-bet.log.json
 booking-worker.log
+.sporty-profile/
