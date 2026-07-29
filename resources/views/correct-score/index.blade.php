@@ -163,6 +163,8 @@
             </div>
             @endif
 
+            @include('partials.match-intelligence', ['prediction' => $pred, 'accent' => '#c4b5fd'])
+
             <div class="cs-kickoff">
                 <span>🕐 Kickoff {{ $kickoff }}</span>
                 <a href="https://wa.me/?text={{ $waText }}" target="_blank" rel="noopener"

@@ -207,6 +207,8 @@
                     </div>
                 </div>
 
+                <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#93c5fd'])</div>
+
                 <div class="pick-card-footer">
                     <span class="footer-tag">We win if: <strong style="color:var(--text);">{{ $winDesc }}</strong></span>
                 </div>

@@ -782,6 +782,8 @@ if (! function_exists('stripTip')) {
                 </div>
                 @endif
 
+                <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#fcd34d'])</div>
+
                 @if(!empty($pick['likely_scores']))
                 <div style="padding:0 1.75rem; margin-bottom:.75rem; font-size:.72rem; color:var(--text-dim);">
                     🎯 Likely scores:

@@ -66,6 +66,11 @@
 
     .lp-league { font-size: .68rem; color: var(--text-dim); margin-bottom: .3rem; font-weight: 600; }
     .lp-teams  { font-size: .95rem; font-weight: 800; color: #fff; margin-bottom: .75rem; line-height: 1.3; }
+    .lp-teams-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:.55rem; }
+    .lp-team-side { display:flex; align-items:center; gap:.45rem; min-width:0; }
+    .lp-team-side.away { justify-content:flex-end; text-align:right; }
+    .lp-team-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lp-team-logo { width:28px; height:28px; object-fit:contain; flex-shrink:0; }
     .lp-vs     { color: var(--text-muted); font-weight: 400; font-size: .8rem; }
 
     .lp-tip {
@@ -192,10 +197,10 @@
             @endif
 
             <div class="lp-league">{{ $match?->league }} · {{ $match?->league_country }}</div>
-            <div class="lp-teams">
-                {{ $match?->home_team }}
+            <div class="lp-teams lp-teams-row">
+                <div class="lp-team-side">@if($match?->home_team_logo)<img class="lp-team-logo" src="{{ $match->home_team_logo }}" alt="" loading="lazy">@endif<span class="lp-team-name">{{ $match?->home_team }}</span></div>
                 <span class="lp-vs">vs</span>
-                {{ $match?->away_team }}
+                <div class="lp-team-side away"><span class="lp-team-name">{{ $match?->away_team }}</span>@if($match?->away_team_logo)<img class="lp-team-logo" src="{{ $match->away_team_logo }}" alt="" loading="lazy">@endif</div>
             </div>
 
             <div class="lp-tip">
@@ -233,6 +238,8 @@
                 "{{ $topTip['rationale'] }}"
             </div>
             @endif
+
+            @include('partials.match-intelligence', ['prediction' => $pick, 'accent' => '#6ee7b7'])
 
             <div class="lp-kickoff" style="display:flex; align-items:center; justify-content:space-between;">
                 <span>🕐 Kickoff {{ $kickoff }}</span>

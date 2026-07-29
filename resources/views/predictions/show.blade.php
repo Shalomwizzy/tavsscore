@@ -305,6 +305,8 @@
                 @endif
             </div>
             @endif
+
+            @include('partials.match-intelligence', ['insight' => $insight, 'prediction' => $pred])
         </div>
 
         {{-- Right column: numbers --}}

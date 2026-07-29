@@ -195,6 +195,8 @@
                 </div>
                 @endif
 
+                <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#f59e0b'])</div>
+
                 <div class="pick-card-footer">
                     <span style="font-size:.7rem; color:var(--text-dim);">📊 Poisson model: {{ $pick['prob'] }}% chance of 3+ total goals</span>
                 </div>

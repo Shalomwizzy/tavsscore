@@ -218,6 +218,8 @@
                 </div>
                 @endif
 
+                <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#fca5a5'])</div>
+
                 <div class="pick-card-footer">
                     <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} {{ $market }} Goals: NO — we win if {{ $pick['team_name'] }} {{ $winDesc }}</span>
                 </div>

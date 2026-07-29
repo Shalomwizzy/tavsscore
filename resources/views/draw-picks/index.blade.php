@@ -284,6 +284,8 @@
                 </div>
                 @endif
 
+                <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#fcd34d'])</div>
+
                 <div class="pick-card-footer">
                     @if($geminiAgrees === true)
                     <span style="font-size:.7rem; color:#6ee7b7; font-weight:700;">✅ AI #1 · AI #2 · AI #3, all agreed</span>

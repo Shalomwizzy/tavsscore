@@ -66,6 +66,7 @@
                     @endif
                 </span>
             </div>
+            @include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#6ee7b7'])
         </div>
         @endforeach
     </div>

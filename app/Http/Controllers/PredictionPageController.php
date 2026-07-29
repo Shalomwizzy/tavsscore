@@ -101,12 +101,14 @@ class PredictionPageController extends Controller
 
         $injuries     = \App\Models\MatchInjury::query()->where('match_id', $match->id)->get()->groupBy('team_name');
         $apiPrediction = \App\Models\ApiPrediction::query()->where('match_id', $match->id)->first();
+        $insight       = app(\App\Services\MatchInsightService::class)->for($p);
 
         return view('predictions.show', [
             'match'        => $match,
             'pred'         => $p,
             'injuries'     => $injuries,
             'apiPrediction'=> $apiPrediction,
+            'insight'      => $insight,
             'confidencePct'=> $confidencePct,
             'isAi'         => $isAi,
             'tip'          => $tip,

@@ -515,6 +515,30 @@
             +'</div>';
     }
 
+    function insightHtml(insight) {
+        if (!insight || !insight.available) return '';
+        function form(team) {
+            var recent = team.recent || {};
+            var dots = (team.form || []).map(function (item) {
+                var colour = item.result === 'W' ? '#6ee7b7' : (item.result === 'L' ? '#fca5a5' : '#fcd34d');
+                return '<span title="'+esc((item.venue||'')+' '+(item.score||'')+' vs '+(item.opponent||''))+'" style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:.58rem;font-weight:900;color:'+colour+';background:rgba(255,255,255,.06);border:1px solid '+colour+'55;">'+esc(item.result||'?')+'</span>';
+            }).join('') || '<span style="font-size:.67rem;color:var(--text-dim);">No recent results stored</span>';
+            var logo = team.logo ? '<img src="'+esc(team.logo)+'" alt="" loading="lazy" style="width:25px;height:25px;object-fit:contain;">' : '';
+            var numbers = recent.played ? '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.35rem;font-size:.65rem;color:var(--text-dim);margin-top:.55rem;"><span>Form <b style="color:#fff;float:right;">'+esc(recent.wins)+'-'+esc(recent.draws)+'-'+esc(recent.losses)+'</b></span><span>Goals <b style="color:#fff;float:right;">'+esc(recent.goals_for)+':'+esc(recent.goals_against)+'</b></span><span>Scored/game <b style="color:#fff;float:right;">'+esc(recent.gpg)+'</b></span><span>Conceded/game <b style="color:#fff;float:right;">'+esc(recent.cpg)+'</b></span></div>' : '';
+            return '<div style="border:1px solid var(--border);border-radius:9px;padding:.75rem;min-width:0;"><div style="display:flex;align-items:center;gap:.45rem;margin-bottom:.55rem;">'+logo+'<strong style="font-size:.76rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(team.name||'Team')+'</strong></div><div style="display:flex;gap:3px;flex-wrap:wrap;">'+dots+'</div>'+numbers+'</div>';
+        }
+        var reasons = (insight.reasons || []).map(function (reason) {
+            return '<div style="font-size:.74rem;line-height:1.5;color:var(--text-dim);padding:.55rem .65rem;border-left:2px solid #6ee7b7;background:rgba(255,255,255,.025);">'+esc(reason)+'</div>';
+        }).join('');
+        var h = insight.h2h || {};
+        var h2h = h.total ? '<div style="margin-top:1rem;"><div style="font-size:.64rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.5rem;">Head to head · last '+esc(h.total)+'</div><div style="font-size:.68rem;color:var(--text-dim);margin-bottom:.45rem;"><b style="color:#fff;">'+esc((insight.home||{}).name||'Home')+' '+esc(h.home_wins)+'</b> wins · <b style="color:#fcd34d;">'+esc(h.draws)+' draws</b> · <b style="color:#fff;">'+esc((insight.away||{}).name||'Away')+' '+esc(h.away_wins)+'</b> wins</div><div style="display:grid;gap:.3rem;">'+(h.results||[]).map(function(r){return '<div style="display:flex;justify-content:space-between;gap:.75rem;font-size:.68rem;color:var(--text-dim);"><span>'+esc(r.score)+'</span><span style="white-space:nowrap;">'+esc(r.date)+'</span></div>';}).join('')+'</div></div>' : '';
+        var injuries = ['home','away'].map(function(side) {
+            var rows = ((insight.injuries || {})[side] || []); if (!rows.length) return '';
+            return '<div style="padding:.7rem;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);"><div style="font-size:.65rem;font-weight:800;color:#fca5a5;margin-bottom:.35rem;">🏥 '+esc((insight[side]||{}).name||'Team')+' unavailable</div>'+rows.map(function(row){return '<div style="font-size:.67rem;color:var(--text-dim);line-height:1.5;">'+esc(row.player)+' · '+esc(row.reason)+'</div>';}).join('')+'</div>';
+        }).join('');
+        return '<div style="margin-top:1rem;border:1px solid var(--border);border-radius:10px;padding:1rem;background:rgba(255,255,255,.018);"><div style="font-size:.72rem;font-weight:900;color:#fff;margin-bottom:.75rem;">🔎 Full match intelligence</div>'+(reasons?'<div style="display:grid;gap:.45rem;margin-bottom:1rem;"><div style="font-size:.64rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#6ee7b7;">Why this pick was selected</div>'+reasons+'</div>':'')+'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;">'+form(insight.home||{})+form(insight.away||{})+'</div>'+h2h+(injuries?'<div style="margin-top:1rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;">'+injuries+'</div>':'')+'</div>';
+    }
+
     /* Render one card */
     function renderCard(p) {
         var m    = p.match || {};
@@ -671,7 +695,8 @@
             +'<p class="analysis-text" data-role="body">'+esc(bodyText)+'</p>'
             + (tipText ? '<div class="tip-callout"><span class="tip-icon">💡</span><span class="tip-text" data-role="tip">'+esc(tipText)+'</span></div>' : '')
             +'</div>'
-            + tipsHtml;
+            + tipsHtml
+            + insightHtml(p.insight);
 
         /* Form dots */
         function formDots(form) {

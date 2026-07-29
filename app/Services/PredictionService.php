@@ -39,6 +39,7 @@ class PredictionService
         private readonly AdaptiveThresholdService $adaptive,
         private readonly PiRatingService          $piRating,
         private readonly \App\Services\DixonColes\Predictor $dcPredictor,
+        private readonly MatchInsightService      $matchInsights,
     ) {}
 
     /** League priority order — most prestigious first; African coverage appended. */
@@ -2463,6 +2464,7 @@ class PredictionService
             'home_form'         => $homeForm,
             'away_form'         => $awayForm,
             'created_at'        => $p->created_at?->toIso8601String(),
+            'insight'           => $this->matchInsights->for($p),
             'match'             => $p->match ? [
                 'id'             => $p->match->id,
                 'api_id'         => $p->match->api_id,
