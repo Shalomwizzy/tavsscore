@@ -32,6 +32,13 @@
     .metric-card { padding:.8rem .85rem; background:var(--card); border:1px solid var(--border); border-radius:10px; }
     .metric-value { color:#fff; font-size:1.3rem; font-weight:900; letter-spacing:-.03em; }
     .metric-label { color:var(--dim); font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem; }
+    .admin-match-cell { display:flex; align-items:center; gap:.55rem; min-width:180px; }
+    .admin-club-marks { width:27px; flex-shrink:0; position:relative; height:31px; }
+    .admin-club-mark { position:absolute; width:21px; height:21px; display:grid; place-items:center; border-radius:50%; color:#fff; font-size:.52rem; font-weight:900; background:linear-gradient(135deg,#285d92,#0b2545); border:1px solid rgba(147,197,253,.35); }
+    .admin-club-mark:last-child { right:0; bottom:0; background:linear-gradient(135deg,#1c785d,#093a31); border-color:rgba(110,231,183,.3); }
+    .admin-match-teams { min-width:0; }
+    .admin-match-teams strong { display:block; color:#fff; font-size:.76rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .admin-match-teams span { display:block; color:var(--dim); font-size:.65rem; margin-top:.12rem; }
     @media (max-width:850px) { .metric-grid { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:900px) { .pred-detail-inner { grid-template-columns: 1fr; } }
     @media (max-width:520px) { .metric-grid { grid-template-columns:repeat(2,1fr); } }
@@ -88,14 +95,20 @@
             </thead>
             <tbody>
                 @forelse($predictions as $pred)
-                @php $m = $pred->match; @endphp
+                @php
+                    $m = $pred->match;
+                    $initials = fn ($name) => collect(preg_split('/\s+/', trim((string) $name)))->filter()->take(3)->map(fn ($part) => mb_substr($part, 0, 1))->join('');
+                @endphp
                 <tr class="pred-row" data-pred="{{ $pred->id }}">
                     <td><span class="expander">▶</span></td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        @if($pred->is_daily_pick)
-                            <span title="Daily Pick #{{ $pred->pick_rank }}" style="margin-right:.25rem;">{{ $pred->pick_rank === 1 ? '👑' : '⭐' }}</span>
-                        @endif
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        <div class="admin-match-cell">
+                            <div class="admin-club-marks"><span class="admin-club-mark">{{ $initials($m?->home_team) }}</span><span class="admin-club-mark">{{ $initials($m?->away_team) }}</span></div>
+                            <div class="admin-match-teams">
+                                <strong>@if($pred->is_daily_pick)<span title="Daily Pick #{{ $pred->pick_rank }}">{{ $pred->pick_rank === 1 ? '👑 ' : '⭐ ' }}</span>@endif{{ $m?->home_team ?? '?' }}</strong>
+                                <span>vs {{ $m?->away_team ?? '?' }}</span>
+                            </div>
+                        </div>
                     </td>
                     <td style="color:var(--dim); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}</td>
                     <td style="color:#6ee7b7; font-weight:700; font-variant-numeric:tabular-nums;">{{ number_format($pred->home_win_prob, 1) }}%</td>

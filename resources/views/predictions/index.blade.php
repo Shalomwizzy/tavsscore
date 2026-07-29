@@ -37,6 +37,37 @@
     .pred-health-value { color:#fff; font-size:1.2rem; font-weight:900; letter-spacing:-.03em; }
     .pred-health-label { color:var(--text-dim); font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-top:.25rem; }
 
+    /* Compact league-led signal cards: the primary prediction experience. */
+    .pred-league-section { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--card); margin-bottom:1rem; }
+    .pred-league-head { border:0; border-bottom:1px solid rgba(255,255,255,.07); border-radius:0; background:rgba(255,255,255,.018); padding:.72rem .9rem; }
+    .signal-card { display:grid; grid-template-columns:76px minmax(230px,1.1fr) minmax(180px,.85fr) minmax(108px,.42fr); gap:1rem; align-items:center; padding:1rem .9rem; border-bottom:1px solid rgba(255,255,255,.055); transition:background .16s ease; }
+    .signal-card:last-child { border-bottom:0; }
+    .signal-card:hover { background:rgba(255,255,255,.025); }
+    .signal-time { color:var(--text-dim); font-size:.68rem; font-weight:700; line-height:1.45; }
+    .signal-time strong { color:#fff; display:block; font-size:.9rem; }
+    .signal-clubs { display:flex; align-items:center; gap:.55rem; min-width:0; }
+    .signal-crest { width:31px; height:31px; display:grid; place-items:center; border-radius:50%; flex-shrink:0; color:#fff; font-size:.61rem; font-weight:900; letter-spacing:-.02em; background:linear-gradient(135deg,#285d92,#0b2545); border:1px solid rgba(147,197,253,.38); box-shadow:0 4px 12px rgba(0,0,0,.25); }
+    .signal-crest.away { background:linear-gradient(135deg,#1c785d,#093a31); border-color:rgba(110,231,183,.34); margin-left:-.8rem; margin-top:1.15rem; }
+    .signal-team-names { min-width:0; }
+    .signal-team-names strong { display:block; color:#fff; font-size:.84rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .signal-team-names span { display:block; color:var(--text-dim); font-size:.68rem; margin:.12rem 0; }
+    .signal-state { color:var(--text-dim); font-size:.66rem; margin-top:.25rem; }
+    .signal-pick { min-width:0; padding-left:.85rem; border-left:1px solid rgba(255,255,255,.09); }
+    .signal-pick-label { color:#6ee7b7; font-size:.62rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em; }
+    .signal-pick-value { color:#fff; font-size:.88rem; font-weight:850; line-height:1.35; margin-top:.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .signal-confidence { min-width:0; }
+    .signal-confidence-top { display:flex; align-items:baseline; justify-content:space-between; gap:.4rem; color:var(--text-dim); font-size:.64rem; font-weight:700; }
+    .signal-confidence-top strong { color:#6ee7b7; font-size:.9rem; }
+    .signal-confidence-track { height:5px; border-radius:999px; background:rgba(255,255,255,.09); overflow:hidden; margin-top:.4rem; }
+    .signal-confidence-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#10b981,#6ee7b7); }
+    .signal-actions { display:flex; gap:.4rem; align-items:center; margin-top:.5rem; }
+    .signal-details { grid-column:2/-1; margin-top:-.35rem; }
+    .signal-details > summary { cursor:pointer; list-style:none; color:#93c5fd; font-size:.69rem; font-weight:800; padding:.35rem 0; }
+    .signal-details > summary::-webkit-details-marker { display:none; }
+    .signal-details > summary:after { content:'+'; margin-left:.35rem; color:var(--text-dim); }
+    .signal-details[open] > summary:after { content:'−'; }
+    .signal-details-body { padding:.75rem; border-radius:9px; border:1px solid var(--border); background:rgba(4,10,21,.42); }
+
     .preds-title   { font-size:1.35rem; font-weight:800; color:#fff; letter-spacing:-.02em; margin:0 0 .2rem; }
     .preds-sub     { font-size:.75rem; color:var(--text-dim); }
     .preds-actions { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
@@ -276,6 +307,10 @@
         .preds-header { flex-direction:column; align-items:flex-start; }
         .pred-experience { padding:1rem; }
         .pred-experience-grid { grid-template-columns:1fr; }
+        .signal-card { grid-template-columns:58px minmax(0,1fr) 82px; gap:.65rem; padding:.85rem .65rem; }
+        .signal-pick { grid-column:2/-1; border-left:0; border-top:1px solid rgba(255,255,255,.07); padding:.55rem 0 0; }
+        .signal-confidence { grid-column:3; grid-row:1; }
+        .signal-details { grid-column:2/-1; }
     }
 
     /* Left info block in card header */
@@ -441,6 +476,9 @@
     function fmtTime(iso) {
         if (!iso) return 'TBC';
         return new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(iso));
+    }
+    function initials(name) {
+        return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 3).map(function(part){ return part.charAt(0); }).join('').toUpperCase();
     }
 
     /* Outcome helpers */
@@ -641,9 +679,9 @@
         /* Result badge */
         var resultBadge = '';
         if (p.was_correct === true) {
-            resultBadge = '<span class="result-badge-card rb-win">✓ Correct</span>';
+            resultBadge = '<span class="result-badge-card rb-win">✓ Won</span>';
         } else if (p.was_correct === false) {
-            resultBadge = '<span class="result-badge-card rb-loss">✗ Incorrect</span>';
+            resultBadge = '<span class="result-badge-card rb-loss">✗ Lost</span>';
         }
 
         /* Share text */
@@ -666,25 +704,21 @@
             ? '<a href="'+detailUrl+'" class="pc-detail-link" aria-label="Full prediction page">→</a>'
             : '';
 
-        return '<div class="pred-card fade-up">'
-            +'<div class="pc-head">'
-            +'<div class="pc-info">'
-            +'<div class="pc-teams">'
-            +  esc(m.home_team||'?') + formDots(p.home_form)
-            +  ' <span class="vs">vs</span> '
-            +  formDots(p.away_form) + esc(m.away_team||'?')
+        var confidence = Math.round(Number(p.confidence || best.value || 0));
+        var statusText = m.status && finishedSet.indexOf(m.status) !== -1
+            ? (m.home_score != null ? 'Final score: '+esc(m.home_score)+'–'+esc(m.away_score) : 'Final result')
+            : (m.status && liveSet.indexOf(m.status) !== -1 ? 'Live now' : 'Upcoming match');
+
+        return '<article class="signal-card fade-up">'
+            +'<div class="signal-time"><strong>'+esc(fmtTime(m.match_time))+'</strong><span>'+esc(m.status || 'Scheduled')+'</span></div>'
+            +'<div class="signal-clubs">'
+            +'<div><span class="signal-crest">'+esc(initials(m.home_team))+'</span><span class="signal-crest away">'+esc(initials(m.away_team))+'</span></div>'
+            +'<div class="signal-team-names"><strong>'+esc(m.home_team||'?')+formDots(p.home_form)+'</strong><span>vs</span><strong>'+esc(m.away_team||'?')+formDots(p.away_form)+'</strong><div class="signal-state">'+statusText+'</div></div>'
             +'</div>'
-            +'<div class="pc-meta">'+esc(fmtTime(m.match_time))+' · '+esc(formatLeague(m.league, m.league_country))+liveScore+'</div>'
-            +'</div>'
-            +'<div class="pc-actions">'
-            +  resultBadge
-            +  '<div class="verdict-chip">📈 '+verdict+'</div>'
-            +  '<button class="share-btn" id="'+shareBtnId+'" onclick="sharePred(\''+shareText.replace(/'/g,"\\'")+ '\',\''+shareBtnId+'\')" title="Share">📤 Share</button>'
-            +  detailLink
-            +'</div>'
-            +'</div>'
-            +'<div class="pc-body">'+barsHtml+glHtml+analysisHtml+'</div>'
-            +'</div>';
+            +'<div class="signal-pick"><div class="signal-pick-label">Model signal</div><div class="signal-pick-value">'+verdict+'</div><div class="signal-actions">'+resultBadge+'<button class="share-btn" id="'+shareBtnId+'" onclick="sharePred(\''+shareText.replace(/'/g,"\\'")+ '\',\''+shareBtnId+'\')" title="Share">Share</button>'+detailLink+'</div></div>'
+            +'<div class="signal-confidence"><div class="signal-confidence-top"><span>Confidence</span><strong>'+confidence+'%</strong></div><div class="signal-confidence-track"><div class="signal-confidence-fill" style="width:'+Math.min(100,Math.max(0,confidence))+'%"></div></div></div>'
+            +'<details class="signal-details"><summary>Full match breakdown</summary><div class="signal-details-body">'+barsHtml+glHtml+analysisHtml+'</div></details>'
+            +'</article>';
     }
 
     /* Group predictions by league and render */
