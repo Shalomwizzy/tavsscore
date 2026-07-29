@@ -112,7 +112,7 @@
 
         body {
             min-height: 100vh;
-            background: var(--bg);
+            background:radial-gradient(circle at 50% -22rem,rgba(16,185,129,.075),transparent 36rem),var(--bg);
             color: var(--text);
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             font-size: 14px;
@@ -242,6 +242,12 @@
         }
 
         .page-main { flex: 1; }
+        .more-rail { border-bottom:1px solid rgba(148,163,184,.1);background:rgba(15,23,42,.54); }
+        .more-rail-inner { display:flex;align-items:center;gap:.38rem;min-height:45px;overflow-x:auto;scrollbar-width:none; }
+        .more-rail-inner::-webkit-scrollbar { display:none; }
+        .more-rail-label { flex-shrink:0;margin-right:.25rem;color:#64748b;font-size:.59rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase; }
+        .more-rail a { flex-shrink:0;padding:.3rem .52rem;border:1px solid transparent;border-radius:999px;color:#94a3b8;text-decoration:none;font-size:.68rem;font-weight:750;transition:all 150ms; }
+        .more-rail a:hover,.more-rail a.active { color:#ecfdf5;border-color:rgba(52,211,153,.3);background:rgba(16,185,129,.1); }
 
         .wrap {
             max-width: 1020px;
@@ -395,37 +401,47 @@
 
         /* ── Footer ── */
         .ts-footer {
-            border-top: 1px solid var(--border);
-            padding: 2rem 0 1.25rem;
+            position:relative;
+            overflow:hidden;
+            border-top:1px solid rgba(148,163,184,.13);
+            padding:3.5rem 0 1.4rem;
             text-align: center;
             font-size: .75rem;
             color: var(--text-muted);
+            background:linear-gradient(180deg,rgba(15,23,42,.32),#070c16 55%);
         }
+        .ts-footer::before { content:'';position:absolute;width:38rem;height:25rem;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.12),transparent 68%);left:50%;top:-18rem;transform:translateX(-50%);pointer-events:none; }
+        .footer-inner { position:relative; }
+        .footer-hero { max-width:720px;margin:0 auto 2.2rem;text-align:center; }
+        .footer-brand { display:inline-flex;align-items:center;gap:.58rem;color:#fff;font-size:1.15rem;font-weight:900;letter-spacing:-.035em;text-decoration:none; }
+        .footer-brand-mark { display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:linear-gradient(135deg,#34d399,#059669);box-shadow:0 7px 18px rgba(16,185,129,.24);font-size:.95rem; }
+        .footer-tagline { max-width:510px;margin:.62rem auto 0;color:#94a3b8;font-size:.77rem;line-height:1.6; }
         .footer-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1.5rem 2rem;
+            grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: .7rem;
             text-align: left;
-            margin: 0 auto 1.75rem;
-            max-width: 860px;
+            margin:0 auto 2rem;
+            max-width: 960px;
         }
+        .footer-col { padding:.95rem .95rem .8rem;border:1px solid rgba(148,163,184,.09);border-radius:13px;background:rgba(255,255,255,.018); }
         .footer-col-title {
-            font-size: .68rem; font-weight: 800; color: var(--text);
-            text-transform: uppercase; letter-spacing: .07em;
-            margin-bottom: .7rem;
+            font-size:.62rem;font-weight:900;color:#e2e8f0;
+            text-transform:uppercase;letter-spacing:.1em;
+            margin-bottom:.72rem;
         }
         .footer-col a {
-            display: block; font-size: .78rem; color: var(--text-dim);
-            text-decoration: none; margin-bottom: .38rem; line-height: 1.5;
-            transition: color 120ms;
+            display:block;font-size:.72rem;color:#94a3b8;
+            text-decoration:none;margin-bottom:.4rem;line-height:1.45;
+            transition:color 140ms,transform 140ms;
         }
-        .footer-col a:hover { color: #fff; }
+        .footer-col a:hover { color:#fff;transform:translateX(2px); }
         .footer-install-strip {
-            max-width: 640px; margin: 0 auto 1.75rem;
+            max-width:720px;margin:0 auto 1.25rem;
             padding: 1rem 1.25rem;
-            background: rgba(16,185,129,.05);
-            border: 1px solid rgba(16,185,129,.15);
-            border-radius: 14px;
+            background:linear-gradient(135deg,rgba(16,185,129,.13),rgba(14,116,144,.07));
+            border:1px solid rgba(16,185,129,.25);
+            border-radius:16px;
             display: flex; align-items: center; justify-content: space-between;
             flex-wrap: wrap; gap: .75rem; text-align: left;
         }
@@ -499,12 +515,12 @@
 
         /* ── Footer newsletter - compact pill style ── */
         .footer-nl {
-            max-width: 640px;
-            margin: 0 auto 1.75rem;
+            max-width:720px;
+            margin:0 auto 1.25rem;
             padding: 1.1rem 1.25rem;
             background: linear-gradient(135deg, rgba(16,185,129,.06), rgba(16,185,129,.01));
             border: 1px solid rgba(16,185,129,.18);
-            border-radius: 14px;
+            border-radius:16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -588,7 +604,8 @@
             .footer-nl-form { width: 100%; }
             .footer-nl-input { flex: 1; min-width: 0; width: auto; }
             .footer-nl-status { text-align: center; }
-            .footer-grid { grid-template-columns: 1fr 1fr !important; text-align: left; }
+            .footer-grid { grid-template-columns:1fr 1fr !important;text-align:left;gap:.55rem; }
+            .footer-col { padding:.8rem; }
         }
         @media (max-width: 440px) {
             .footer-grid { grid-template-columns: 1fr !important; }
@@ -657,11 +674,29 @@
         }
     </script>
 
+    @if(request()->routeIs('stats.index','standings.index','top-scorers.index','track-record.index','results.index','daily-football-predictions.*','winners.*','hall-of-fame.*','about'))
+    <div class="more-rail">
+        <div class="wrap more-rail-inner">
+            <span class="more-rail-label">Explore</span>
+            <a href="{{ route('stats.index') }}" class="{{ request()->routeIs('stats.index') ? 'active' : '' }}">📊 Stats</a>
+            <a href="{{ route('standings.index') }}" class="{{ request()->routeIs('standings.index','top-scorers.index') ? 'active' : '' }}">🏆 Tables</a>
+            <a href="{{ route('track-record.index') }}" class="{{ request()->routeIs('track-record.index') ? 'active' : '' }}">📈 Track Record</a>
+            <a href="{{ route('results.index') }}" class="{{ request()->routeIs('results.index','daily-football-predictions.*') ? 'active' : '' }}">📜 Results</a>
+            <a href="{{ route('winners.index') }}" class="{{ request()->routeIs('winners.*','hall-of-fame.*') ? 'active' : '' }}">🏆 Winners</a>
+            <a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}">ℹ️ About</a>
+        </div>
+    </div>
+    @endif
+
     <main class="page-main">
         @yield('content')
     </main>
     <footer class="ts-footer">
-        <div class="wrap">
+        <div class="wrap footer-inner">
+            <div class="footer-hero">
+                <a href="{{ route('home.index') }}" class="footer-brand"><span class="footer-brand-mark">⚽</span> TavsScore</a>
+                <p class="footer-tagline">Live football intelligence, transparent AI predictions and the match context that helps you follow every signal with confidence.</p>
+            </div>
 
             {{-- Link grid --}}
             <div class="footer-grid">
@@ -745,7 +780,7 @@
             </div>
             {{-- Social links --}}
             @if($telegramUrl || $twitterUrl)
-            <div style="display:flex; justify-content:center; gap:1rem; margin-bottom:.85rem;">
+            <div style="display:flex; justify-content:center; gap:.6rem; margin-bottom:1rem;">
                 @if($telegramUrl)
                 <a href="{{ $telegramUrl }}" target="_blank" rel="noopener noreferrer"
                    title="Join us on Telegram"
@@ -765,7 +800,7 @@
             </div>
             @endif
 
-            <div>⚽ &copy; {{ date('Y') }} TavsScore &mdash; Real-Time Football Scores &amp; AI Predictions</div>
+            <div style="padding-top:1.15rem;border-top:1px solid rgba(148,163,184,.1);">⚽ &copy; {{ date('Y') }} TavsScore &mdash; Real-Time Football Scores &amp; AI Predictions</div>
             <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football.</div>
             <div style="font-size:.65rem; color:var(--text-muted); margin-top:.4rem; line-height:1.6;">
                 🔞 18+ only &middot; For entertainment purposes only &middot; Not financial or betting advice &middot; Never stake money you cannot afford to lose.

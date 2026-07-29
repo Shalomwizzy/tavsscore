@@ -6,27 +6,29 @@
 <style>
     /* ── Page header ── */
     .scores-header {
-        padding: 1.5rem 0 1.25rem;
+        position:relative;overflow:hidden;
+        padding:1.75rem 1.5rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
         flex-wrap: wrap;
         gap: .75rem;
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 1.25rem;
+        border:1px solid rgba(96,165,250,.22);
+        border-radius:18px;
+        background:radial-gradient(circle at 87% 18%,rgba(239,68,68,.17),transparent 25%),radial-gradient(circle at 10% 100%,rgba(59,130,246,.15),transparent 35%),linear-gradient(135deg,#111d33,#0b1220 70%);
+        margin:1.25rem 0 1rem;
     }
 
     .scores-title {
-        font-size: 1.35rem;
-        font-weight: 800;
+        font-size:clamp(1.55rem,3vw,2.25rem);
+        font-weight:900;
         color: #fff;
         letter-spacing: -.02em;
         margin: 0 0 .2rem;
     }
 
     .scores-sub {
-        font-size: .75rem;
-        color: var(--text-dim);
+        font-size:.78rem;color:#9fb0c6;
     }
 
     /* ── Summary tiles ── */
@@ -38,10 +40,9 @@
     }
 
     .sum-tile {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: .75rem .875rem;
+        background:linear-gradient(145deg,rgba(19,29,48,.98),rgba(15,23,42,.78));
+        border:1px solid rgba(148,163,184,.13);
+        border-radius:12px;padding:.85rem .875rem;
         text-align: center;
     }
 
@@ -109,18 +110,19 @@
 
     /* ── League section ── */
     .league-section {
-        border: 1px solid var(--border);
-        border-radius: 10px;
+        border:1px solid rgba(148,163,184,.13);
+        border-radius:14px;
         overflow: hidden;
-        margin-bottom: .65rem;
+        margin-bottom:.8rem;
+        box-shadow:0 8px 20px rgba(0,0,0,.08);
     }
 
     .league-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: .55rem .875rem;
-        background: var(--surface);
+        padding:.7rem .9rem;
+        background:linear-gradient(90deg,rgba(30,41,59,.8),rgba(15,23,42,.85));
         border-bottom: 1px solid var(--border);
     }
 
@@ -154,7 +156,7 @@
         grid-template-columns: 5.25rem 1fr 5rem 1fr 5rem;
         align-items: center;
         gap: .6rem;
-        padding: .65rem .875rem;
+        padding:.75rem .9rem;
         border-bottom: 1px solid rgba(255,255,255,.04);
         transition: background 140ms;
         cursor: default;
@@ -205,6 +207,10 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .live-team { display:flex;align-items:center;gap:.42rem;min-width:0; }
+    .live-team.right { justify-content:flex-end; }
+    .live-crest { width:22px;height:22px;object-fit:contain;flex-shrink:0; }
+    .live-crest-fallback { display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#243a63;color:#dbeafe;font-size:.48rem;font-weight:900;flex-shrink:0; }
 
     .team-name.right { text-align: right; }
 
@@ -271,6 +277,7 @@
 
     /* Responsive */
     @media (max-width: 620px) {
+        .scores-header { padding:1.3rem 1rem;align-items:flex-start; }
         .summary-row { grid-template-columns: repeat(2,1fr); }
         .match-row-d { display: none; }
         .match-row-m { display: grid; }
@@ -286,8 +293,9 @@
     {{-- Header --}}
     <div class="scores-header">
         <div>
-            <h1 class="scores-title">⚽ Live Scores</h1>
-            <p class="scores-sub">Premier League · Champions League · La Liga · Serie A · Bundesliga &amp; more</p>
+            <div style="font-size:.62rem;color:#fca5a5;font-weight:900;letter-spacing:.11em;text-transform:uppercase;margin-bottom:.35rem;">● Match centre · updates every 30 seconds</div>
+            <h1 class="scores-title">Live football, without the noise.</h1>
+            <p class="scores-sub">Scores, match states and competition context in one live command centre.</p>
         </div>
         <div style="text-align:right">
             <div class="scores-sub" id="refresh-status">Updates every 30 s</div>
@@ -424,6 +432,16 @@
         return new Intl.DateTimeFormat(undefined, { hour:'numeric', minute:'2-digit' }).format(new Date(iso));
     }
 
+    function initials(name) {
+        return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0).toUpperCase(); }).join('') || 'FC';
+    }
+
+    function crest(url, name) {
+        return url
+            ? '<img class="live-crest" src="' + esc(url) + '" alt="" loading="lazy">'
+            : '<span class="live-crest-fallback">' + esc(initials(name)) + '</span>';
+    }
+
     function leagueKey(m) { return (m.league || '') + '|||' + (m.league_country || ''); }
 
     /* ── State display ── */
@@ -454,13 +472,13 @@
         var dot  = activeFeed === 'live' ? '<span class="live-dot" style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulseDot 1.6s infinite;flex-shrink:0;"></span>' : '';
         return '<div class="match-row-d fade-up" data-id="' + esc(m.api_id) + '">'
             + '<div><span class="status-pill ' + pc + '">' + dot + st + '</span></div>'
-            + '<div class="team-name">' + esc(m.home_team) + '</div>'
+            + '<div class="team-name live-team">' + crest(m.home_team_logo, m.home_team) + '<span class="team-name">' + esc(m.home_team) + '</span></div>'
             + '<div class="score-wrap' + (flash ? ' flash' : '') + '">'
             +   '<span>' + esc(fmtScore(m.home_score)) + '</span>'
             +   '<span class="score-sep">:</span>'
             +   '<span>' + esc(fmtScore(m.away_score)) + '</span>'
             + '</div>'
-            + '<div class="team-name right">' + esc(m.away_team) + '</div>'
+            + '<div class="team-name live-team right"><span class="team-name right">' + esc(m.away_team) + '</span>' + crest(m.away_team_logo, m.away_team) + '</div>'
             + '<div class="kickoff">' + esc(fmtTime(m.match_time)) + '</div>'
             + '</div>';
     }
@@ -474,11 +492,11 @@
             + '<div><span class="status-pill ' + pc + '" style="font-size:.67rem;padding:2px 6px;">' + dot + st + '</span></div>'
             + '<div class="m-teams">'
             +   '<div class="m-team-row">'
-            +     '<span class="team-name" style="font-size:.8rem">' + esc(m.home_team) + '</span>'
+            +     '<span class="live-team"><span class="team-name" style="font-size:.8rem">' + esc(m.home_team) + '</span>' + crest(m.home_team_logo, m.home_team) + '</span>'
             +     '<span class="m-score' + (flash ? ' flash' : '') + '">' + esc(fmtScore(m.home_score)) + '</span>'
             +   '</div>'
             +   '<div class="m-team-row">'
-            +     '<span class="team-name" style="font-size:.8rem">' + esc(m.away_team) + '</span>'
+            +     '<span class="live-team"><span class="team-name" style="font-size:.8rem">' + esc(m.away_team) + '</span>' + crest(m.away_team_logo, m.away_team) + '</span>'
             +     '<span class="m-score' + (flash ? ' flash' : '') + '">' + esc(fmtScore(m.away_score)) + '</span>'
             +   '</div>'
             +   '<div class="m-kickoff">' + esc(fmtTime(m.match_time)) + '</div>'

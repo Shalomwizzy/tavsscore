@@ -5,16 +5,18 @@
 
 @push('styles')
 <style>
-    .af-hero { padding: 1.5rem 0 .25rem; }
-    .af-eyebrow { font-size:.7rem; font-weight:800; color:rgba(110,231,183,.78); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.4rem; }
-    .af-title { font-size:1.7rem; font-weight:800; letter-spacing:-.02em; color:#fff; }
-    .af-sub   { font-size:.86rem; color:var(--text-dim); margin-top:.4rem; max-width:640px; line-height:1.6; }
+    .af-hero { position:relative;overflow:hidden;padding:2rem 1.5rem 1.7rem;margin:1.25rem 0 .3rem;border:1px solid rgba(245,158,11,.24);border-radius:19px;background:radial-gradient(circle at 88% 12%,rgba(245,158,11,.2),transparent 28%),radial-gradient(circle at 6% 100%,rgba(16,185,129,.14),transparent 30%),linear-gradient(135deg,#181d2b,#0b1220 70%); }
+    .af-hero::after { content:'AFRICA';position:absolute;right:-.02rem;bottom:-1.2rem;color:rgba(255,255,255,.035);font-size:clamp(3.5rem,12vw,8rem);font-weight:900;letter-spacing:-.08em;pointer-events:none; }
+    .af-eyebrow { position:relative;z-index:1;font-size:.64rem;font-weight:900;color:#fde68a;text-transform:uppercase;letter-spacing:.11em;margin-bottom:.4rem; }
+    .af-title { position:relative;z-index:1;max-width:650px;font-size:clamp(1.55rem,4vw,2.5rem);font-weight:900;line-height:1.08;letter-spacing:-.045em;color:#fff; }
+    .af-sub   { position:relative;z-index:1;font-size:.8rem;color:#b8c2d0;margin-top:.65rem;max-width:640px;line-height:1.7; }
 
-    .af-section { margin-top:2rem; }
+    .af-section { margin-top:2.1rem; }
     .af-section h2 { font-size:1rem; font-weight:800; color:#fff; margin-bottom:.85rem; display:flex; align-items:center; gap:.55rem; }
     .af-section-count { font-size:.7rem; color:var(--text-dim); font-weight:700; }
 
-    .af-card { background:var(--card); border:1px solid var(--border); border-radius:11px; padding:.95rem 1.05rem; margin-bottom:.6rem; }
+    .af-card { background:linear-gradient(145deg,rgba(19,29,48,.98),rgba(13,20,34,.92));border:1px solid rgba(148,163,184,.13);border-radius:14px;padding:1rem 1.05rem;margin-bottom:.65rem;transition:transform 160ms,border-color 160ms; }
+    .af-card:hover { transform:translateY(-2px);border-color:rgba(245,158,11,.34); }
     .af-card.live { border-color: rgba(239,68,68,.32); background:linear-gradient(135deg, rgba(239,68,68,.04), rgba(239,68,68,.01)); }
     .af-card.cont { border-color: rgba(245,158,11,.32); background:linear-gradient(135deg, rgba(245,158,11,.05), rgba(245,158,11,.01)); }
 
@@ -23,7 +25,7 @@
     .af-time   { font-size:.74rem; color:var(--text-dim); font-weight:600; }
     .af-time .live-dot { width:6px; height:6px; }
 
-    .af-match { color:#fff; font-weight:700; font-size:.92rem; line-height:1.4; margin-top:.3rem; }
+    .af-match { color:#fff;font-weight:700;font-size:.92rem;line-height:1.4;margin-top:.3rem; }
     .af-tip { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; background:rgba(245,158,11,.13); border:1px solid rgba(245,158,11,.25); color:#fcd34d; font-size:.72rem; font-weight:700; margin-top:.45rem; text-decoration:none; }
     .af-tip:hover { color:#fcd34d; }
 
@@ -36,7 +38,7 @@
         margin-top:2.25rem; padding:1.25rem 1.5rem;
         background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));
         border:1px solid rgba(245,158,11,.28); border-radius:14px;
-        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;box-shadow:0 14px 32px rgba(0,0,0,.16);
     }
 </style>
 @endpush
@@ -45,7 +47,7 @@
 <div class="wrap">
     <header class="af-hero">
         <div class="af-eyebrow">🌍 African Football Coverage</div>
-        <h1 class="af-title">NPFL, PSL, CAF & AFCON - All in One Place</h1>
+        <h1 class="af-title">African football, in one intelligent match hub.</h1>
         <p class="af-sub">
             Real-time scores, predictions and AI match analysis across every major African competition.
             Tap any tip to read the breakdown in <strong style="color:#fcd34d;">English, 🇳🇬 Pidgin or 🇰🇪 Swahili</strong> -
@@ -63,11 +65,7 @@
                 <div class="af-league">⚽ {{ \App\Support\LeagueCoverage::formatName($m->league, $m->league_country) }}</div>
                 <div class="af-time"><span class="live-dot"></span> {{ $m->elapsed }}'</div>
             </div>
-            <div class="af-match">
-                {{ $m->home_team }}
-                <strong style="color:#fff; margin: 0 .5rem;">{{ $m->home_score ?? 0 }}–{{ $m->away_score ?? 0 }}</strong>
-                {{ $m->away_team }}
-            </div>
+            @include('partials.fixture-showcase', ['match' => $m, 'accent' => '#fca5a5', 'compact' => true])
             @if($m->prediction && $m->prediction->predicted_outcome)
             <a href="{{ route('predictions.show', $m->slug) }}" class="af-tip">📊 Tip: {{ $m->prediction->predicted_outcome }}</a>
             @endif
@@ -94,13 +92,7 @@
                     @endif
                 </div>
             </div>
-            <div class="af-match">
-                {{ $m->home_team }}
-                <strong style="margin: 0 .5rem;">
-                    {{ in_array($m->status,['FT','AET','PEN','1H','2H','HT','ET','BT','P','LIVE']) ? ($m->home_score ?? 0).'–'.($m->away_score ?? 0) : 'vs' }}
-                </strong>
-                {{ $m->away_team }}
-            </div>
+            @include('partials.fixture-showcase', ['match' => $m, 'accent' => '#fcd34d', 'compact' => true])
             @if($m->prediction && $m->prediction->predicted_outcome)
             <a href="{{ route('predictions.show', $m->slug) }}" class="af-tip">📊 Tip: {{ $m->prediction->predicted_outcome }}</a>
             @endif
@@ -125,9 +117,7 @@
                         <div class="af-time" style="margin-bottom:.25rem;">
                             KO {{ $m->match_time?->format('H:i') }} · {{ $m->match_time?->format('D M j') }}
                         </div>
-                        <div class="af-match" style="font-size:.85rem;">
-                            {{ $m->home_team }} <span style="color:var(--text-muted); font-weight:600;">vs</span> {{ $m->away_team }}
-                        </div>
+                        @include('partials.fixture-showcase', ['match' => $m, 'accent' => '#6ee7b7', 'compact' => true])
                         @if($m->prediction && $m->prediction->predicted_outcome)
                         <a href="{{ route('predictions.show', $m->slug) }}" class="af-tip" style="font-size:.66rem; padding:1px 7px;">📊 {{ $m->prediction->predicted_outcome }}</a>
                         @endif
@@ -150,9 +140,7 @@
                 <div class="af-time">FT · {{ $m->match_time?->format('M j') }}</div>
             </div>
             <div class="af-match" style="font-size:.85rem; margin-top:.25rem;">
-                {{ $m->home_team }}
-                <strong style="margin: 0 .45rem;">{{ $m->home_score }}–{{ $m->away_score }}</strong>
-                {{ $m->away_team }}
+                @include('partials.fixture-showcase', ['match' => $m, 'accent' => '#93c5fd', 'compact' => true])
                 @if($m->prediction && $m->prediction->was_correct === true)
                     <span style="color:#6ee7b7; font-size:.72rem; margin-left:.4rem;">✓</span>
                 @elseif($m->prediction && $m->prediction->was_correct === false)

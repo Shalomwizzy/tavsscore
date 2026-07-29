@@ -9,9 +9,9 @@
 
 @push('styles')
 <style>
-    .article-wrap  { max-width: 740px; margin: 0 auto; }
+    .article-wrap  { max-width:780px;margin:0 auto; }
 
-    .article-header { padding: 2rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+    .article-header { position:relative;overflow:hidden;padding:2.25rem 2rem 1.8rem;border:1px solid rgba(96,165,250,.22);border-radius:18px;background:radial-gradient(circle at 92% 8%,rgba(59,130,246,.18),transparent 25%),linear-gradient(135deg,#111d33,#0b1220 68%);margin:1.25rem 0 1.35rem; }
 
     .article-cat {
         font-size:.72rem; font-weight:700; color:var(--green);
@@ -19,8 +19,8 @@
     }
 
     .article-title {
-        font-size:clamp(1.5rem,4vw,2.2rem); font-weight:900;
-        color:#fff; letter-spacing:-.03em; line-height:1.12; margin-bottom:.875rem;
+        font-size:clamp(1.65rem,4.5vw,2.75rem);font-weight:900;
+        color:#fff;letter-spacing:-.05em;line-height:1.06;margin-bottom:.9rem;
     }
 
     .article-meta {
@@ -31,12 +31,12 @@
     .article-meta-sep { color:var(--text-muted); }
 
     .article-hero {
-        width:100%; border-radius:10px; margin-bottom:2rem;
-        aspect-ratio:16/9; object-fit:cover;
+        width:100%;border:1px solid rgba(148,163,184,.14);border-radius:16px;margin-bottom:1.5rem;
+        aspect-ratio:16/9;object-fit:cover;box-shadow:0 18px 38px rgba(0,0,0,.2);
     }
 
     /* Article body */
-    .article-body { color:#c8d5e8; line-height:1.8; font-size:.92rem; }
+    .article-body { color:#c8d5e8;line-height:1.85;font-size:.95rem;padding:0 .3rem; }
 
     .article-body p  { margin-bottom:1.25rem; }
     .article-body h2 { font-size:1.2rem; font-weight:800; color:#fff; margin:2rem 0 .75rem; letter-spacing:-.02em; }
@@ -50,8 +50,8 @@
     /* Share bar */
     .share-bar {
         display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
-        padding:1.1rem; background:var(--card); border:1px solid var(--border);
-        border-radius:10px; margin:2rem 0;
+        padding:1.1rem;background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.025));border:1px solid rgba(16,185,129,.22);
+        border-radius:14px;margin:2rem 0;
     }
     .share-label { font-size:.75rem; font-weight:700; color:var(--text); }
     .share-btn {
@@ -66,7 +66,7 @@
     .related-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
 
     .related-card {
-        background:var(--card); border:1px solid var(--border); border-radius:10px;
+        background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:13px;
         padding:.875rem; text-decoration:none;
         transition:border-color 180ms, transform 180ms;
         display:flex; flex-direction:column; gap:.35rem;
