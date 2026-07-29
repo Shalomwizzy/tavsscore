@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
 use App\Services\FootballPredictionBoardRefresher;
-use App\Services\MatchInsightService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
 use App\Support\SpecialtyPickCatalog;
@@ -18,7 +17,6 @@ class SpecialtyMarketPicksAdminController extends Controller
 {
     public function __construct(
         private readonly PredictionService $predictionService,
-        private readonly MatchInsightService $matchInsights,
         private readonly FootballPredictionBoardRefresher $boardRefresher,
     ) {}
 
@@ -92,7 +90,6 @@ class SpecialtyMarketPicksAdminController extends Controller
             'likely_score' => is_array($likely) ? ($likely['score'] ?? null) : null,
             'european_start' => $european[1] ?? null,
             'european_selection' => $european[2] ?? null,
-            'insight' => $this->matchInsights->for($pick),
         ];
     }
 }

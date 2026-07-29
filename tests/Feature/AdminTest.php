@@ -169,6 +169,20 @@ class AdminTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_admin_user_can_access_specialty_pick_pages(): void
+    {
+        $admin = User::create([
+            'name'     => 'Specialty Admin',
+            'email'    => 'specialty-admin@example.com',
+            'password' => bcrypt('password'),
+            'role'     => 'admin',
+        ]);
+
+        foreach (['/admin/under35', '/admin/under45', '/admin/handicap', '/admin/european-handicap'] as $path) {
+            $this->actingAs($admin)->get($path)->assertStatus(200)->assertSee("Today's", false);
+        }
+    }
+
     public function test_admin_login_with_valid_credentials(): void
     {
         User::create([
