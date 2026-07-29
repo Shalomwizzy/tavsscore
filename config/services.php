@@ -128,6 +128,7 @@ return [
     'telegram' => [
         'bot_token'  => env('TELEGRAM_BOT_TOKEN', ''),
         'channel_id' => env('TELEGRAM_CHANNEL_ID', ''),
+        'card_font'  => env('TELEGRAM_CARD_FONT_PATH'),
     ],
 
 ];

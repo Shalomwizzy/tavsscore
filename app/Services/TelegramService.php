@@ -65,6 +65,9 @@ class TelegramService
         if (empty($picks)) {
             return;
         }
+        if ($this->sendPredictionCard("Today's Football Signals", $picks, $siteUrl, '/predictions')) {
+            return;
+        }
 
         $date = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
@@ -103,9 +106,40 @@ class TelegramService
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
+    /**
+     * Sends one complete data card: all matches and model calls live inside the
+     * JPEG, with only an action button below it. Falls back to the established
+     * text formatter if the server cannot render/send a photo.
+     *
+     * @param array<int, array<string, mixed>> $picks
+     */
+    private function sendPredictionCard(string $title, array $picks, string $siteUrl, string $path): bool
+    {
+        if (! $this->isConfigured()) {
+            return false;
+        }
+
+        $imagePath = app(TelegramPickCardService::class)->render($title, $picks);
+        if (! $imagePath) {
+            return false;
+        }
+
+        try {
+            return $this->sendPhoto($imagePath, '<b>Open the full analysis below.</b>', [[[
+                'text' => '📊 VIEW FULL ANALYSIS',
+                'url' => rtrim($siteUrl, '/').$path,
+            ]]], fallbackToText: false);
+        } finally {
+            Storage::disk('public')->delete($imagePath);
+        }
+    }
+
     public function sendLineupPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        if ($this->sendPredictionCard('Lineups Confirmed', $picks, $siteUrl, '/lineup-picks')) {
             return;
         }
 
@@ -161,6 +195,10 @@ class TelegramService
         if (empty($picks)) {
             return;
         }
+        $cardPicks = array_map(fn (array $pick) => $pick + ['tip' => 'Draw (X)'], $picks);
+        if ($this->sendPredictionCard('Draw Picks', $cardPicks, $siteUrl, '/draw-picks')) {
+            return;
+        }
 
         $date = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
@@ -195,6 +233,10 @@ class TelegramService
     public function sendGGPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        $cardPicks = array_map(fn (array $pick) => $pick + ['tip' => 'Both Teams To Score — GG'], $picks);
+        if ($this->sendPredictionCard('Both Teams To Score', $cardPicks, $siteUrl, '/gg-picks')) {
             return;
         }
 
@@ -233,6 +275,10 @@ class TelegramService
         if (empty($picks)) {
             return;
         }
+        $cardPicks = array_map(fn (array $pick) => $pick + ['tip' => 'Over 1.5 Goals'], $picks);
+        if ($this->sendPredictionCard('Over 1.5 Goals', $cardPicks, $siteUrl, '/over-1-5')) {
+            return;
+        }
 
         $date = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
@@ -266,6 +312,10 @@ class TelegramService
     public function sendOver25Picks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        $cardPicks = array_map(fn (array $pick) => $pick + ['tip' => 'Over 2.5 Goals'], $picks);
+        if ($this->sendPredictionCard('Over 2.5 Goals', $cardPicks, $siteUrl, '/over-2-5')) {
             return;
         }
 
@@ -304,6 +354,9 @@ class TelegramService
         if (empty($picks)) {
             return;
         }
+        if ($this->sendPredictionCard($title, $picks, $siteUrl, $path)) {
+            return;
+        }
         $lines = ['<b>TAVSSCORE — '.$this->escape($title).'</b>', '<i>'.now('Africa/Lagos')->format('l, d M Y').'</i>', '━━━━━━━━━━━━━━━━━━━━━━━━━━'];
         foreach ($picks as $i => $pick) {
             $lines[] = "\n".($i === 0 ? '👑 <b>TOP PICK</b>' : '⚽ <b>PICK '.($i + 1).'</b>');
@@ -334,6 +387,9 @@ class TelegramService
     public function sendCornersPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        if ($this->sendPredictionCard('Corner Picks', $picks, $siteUrl, '/corners-picks')) {
             return;
         }
 
@@ -374,6 +430,9 @@ class TelegramService
         if (empty($picks)) {
             return;
         }
+        if ($this->sendPredictionCard('Anytime Goalscorer', $picks, $siteUrl, '/goalscorer-picks')) {
+            return;
+        }
 
         $date = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
@@ -408,6 +467,9 @@ class TelegramService
     public function sendTeam3PlusPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        if ($this->sendPredictionCard('Team Goals Safety', $picks, $siteUrl, '/team-3-plus')) {
             return;
         }
 
@@ -445,6 +507,9 @@ class TelegramService
     public function sendDoubleChancePicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) {
+            return;
+        }
+        if ($this->sendPredictionCard('Double Chance Picks', $picks, $siteUrl, '/double-chance')) {
             return;
         }
 
@@ -904,6 +969,9 @@ class TelegramService
         if (empty($predictions)) {
             return;
         }
+        if ($this->sendPredictionCard('Correct Score Predictions', $predictions, $siteUrl, '/correct-score')) {
+            return;
+        }
 
         $date = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
@@ -1006,17 +1074,19 @@ class TelegramService
     }
 
     /** Send an authenticated worker screenshot as a Telegram photo + caption. */
-    private function sendPhoto(string $path, string $caption, array $inlineKeyboard): void
+    private function sendPhoto(string $path, string $caption, array $inlineKeyboard, bool $fallbackToText = true): bool
     {
         if (! $this->isConfigured()) {
-            return;
+            return false;
         }
 
         $fullPath = Storage::disk('public')->path($path);
         $stream = @fopen($fullPath, 'rb');
         if ($stream === false) {
-            $this->send($caption, $inlineKeyboard);
-            return;
+            if ($fallbackToText) {
+                $this->send($caption, $inlineKeyboard);
+            }
+            return false;
         }
 
         try {
@@ -1031,8 +1101,12 @@ class TelegramService
 
             if (! $response->successful()) {
                 Log::error('Telegram photo send failed', ['status' => $response->status(), 'body' => $response->body()]);
-                $this->send($caption, $inlineKeyboard);
+                if ($fallbackToText) {
+                    $this->send($caption, $inlineKeyboard);
+                }
+                return false;
             }
+            return true;
         } finally {
             fclose($stream);
         }
