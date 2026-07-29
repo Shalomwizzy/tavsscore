@@ -195,12 +195,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Under goals & Asian Handicap Picks */
         Route::get('/under35', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'under35'])->name('under35.index');
         Route::post('/under35/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshUnder35'])->name('under35.refresh');
+        Route::post('/under35/rebuild', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'rebuildUnder35'])->name('under35.rebuild');
         Route::get('/under45', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'under45'])->name('under45.index');
         Route::post('/under45/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshUnder45'])->name('under45.refresh');
+        Route::post('/under45/rebuild', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'rebuildUnder45'])->name('under45.rebuild');
         Route::get('/handicap', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'handicap'])->name('handicap.index');
         Route::post('/handicap/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshHandicap'])->name('handicap.refresh');
+        Route::post('/handicap/rebuild', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'rebuildHandicap'])->name('handicap.rebuild');
         Route::get('/european-handicap', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'europeanHandicap'])->name('european-handicap.index');
         Route::post('/european-handicap/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshEuropeanHandicap'])->name('european-handicap.refresh');
+        Route::post('/european-handicap/rebuild', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'rebuildEuropeanHandicap'])->name('european-handicap.rebuild');
 
         /* Team 3+ Picks */
         Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');
