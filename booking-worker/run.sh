@@ -12,9 +12,34 @@
 #
 # This Mac must be on a Nigerian (residential) IP — SportyBet blocks datacenter
 # and non-NG IPs, so this cannot run on the server or GitHub Actions.
-set -euo pipefail
+#
+# Retries built in: if the Mac isn't online yet (or SportyBet is briefly
+# unreachable) the run is retried a few times before giving up. Re-runs are safe
+# — the post-back is idempotent per platform+slip+day, so it fills in / updates
+# rather than duplicating.
 cd "$(dirname "$0")"
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"   # so cron finds node/npm
 set -a; [ -f .env ] && . ./.env; set +a
-echo "=== booking run $(date) ===" >> booking-worker.log
-npm start >> booking-worker.log 2>&1
+
+ATTEMPTS="${BOOKING_MAX_ATTEMPTS:-8}"
+DELAY="${BOOKING_RETRY_DELAY:-900}"   # 15 min between tries → ~2h of retrying
+LOG=booking-worker.log
+
+online() { curl -sf -m 15 -o /dev/null "https://www.sportybet.com/ng/sport/football"; }
+
+for i in $(seq 1 "$ATTEMPTS"); do
+  echo "=== booking run $(date) — attempt $i/$ATTEMPTS ===" >> "$LOG"
+  if ! online; then
+    echo "offline / SportyBet unreachable; waiting ${DELAY}s" >> "$LOG"
+    sleep "$DELAY"; continue
+  fi
+  if npm start >> "$LOG" 2>&1; then
+    echo "success on attempt $i" >> "$LOG"
+    exit 0
+  fi
+  echo "attempt $i failed; retrying in ${DELAY}s" >> "$LOG"
+  sleep "$DELAY"
+done
+
+echo "gave up after $ATTEMPTS attempts $(date)" >> "$LOG"
+exit 1

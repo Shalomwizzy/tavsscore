@@ -13,8 +13,9 @@
 const BASE = 'https://www.sportybet.com';
 const EVENTS_PATH = '/api/ng/factsCenter/pcUpcomingEvents';
 const SHARE_PATH = '/api/ng/orders/share';
-// 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet, European Handicap, Odd/Even
-const MARKET_IDS = '1,18,10,29,11,14,26';
+// 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet, European Handicap,
+// Asian Handicap, Odd/Even
+const MARKET_IDS = '1,18,10,29,11,14,16,26';
 const MAX_PAGES = 12;
 
 // Our internal market label → SportyBet { marketId, outcomeId, specifier? }.
@@ -55,8 +56,19 @@ const MARKET_MAP = {
 const EH_OUTCOME = { Home: '1711', Draw: '1712', Away: '1713' };
 function resolveMarket(label) {
   if (MARKET_MAP[label]) return MARKET_MAP[label];
+
+  // European Handicap: "European Handicap 0:2 - Away" → market 14, hcp=0:2.
   const eh = /^European Handicap (\d+):(\d+) - (Home|Draw|Away)$/.exec(label || '');
   if (eh) return { marketId: '14', specifier: `hcp=${eh[1]}:${eh[2]}`, outcomeId: EH_OUTCOME[eh[3]] };
+
+  // Asian Handicap: "Home -1.5 (Handicap)" / "Away +4.5 (Handicap)" → market 16.
+  // SportyBet's specifier is the HOME line (away line negated); 1714=Home, 1715=Away.
+  const ah = /^(Home|Away) ([+-]\d+(?:\.\d+)?) \(Handicap\)$/.exec(label || '');
+  if (ah) {
+    const value = parseFloat(ah[2]);
+    const homeLine = ah[1] === 'Home' ? value : -value;
+    return { marketId: '16', specifier: `hcp=${homeLine}`, outcomeId: ah[1] === 'Home' ? '1714' : '1715' };
+  }
   return null;
 }
 
@@ -135,17 +147,28 @@ async function loadEvents(page) {
 }
 
 async function shareBooking(page, selections) {
-  const resp = await page.request.post(`${BASE}${SHARE_PATH}`, {
-    headers: { ...apiHeaders, 'content-type': 'application/json' },
-    data: { selections },
-  });
-  if (!resp.ok()) throw new Error(`share HTTP ${resp.status()}`);
-  const body = await resp.json().catch(() => null);
-  if (!body) throw new Error('share returned non-JSON');
-  if (body.bizCode && body.bizCode !== 10000) {
-    throw new Error(`share bizCode ${body.bizCode}: ${body.message || 'rejected'}`);
+  // Retry transient failures (a code is only minted on a clean 200, so a thrown
+  // attempt never leaves a stray booking behind).
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const resp = await page.request.post(`${BASE}${SHARE_PATH}`, {
+        headers: { ...apiHeaders, 'content-type': 'application/json' },
+        data: { selections },
+      });
+      if (!resp.ok()) throw new Error(`share HTTP ${resp.status()}`);
+      const body = await resp.json().catch(() => null);
+      if (!body) throw new Error('share returned non-JSON');
+      if (body.bizCode && body.bizCode !== 10000) {
+        throw new Error(`share bizCode ${body.bizCode}: ${body.message || 'rejected'}`);
+      }
+      return body.data;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 3) await page.waitForTimeout(1500 * attempt);
+    }
   }
-  return body.data;
+  throw lastErr;
 }
 
 // ── Matching helpers ──
