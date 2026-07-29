@@ -68,7 +68,7 @@ class SpecialtyMarketPicksController extends Controller
         $likely = is_array($pick->likely_scores) ? ($pick->likely_scores[0] ?? null) : null;
         $insight = $this->matchInsights->for($pick);
         return [
-            'rank' => $pick->{$config['rank']}, 'label' => $label,
+            'id' => $pick->id, 'rank' => $pick->{$config['rank']}, 'label' => $label,
             'prob' => round((float) ($board[$label] ?? 0)),
             'result' => $finished ? PickHelpers::resolveForMatch($match, $label) : null,
             'score' => ($finished || $live) ? "{$match?->home_score}–" . ($match?->away_score ?? 0) : null,
