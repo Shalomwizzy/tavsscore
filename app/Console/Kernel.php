@@ -63,17 +63,17 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:select')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Staggered notifications 03:30–04:30 Lagos — 30 min after picks:select --force.
-        // Once a type is notified, a cache flag prevents later picks:select runs
-        // from overwriting those picks, so what users receive is always what stays.
-        $schedule->command('picks:notify --type=daily')->dailyAt('03:30')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=draw')->dailyAt('03:40')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=gg')->dailyAt('03:50')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over15')->dailyAt('04:00')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=over25')->dailyAt('04:10')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=team3plus')->dailyAt('04:20')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=doublechance')->dailyAt('04:30')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=correctscore')->dailyAt('04:40')->timezone('Africa/Lagos')->withoutOverlapping();
+        // Staggered notifications 02:00–02:56 Lagos — one after another, ~30 min
+        // after the 01:30 picks:select --force. Once a type is notified, a cache
+        // flag prevents later picks:select runs from overwriting those picks.
+        $schedule->command('picks:notify --type=daily')->dailyAt('02:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=draw')->dailyAt('02:08')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=gg')->dailyAt('02:16')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over15')->dailyAt('02:24')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=over25')->dailyAt('02:32')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=team3plus')->dailyAt('02:40')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=doublechance')->dailyAt('02:48')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=correctscore')->dailyAt('02:56')->timezone('Africa/Lagos')->withoutOverlapping();
         // Backup runs at 08:00 — covers types where predictions aren't ready by the primary run.
         // Cache guards in NotifyDailyPicks prevent double-sending if the primary already fired.
         $schedule->command('picks:notify --type=draw')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
