@@ -257,6 +257,9 @@
             <a href="{{ route('admin.analytics') }}" class="sb-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
                 <span class="sb-icon">📈</span> Analytics
             </a>
+            <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                <span class="sb-icon">🖼️</span> Homepage Images
+            </a>
             @if(config('services.ga.id'))
             <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" class="sb-link">
                 <span class="sb-icon">🔍</span> Google Analytics ↗
