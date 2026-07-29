@@ -20,7 +20,7 @@ class ResultsFallbackService
 {
     private const NON_FINAL = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
-    /** @return array{configured:bool, pending?:int, results?:int, updated?:int, error?:mixed} */
+    /** @return array{configured:bool, pending?:int, results?:int, updated?:int, error?:mixed, unmatched_predicted?:array<int,array{league:string,match:string,kickoff:string}>} */
     public function settlePending(int $days = 3): array
     {
         if (blank(config('services.football_data.key')) && empty(config('services.espn.leagues'))) {
@@ -47,7 +47,7 @@ class ResultsFallbackService
 
         if ($pending->isEmpty()) {
             return ['configured' => true, 'pending' => 0, 'predicted' => 0, 'updated' => 0, 'predicted_updated' => 0,
-                'fd_rows' => null, 'tsdb_rows' => null];
+                'fd_rows' => null, 'tsdb_rows' => null, 'espn_rows' => null, 'unmatched_predicted' => []];
         }
 
         $predicted = $pending->filter(fn (FootballMatch $m) => (bool) $m->prediction)->count();
@@ -88,6 +88,15 @@ class ResultsFallbackService
             'predicted_updated' => $predictedUpdated,
             'fd_rows'           => $fdRows,   // null = football-data key not set
             'espn_rows'         => $espnRows, // null = not reached / no leagues configured
+            'unmatched_predicted' => collect($unsettled)
+                ->filter(fn (FootballMatch $match) => (bool) $match->prediction)
+                ->map(fn (FootballMatch $match): array => [
+                    'league' => trim($match->league.' '.($match->league_country ? '· '.$match->league_country : '')),
+                    'match' => trim($match->home_team.' vs '.$match->away_team),
+                    'kickoff' => $match->match_time?->timezone($tz)->format('D, d M · H:i') ?? 'Unknown kickoff',
+                ])
+                ->values()
+                ->all(),
         ];
     }
 

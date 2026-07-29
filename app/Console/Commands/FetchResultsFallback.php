@@ -33,6 +33,13 @@ class FetchResultsFallback extends Command
         $this->info("Filled {$result['updated']} result(s) ({$result['predicted_updated']} predicted) "
             . "of {$result['pending']} pending ({$result['predicted']} predicted).");
 
+        if (! empty($result['unmatched_predicted'])) {
+            $this->warn('Still unmatched after all result sources — review the exact provider names below:');
+            foreach ($result['unmatched_predicted'] as $match) {
+                $this->line("  • {$match['match']} | {$match['league']} | {$match['kickoff']}");
+            }
+        }
+
         // Grade the freshly-filled results immediately.
         if (($result['updated'] ?? 0) > 0) {
             Artisan::call('predictions:check-outcomes', ['--days' => (int) $this->option('days')], $this->getOutput());

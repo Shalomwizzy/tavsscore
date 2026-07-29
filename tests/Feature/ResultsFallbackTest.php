@@ -74,6 +74,7 @@ class ResultsFallbackTest extends TestCase
         $result = app(ResultsFallbackService::class)->settlePending(2);
 
         $this->assertSame(0, $result['updated']);
+        $this->assertSame([], $result['unmatched_predicted']);
         $this->assertSame('NS', $match->fresh()->status);
     }
 
