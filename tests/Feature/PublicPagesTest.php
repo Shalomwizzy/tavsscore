@@ -142,6 +142,7 @@ class PublicPagesTest extends TestCase
         $this->get(route('under35-picks.index'))->assertOk();
         $this->get(route('under45-picks.index'))->assertOk();
         $this->get(route('handicap-picks.index'))->assertOk();
+        $this->get(route('european-handicap-picks.index'))->assertOk();
     }
 
     public function test_rollover_show_loads_for_valid_date(): void

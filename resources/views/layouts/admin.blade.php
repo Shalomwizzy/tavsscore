@@ -310,6 +310,7 @@
                     <a href="{{ route('admin.under35.index') }}" class="sb-link {{ request()->routeIs('admin.under35.*') ? 'active' : '' }}"><span class="sb-icon">🧊</span> Under 3.5 Picks</a>
                     <a href="{{ route('admin.under45.index') }}" class="sb-link {{ request()->routeIs('admin.under45.*') ? 'active' : '' }}"><span class="sb-icon">🛟</span> Under 4.5 Picks</a>
                     <a href="{{ route('admin.handicap.index') }}" class="sb-link {{ request()->routeIs('admin.handicap.*') ? 'active' : '' }}"><span class="sb-icon">🛡️</span> Handicap Picks</a>
+                    <a href="{{ route('admin.european-handicap.index') }}" class="sb-link {{ request()->routeIs('admin.european-handicap.*') ? 'active' : '' }}"><span class="sb-icon">🏁</span> European Handicap</a>
                     <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}"><span class="sb-icon">🚫</span> Team 3+ NO</a>
                     <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Double Chance</a>
                     <a href="{{ route('admin.goalscorer-picks.index') }}" class="sb-link {{ request()->routeIs('admin.goalscorer-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Goalscorer Picks</a>

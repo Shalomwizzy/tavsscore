@@ -71,6 +71,7 @@
                     <a href="{{ route('under35-picks.index') }}" class="nav-drop-item {{ request()->routeIs('under35-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🧊</span><span><span class="ndi-label">Under 3.5 Goals</span><span class="ndi-sub">Controlled-goal picks</span></span></a>
                     <a href="{{ route('under45-picks.index') }}" class="nav-drop-item {{ request()->routeIs('under45-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🛟</span><span><span class="ndi-label">Under 4.5 Goals</span><span class="ndi-sub">High-probability goal cap</span></span></a>
                     <a href="{{ route('handicap-picks.index') }}" class="nav-drop-item {{ request()->routeIs('handicap-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🛡️</span><span><span class="ndi-label">Asian Handicap</span><span class="ndi-sub">0.5 to 5.5 goal lines</span></span></a>
+                    <a href="{{ route('european-handicap-picks.index') }}" class="nav-drop-item {{ request()->routeIs('european-handicap-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🏁</span><span><span class="ndi-label">European Handicap</span><span class="ndi-sub">Virtual scores, Home/Draw/Away</span></span></a>
                     <a href="{{ route('team3plus-picks.index') }}" class="nav-drop-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🚫</span>
                         <span><span class="ndi-label">Team Goals NO</span><span class="ndi-sub">2+ & 3+ NO picks</span></span>
@@ -260,6 +261,7 @@
         <a href="{{ route('under35-picks.index') }}" class="drawer-item {{ request()->routeIs('under35-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🧊</span><span class="di-text">Under 3.5 Goals<small>Controlled-goal daily picks</small></span></a>
         <a href="{{ route('under45-picks.index') }}" class="drawer-item {{ request()->routeIs('under45-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🛟</span><span class="di-text">Under 4.5 Goals<small>High-probability goal cap</small></span></a>
         <a href="{{ route('handicap-picks.index') }}" class="drawer-item {{ request()->routeIs('handicap-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🛡️</span><span class="di-text">Asian Handicap<small>0.5 to 5.5 goal lines</small></span></a>
+        <a href="{{ route('european-handicap-picks.index') }}" class="drawer-item {{ request()->routeIs('european-handicap-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🏁</span><span class="di-text">European Handicap<small>Virtual score, 1/X/2</small></span></a>
         <a href="{{ route('team3plus-picks.index') }}" class="drawer-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🚫</span>
             <span class="di-text">

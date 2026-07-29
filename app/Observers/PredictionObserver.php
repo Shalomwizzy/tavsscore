@@ -45,7 +45,7 @@ class PredictionObserver
         $pickFlags = [
             'is_draw_pick', 'is_gg_pick', 'is_over15_pick', 'is_over25_pick',
             'is_double_chance_pick', 'is_team3plus_pick', 'is_under35_pick',
-            'is_under45_pick', 'is_handicap_pick',
+            'is_under45_pick', 'is_handicap_pick', 'is_european_handicap_pick',
         ];
         foreach ($pickFlags as $flag) {
             if ($prediction->wasChanged($flag) && $prediction->{$flag}) {

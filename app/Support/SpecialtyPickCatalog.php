@@ -26,7 +26,13 @@ class SpecialtyPickCatalog
                 'title' => 'Asian Handicap Picks', 'short_title' => 'Handicap', 'icon' => '🛡️',
                 'route' => 'handicap-picks.index', 'admin_route' => 'handicap', 'path' => '/handicap-picks',
                 'flag' => 'is_handicap_pick', 'rank' => 'handicap_rank', 'notified' => 'handicap_notified',
-                'market' => null, 'label_field' => 'handicap_label', 'floor' => 64.0,
+                'market' => null, 'label_field' => 'handicap_label', 'floor' => 64.0, 'dynamic' => 'asian',
+            ],
+            'europeanhandicap' => [
+                'title' => 'European Handicap Picks', 'short_title' => 'European Handicap', 'icon' => '🏁',
+                'route' => 'european-handicap-picks.index', 'admin_route' => 'european-handicap', 'path' => '/european-handicap-picks',
+                'flag' => 'is_european_handicap_pick', 'rank' => 'european_handicap_rank', 'notified' => 'european_handicap_notified',
+                'market' => null, 'label_field' => 'european_handicap_label', 'floor' => 57.0, 'dynamic' => 'european',
             ],
         ];
 
@@ -39,6 +45,6 @@ class SpecialtyPickCatalog
 
     public static function types(): array
     {
-        return ['under35', 'under45', 'handicap'];
+        return ['under35', 'under45', 'handicap', 'europeanhandicap'];
     }
 }

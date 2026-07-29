@@ -419,6 +419,7 @@ AVAILABLE MARKETS:
   Team Score:    "Home Team to Score", "Away Team to Score", "Home Team NOT to Score", "Away Team NOT to Score"
   Clean Sheet:   "Home Clean Sheet", "Away Clean Sheet", "Home Win to Nil", "Away Win to Nil"
   Asian Handicap: Use only half-goal lines, never whole numbers: "Home/Away +/-0.5", "+/-1.5", "+/-2.5", "+/-3.5", "+/-4.5", or "+/-5.5 (Handicap)". Pick a line only where the supplied data supports it.
+  European Handicap: Three-way virtual-score lines such as "European Handicap 1:0 - Away" or "European Handicap 0:3 - Home". The displayed score is added before Home/Draw/Away settlement; do not confuse this with Asian Handicap.
   Corners:       "Over 8.5 Corners", "Over 9.5 Corners", "Over 10.5 Corners", "Under 9.5 Corners", "Home Most Corners", "Away Most Corners"
   Cards:         "Over 3.5 Cards", "Over 4.5 Cards"
 

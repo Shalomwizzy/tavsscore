@@ -19,9 +19,11 @@ class SpecialtyMarketPicksAdminController extends Controller
     public function under35(): View { return $this->show('under35'); }
     public function under45(): View { return $this->show('under45'); }
     public function handicap(): View { return $this->show('handicap'); }
+    public function europeanHandicap(): View { return $this->show('europeanhandicap'); }
     public function refreshUnder35(): RedirectResponse { return $this->refresh('under35'); }
     public function refreshUnder45(): RedirectResponse { return $this->refresh('under45'); }
     public function refreshHandicap(): RedirectResponse { return $this->refresh('handicap'); }
+    public function refreshEuropeanHandicap(): RedirectResponse { return $this->refresh('europeanhandicap'); }
 
     private function show(string $type): View
     {

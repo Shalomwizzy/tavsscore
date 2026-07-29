@@ -258,6 +258,17 @@ class PickHelpersTest extends TestCase
         $this->assertFalse(PickHelpers::resolveForMatch($this->match(3, 1), 'Home -2.5 (Handicap)'));
     }
 
+    public function test_european_handicap_uses_the_virtual_score_and_has_a_draw_selection(): void
+    {
+        // 0:1 gives the away side one virtual goal.
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 0), 'European Handicap 0:1 - Home'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 0), 'European Handicap 0:1 - Draw'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 0), 'European Handicap 0:1 - Away'));
+        // 3:0 gives the home side three virtual goals.
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 3), 'European Handicap 3:0 - Draw'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 4), 'European Handicap 3:0 - Away'));
+    }
+
     public function test_winning_margin(): void
     {
         $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Home to win by 1'));

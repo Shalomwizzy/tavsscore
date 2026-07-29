@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Prediction;
 use App\Services\PredictionService;
+use App\Support\SpecialtyPickCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -111,7 +112,7 @@ class SelectDailyPicks extends Command
         }
 
         // ── Specialist under-goals and Asian Handicap picks ─────────
-        foreach (['under35', 'under45', 'handicap'] as $type) {
+        foreach (['under35', 'under45', 'handicap', 'europeanhandicap'] as $type) {
             if (! $force && Cache::has("picks_sent_{$type}_{$date}")) {
                 $this->info("{$type} picks already notified — skipping re-selection.");
                 continue;
@@ -124,9 +125,10 @@ class SelectDailyPicks extends Command
             }
             foreach ($picks as $pick) {
                 $match = $pick->match;
-                $label = $type === 'handicap' ? $pick->handicap_label : ($type === 'under35' ? 'Under 3.5 Goals' : 'Under 4.5 Goals');
+                $config = SpecialtyPickCatalog::get($type);
+                $label = $type === 'handicap' ? $pick->handicap_label : ($type === 'europeanhandicap' ? $pick->european_handicap_label : ($type === 'under35' ? 'Under 3.5 Goals' : 'Under 4.5 Goals'));
                 $probability = (float) ((is_array($pick->market_board) ? $pick->market_board : [])[$label] ?? 0);
-                $this->line(sprintf('  %s #%d  %s vs %s  (%s, %s%%)', $type === 'handicap' ? '🛡️' : '🧊', $pick->{"{$type}_rank"}, $match?->home_team ?? '?', $match?->away_team ?? '?', $label, round($probability)));
+                $this->line(sprintf('  %s #%d  %s vs %s  (%s, %s%%)', in_array($type, ['handicap', 'europeanhandicap'], true) ? '🛡️' : '🧊', $pick->{$config['rank']}, $match?->home_team ?? '?', $match?->away_team ?? '?', $label, round($probability)));
             }
             $this->info("✅ {$picks->count()} {$type} picks selected.");
         }

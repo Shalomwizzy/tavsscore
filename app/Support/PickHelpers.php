@@ -228,6 +228,14 @@ class PickHelpers
             $line = (float) $parts[3];
             return $parts[2] === '+' ? $teamMargin + $line > 0 : $teamMargin - $line > 0;
         }
+        if (preg_match('/^European Handicap ([0-5]):([0-5]) - (Home|Draw|Away)$/', $outcome, $parts)) {
+            $adjustedMargin = $diff + (int) $parts[1] - (int) $parts[2];
+            return match ($parts[3]) {
+                'Home' => $adjustedMargin > 0,
+                'Draw' => $adjustedMargin === 0,
+                'Away' => $adjustedMargin < 0,
+            };
+        }
 
         return match ($outcome) {
             // ── 1X2 / double chance / DNB ──

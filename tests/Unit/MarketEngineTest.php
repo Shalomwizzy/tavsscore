@@ -90,6 +90,20 @@ class MarketEngineTest extends TestCase
         }
     }
 
+    public function test_european_handicap_has_three_outcomes_for_each_virtual_score(): void
+    {
+        $b = $this->board();
+        foreach (['1:0', '0:1', '3:0', '0:3', '5:0', '0:5'] as $line) {
+            $sum = 0.0;
+            foreach (['Home', 'Draw', 'Away'] as $selection) {
+                $key = "European Handicap {$line} - {$selection}";
+                $this->assertArrayHasKey($key, $b);
+                $sum += $b[$key];
+            }
+            $this->assertEqualsWithDelta(100.0, $sum, 0.6);
+        }
+    }
+
     public function test_over_lines_decrease_monotonically(): void
     {
         $b = $this->board();

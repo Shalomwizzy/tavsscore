@@ -264,6 +264,16 @@ class MarketEngine
                 $handicaps["{$side} -{$line} (Handicap)"] = 0.0;
             }
         }
+        // European Handicap is a separate three-way market. The score shown
+        // (for example 1:0 or 0:3) is added before Home/Draw/Away settlement.
+        $europeanHandicaps = [];
+        foreach (range(1, 5) as $goals) {
+            foreach ([[ $goals, 0 ], [ 0, $goals ]] as [$homeStart, $awayStart]) {
+                foreach (['Home', 'Draw', 'Away'] as $outcome) {
+                    $europeanHandicaps["European Handicap {$homeStart}:{$awayStart} - {$outcome}"] = 0.0;
+                }
+            }
+        }
         $mH1 = $mH2 = $mH3 = $mA1 = $mA2 = $mA3 = 0.0;
         $hwO = $hwU = $dO = $dU = $awO = $awU = 0.0;               // result × O/U 2.5
         $hwBt = $hwNb = $awBt = $awNb = $drawBt = 0.0;              // result × BTTS
@@ -279,6 +289,13 @@ class MarketEngine
                     if (-$d + $line > 0) $handicaps["Away +{$line} (Handicap)"] += $p;
                     if (-$d - $line > 0) $handicaps["Away -{$line} (Handicap)"] += $p;
                 }
+                foreach (range(1, 5) as $goals) {
+                    foreach ([[ $goals, 0 ], [ 0, $goals ]] as [$homeStart, $awayStart]) {
+                        $adjusted = $d + $homeStart - $awayStart;
+                        $selection = $adjusted > 0 ? 'Home' : ($adjusted < 0 ? 'Away' : 'Draw');
+                        $europeanHandicaps["European Handicap {$homeStart}:{$awayStart} - {$selection}"] += $p;
+                    }
+                }
 
                 if ($d === 1) $mH1 += $p; elseif ($d === 2) $mH2 += $p; elseif ($d >= 3) $mH3 += $p;
                 elseif ($d === -1) $mA1 += $p; elseif ($d === -2) $mA2 += $p; elseif ($d <= -3) $mA3 += $p;
@@ -292,6 +309,9 @@ class MarketEngine
         }
 
         foreach ($handicaps as $label => $probability) {
+            $m[$label] = $pct($probability);
+        }
+        foreach ($europeanHandicaps as $label => $probability) {
             $m[$label] = $pct($probability);
         }
 

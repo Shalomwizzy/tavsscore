@@ -74,11 +74,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:notify --type=under35')->dailyAt('02:36')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=under45')->dailyAt('02:40')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=handicap')->dailyAt('02:44')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=team3plus')->dailyAt('02:48')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=doublechance')->dailyAt('02:56')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=correctscore')->dailyAt('03:04')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=corners')->dailyAt('03:12')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('picks:notify --type=goalscorer')->dailyAt('03:20')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=europeanhandicap')->dailyAt('02:48')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=team3plus')->dailyAt('02:52')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=doublechance')->dailyAt('03:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=correctscore')->dailyAt('03:08')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=corners')->dailyAt('03:16')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=goalscorer')->dailyAt('03:24')->timezone('Africa/Lagos')->withoutOverlapping();
         // Backup runs at 08:00 — covers types where predictions aren't ready by the primary run.
         // Cache guards in NotifyDailyPicks prevent double-sending if the primary already fired.
         $schedule->command('picks:notify --type=draw')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
@@ -88,6 +89,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:notify --type=under35')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=under45')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=handicap')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=europeanhandicap')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=team3plus')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=doublechance')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=correctscore')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();

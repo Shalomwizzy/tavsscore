@@ -20,6 +20,7 @@ class SpecialtyMarketPicksController extends Controller
     public function under35(Request $request): View { return $this->show($request, 'under35'); }
     public function under45(Request $request): View { return $this->show($request, 'under45'); }
     public function handicap(Request $request): View { return $this->show($request, 'handicap'); }
+    public function europeanHandicap(Request $request): View { return $this->show($request, 'europeanhandicap'); }
 
     private function show(Request $request, string $type): View
     {

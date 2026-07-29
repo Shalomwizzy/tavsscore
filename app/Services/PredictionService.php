@@ -1526,7 +1526,7 @@ class PredictionService
             ->get()
             ->map(function (Prediction $prediction) use ($type, $config) {
                 $board = is_array($prediction->market_board) ? $prediction->market_board : [];
-                if ($type !== 'handicap') {
+                if (! isset($config['dynamic'])) {
                     $label = $config['market'];
                     $probability = (float) ($board[$label] ?? 0);
                     return $probability >= $config['floor'] ? compact('prediction', 'label', 'probability') : null;
@@ -1535,11 +1535,15 @@ class PredictionService
                 $bestLabel = null;
                 $bestProbability = 0.0;
                 foreach ($board as $label => $probability) {
-                    if (! preg_match('/^(Home|Away) [+-](0\.5|1\.5|2\.5|3\.5|4\.5|5\.5) \(Handicap\)$/', (string) $label)) continue;
+                    $validLabel = $config['dynamic'] === 'asian'
+                        ? preg_match('/^(Home|Away) [+-](0\.5|1\.5|2\.5|3\.5|4\.5|5\.5) \(Handicap\)$/', (string) $label)
+                        : preg_match('/^European Handicap ([1-5]):0 - (Home|Draw|Away)$|^European Handicap 0:([1-5]) - (Home|Draw|Away)$/', (string) $label);
+                    if (! $validLabel) continue;
                     $probability = (float) $probability;
                     // Do not publish near-certain bailout lines; retain a useful,
                     // genuinely selected handicap signal instead of a trivial one.
-                    if ($probability >= $config['floor'] && $probability <= 92 && $probability > $bestProbability) {
+                    $ceiling = $config['dynamic'] === 'european' ? 86 : 92;
+                    if ($probability >= $config['floor'] && $probability <= $ceiling && $probability > $bestProbability) {
                         $bestLabel = (string) $label;
                         $bestProbability = $probability;
                     }

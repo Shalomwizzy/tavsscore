@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 
 class NotifyDailyPicks extends Command
 {
-    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|under35|under45|handicap|team3plus|doublechance|lineup|correctscore|corners|goalscorer (default: all)} {--force : Bypass already-sent cache guard}';
+    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|under35|under45|handicap|europeanhandicap|team3plus|doublechance|lineup|correctscore|corners|goalscorer (default: all)} {--force : Bypass already-sent cache guard}';
 
     protected $description = 'Send push + Telegram for today\'s picks. Use --type= to send one group at a time for staggered scheduling.';
 
