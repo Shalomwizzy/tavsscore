@@ -203,47 +203,54 @@
 
 {{-- Past challenges --}}
 @if($history->count() > 1)
-<div class="a-card">
-    <div style="font-weight:700; font-size:.9rem; color:#fff; margin-bottom:.875rem;">📜 Past Challenges</div>
-    <div style="overflow-x:auto;">
+<div style="font-weight:700; font-size:.9rem; color:#fff; margin:1.25rem 0 .75rem;">📜 Past Challenges <span style="font-size:.72rem; color:var(--dim); font-weight:500;">(click to expand)</span></div>
+@foreach($history as $ch)
+@php
+    $chDays    = $ch->picks->groupBy('day_number')->sortKeys();
+    $chStatusOf = fn ($legs) => $legs->contains(fn ($l) => $l->status === 'lost') ? 'lost'
+                    : ($legs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
+    $chWon  = $chDays->filter(fn ($l) => $chStatusOf($l) === 'won')->count();
+    $chLost = $chDays->filter(fn ($l) => $chStatusOf($l) === 'lost')->count();
+    $chTot  = $chDays->count();
+@endphp
+<details class="a-card" style="margin-bottom:.75rem;" {{ $loop->first ? 'open' : '' }}>
+    <summary style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; list-style:none;">
+        <span style="font-weight:700; color:#fff; font-size:.85rem;">📋 {{ $ch->started_at->format('M d, Y') }}</span>
+        <span style="font-size:.74rem; color:var(--dim);">
+            {{ $chTot }}/10 days · <span style="color:#6ee7b7;">{{ $chWon }}W</span>/<span style="color:#fca5a5;">{{ $chLost }}L</span> ·
+            ₦{{ number_format($ch->currentBalance(), 0) }} ·
+            @if($ch->status === 'active')<span style="color:#6ee7b7;">Active</span>
+            @elseif($ch->status === 'complete' && $chWon >= 10)<span style="color:#6ee7b7;">🏆 Complete</span>
+            @else<span style="color:#9ca3af;">Ended</span>@endif
+        </span>
+    </summary>
+    <div style="overflow-x:auto; margin-top:.75rem;">
         <table class="a-table">
-            <thead>
-                <tr>
-                    <th>Started</th>
-                    <th>Initial Stake</th>
-                    <th>Days</th>
-                    <th>W/L</th>
-                    <th>Final Balance</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Day</th><th>Match</th><th>Tip</th><th>Odds</th><th>Score</th><th>Status</th></tr></thead>
             <tbody>
-                @foreach($history as $ch)
-                @php
-                    $w = $ch->picks->where('status', 'won')->count();
-                    $l = $ch->picks->where('status', 'lost')->count();
-                @endphp
+                @foreach($chDays as $day => $legs)
+                @foreach($legs as $i => $rp)
+                @php $rm = $rp->match; @endphp
                 <tr>
-                    <td style="color:var(--dim);">{{ $ch->started_at->format('M d, Y') }}</td>
-                    <td>{{ number_format((float)$ch->initial_stake, 0) }}</td>
-                    <td>{{ $ch->picks->count() }}/10</td>
-                    <td><span style="color:#6ee7b7;">{{ $w }}W</span> / <span style="color:#fca5a5;">{{ $l }}L</span></td>
-                    <td style="color:#fcd34d; font-weight:700;">{{ number_format($ch->currentBalance(), 0) }}</td>
+                    @if($i === 0)<td rowspan="{{ $legs->count() }}" style="font-weight:800; color:#fcd34d; vertical-align:top;">Day {{ $day }}</td>@endif
+                    <td style="color:#fff; white-space:nowrap;">{{ $rm?->home_team }} vs {{ $rm?->away_team }}</td>
+                    <td style="color:#6ee7b7; font-weight:600;">{{ $rp->groq_verdict }}</td>
+                    <td style="color:#fcd34d;">{{ $rp->implied_odds }}</td>
+                    <td style="color:var(--dim);">{{ $rp->result_score ?? '-' }}</td>
                     <td>
-                        @if($ch->status === 'active')
-                            <span class="badge badge-green">Active</span>
-                        @elseif($ch->status === 'complete' && $w >= 10)
-                            <span class="badge badge-green">🏆 Complete</span>
-                        @else
-                            <span class="badge badge-gray">Ended</span>
-                        @endif
+                        @if($rp->status === 'won')<span class="badge badge-green">✓</span>
+                        @elseif($rp->status === 'lost')<span class="badge badge-red">✗</span>
+                        @elseif($rp->status === 'void')<span class="badge badge-gray">Void</span>
+                        @else<span class="badge badge-gray">⏳</span>@endif
                     </td>
                 </tr>
+                @endforeach
                 @endforeach
             </tbody>
         </table>
     </div>
-</div>
+</details>
+@endforeach
 @endif
 
 <script>

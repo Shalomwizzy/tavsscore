@@ -20,7 +20,7 @@ class RolloverAdminController extends Controller
             ->first();
 
         $history = RolloverChallenge::query()
-            ->with(['picks'])
+            ->with(['picks.match'])
             ->latest('started_at')
             ->limit(5)
             ->get();
