@@ -7,6 +7,7 @@ use App\Models\BookingCodeLeg;
 use App\Models\FootballMatch;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -128,6 +129,28 @@ class BookingCodeWorkflowTest extends TestCase
             ->assertJsonValidationErrors('status');
 
         $this->assertDatabaseMissing('booking_codes', ['code' => 'FAILED-SAFE']);
+    }
+
+    public function test_worker_stores_a_verified_ticket_screenshot_with_the_code(): void
+    {
+        config(['services.booking_worker.token' => 'test-worker-token']);
+        Storage::fake('public');
+        $jpeg = "\xFF\xD8\xFF\xE0".str_repeat('x', 24);
+
+        $this->withHeader('X-Worker-Token', 'test-worker-token')
+            ->postJson('/api/worker/booking-codes', [
+                'platform' => 'sportybet',
+                'code' => 'PHOTO22',
+                'slip_ref' => 'photo-ticket',
+                'total_odds' => 2.22,
+                'status' => 'published',
+                'ticket_screenshot' => 'data:image/jpeg;base64,'.base64_encode($jpeg),
+            ])
+            ->assertCreated();
+
+        $code = BookingCode::where('code', 'PHOTO22')->firstOrFail();
+        $this->assertNotNull($code->ticket_image_path);
+        Storage::disk('public')->assertExists($code->ticket_image_path);
     }
 
     public function test_public_booking_page_shows_today_code_and_outcome_history(): void

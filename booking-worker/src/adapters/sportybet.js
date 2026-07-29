@@ -117,11 +117,17 @@ export const sportybet = {
     const data = await shareBooking(page, selections);
     if (!data || !data.shareCode) throw new Error('share call returned no shareCode');
 
+    // The photo is attached only when SportyBet visibly renders the exact code
+    // on the shared ticket page. This is proof of the real ticket, never a
+    // fabricated template with substituted text.
+    const ticketScreenshot = await captureTicketScreenshot(page, data.shareURL, data.shareCode);
+
     return {
       code: data.shareCode,
       link: data.shareURL || `${BASE}/ng/?shareCode=${data.shareCode}`,
       total_odds: Math.round(combined * 100) / 100,
       booked,
+      ticket_screenshot: ticketScreenshot,
     };
   },
 };
@@ -147,6 +153,29 @@ async function loadEvents(page) {
     if (events.length < 100) break;
   }
   return all;
+}
+
+async function captureTicketScreenshot(page, shareUrl, shareCode) {
+  if (!shareUrl || !shareCode) return null;
+
+  let ticketPage = null;
+  try {
+    ticketPage = await page.context().newPage();
+    await ticketPage.goto(shareUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await ticketPage.waitForTimeout(1800);
+    const visibleText = await ticketPage.locator('body').innerText({ timeout: 6000 });
+    if (!visibleText.toUpperCase().includes(String(shareCode).toUpperCase())) {
+      return null;
+    }
+
+    const image = await ticketPage.screenshot({ type: 'jpeg', quality: 84, fullPage: false });
+    return `data:image/jpeg;base64,${image.toString('base64')}`;
+  } catch (error) {
+    console.warn(`Could not capture the shared SportyBet ticket: ${error.message}`);
+    return null;
+  } finally {
+    if (ticketPage) await ticketPage.close().catch(() => {});
+  }
 }
 
 async function shareBooking(page, selections) {

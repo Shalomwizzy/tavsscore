@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TelegramService
 {
@@ -950,23 +951,26 @@ class TelegramService
         );
     }
 
-    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null, ?string $ticketUrl = null): void
+    public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null, ?string $ticketUrl = null, ?string $ticketImagePath = null, ?float $totalOdds = null): void
     {
-        $notePart = $note ? "\n📋 Picks: <b>{$note}</b>" : '';
+        $notePart = $note ? "\n📋 Picks: <b>{$this->escape($note)}</b>" : '';
+        $safeCode = $this->escape($code);
         $howTo = match (strtolower($platform)) {
-            'bet9ja' => "Open Bet9ja app → Booking Code → Enter <b>{$code}</b>",
-            '1xbet' => "Open 1xBet app → Coupon Code → Enter <b>{$code}</b>",
-            '1win' => "Open 1Win app → Betting Slip → Coupon Code → Enter <b>{$code}</b>",
-            'sportybet' => "Open SportyBet app → Booking Code → Enter <b>{$code}</b>",
-            'betway' => "Open Betway app → Booking Code → Enter <b>{$code}</b>",
-            'parimatch' => "Open Parimatch app → Booking Code → Enter <b>{$code}</b>",
-            default => "Open {$platform} app → Booking Code → Enter <b>{$code}</b>",
+            'bet9ja' => "Open Bet9ja app → Booking Code → Enter <b>{$safeCode}</b>",
+            '1xbet' => "Open 1xBet app → Coupon Code → Enter <b>{$safeCode}</b>",
+            '1win' => "Open 1Win app → Betting Slip → Coupon Code → Enter <b>{$safeCode}</b>",
+            'sportybet' => "Open SportyBet app → Booking Code → Enter <b>{$safeCode}</b>",
+            'betway' => "Open Betway app → Booking Code → Enter <b>{$safeCode}</b>",
+            'parimatch' => "Open Parimatch app → Booking Code → Enter <b>{$safeCode}</b>",
+            default => 'Open '.$this->escape($platform)." app → Booking Code → Enter <b>{$safeCode}</b>",
         };
 
-        $safeCode = $this->escape($code);
         $msg = '🎟️ <b>BOOKING CODE — '.strtoupper($platform)."</b>\n"
             ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            ."🔑 Code: <code>{$safeCode}</code>\n"
+            ."🔐 <b>YOUR BOOKING CODE</b>\n"
+            ."<b>🔥 {$safeCode} 🔥</b>\n"
+            ."<code>{$safeCode}</code>\n"
+            .($totalOdds ? '📈 Total odds: <b>'.number_format($totalOdds, 2).'</b>\n' : '')
             ."☝️ Tap <b>Copy code</b> below, then load it in {$platform}."
             .$notePart."\n\n"
             ."📲 <b>How to use:</b>\n{$howTo}\n\n"
@@ -993,7 +997,45 @@ class TelegramService
             'url' => rtrim($siteUrl, '/').'/booking-codes',
         ]];
 
+        if ($ticketImagePath && Storage::disk('public')->exists($ticketImagePath)) {
+            $this->sendPhoto($ticketImagePath, $msg, $keyboard);
+            return;
+        }
+
         $this->send($msg, $keyboard);
+    }
+
+    /** Send an authenticated worker screenshot as a Telegram photo + caption. */
+    private function sendPhoto(string $path, string $caption, array $inlineKeyboard): void
+    {
+        if (! $this->isConfigured()) {
+            return;
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+        $stream = @fopen($fullPath, 'rb');
+        if ($stream === false) {
+            $this->send($caption, $inlineKeyboard);
+            return;
+        }
+
+        try {
+            $response = Http::timeout(20)
+                ->attach('photo', $stream, basename($path))
+                ->post("https://api.telegram.org/bot{$this->token}/sendPhoto", [
+                    'chat_id' => $this->channelId,
+                    'caption' => $caption,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode(['inline_keyboard' => $inlineKeyboard]),
+                ]);
+
+            if (! $response->successful()) {
+                Log::error('Telegram photo send failed', ['status' => $response->status(), 'body' => $response->body()]);
+                $this->send($caption, $inlineKeyboard);
+            }
+        } finally {
+            fclose($stream);
+        }
     }
 
     /** Result of a settled booking code (all legs won, or one leg lost). */

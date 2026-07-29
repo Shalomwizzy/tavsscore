@@ -17,7 +17,7 @@ class ResendBookingCodes extends Command
         $codes = BookingCode::query()->where('status', 'published')->where('total_odds', '>=', 2)
             ->whereDate('pick_date', $date)->orderBy('id')->get();
         foreach ($codes as $code) {
-            $telegram->sendBookingCode($code->platform, strtoupper($code->code), (string) ($code->note ?? ''), config('app.url'), ticketUrl: $code->link);
+            $telegram->sendBookingCode($code->platform, strtoupper($code->code), (string) ($code->note ?? ''), config('app.url'), ticketUrl: $code->link, ticketImagePath: $code->ticket_image_path, totalOdds: $code->total_odds);
         }
         $this->info("Re-sent {$codes->count()} booking code(s) for {$date}.");
         return self::SUCCESS;

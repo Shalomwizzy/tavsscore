@@ -11,6 +11,7 @@ use App\Services\OneSignalService;
 use App\Services\TelegramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Endpoints the external automation worker talks to (behind worker.token):
@@ -53,6 +54,10 @@ class BookingWorkerController extends Controller
             'link'       => ['nullable', 'url', 'max:500'],
             'slip_ref'   => ['nullable', 'string', 'max:60'],
             'fixtures'   => ['nullable', 'array'],
+            // JPEG/PNG captured by the authenticated Mac worker after SportyBet
+            // visibly loads the actual shared ticket. It is optional: a ticket
+            // is still published if the bookmaker blocks the screenshot page.
+            'ticket_screenshot' => ['nullable', 'string', 'max:5000000'],
             // Every publishable ticket itself must clear the 2.00 minimum.
             'total_odds' => ['nullable', 'numeric', 'min:2', 'max:500', 'required_if:status,published'],
             // The browser worker retries transient errors locally. It must
@@ -86,15 +91,29 @@ class BookingWorkerController extends Controller
             ]
         );
 
+        if (filled($data['ticket_screenshot'] ?? null)) {
+            try {
+                $path = $this->storeTicketScreenshot((string) $data['ticket_screenshot'], $code);
+                if ($path) {
+                    $code->update(['ticket_image_path' => $path]);
+                }
+            } catch (\Throwable $e) {
+                // A screenshot is proof/extra presentation only; never discard
+                // a real booking code because image storage failed.
+                report($e);
+            }
+        }
+
         if (($data['status'] ?? 'published') === 'published') {
             $ledger->syncLegs($code);
         }
 
         // Push each newly-published code to Telegram + OneSignal immediately.
-        // wasRecentlyCreated / wasChanged('code') means an idempotent re-run
-        // with the same code never re-notifies; a changed code does.
+        // An idempotent re-run with the same code never re-notifies. A changed
+        // code or a newly captured real-ticket image does re-notify so Telegram
+        // receives the proof photo as soon as it is available.
         if (($data['status'] ?? 'published') === 'published'
-            && ($code->wasRecentlyCreated || $code->wasChanged('code'))) {
+            && ($code->wasRecentlyCreated || $code->wasChanged('code') || $code->wasChanged('ticket_image_path'))) {
             $this->announce($code, $telegram, $oneSignal);
         }
 
@@ -113,6 +132,8 @@ class BookingWorkerController extends Controller
                 (string) ($code->note ?? ''),
                 config('app.url'),
                 ticketUrl: $code->link,
+                ticketImagePath: $code->ticket_image_path,
+                totalOdds: $code->total_odds,
             );
         } catch (\Throwable $e) {
             report($e);
@@ -127,5 +148,30 @@ class BookingWorkerController extends Controller
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    private function storeTicketScreenshot(string $encoded, BookingCode $code): ?string
+    {
+        if (! preg_match('#^data:image/(png|jpe?g);base64,([A-Za-z0-9+/=\s]+)$#i', $encoded, $matches)) {
+            return null;
+        }
+
+        $binary = base64_decode(preg_replace('/\s+/', '', $matches[2]), true);
+        if ($binary === false || strlen($binary) < 16 || strlen($binary) > 3_500_000) {
+            return null;
+        }
+
+        $isJpeg = str_starts_with($binary, "\xFF\xD8\xFF");
+        $isPng = str_starts_with($binary, "\x89PNG\r\n\x1A\n");
+        if (! $isJpeg && ! $isPng) {
+            return null;
+        }
+
+        $extension = $isPng ? 'png' : 'jpg';
+        $date = ($code->pick_date ?? now('Africa/Lagos'))->format('Y-m-d');
+        $path = "booking-codes/{$date}/ticket-{$code->id}.{$extension}";
+        Storage::disk('public')->put($path, $binary);
+
+        return $path;
     }
 }

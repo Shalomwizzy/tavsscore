@@ -99,6 +99,7 @@ async function run() {
           platform,
           code: result.code,
           link: result.link || null,
+          ticket_screenshot: result.ticket_screenshot || null,
           slip_ref: slip.ref,
           total_odds: result.total_odds || slip.est_total_odds || null,
           fixtures: (result.booked || legs).map((l) => ({

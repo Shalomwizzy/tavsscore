@@ -66,7 +66,7 @@ class BookingCodeController extends Controller
         $affiliate    = \App\Models\AffiliateLink::where('slug', strtolower(str_replace(' ', '', $data['platform'])))->where('is_active', true)->first();
         $affiliateUrl = $affiliate?->register_url ?: null;
 
-        $telegram->sendBookingCode($data['platform'], strtoupper($data['code']), $data['note'] ?? '', config('app.url'), $affiliateUrl);
+        $telegram->sendBookingCode($data['platform'], strtoupper($data['code']), $data['note'] ?? '', config('app.url'), $affiliateUrl, totalOdds: (float) $data['total_odds']);
 
         $oneSignal->sendMatchAlert(
             title:   "🎟️ Booking Code — {$data['platform']}",
@@ -111,6 +111,8 @@ class BookingCodeController extends Controller
                 (string) ($code->note ?? ''),
                 config('app.url'),
                 ticketUrl: $code->link,
+                ticketImagePath: $code->ticket_image_path,
+                totalOdds: $code->total_odds,
             );
         }
 
