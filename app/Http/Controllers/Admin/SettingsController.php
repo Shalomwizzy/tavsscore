@@ -18,6 +18,13 @@ class SettingsController extends Controller
         return view('admin.settings.index', compact('settings'));
     }
 
+    public function homepageMedia(): View
+    {
+        $settings = Setting::all()->keyBy('key');
+
+        return view('admin.homepage-media.index', compact('settings'));
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([

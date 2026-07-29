@@ -221,8 +221,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/affiliate-links/{affiliateLink}',                 [Admin\AffiliateLinkController::class, 'destroy'])->name('affiliate-links.destroy');
         Route::post('/affiliate-links/{affiliateLink}/toggle',            [Admin\AffiliateLinkController::class, 'toggle'])->name('affiliate-links.toggle');
 
-        Route::get('/settings',  [Admin\SettingsController::class, 'index'])->name('settings.index');
-        Route::post('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+        Route::get('/homepage-images', [Admin\SettingsController::class, 'homepageMedia'])->name('homepage-media.index');
+        Route::get('/settings',        [Admin\SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings',       [Admin\SettingsController::class, 'update'])->name('settings.update');
 
         Route::get('/pi-ratings',         [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'index'])->name('pi-ratings.index');
         Route::post('/pi-ratings/rebuild', [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'rebuild'])->name('pi-ratings.rebuild');

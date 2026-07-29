@@ -172,7 +172,7 @@
             <button type="submit" class="btn-a" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.28);color:#fcd34d;">🤖 AI Auto-Blog</button>
         </form>
         <a href="{{ route('admin.blog.create') }}" class="btn-a btn-gray">✏️ New Post</a>
-        <a href="{{ route('admin.settings.index') }}" class="btn-a btn-gray">🖼️ Homepage Media</a>
+        <a href="{{ route('admin.homepage-media.index') }}" class="btn-a btn-gray">🖼️ Homepage Images</a>
     </div>
 </div>
 

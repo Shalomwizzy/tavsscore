@@ -248,6 +248,7 @@
             $isContent = request()->routeIs('admin.blog.*');
             $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*','admin.winners.*');
             $isRevenue = request()->routeIs('admin.affiliate-links.*','admin.settings.*');
+            $isHomepageMedia = request()->routeIs('admin.homepage-media.*');
         @endphp
         <nav class="sb-nav">
             <div class="sb-section-label">Main</div>
@@ -257,7 +258,7 @@
             <a href="{{ route('admin.analytics') }}" class="sb-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
                 <span class="sb-icon">📈</span> Analytics
             </a>
-            <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.homepage-media.index') }}" class="sb-link {{ $isHomepageMedia ? 'active' : '' }}">
                 <span class="sb-icon">🖼️</span> Homepage Images
             </a>
             @if(config('services.ga.id'))
