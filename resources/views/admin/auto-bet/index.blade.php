@@ -49,6 +49,17 @@
                 @endforeach
             </div>
 
+            <div class="sb-section-label">SportyBet login (encrypted — used only by your Mac worker to keep the session alive)</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;">
+                <label style="font-size:.8rem;color:var(--dim);">Phone number {!! $hasPhone ? '<span style="color:#059669;">✓ saved</span>' : '' !!}
+                    <input type="text" name="sporty_phone" autocomplete="off" placeholder="{{ $hasPhone ? '•••••••• (leave blank to keep)' : 'e.g. 08012345678' }}" style="width:100%;margin-top:.3rem;padding:.5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                </label>
+                <label style="font-size:.8rem;color:var(--dim);">Password {!! $hasPassword ? '<span style="color:#059669;">✓ saved</span>' : '' !!}
+                    <input type="password" name="sporty_password" autocomplete="new-password" placeholder="{{ $hasPassword ? '•••••••• (leave blank to keep)' : 'SportyBet password' }}" style="width:100%;margin-top:.3rem;padding:.5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                </label>
+            </div>
+            <p style="font-size:.72rem;color:var(--dim);margin:-.4rem 0 0;">Stored encrypted, your own account only. This is real money on your account, and SportyBet's terms discourage automation — your call.</p>
+
             <button type="submit" style="align-self:flex-start;background:var(--green,#10b981);color:#04231a;font-weight:700;border:none;border-radius:8px;padding:.6rem 1.4rem;cursor:pointer;">Save rules</button>
         </div>
     </form>

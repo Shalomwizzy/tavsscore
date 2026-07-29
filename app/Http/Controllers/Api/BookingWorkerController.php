@@ -4,14 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
+use App\Models\Setting;
 use App\Services\Booking\BetslipSpecService;
 use App\Services\Booking\BookingCodeGenerationRequest;
 use App\Services\Booking\BookingCodeLedgerService;
+use App\Services\Booking\StakePlanService;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
 use App\Services\ImageWatermarkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -26,6 +29,27 @@ class BookingWorkerController extends Controller
     public function spec(BetslipSpecService $specs): JsonResponse
     {
         return response()->json($specs->today());
+    }
+
+    /**
+     * Auto-bet config + decrypted SportyBet credentials for the Mac worker only
+     * (behind the worker token). The server never places a bet; it hands the
+     * worker the owner's own login + staking rules to do it locally.
+     */
+    public function autobetConfig(StakePlanService $stakePlan): JsonResponse
+    {
+        $decrypt = function (?string $key): ?string {
+            $v = Setting::get($key);
+            if (! filled($v)) return null;
+            try { return Crypt::decryptString($v); } catch (\Throwable) { return null; }
+        };
+
+        return response()->json([
+            'armed'    => $stakePlan->isArmed(),
+            'config'   => $stakePlan->config(),
+            'phone'    => $decrypt('sporty_phone_enc'),
+            'password' => $decrypt('sporty_password_enc'),
+        ]);
     }
 
     /** Read the latest admin “Generate codes” request from the Mac worker. */

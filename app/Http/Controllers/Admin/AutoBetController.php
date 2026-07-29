@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\Booking\StakePlanService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\View\View;
 
 /**
@@ -37,7 +38,10 @@ class AutoBetController extends Controller
 
         $plannedTotal = $preview->sum('stake');
 
-        return view('admin.auto-bet.index', compact('config', 'armed', 'preview', 'plannedTotal'));
+        $hasPhone    = filled(Setting::get('sporty_phone_enc'));
+        $hasPassword = filled(Setting::get('sporty_password_enc'));
+
+        return view('admin.auto-bet.index', compact('config', 'armed', 'preview', 'plannedTotal', 'hasPhone', 'hasPassword'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -59,6 +63,15 @@ class AutoBetController extends Controller
         Setting::set('autobet_enabled', $request->boolean('autobet_enabled') ? '1' : '0');
         foreach ($data as $key => $value) {
             Setting::set($key, (string) $value);
+        }
+
+        // SportyBet credentials — stored encrypted, only ever decrypted for the
+        // token-authed Mac worker. Left blank = keep the existing value.
+        if (filled($request->input('sporty_phone'))) {
+            Setting::set('sporty_phone_enc', Crypt::encryptString(trim((string) $request->input('sporty_phone'))));
+        }
+        if (filled($request->input('sporty_password'))) {
+            Setting::set('sporty_password_enc', Crypt::encryptString((string) $request->input('sporty_password')));
         }
 
         return back()->with('success', 'Auto-bet rules saved'.($request->boolean('autobet_enabled') ? ' — auto-bet is ARMED.' : '.'));

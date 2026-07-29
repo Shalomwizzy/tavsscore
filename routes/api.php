@@ -39,4 +39,5 @@ Route::middleware('worker.token')->prefix('worker')->group(function () {
     Route::get('/booking-generation-request', [BookingWorkerController::class, 'generationRequest']);
     Route::post('/booking-generation-request/complete', [BookingWorkerController::class, 'completeGenerationRequest']);
     Route::post('/booking-codes', [BookingWorkerController::class, 'store']);
+    Route::get('/autobet-config', [BookingWorkerController::class, 'autobetConfig']);
 });
