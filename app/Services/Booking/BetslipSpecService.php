@@ -24,6 +24,12 @@ class BetslipSpecService
     private const MIN_LEGS       = 3;
     private const MAX_LEGS       = 30;   // hard cap so we never blow past MAX_TOTAL_ODDS
 
+    // High-Risk ticket: the model's confident picks (≥50%) stacked into a big
+    // long-shot accumulator. Deliberately risky — small stakes, for fun.
+    private const HR_FLOOR     = 50.0;
+    private const MIN_HR_ODDS  = 100.0;
+    private const MAX_HR_ODDS  = 1500.0;
+
     /**
      * Markets that reliably exist on SportyBet (and the worker can book). The
      * Safe Builder only picks from these so it never lands on a 99% line the
@@ -131,6 +137,9 @@ class BetslipSpecService
         // ── Rollover: today's full multi-leg ticket ──
         $slips[] = $this->buildRolloverTicket($tz);
 
+        // ── High Risk: the model's confident calls stacked into a big-odds acca ──
+        $slips[] = $this->buildHighRisk($preds);
+
         return [
             'generated_at'   => now($tz)->toIso8601String(),
             'pick_date'      => now($tz)->toDateString(),
@@ -225,6 +234,50 @@ class BetslipSpecService
             'max_total_odds' => self::MAX_TOTAL_ODDS,
             'est_total_odds' => $this->combinedOdds($selections),
             'selections'     => $selections,
+        ];
+    }
+
+    /**
+     * High-Risk ticket: the model's single most-confident bookable call on each
+     * game (≥50%), stacked safest-first into a long-shot accumulator with total
+     * odds in the 100–1500 band. Genuinely risky — every leg must land.
+     */
+    private function buildHighRisk(Collection $preds): ?array
+    {
+        $legs = [];
+        foreach ($preds as $p) {
+            $opts = $this->bookableOptions($p->market_board, self::HR_FLOOR);
+            if ($opts === []) continue;
+            $best = $opts[0]; // most confident bookable pick on this game
+            $legs[] = ['pred' => $p, 'market' => $best['market'], 'prob' => $best['prob'], 'odds' => $this->estOdds($best['prob'])];
+        }
+
+        usort($legs, fn ($a, $b) => $b['prob'] <=> $a['prob']); // safest legs first
+        $selections = [];
+        $combined = 1.0;
+        foreach ($legs as $leg) {
+            if (count($selections) >= self::MAX_LEGS) break;
+            if ($combined * $leg['odds'] > self::MAX_HR_ODDS) continue;
+            $sel = $this->selectionFromMatch($leg['pred']->match, $leg['market'], $leg['prob'], $leg['odds']);
+            if ($sel === null) continue;
+            $selections[] = $sel;
+            $combined *= $leg['odds'];
+            if ($combined >= self::MIN_HR_ODDS && count($selections) >= self::MIN_LEGS) break;
+        }
+
+        if ($combined < self::MIN_HR_ODDS || count($selections) < self::MIN_LEGS) {
+            return null;
+        }
+
+        return [
+            'ref'            => 'high-risk',
+            'title'          => 'High Risk (big odds)',
+            'market'         => 'High-risk accumulator — 50%+ picks',
+            'min_total_odds' => self::MIN_HR_ODDS,
+            'max_total_odds' => self::MAX_HR_ODDS,
+            'est_total_odds' => $this->combinedOdds($selections),
+            'selections'     => $selections,
+            'high_risk'      => true,
         ];
     }
 

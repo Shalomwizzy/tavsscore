@@ -61,6 +61,7 @@ Route::get('/results',     [ResultsController::class, 'index'])->name('results.i
 
 /* ── Booking Codes (public) ── */
 Route::get('/booking-codes', [App\Http\Controllers\BookingCodesController::class, 'index'])->name('booking-codes.index');
+Route::get('/high-risk', [App\Http\Controllers\HighRiskController::class, 'index'])->name('high-risk.index');
 
 /* ── Winners ── */
 Route::get('/winners',                  [WinnersController::class, 'index'])->name('winners.index');
