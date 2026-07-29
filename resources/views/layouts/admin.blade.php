@@ -270,7 +270,11 @@
         </a>
 
         @php
-            $isPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.over15.*','admin.over25.*','admin.team3plus.*','admin.double-chance.*','admin.correct-score.*','admin.lineup-picks.*','admin.booking-code.*','admin.rollover.*','admin.goalscorer-picks.*');
+            $isMainPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.double-chance.*');
+            $isGoalMarkets = request()->routeIs('admin.over15.*','admin.over25.*','admin.under35.*','admin.under45.*','admin.team3plus.*');
+            $isHandicapMarkets = request()->routeIs('admin.handicap.*','admin.european-handicap.*');
+            $isSpecialistPicks = request()->routeIs('admin.correct-score.*','admin.lineup-picks.*','admin.goalscorer-picks.*');
+            $isRollover = request()->routeIs('admin.booking-code.*','admin.rollover.*');
             $isData  = request()->routeIs('admin.matches','admin.predictions','admin.daily-football-predictions.*','admin.api-stats.*','admin.fantasy.*');
             $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
             $isContent = request()->routeIs('admin.blog.*');
@@ -297,31 +301,52 @@
             </a>
             @endif
 
-            {{-- Picks & Rollover --}}
-            <details class="sb-group" {{ $isPicks ? 'open' : '' }}>
-                <summary><span>⭐ Picks &amp; Rollover</span><span class="sb-caret">▶</span></summary>
+            {{-- Picks --}}
+            <div class="sb-section-label">Pick Centre</div>
+            <details class="sb-group" data-admin-group="main-picks" {{ $isMainPicks ? 'open' : '' }}>
+                <summary><span>⭐ Main Picks</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.picks') }}" class="sb-link {{ request()->routeIs('admin.picks') ? 'active' : '' }}"><span class="sb-icon">⭐</span> Daily Picks</a>
-                    <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}"><span class="sb-icon">🔄</span> Rollover</a>
                     <a href="{{ route('admin.draw-picks.index') }}" class="sb-link {{ request()->routeIs('admin.draw-picks.*') ? 'active' : '' }}"><span class="sb-icon">🤝</span> Draw Picks</a>
                     <a href="{{ route('admin.gg-picks.index') }}" class="sb-link {{ request()->routeIs('admin.gg-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> GG Picks</a>
+                    <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Double Chance</a>
+                </div>
+            </details>
+            <details class="sb-group" data-admin-group="goal-markets" {{ $isGoalMarkets ? 'open' : '' }}>
+                <summary><span>📈 Goal Markets</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
                     <a href="{{ route('admin.over15.index') }}" class="sb-link {{ request()->routeIs('admin.over15.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Over 1.5 Picks</a>
                     <a href="{{ route('admin.over25.index') }}" class="sb-link {{ request()->routeIs('admin.over25.*') ? 'active' : '' }}"><span class="sb-icon">🔥</span> Over 2.5 Picks</a>
                     <a href="{{ route('admin.under35.index') }}" class="sb-link {{ request()->routeIs('admin.under35.*') ? 'active' : '' }}"><span class="sb-icon">🧊</span> Under 3.5 Picks</a>
                     <a href="{{ route('admin.under45.index') }}" class="sb-link {{ request()->routeIs('admin.under45.*') ? 'active' : '' }}"><span class="sb-icon">🛟</span> Under 4.5 Picks</a>
+                    <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}"><span class="sb-icon">🚫</span> Team 3+ NO</a>
+                </div>
+            </details>
+            <details class="sb-group" data-admin-group="handicap-markets" {{ $isHandicapMarkets ? 'open' : '' }}>
+                <summary><span>🛡️ Handicap Markets</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
                     <a href="{{ route('admin.handicap.index') }}" class="sb-link {{ request()->routeIs('admin.handicap.*') ? 'active' : '' }}"><span class="sb-icon">🛡️</span> Handicap Picks</a>
                     <a href="{{ route('admin.european-handicap.index') }}" class="sb-link {{ request()->routeIs('admin.european-handicap.*') ? 'active' : '' }}"><span class="sb-icon">🏁</span> European Handicap</a>
-                    <a href="{{ route('admin.team3plus.index') }}" class="sb-link {{ request()->routeIs('admin.team3plus.*') ? 'active' : '' }}"><span class="sb-icon">🚫</span> Team 3+ NO</a>
-                    <a href="{{ route('admin.double-chance.index') }}" class="sb-link {{ request()->routeIs('admin.double-chance.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Double Chance</a>
+                </div>
+            </details>
+            <details class="sb-group" data-admin-group="specialist-picks" {{ $isSpecialistPicks ? 'open' : '' }}>
+                <summary><span>🎯 Specialist Picks</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
                     <a href="{{ route('admin.goalscorer-picks.index') }}" class="sb-link {{ request()->routeIs('admin.goalscorer-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Goalscorer Picks</a>
                     <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Correct Score</a>
                     <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Lineup Picks</a>
+                </div>
+            </details>
+            <details class="sb-group" data-admin-group="rollover" {{ $isRollover ? 'open' : '' }}>
+                <summary><span>🔄 Rollover &amp; Booking</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}"><span class="sb-icon">🔄</span> Rollover Challenge</a>
                     <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}"><span class="sb-icon">🎟️</span> Booking Code</a>
                 </div>
             </details>
 
             {{-- Football Data --}}
-            <details class="sb-group" {{ $isData ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="football-data" {{ $isData ? 'open' : '' }}>
                 <summary><span>⚽ Football Data</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.matches') }}" class="sb-link {{ request()->routeIs('admin.matches') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Matches</a>
@@ -332,7 +357,7 @@
                 </div>
             </details>
 
-            <details class="sb-group" {{ request()->routeIs('admin.tennis.*') ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="tennis-data" {{ request()->routeIs('admin.tennis.*') ? 'open' : '' }}>
                 <summary><span>🎾 Tennis Data</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.tennis.index') }}" class="sb-link {{ request()->routeIs('admin.tennis.*') ? 'active' : '' }}"><span class="sb-icon">🎾</span> Tennis Predictions</a>
@@ -341,7 +366,7 @@
             </details>
 
             {{-- Model & Accuracy --}}
-            <details class="sb-group" {{ $isModel ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="model-accuracy" {{ $isModel ? 'open' : '' }}>
                 <summary><span>🧠 Model &amp; Accuracy</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Stats</a>
@@ -353,7 +378,7 @@
             </details>
 
             {{-- Content --}}
-            <details class="sb-group" {{ $isContent ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="content" {{ $isContent ? 'open' : '' }}>
                 <summary><span>📝 Content</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.blog.index') }}" class="sb-link {{ request()->routeIs('admin.blog.index','admin.blog.edit') ? 'active' : '' }}"><span class="sb-icon">📝</span> Blog Posts</a>
@@ -362,7 +387,7 @@
             </details>
 
             {{-- Engagement --}}
-            <details class="sb-group" {{ $isEngage ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="engagement" {{ $isEngage ? 'open' : '' }}>
                 <summary><span>📢 Engagement</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}"><span class="sb-icon">📬</span> Newsletter</a>
@@ -372,7 +397,7 @@
             </details>
 
             {{-- Revenue & Settings --}}
-            <details class="sb-group" {{ $isRevenue ? 'open' : '' }}>
+            <details class="sb-group" data-admin-group="revenue-settings" {{ $isRevenue ? 'open' : '' }}>
                 <summary><span>💰 Revenue &amp; Settings</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}"><span class="sb-icon">💰</span> Affiliate Links</a>
@@ -381,7 +406,7 @@
             </details>
 
             {{-- Public Site (collapsed) --}}
-            <details class="sb-group">
+            <details class="sb-group" data-admin-group="public-site">
                 <summary><span>🌐 View Public Site</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('home.index') }}" target="_blank" class="sb-link"><span class="sb-icon">🌐</span> Home ↗</a>
@@ -446,6 +471,46 @@ if (toggle && sidebar) {
     toggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
     compactAdmin.addEventListener('change', syncAdminMenu);
     syncAdminMenu();
+}
+
+// Keep the admin navigation exactly where the admin left it when a new page
+// loads. Server-side route checks still force the active section open.
+if (sidebar) {
+    (function () {
+        var storageKey = 'tavsscore.admin.sidebar-state.v1';
+        var state = { groups: {}, scrollTop: 0 };
+
+        try {
+            var saved = window.localStorage.getItem(storageKey);
+            if (saved) state = Object.assign(state, JSON.parse(saved));
+        } catch (error) {}
+
+        var groups = sidebar.querySelectorAll('details[data-admin-group]');
+        groups.forEach(function (group) {
+            var name = group.getAttribute('data-admin-group');
+            if (Object.prototype.hasOwnProperty.call(state.groups, name)) {
+                group.open = Boolean(state.groups[name]);
+            }
+            if (group.querySelector('.sb-link.active')) group.open = true;
+
+            group.addEventListener('toggle', function () {
+                state.groups[name] = group.open;
+                saveState();
+            });
+        });
+
+        function saveState() {
+            state.scrollTop = sidebar.scrollTop;
+            try { window.localStorage.setItem(storageKey, JSON.stringify(state)); } catch (error) {}
+        }
+
+        sidebar.addEventListener('scroll', saveState, { passive: true });
+        sidebar.querySelectorAll('.sb-link').forEach(function (link) {
+            link.addEventListener('click', saveState);
+        });
+        window.addEventListener('pagehide', saveState);
+        window.requestAnimationFrame(function () { sidebar.scrollTop = Number(state.scrollTop) || 0; });
+    }());
 }
 </script>
 @stack('scripts')
