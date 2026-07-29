@@ -21,6 +21,9 @@ class TelegramPickCardService
             $image = imagecreatetruecolor($width, $height); imagealphablending($image, true);
             $this->background($image, $width, $height); $this->glow($image, 1065, 65, 300, $accent);
 
+            // Permanent brand watermark: present on every shared card without
+            // competing with the match and confidence information below.
+            $this->watermark($image, $font);
             $this->text($image, $font, 31, 58, 66, 'TavsScore', [255, 255, 255], true);
             $this->text($image, $font, 14, 58, 96, 'DATA-LED FOOTBALL INTELLIGENCE', [155, 176, 196], true);
             $this->text($image, $font, 40, 58, 172, $this->shorten($title, 38), [255, 255, 255], true);
@@ -68,6 +71,15 @@ class TelegramPickCardService
     private function background(\GdImage $image, int $width, int $height): void
     {
         for ($y = 0; $y < $height; $y++) { $r = $y / max(1, $height - 1); imagefilledrectangle($image, 0, $y, $width, $y, $this->color($image, [(int) round(8 + 12 * $r), (int) round(17 + 18 * $r), (int) round(31 + 25 * $r)])); }
+    }
+    private function watermark(\GdImage $image, string $font): void
+    {
+        $mark = 'TAVSSCORE';
+        $size = 43;
+        $box = imagettfbbox($size, 0, $font, $mark);
+        $width = $box[2] - $box[0];
+        $fill = imagecolorallocatealpha($image, 255, 255, 255, 104);
+        imagettftext($image, $size, 0, 1136 - $width, 76, $fill, $font, $mark);
     }
     /** @param array{0:int,1:int,2:int} $accent */
     private function glow(\GdImage $image, int $x, int $y, int $radius, array $accent): void
