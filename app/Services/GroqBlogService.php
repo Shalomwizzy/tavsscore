@@ -31,7 +31,9 @@ class GroqBlogService
             ->post(config('services.groq.url'), [
                 'model' => config('services.groq.model'),
                 'temperature' => 0.45,
-                'max_tokens' => 2600,
+                // 2,000 tokens comfortably fits the required 750-word article
+                // while keeping each audit rewrite within Groq's tighter limits.
+                'max_tokens' => 2000,
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
