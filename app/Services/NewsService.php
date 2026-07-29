@@ -60,6 +60,54 @@ class NewsService
         });
     }
 
+    /**
+     * Briefing for the automated football newsroom. These are reported
+     * developments, not confirmed facts; the article prompt enforces that
+     * distinction. Confirmed data is added by the publishing command.
+     */
+    public function getEditorialDeskContext(string $desk = 'football'): string
+    {
+        $desk = in_array($desk, ['transfers', 'club', 'controversy', 'football'], true)
+            ? $desk
+            : 'football';
+
+        return Cache::remember("news_editorial_desk_{$desk}", now()->addMinutes(45), function () use ($desk) {
+            $queries = match ($desk) {
+                'transfers' => [
+                    'football transfer news when:2d',
+                    'Premier League transfer news when:2d',
+                    'European football transfer rumours when:2d',
+                ],
+                'club' => [
+                    'football club team news injuries manager when:2d',
+                    'Premier League club news when:2d',
+                    'Champions League team news when:2d',
+                ],
+                'controversy' => [
+                    'football controversy investigation row when:2d',
+                    'football referee controversy disciplinary news when:2d',
+                    'football manager player dispute news when:2d',
+                ],
+                default => [
+                    'latest football news when:2d',
+                    'football transfer team news when:2d',
+                    'European football news when:2d',
+                ],
+            };
+
+            $headlines = [];
+            foreach ($queries as $query) {
+                $headlines = array_merge($headlines, $this->fetchGoogleNews($query, needle: null, limit: 6));
+            }
+            $headlines = array_merge($headlines, $this->generalRssHeadlines($desk));
+
+            $briefing = $this->dedup($headlines, 18);
+            return blank($briefing)
+                ? ''
+                : "LATEST REPORTED HEADLINES (reports, not confirmed facts):\n{$briefing}";
+        });
+    }
+
     // ── Private helpers ─────────────────────────────────────────────
 
     /**
@@ -115,6 +163,37 @@ class NewsService
                     $headlines[] = $headline;
                 }
                 if (count($headlines) >= 4) break;
+            }
+        }
+
+        return $headlines;
+    }
+
+    /** General RSS headlines relevant to a football-news desk. */
+    private function generalRssHeadlines(string $desk): array
+    {
+        $keywords = match ($desk) {
+            'transfers' => ['transfer', 'sign', 'deal', 'move', 'loan'],
+            'club' => ['injury', 'manager', 'coach', 'team', 'club', 'squad'],
+            'controversy' => ['controvers', 'charge', 'investigation', 'ban', 'disciplin'],
+            default => [],
+        };
+
+        $headlines = [];
+        foreach (self::RSS_SOURCES as $source => $url) {
+            $items = Cache::remember("rss_feed_{$source}", now()->addMinutes(30), function () use ($url) {
+                return $this->parseRss($url, needle: null, limit: 50);
+            });
+
+            foreach ($items as $headline) {
+                $text = strtolower($headline);
+                if ($keywords !== [] && ! collect($keywords)->contains(fn (string $keyword) => str_contains($text, $keyword))) {
+                    continue;
+                }
+                $headlines[] = $headline;
+                if (count($headlines) >= 9) {
+                    return $headlines;
+                }
             }
         }
 

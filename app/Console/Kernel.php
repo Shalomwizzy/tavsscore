@@ -105,7 +105,15 @@ class Kernel extends ConsoleKernel
         // Post today's pick results to Telegram at 23:00 Lagos
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        $schedule->command('blog:auto-post')->dailyAt('08:30')->timezone('Africa/Lagos');
+        // Football newsroom: three editorial desks every day. These use the
+        // cached RSS/Google News briefing, so checking the transfer window and
+        // club news does not spend additional API-Football fixture quota.
+        $schedule->command('blog:auto-post --desk=transfers')
+            ->dailyAt('08:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=club')
+            ->dailyAt('14:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=controversy')
+            ->dailyAt('20:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Tennis source update: re-import the rolling current/previous season
         // every morning, then rebuild surface and overall Elo ratings.

@@ -11,6 +11,7 @@ use App\Models\Standing;
 use App\Models\Transfer;
 use App\Services\Blog\BlogArticleWriter;
 use App\Services\Blog\EditorialQualityGate;
+use App\Services\NewsService;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -19,13 +20,15 @@ use Throwable;
 
 class AutoBlogPost extends Command
 {
-    protected $signature = 'blog:auto-post {--force : Regenerate even if a post exists today}';
+    protected $signature = 'blog:auto-post
+                            {--desk=auto : transfers|club|controversy|football|match|auto}
+                            {--force : Regenerate even if this desk already has a post today}';
 
     protected $description = 'Auto-generate a football news article using AI and publish it.';
 
     private const TOP_LEAGUE_IDS = [2, 3, 39, 61, 78, 135, 140, 848];
 
-    public function handle(): int
+    public function handle(NewsService $news): int
     {
         $writer = app(BlogArticleWriter::class);
 
@@ -34,20 +37,37 @@ class AutoBlogPost extends Command
             return self::FAILURE;
         }
 
-        $today = CarbonImmutable::now(config('app.timezone'));
+        $today    = CarbonImmutable::now(config('app.timezone'));
+        $desk     = $this->resolveDesk();
+        $category = $this->deskCategory($desk);
 
         if (!$this->option('force')) {
             $existing = BlogPost::whereDate('created_at', $today->toDateString())
-                ->where('is_ai_generated', true)->exists();
+                ->where('is_ai_generated', true)
+                ->where('category', $category)
+                ->exists();
 
             if ($existing) {
-                $this->info('AI post already generated today. Use --force to override.');
+                $this->info("A {$category} AI post already exists today. Use --force to override.");
                 return self::SUCCESS;
             }
         }
 
         $dateStr = $today->format('l, F j Y');
 
+        if ($desk !== 'match') {
+            $storedContext   = $this->buildGeneralNewsContext();
+            $reportedContext = $news->getEditorialDeskContext($desk);
+            $newsContext     = trim($storedContext . "\n\n" . $reportedContext);
+
+            if (blank($newsContext)) {
+                $this->warn('No football-news briefing is available right now — skipping publication.');
+                return self::SUCCESS;
+            }
+
+            $matchList  = $this->deskLabel($desk);
+            $userPrompt = $this->newsDeskPrompt($desk, $dateStr, $newsContext);
+        } else {
         // Prefer top-league matches today; broaden to any covered league; else
         // fall back to a news roundup so the blog never fails to post.
         $matches = FootballMatch::whereDate('match_time', $today->toDateString())
@@ -78,6 +98,7 @@ class AutoBlogPost extends Command
             }
             $userPrompt  = "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.";
         }
+        }
 
         try {
             $this->info("Generating AI article for {$dateStr}…");
@@ -86,7 +107,7 @@ class AutoBlogPost extends Command
             $json = $this->writeApprovedArticle($writer, $quality, $userPrompt);
             $content = $quality->sanitise($json['content']);
 
-            $category = $this->pickCategory($matchList);
+            $category = $desk === 'match' ? $this->pickCategory($matchList) : $category;
             $excerpt  = $this->buildExcerpt($content);
             $slug     = BlogPost::generateSlug($json['title']);
             // Images are uploaded manually in Admin after publication. Never
@@ -236,7 +257,7 @@ class AutoBlogPost extends Command
             $sections[] = implode("\n", $lines);
         }
 
-        $leaders = Standing::query()->where('season', $season)->where('rank', 1)->limit(8)->get();
+        $leaders = Standing::query()->whereIn('league_id', $leagueIds)->where('season', $season)->where('rank', 1)->limit(8)->get();
         if ($leaders->isNotEmpty()) {
             $lines = ['LEAGUE LEADERS:'];
             foreach ($leaders as $s) {
@@ -245,7 +266,7 @@ class AutoBlogPost extends Command
             $sections[] = implode("\n", $lines);
         }
 
-        $scorers = PlayerStatistic::query()->where('season', $season)
+        $scorers = PlayerStatistic::query()->whereIn('league_id', $leagueIds)->where('season', $season)
             ->where('goals', '>', 0)->orderByDesc('goals')->limit(8)->get();
         if ($scorers->isNotEmpty()) {
             $lines = ['TOP SCORERS:'];
@@ -272,8 +293,59 @@ class AutoBlogPost extends Command
             return '';
         }
 
-        return "\n\nREAL FOOTBALL NEWS & FACTS (from live data). Base the article on these; rephrase in your own words, do not invent facts:\n\n"
+        return "\n\nCONFIRMED TAVSSCORE DATA (transfers, standings, scorers and results). Treat these as facts; rephrase them in your own words and do not invent details:\n\n"
             .implode("\n\n", $sections);
+    }
+
+    private function resolveDesk(): string
+    {
+        $requested = strtolower(trim((string) $this->option('desk')));
+
+        if ($requested === 'auto' || $requested === '') {
+            // The newsroom is transfer-led by default. Scheduled jobs choose
+            // explicit desks, while the Admin button gets this useful default.
+            return 'transfers';
+        }
+
+        if (in_array($requested, ['transfers', 'club', 'controversy', 'football', 'match'], true)) {
+            return $requested;
+        }
+
+        $this->warn("Unknown desk '{$requested}', using general football news.");
+        return 'football';
+    }
+
+    private function deskCategory(string $desk): string
+    {
+        return match ($desk) {
+            'transfers'   => 'Transfer News',
+            'club'        => 'Team News',
+            'controversy' => 'Football Controversy',
+            'match'       => 'Match Previews',
+            default       => 'Football News',
+        };
+    }
+
+    private function deskLabel(string $desk): string
+    {
+        return match ($desk) {
+            'transfers'   => 'Transfer Desk',
+            'club'        => 'Team News Desk',
+            'controversy' => 'Football Affairs Desk',
+            default       => 'Football News Desk',
+        };
+    }
+
+    private function newsDeskPrompt(string $desk, string $dateStr, string $newsContext): string
+    {
+        $focus = match ($desk) {
+            'transfers' => 'Make transfer developments the lead. Explain what is confirmed, what is only reported, and why the potential move matters to the clubs and player.',
+            'club' => 'Lead with the biggest team-news development: injury, manager, squad, contract, tactical or selection issue. Explain the football consequences.',
+            'controversy' => 'Cover the biggest football-affairs story carefully. Describe allegations, disputes or investigations only as reported, state what is known and unknown, and never present an accusation as fact.',
+            default => 'Choose the strongest verified football-news angle from the briefing, prioritising transfer and club developments over fixture previews.',
+        };
+
+        return "Write a TavsScore football NEWS article for {$dateStr}. {$focus}\n\n{$newsContext}\n\nJSON format required:\n{\"title\": \"<clear, descriptive SEO headline, 35-85 chars>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Write at least 750 useful words with at least three descriptive <h2> sections.\n- Open with the news angle, not a generic introduction.\n- Treat the CONFIRMED TAVSSCORE DATA as factual. Treat LATEST REPORTED HEADLINES as reports only: use wording such as 'reports indicate', 'has been linked', or 'the reporting suggests'.\n- Never invent a fee, quote, injury, transfer, allegation, date, source, or outcome. Never turn a rumour into a completed deal.\n- Explain why the development matters: squad fit, tactics, finances, title race, player pathway or club strategy.\n- Do not write a match preview, betting tip or predicted score unless the briefing directly requires it.\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only.\n- Write in an original, calm football-journalist voice. No clickbait, generic AI filler, keyword stuffing or em dashes.";
     }
 
     private function pickCategory(string $matchList): string

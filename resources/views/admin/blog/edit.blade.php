@@ -88,7 +88,7 @@
                     <div class="form-group">
                         <label class="form-label" for="category">Category</label>
                         <select id="category" name="category" class="form-select">
-                            @foreach(['Football News','Match Previews','Match Reports','Premier League','Champions League','La Liga','Serie A','Bundesliga','Ligue 1','Transfer News','Football Analysis','Tactics & Data'] as $cat)
+                            @foreach(['Football News','Team News','Football Controversy','Match Previews','Match Reports','Premier League','Champions League','La Liga','Serie A','Bundesliga','Ligue 1','Transfer News','Football Analysis','Tactics & Data'] as $cat)
                                 <option value="{{ $cat }}" {{ old('category', $blog->category) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
                             @endforeach
                         </select>
