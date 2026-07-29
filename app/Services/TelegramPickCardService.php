@@ -11,7 +11,16 @@ class TelegramPickCardService
     /** @param array<int, array<string, mixed>> $picks */
     public function render(string $title, array $picks): ?string
     {
-        if (! function_exists('imagecreatetruecolor') || empty($picks) || ! ($font = $this->fontPath())) return null;
+        if (! function_exists('imagecreatetruecolor') || empty($picks)) {
+            Log::warning('Telegram pick-card rendering is unavailable: GD is not installed or no picks were supplied.');
+
+            return null;
+        }
+
+        // Some shared hosts have GD but no installed TTF fonts. Cards must
+        // still be delivered in that case, so the drawing helpers gracefully
+        // use GD's built-in font rather than returning a text-only message.
+        $font = $this->fontPath();
 
         try {
             $items = array_values(array_filter(array_map(fn (array $pick) => $this->normalise($pick), array_slice($picks, 0, 8))));
@@ -72,14 +81,21 @@ class TelegramPickCardService
     {
         for ($y = 0; $y < $height; $y++) { $r = $y / max(1, $height - 1); imagefilledrectangle($image, 0, $y, $width, $y, $this->color($image, [(int) round(8 + 12 * $r), (int) round(17 + 18 * $r), (int) round(31 + 25 * $r)])); }
     }
-    private function watermark(\GdImage $image, string $font): void
+    private function watermark(\GdImage $image, ?string $font): void
     {
         $mark = 'TAVSSCORE';
-        $size = 43;
-        $box = imagettfbbox($size, 0, $font, $mark);
-        $width = $box[2] - $box[0];
-        $fill = imagecolorallocatealpha($image, 255, 255, 255, 104);
-        imagettftext($image, $size, 0, 1136 - $width, 76, $fill, $font, $mark);
+        $size = 32;
+
+        if ($font) {
+            $box = imagettfbbox($size, 0, $font, $mark);
+            $width = $box[2] - $box[0];
+            $fill = imagecolorallocatealpha($image, 255, 255, 255, 104);
+            imagettftext($image, $size, 0, 1136 - $width, 76, $fill, $font, $mark);
+
+            return;
+        }
+
+        $this->text($image, null, $size, 1136 - $this->nativeWidth($mark, $size), 76, $mark, [205, 220, 234], true);
     }
     /** @param array{0:int,1:int,2:int} $accent */
     private function glow(\GdImage $image, int $x, int $y, int $radius, array $accent): void
@@ -87,14 +103,27 @@ class TelegramPickCardService
         for ($r = $radius; $r > 0; $r -= 12) imagefilledellipse($image, $x, $y, $r * 2, $r * 2, imagecolorallocatealpha($image, $accent[0], $accent[1], $accent[2], 118));
     }
     /** @param array{0:int,1:int,2:int} $color */
-    private function text(\GdImage $image, string $font, int $size, int $x, int $y, string $text, array $color, bool $bold = false): void
+    private function text(\GdImage $image, ?string $font, int $size, int $x, int $y, string $text, array $color, bool $bold = false): void
     {
-        $fill = $this->color($image, $color); imagettftext($image, $size, 0, $x, $y, $fill, $font, $text); if ($bold) imagettftext($image, $size, 0, $x + 1, $y, $fill, $font, $text);
+        if (! $font) {
+            $this->nativeText($image, $size, $x, $y, $text, $color, $bold);
+
+            return;
+        }
+
+        $fill = $this->color($image, $color);
+        imagettftext($image, $size, 0, $x, $y, $fill, $font, $text);
+        if ($bold) {
+            imagettftext($image, $size, 0, $x + 1, $y, $fill, $font, $text);
+        }
     }
     /** @param array{0:int,1:int,2:int} $color */
-    private function centered(\GdImage $image, string $font, int $size, int $x, int $y, string $text, array $color, bool $bold = false): void
+    private function centered(\GdImage $image, ?string $font, int $size, int $x, int $y, string $text, array $color, bool $bold = false): void
     {
-        $box = imagettfbbox($size, 0, $font, $text); $this->text($image, $font, $size, $x - (int) round(($box[2] - $box[0]) / 2), $y, $text, $color, $bold);
+        $width = $font
+            ? (imagettfbbox($size, 0, $font, $text)[2] - imagettfbbox($size, 0, $font, $text)[0])
+            : $this->nativeWidth($text, $size);
+        $this->text($image, $font, $size, $x - (int) round($width / 2), $y, $text, $color, $bold);
     }
     /** @param array{0:int,1:int,2:int} $color */
     private function roundedRect(\GdImage $image, int $x1, int $y1, int $x2, int $y2, int $radius, array $color): void
@@ -110,8 +139,48 @@ class TelegramPickCardService
     {
         $title = strtolower($title); return match (true) { str_contains($title, 'corner') => [251,191,36], str_contains($title, 'over') => [251,146,60], str_contains($title, 'under') => [96,165,250], str_contains($title, 'draw') => [192,132,252], str_contains($title, 'handicap') => [56,189,248], str_contains($title, 'score') => [244,114,182], default => [56,230,197] };
     }
+    private function nativeText(\GdImage $image, int $size, int $x, int $y, string $text, array $color, bool $bold): void
+    {
+        $text = $this->nativeString($text);
+        $scale = max(1, min(4, (int) round($size / 15)));
+        $sourceWidth = max(1, imagefontwidth(5) * strlen($text));
+        $sourceHeight = imagefontheight(5);
+        $layer = imagecreatetruecolor($sourceWidth, $sourceHeight);
+        imagealphablending($layer, false);
+        imagesavealpha($layer, true);
+        $transparent = imagecolorallocatealpha($layer, 0, 0, 0, 127);
+        imagefill($layer, 0, 0, $transparent);
+        imagestring($layer, 5, 0, 0, $text, imagecolorallocate($layer, $color[0], $color[1], $color[2]));
+
+        $targetWidth = $sourceWidth * $scale;
+        $targetHeight = $sourceHeight * $scale;
+        imagecopyresized($image, $layer, $x, $y - $targetHeight, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+        if ($bold) {
+            imagecopyresized($image, $layer, $x + 1, $y - $targetHeight, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+        }
+        imagedestroy($layer);
+    }
+
+    private function nativeWidth(string $text, int $size): int
+    {
+        $scale = max(1, min(4, (int) round($size / 15)));
+
+        return imagefontwidth(5) * strlen($this->nativeString($text)) * $scale;
+    }
+
+    private function nativeString(string $text): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+
+        return $ascii === false ? preg_replace('/[^\x20-\x7E]/', '', $text) : $ascii;
+    }
+
     private function fontPath(): ?string
     {
+        if (config('services.telegram.card_native_only', false)) {
+            return null;
+        }
+
         foreach (array_filter([config('services.telegram.card_font'), resource_path('fonts/DejaVuSans.ttf'), '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/dejavu/DejaVuSans.ttf', '/System/Library/Fonts/Supplemental/Verdana.ttf']) as $font) if (is_file($font) && is_readable($font)) return $font;
         return null;
     }

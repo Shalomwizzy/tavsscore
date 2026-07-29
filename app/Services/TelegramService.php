@@ -121,6 +121,8 @@ class TelegramService
 
         $imagePath = app(TelegramPickCardService::class)->render($title, $picks);
         if (! $imagePath) {
+            Log::warning('Telegram prediction card was not sent as an image; falling back to text.', ['title' => $title]);
+
             return false;
         }
 
@@ -1003,6 +1005,46 @@ class TelegramService
         $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
         $lines[] = "🔗 <a href=\"{$siteUrl}/correct-score\">See all predictions →</a>";
         $lines[] = "\n<i>⚠️ Correct scores are hardest to predict. Reference only.</i>";
+
+        $this->send(implode("\n", $lines));
+    }
+
+    /** Daily top tennis picks. Each: match, winner, confidence, tournament, country. */
+    public function sendTennisPicks(array $predictions, string $siteUrl): void
+    {
+        if (empty($predictions)) {
+            return;
+        }
+
+        $cardPicks = array_map(fn (array $pick) => [
+            'match' => $pick['match'] ?? '',
+            'tip' => $pick['winner'] ?? 'Model selection',
+            'confidence' => $pick['confidence'] ?? '',
+            'league' => $pick['tournament'] ?? 'Tennis intelligence',
+        ], $predictions);
+        if ($this->sendPredictionCard('Tennis Picks', $cardPicks, $siteUrl, '/tennis')) {
+            return;
+        }
+
+        $date = now('Africa/Lagos')->format('l, d M Y');
+        $lines = [
+            '🎾 <b>TAVSSCORE — TENNIS PICKS</b>',
+            "<i>📅 {$date}</i>",
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        ];
+
+        foreach ($predictions as $p) {
+            $lines[] = '';
+            if (! empty($p['tournament'])) {
+                $lines[] = "🏆 <i>{$p['tournament']}</i>";
+            }
+            $lines[] = "🎾 <b>{$p['match']}</b>";
+            $lines[] = "✅ Pick: <b>{$p['winner']}</b> ({$p['confidence']}%)";
+        }
+
+        $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        $lines[] = "🔗 <a href=\"{$siteUrl}/tennis\">See all tennis picks →</a>";
+        $lines[] = "\n<i>⚠️ Tennis is high-variance. Bet responsibly.</i>";
 
         $this->send(implode("\n", $lines));
     }

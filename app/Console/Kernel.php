@@ -151,6 +151,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('tennis:fetch-fixtures')->hourly()->withoutOverlapping();
         $schedule->command('tennis:predict')->everyFifteenMinutes()->withoutOverlapping();
         $schedule->command('tennis:settle-results')->everyTenMinutes()->withoutOverlapping();
+        // Daily top tennis picks → Telegram + OneSignal (after the morning predict).
+        $schedule->command('tennis:notify')->dailyAt('03:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Monthly calibration snapshot — runs on the 1st at 02:00 Lagos.
         // Builds up the public Track Record timeline that proves system improvement.

@@ -24,4 +24,25 @@ class TelegramPickCardServiceTest extends TestCase
         Storage::disk('public')->assertExists($path);
         $this->assertStringStartsWith("\xFF\xD8\xFF", Storage::disk('public')->get($path));
     }
+
+    public function test_it_falls_back_to_a_native_gd_font_when_no_ttf_font_is_available(): void
+    {
+        if (! function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD is required for Telegram pick-card rendering.');
+        }
+
+        Storage::fake('public');
+        config()->set('services.telegram.card_native_only', true);
+
+        $path = app(TelegramPickCardService::class)->render('Tennis Picks', [[
+            'match' => 'Player One vs Player Two',
+            'tip' => 'Player One to win',
+            'confidence' => 72,
+            'league' => 'Test Open',
+        ]]);
+
+        $this->assertNotNull($path);
+        Storage::disk('public')->assertExists($path);
+        $this->assertStringStartsWith("\xFF\xD8\xFF", Storage::disk('public')->get($path));
+    }
 }

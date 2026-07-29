@@ -1,43 +1,41 @@
 @extends('layouts.admin')
 
-@section('title', 'High Risk')
+@section('title', 'High Risk Desk')
+
+@push('styles')
+<style>
+    .ahr{max-width:1180px}.ahr-hero{position:relative;overflow:hidden;padding:1.45rem;border:1px solid rgba(251,113,133,.28);border-radius:16px;background:radial-gradient(circle at 85% 0,rgba(244,63,94,.25),transparent 28%),linear-gradient(130deg,#241222,#111b2d)}.ahr-hero:after{content:'HIGH RISK';position:absolute;right:-.3rem;bottom:-1.6rem;color:rgba(255,255,255,.035);font-size:5.4rem;font-weight:900;letter-spacing:-.09em;white-space:nowrap}.ahr-kicker{position:relative;z-index:1;color:#fda4af;font-size:.62rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ahr-title-row{position:relative;z-index:1;display:flex;align-items:end;justify-content:space-between;gap:1rem}.ahr-title-row h1{margin:.36rem 0 0;color:#fff;font-size:1.55rem;letter-spacing:-.04em}.ahr-title-row p{max-width:700px;margin:.35rem 0 0;color:#cbd5e1;font-size:.76rem;line-height:1.55}.ahr-public{display:inline-flex;align-items:center;gap:.35rem;flex-shrink:0;padding:.52rem .72rem;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(255,255,255,.06);color:#fff;text-decoration:none;font-size:.7rem;font-weight:800}.ahr-public:hover{color:#fff;background:rgba(255,255,255,.11)}.ahr-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;margin:1rem 0}.ahr-stat{padding:.9rem;border:1px solid var(--border);border-radius:12px;background:var(--card)}.ahr-stat b{display:block;color:#fff;font-size:1.35rem;line-height:1}.ahr-stat span{display:block;margin-top:.35rem;color:var(--dim);font-size:.61rem;font-weight:800;letter-spacing:.075em;text-transform:uppercase}.ahr-stat.risk b{color:#fda4af}.ahr-card{margin-top:1rem;padding:1.05rem;border:1px solid var(--border);border-radius:14px;background:var(--card)}.ahr-card-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.85rem}.ahr-card-head h2{margin:0;color:#fff;font-size:.9rem;letter-spacing:-.02em}.ahr-card-head p{margin:.18rem 0 0;color:var(--dim);font-size:.68rem}.ahr-label{display:inline-flex;align-items:center;gap:.3rem;padding:.27rem .5rem;border-radius:999px;background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2);color:#fda4af;font-size:.61rem;font-weight:850;text-transform:uppercase;letter-spacing:.075em}.ahr-ticket{padding:.85rem;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(8,13,26,.35);margin-top:.55rem}.ahr-ticket:first-of-type{margin-top:0}.ahr-ticket-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.ahr-code{color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1rem;font-weight:850;letter-spacing:.1em}.ahr-meta{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;color:var(--dim);font-size:.66rem}.ahr-status{padding:.22rem .42rem;border-radius:999px;font-size:.59rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.ahr-status.published{color:#fef3c7;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.24)}.ahr-status.won{color:#a7f3d0;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)}.ahr-status.lost{color:#fecaca;background:rgba(239,68,68,.11);border:1px solid rgba(239,68,68,.25)}.ahr-legs{margin-top:.68rem;padding-top:.68rem;border-top:1px solid rgba(255,255,255,.06);color:#94a3b8;font-size:.68rem;line-height:1.65}.ahr-legs b{color:#cbd5e1}.ahr-empty{padding:2.2rem 1rem;text-align:center;border:1px dashed rgba(148,163,184,.24);border-radius:12px;color:var(--dim);font-size:.76rem}.ahr-history{width:100%;border-collapse:collapse}.ahr-history th{padding:.55rem .45rem;color:var(--dim);font-size:.59rem;font-weight:850;letter-spacing:.08em;text-align:left;text-transform:uppercase;border-bottom:1px solid var(--border)}.ahr-history td{padding:.65rem .45rem;color:#cbd5e1;font-size:.71rem;border-bottom:1px solid rgba(255,255,255,.045)}.ahr-history tr:last-child td{border-bottom:0}.ahr-copy{border:0;background:transparent;color:#94a3b8;cursor:pointer;font:inherit;font-size:.63rem}.ahr-copy:hover{color:#fff}@media(max-width:760px){.ahr-title-row{align-items:start;flex-direction:column}.ahr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ahr-history thead{display:none}.ahr-history,.ahr-history tbody,.ahr-history tr,.ahr-history td{display:block;width:100%}.ahr-history tr{padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06)}.ahr-history td{display:inline-block;width:auto;padding:.25rem .45rem;border:0}.ahr-history td:first-child{display:block}.ahr-ticket-top{align-items:start;flex-direction:column;gap:.4rem}}
+</style>
+@endpush
 
 @section('content')
-<div style="max-width:820px;">
-    <h1 style="font-size:1.3rem;font-weight:700;margin:0 0 .35rem;">🎲 High Risk</h1>
-    <p style="color:var(--dim);font-size:.85rem;margin:0 0 1.25rem;">
-        Auto-built big-odds accumulators (the model's 50%+ calls stacked to 100–1500× odds).
-        They generate with the daily picks and are booked + sent to Telegram automatically.
-        <a href="{{ route('high-risk.index') }}" target="_blank" style="color:var(--green,#10b981);">View public page →</a>
-    </p>
+@php
+    $todayLegs = $today_codes->sum(fn ($code) => is_array($code->fixtures) ? count($code->fixtures) : 0);
+    $won = $history->where('status', 'won')->count();
+    $largest = $today_codes->max('total_odds');
+@endphp
+<div class="ahr">
+    <section class="ahr-hero"><div class="ahr-kicker">Booking desk · entertainment only</div><div class="ahr-title-row"><div><h1>🎲 High Risk Desk</h1><p>Visibility for the big-odds accumulator board. These are intentionally speculative tickets: review availability, code creation and settlement history here without presenting them as safe picks.</p></div><a class="ahr-public" href="{{ route('high-risk.index') }}" target="_blank" rel="noopener">View user page ↗</a></div></section>
+    <div class="ahr-stats"><div class="ahr-stat risk"><b>{{ $today_codes->count() }}</b><span>Tickets today</span></div><div class="ahr-stat"><b>{{ $todayLegs }}</b><span>Legs today</span></div><div class="ahr-stat risk"><b>{{ $largest ? number_format((float) $largest, 0).'×' : '—' }}</b><span>Highest live odds</span></div><div class="ahr-stat"><b>{{ $history->count() ? $won.'/'.$history->count() : '—' }}</b><span>Settled wins shown</span></div></div>
 
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem;">
-        <div class="sb-section-label" style="margin-bottom:.6rem;">Today's high-risk ticket</div>
-        @forelse($today_codes as $c)
-            <div style="border-top:1px solid var(--border);padding:.6rem 0;">
-                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-                    <span style="font-family:monospace;font-weight:700;">{{ $c->code }}</span>
-                    <span>{{ number_format((float)$c->total_odds,2) }}× · <span style="font-weight:700;{{ $c->status==='won'?'color:#059669':($c->status==='lost'?'color:#dc2626':'') }}">{{ ucfirst($c->status) }}</span></span>
-                </div>
-                @if(is_array($c->fixtures))
-                    <div style="color:var(--dim);font-size:.78rem;margin-top:.35rem;">{{ count($c->fixtures) }} legs: {{ collect($c->fixtures)->pluck('match')->take(4)->implode(' · ') }}{{ count($c->fixtures)>4?' …':'' }}</div>
-                @endif
-            </div>
+    <section class="ahr-card"><div class="ahr-card-head"><div><h2>Today’s ticket queue</h2><p>Published tickets are visible to users; pending or failed entries remain operational records here.</p></div><span class="ahr-label">{{ now('Africa/Lagos')->format('D, d M') }}</span></div>
+        @forelse($today_codes as $code)
+            @php $legs = is_array($code->fixtures) ? $code->fixtures : []; @endphp
+            <article class="ahr-ticket"><div class="ahr-ticket-top"><div><div class="ahr-code">{{ strtoupper($code->code) }} <button class="ahr-copy" type="button" data-copy-code="{{ $code->code }}">copy</button></div><div class="ahr-meta">{{ ucfirst($code->platform ?: 'Booking provider') }} · {{ number_format((float) $code->total_odds, 2) }}× odds · {{ count($legs) }} legs · {{ $code->created_at?->timezone('Africa/Lagos')?->format('H:i') ?? '—' }}</div></div><span class="ahr-status {{ $code->status }}">{{ $code->status }}</span></div><div class="ahr-legs"><b>Selections:</b> {{ collect($legs)->map(fn ($leg) => ($leg['match'] ?? trim(($leg['home'] ?? 'Home').' vs '.($leg['away'] ?? 'Away'))).' — '.($leg['market'] ?? 'Market'))->implode(' · ') ?: 'Awaiting confirmed ticket details.' }}</div></article>
         @empty
-            <p style="color:var(--dim);font-size:.85rem;margin:0;">No high-risk ticket yet today — it appears after the daily spec runs and the worker books it.</p>
+            <div class="ahr-empty">No high-risk ticket has been created today. It will appear only when the booking workflow returns a valid code.</div>
         @endforelse
-    </div>
+    </section>
 
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;">
-        <div class="sb-section-label" style="margin-bottom:.6rem;">Results history ({{ $history->count() }})</div>
-        @forelse($history as $h)
-            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding:.45rem 0;font-size:.82rem;">
-                <span style="font-family:monospace;">{{ $h->code }}</span>
-                <span>{{ number_format((float)$h->total_odds,0) }}× · <span style="font-weight:700;{{ $h->status==='won'?'color:#059669':'color:#dc2626' }}">{{ $h->status==='won'?'WON ✓':'LOST ✗' }}</span></span>
-            </div>
-        @empty
-            <p style="color:var(--dim);font-size:.85rem;margin:0;">No settled high-risk tickets yet.</p>
-        @endforelse
-    </div>
+    <section class="ahr-card"><div class="ahr-card-head"><div><h2>Transparent settled history</h2><p>{{ $won }} won from {{ $history->count() }} settled high-risk tickets listed below.</p></div><span class="ahr-label">Last 30</span></div>
+        @if($history->isNotEmpty())
+            <table class="ahr-history"><thead><tr><th>Code</th><th>Result</th><th>Odds</th><th>Legs</th><th>Settled</th></tr></thead><tbody>@foreach($history as $code)<tr><td><span class="ahr-code">{{ strtoupper($code->code) }}</span></td><td><span class="ahr-status {{ $code->status }}">{{ $code->status === 'won' ? 'Won' : 'Lost' }}</span></td><td>{{ number_format((float) $code->total_odds, 2) }}×</td><td>{{ is_array($code->fixtures) ? count($code->fixtures) : 0 }}</td><td>{{ $code->settled_at?->timezone('Africa/Lagos')?->format('d M Y · H:i') ?? '—' }}</td></tr>@endforeach</tbody></table>
+        @else
+            <div class="ahr-empty">No settled high-risk tickets yet. Results will appear here automatically after grading.</div>
+        @endif
+    </section>
 </div>
+@push('scripts')
+<script>document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy-code]');if(!b)return;const o=b.textContent;try{await navigator.clipboard.writeText(b.dataset.copyCode);b.textContent='copied ✓'}catch(_){b.textContent=b.dataset.copyCode}setTimeout(()=>b.textContent=o,1600)});</script>
+@endpush
 @endsection

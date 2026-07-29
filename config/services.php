@@ -67,10 +67,10 @@ return [
         'url' => env('TENNIS_LIVE_API_URL', 'https://api.livetennisapi.com/api/public/v1'),
     ],
 
-    // Public tennis is hidden until the historical data is current enough to
-    // trust the predictions. Admin tennis stays available. Flip to true via env.
+    // Tennis is live now that historical data is current (Tennis-Data.co.uk,
+    // 2015→present). Set TENNIS_PUBLIC_ENABLED=false in env to hide it again.
     'tennis' => [
-        'public' => filter_var(env('TENNIS_PUBLIC_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'public' => filter_var(env('TENNIS_PUBLIC_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     // Free fallback for match RESULTS when the API-Football quota is exhausted.

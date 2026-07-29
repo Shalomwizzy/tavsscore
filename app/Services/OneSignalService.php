@@ -159,6 +159,15 @@ class OneSignalService
         );
     }
 
+    public function notifyTennisPicks(string $topMatch, string $topPick, int $total): void
+    {
+        $this->sendMatchAlert(
+            title: "🎾 {$total} Tennis Pick".($total > 1 ? 's' : '').' Today!',
+            message: "{$topMatch} → {$topPick}. Tap for today's tennis picks →",
+            path: '/tennis',
+        );
+    }
+
     public function notifyTeam3Picks(string $topMatch, string $topTeam, int $total): void
     {
         $this->sendMatchAlert(
