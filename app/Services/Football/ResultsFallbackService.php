@@ -20,6 +20,24 @@ class ResultsFallbackService
 {
     private const NON_FINAL = ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'];
 
+    /**
+     * Verified cross-provider club names. These are names for the same club,
+     * not fuzzy guesses: API-Football's regional/legacy display name is on the
+     * left and ESPN's official current display name is on the right. Keep this
+     * deliberately small and explicit; a false result is worse than a pending
+     * one.
+     *
+     * @var array<string, list<string>>
+     */
+    private const RESULT_NAME_ALIASES = [
+        'aarhus' => ['agf'],
+        'copenhagen' => ['kobenhavn'],
+        'hapoel beer sheva' => ['hapoel be er'],
+        'universitatea craiova' => ['csu craiova'],
+        'crvena zvezda' => ['red star belgrade'],
+        'saburtalo' => ['iberia 1999'],
+    ];
+
     /** @return array{configured:bool, pending?:int, results?:int, updated?:int, error?:mixed, unmatched_predicted?:array<int,array{league:string,match:string,kickoff:string}>} */
     public function settlePending(int $days = 3): array
     {
@@ -60,7 +78,8 @@ class ResultsFallbackService
         $fdRows = $fd === null ? null : count($fd);
         if ($fd !== null) {
             [$unsettled, $u, $pu] = $this->apply($unsettled, $fd, $tz);
-            $updated += $u; $predictedUpdated += $pu;
+            $updated += $u;
+            $predictedUpdated += $pu;
         }
 
         // Source 2: ESPN (broad, no key) — checked for whatever is STILL
@@ -72,7 +91,8 @@ class ResultsFallbackService
             $espnRows = $espn === null ? null : count($espn);
             if ($espn !== null) {
                 [$unsettled, $u, $pu] = $this->apply($unsettled, $espn, $tz);
-                $updated += $u; $predictedUpdated += $pu;
+                $updated += $u;
+                $predictedUpdated += $pu;
             }
         }
 
@@ -81,13 +101,13 @@ class ResultsFallbackService
         }
 
         return [
-            'configured'        => true,
-            'pending'           => $pending->count(),
-            'predicted'         => $predicted,
-            'updated'           => $updated,
+            'configured' => true,
+            'pending' => $pending->count(),
+            'predicted' => $predicted,
+            'updated' => $updated,
             'predicted_updated' => $predictedUpdated,
-            'fd_rows'           => $fdRows,   // null = football-data key not set
-            'espn_rows'         => $espnRows, // null = not reached / no leagues configured
+            'fd_rows' => $fdRows,   // null = football-data key not set
+            'espn_rows' => $espnRows, // null = not reached / no leagues configured
             'unmatched_predicted' => collect($unsettled)
                 ->filter(fn (FootballMatch $match) => (bool) $match->prediction)
                 ->map(fn (FootballMatch $match): array => [
@@ -118,15 +138,16 @@ class ResultsFallbackService
             $result = $this->lookup($index, $match->home_team, $match->away_team, $fixtureDate);
             if ($result === null) {
                 $remaining[] = $match;
+
                 continue;
             }
 
             $match->update([
-                'home_score'    => $result['home'],
-                'away_score'    => $result['away'],
+                'home_score' => $result['home'],
+                'away_score' => $result['away'],
                 'home_score_ht' => $result['ht_home'],
                 'away_score_ht' => $result['ht_away'],
-                'status'        => 'FT',
+                'status' => 'FT',
             ]);
             $updated++;
             if ($match->prediction) {
@@ -153,18 +174,20 @@ class ResultsFallbackService
         try {
             $resp = Http::withHeaders(['X-Auth-Token' => $key])
                 ->timeout(30)
-                ->get(rtrim(config('services.football_data.url'), '/') . '/matches', [
+                ->get(rtrim(config('services.football_data.url'), '/').'/matches', [
                     'dateFrom' => now($tz)->subDays($days)->toDateString(),
-                    'dateTo'   => now($tz)->toDateString(),
-                    'status'   => 'FINISHED',
+                    'dateTo' => now($tz)->toDateString(),
+                    'status' => 'FINISHED',
                 ]);
         } catch (\Throwable $e) {
-            Log::warning('ResultsFallbackService: football-data.org request failed — ' . $e->getMessage());
+            Log::warning('ResultsFallbackService: football-data.org request failed — '.$e->getMessage());
+
             return null;
         }
 
         if ($resp->failed()) {
-            Log::warning('ResultsFallbackService: football-data.org HTTP ' . $resp->status());
+            Log::warning('ResultsFallbackService: football-data.org HTTP '.$resp->status());
+
             return null;
         }
 
@@ -177,11 +200,11 @@ class ResultsFallbackService
             }
 
             $row = [
-                'home'    => (int) $home,
-                'away'    => (int) $away,
+                'home' => (int) $home,
+                'away' => (int) $away,
                 'ht_home' => $this->intOrNull(data_get($m, 'score.halfTime.home')),
                 'ht_away' => $this->intOrNull(data_get($m, 'score.halfTime.away')),
-                'date'    => substr((string) data_get($m, 'utcDate'), 0, 10),
+                'date' => substr((string) data_get($m, 'utcDate'), 0, 10),
             ];
 
             foreach (['name', 'shortName', 'tla'] as $hk) {
@@ -206,8 +229,8 @@ class ResultsFallbackService
             return null;
         }
 
-        $base  = rtrim(config('services.espn.url'), '/');
-        $range = now($tz)->subDays($days)->format('Ymd') . '-' . now($tz)->format('Ymd');
+        $base = rtrim(config('services.espn.url'), '/');
+        $range = now($tz)->subDays($days)->format('Ymd').'-'.now($tz)->format('Ymd');
         $index = [];
 
         foreach ($slugs as $slug) {
@@ -234,14 +257,31 @@ class ResultsFallbackService
                     continue;
                 }
 
-                [$htHome, $htAway] = $this->espnHalfTime($comp, (string) data_get($home, 'team.id'), (string) data_get($away, 'team.id'), (int) $hs, (int) $as);
+                $homeId = (string) data_get($home, 'team.id');
+                $awayId = (string) data_get($away, 'team.id');
+                $status = (string) data_get($comp, 'status.type.name');
+
+                // ESPN's competitor score for a match decided after extra time
+                // or penalties can include the shoot-out. Prediction markets
+                // settle 1X2/goals on regulation time, so only use a score
+                // reconstructed from ESPN's timed scoring plays in that case.
+                [$finalHome, $finalAway] = [(int) $hs, (int) $as];
+                if (Str::contains($status, ['FINAL_PEN', 'FINAL_AET'])) {
+                    $regulation = $this->espnRegulationScores($comp, $homeId, $awayId);
+                    if ($regulation === null) {
+                        continue;
+                    }
+                    [$finalHome, $finalAway] = $regulation;
+                }
+
+                [$htHome, $htAway] = $this->espnHalfTime($comp, $homeId, $awayId, $finalHome, $finalAway);
 
                 $row = [
-                    'home'    => (int) $hs,
-                    'away'    => (int) $as,
+                    'home' => $finalHome,
+                    'away' => $finalAway,
                     'ht_home' => $htHome,
                     'ht_away' => $htAway,
-                    'date'    => substr((string) data_get($ev, 'date'), 0, 10),
+                    'date' => substr((string) data_get($ev, 'date'), 0, 10),
                 ];
 
                 // Index under every name variant (incl. abbreviation) so free-form
@@ -280,7 +320,7 @@ class ResultsFallbackService
             if (! data_get($d, 'scoringPlay') || data_get($d, 'shootout')) {
                 continue;
             }
-            $teamId  = (string) data_get($d, 'team.id');
+            $teamId = (string) data_get($d, 'team.id');
             $ownGoal = (bool) data_get($d, 'ownGoal');
 
             // An own goal credits the opponent.
@@ -294,15 +334,67 @@ class ResultsFallbackService
             $base = (int) preg_replace('/\D.*$/', '', (string) data_get($d, 'clock.displayValue', ''));
             $firstHalf = $base > 0 && $base <= 45;
 
-            if ($side === 'home') { $totHome++; if ($firstHalf) $htHome++; }
-            else                  { $totAway++; if ($firstHalf) $htAway++; }
+            if ($side === 'home') {
+                $totHome++;
+                if ($firstHalf) {
+                    $htHome++;
+                }
+            } else {
+                $totAway++;
+                if ($firstHalf) {
+                    $htAway++;
+                }
+            }
         }
 
         // Only trust HT if the play-by-play reconciles with the final score.
         if ($totHome === $ftHome && $totAway === $ftAway) {
             return [$htHome, $htAway];
         }
+
         return [null, null];
+    }
+
+    /**
+     * ESPN exposes shoot-out totals in `competitors.*.score` for a `FINAL_PEN`
+     * event. Count only genuine scoring plays through the 90th minute, omitting
+     * shoot-out attempts and extra-time goals. Returns null if ESPN has no
+     * reliable timed play-by-play, so the match stays pending for a later source
+     * instead of being graded against a shoot-out score.
+     *
+     * @return array{0:int, 1:int}|null
+     */
+    private function espnRegulationScores(array $comp, string $homeId, string $awayId): ?array
+    {
+        $details = data_get($comp, 'details', []);
+        if (empty($details) || $homeId === '' || $awayId === '') {
+            return null;
+        }
+
+        $home = $away = 0;
+        $sawScoringPlay = false;
+
+        foreach ($details as $detail) {
+            if (! data_get($detail, 'scoringPlay') || data_get($detail, 'shootout')) {
+                continue;
+            }
+
+            $sawScoringPlay = true;
+            $minute = (int) preg_replace('/\D.*$/', '', (string) data_get($detail, 'clock.displayValue', ''));
+            if ($minute <= 0 || $minute > 90) {
+                continue;
+            }
+
+            $teamId = (string) data_get($detail, 'team.id');
+            $ownGoal = (bool) data_get($detail, 'ownGoal');
+            if ($teamId === $homeId) {
+                $ownGoal ? $away++ : $home++;
+            } elseif ($teamId === $awayId) {
+                $ownGoal ? $home++ : $away++;
+            }
+        }
+
+        return $sawScoringPlay ? [$home, $away] : null;
     }
 
     /** Index a result under the normalised "home|away" key (if both are present). */
@@ -318,9 +410,19 @@ class ResultsFallbackService
     /** Find a result for a fixture, requiring the date to be within a day. */
     private function lookup(array $index, string $home, string $away, ?string $fixtureDate): ?array
     {
-        $hk = $this->norm($home);
-        $ak = $this->norm($away);
-        $row = $index["$hk|$ak"] ?? null;
+        $homeKeys = $this->equivalentKeys($home);
+        $awayKeys = $this->equivalentKeys($away);
+        $hk = $homeKeys[0] ?? '';
+        $ak = $awayKeys[0] ?? '';
+        $row = null;
+        foreach ($homeKeys as $homeKey) {
+            foreach ($awayKeys as $awayKey) {
+                $row = $index["$homeKey|$awayKey"] ?? null;
+                if ($row !== null) {
+                    break 2;
+                }
+            }
+        }
 
         // Fuzzy fallback: one provider often adds a city ("Vardar" vs "Vardar
         // Skopje", "Dila" vs "Dila Gori"). Match when both sides' tokens are a
@@ -343,7 +445,22 @@ class ResultsFallbackService
         if ($fixtureDate && $row['date'] !== '' && abs(strtotime($row['date']) - strtotime($fixtureDate)) > 86400) {
             return null; // a different meeting of the same two teams
         }
+
         return $row;
+    }
+
+    /** @return list<string> */
+    private function equivalentKeys(string $name): array
+    {
+        $key = $this->norm($name);
+        if ($key === '') {
+            return [];
+        }
+
+        return array_values(array_unique(array_merge(
+            [$key],
+            self::RESULT_NAME_ALIASES[$key] ?? [],
+        )));
     }
 
     /** True when the shorter token list is fully contained in the longer one. */
@@ -360,6 +477,7 @@ class ResultsFallbackService
                 return false;
             }
         }
+
         return true;
     }
 
@@ -371,9 +489,10 @@ class ResultsFallbackService
     private function norm(string $name): string
     {
         $s = Str::of($name)->ascii()->lower()->replaceMatches('/[^a-z0-9 ]/', ' ')->squish();
-        $stop = ['fc', 'cf', 'afc', 'sc', 'ac', 'ss', 'ssc', 'us', 'rc', 'cd', 'ca', 'ud', 'sd', 'cp',
+        $stop = ['fc', 'cf', 'afc', 'sc', 'ac', 'ss', 'ssc', 'us', 'rc', 'cd', 'ca', 'ud', 'sd', 'cp', 'f', 'c',
             'club', 'de', 'the', 'football', 'calcio', 'if', 'bk', 'fk', 'sk', 'fa', 'cfr'];
         $words = array_filter(explode(' ', (string) $s), fn ($w) => $w !== '' && ! in_array($w, $stop, true));
+
         return implode(' ', $words);
     }
 
