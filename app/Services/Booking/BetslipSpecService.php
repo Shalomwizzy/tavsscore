@@ -55,6 +55,7 @@ class BetslipSpecService
         ];
 
         return [
+            'over-0-5'      => ['title' => 'Over 0.5 Goals (Banker)'] + $single('Over 0.5 Goals', 90),
             'over-1-5'      => ['title' => 'Over 1.5 Goals'] + $single('Over 1.5 Goals', 78),
             'over-2-5'      => ['title' => 'Over 2.5 Goals'] + $single('Over 2.5 Goals', 66),
             'gg'            => ['title' => 'Both Teams to Score'] + $single('Both Teams Score (GG)', 66),
@@ -62,6 +63,7 @@ class BetslipSpecService
             'draw-no-bet'   => ['title' => 'Draw No Bet'] + $bestOf(['Draw No Bet - Home', 'Draw No Bet - Away'], 78),
             'under-3-5'     => ['title' => 'Under 3.5 Goals'] + $single('Under 3.5 Goals', 70),
             'under-4-5'     => ['title' => 'Under 4.5 Goals'] + $single('Under 4.5 Goals', 82),
+            'under-5-5'     => ['title' => 'Under 5.5 Goals (Banker)'] + $single('Under 5.5 Goals', 90),
             'handicap-safe' => ['title' => 'Goal Handicap Safety (+4.5)'] + $bestOf(['Home +4.5 (Handicap)', 'Away +4.5 (Handicap)'], 88),
         ];
     }

@@ -13,26 +13,27 @@
 const BASE = 'https://www.sportybet.com';
 const EVENTS_PATH = '/api/ng/factsCenter/pcUpcomingEvents';
 const SHARE_PATH = '/api/ng/orders/share';
-const MARKET_IDS = '1,18,10,29,11'; // 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet
+// 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet, European Handicap, Odd/Even
+const MARKET_IDS = '1,18,10,29,11,14,26';
 const MAX_PAGES = 12;
 
-// Our internal market label → SportyBet { marketId, outcomeId, total? }.
-// total is the Over/Under line, encoded on the wire as specifier "total=X".
+// Our internal market label → SportyBet { marketId, outcomeId, specifier? }.
+// specifier is the exact on-wire specifier (e.g. "total=2.5", "hcp=0:2").
 const MARKET_MAP = {
   'Home Win':               { marketId: '1', outcomeId: '1' },
   'Draw':                   { marketId: '1', outcomeId: '2' },
   'Away Win':               { marketId: '1', outcomeId: '3' },
 
-  'Over 0.5 Goals':         { marketId: '18', outcomeId: '12', total: '0.5' },
-  'Over 1.5 Goals':         { marketId: '18', outcomeId: '12', total: '1.5' },
-  'Over 2.5 Goals':         { marketId: '18', outcomeId: '12', total: '2.5' },
-  'Over 3.5 Goals':         { marketId: '18', outcomeId: '12', total: '3.5' },
-  'Over 4.5 Goals':         { marketId: '18', outcomeId: '12', total: '4.5' },
-  'Under 1.5 Goals':        { marketId: '18', outcomeId: '13', total: '1.5' },
-  'Under 2.5 Goals':        { marketId: '18', outcomeId: '13', total: '2.5' },
-  'Under 3.5 Goals':        { marketId: '18', outcomeId: '13', total: '3.5' },
-  'Under 4.5 Goals':        { marketId: '18', outcomeId: '13', total: '4.5' },
-  'Under 5.5 Goals':        { marketId: '18', outcomeId: '13', total: '5.5' },
+  'Over 0.5 Goals':         { marketId: '18', outcomeId: '12', specifier: 'total=0.5' },
+  'Over 1.5 Goals':         { marketId: '18', outcomeId: '12', specifier: 'total=1.5' },
+  'Over 2.5 Goals':         { marketId: '18', outcomeId: '12', specifier: 'total=2.5' },
+  'Over 3.5 Goals':         { marketId: '18', outcomeId: '12', specifier: 'total=3.5' },
+  'Over 4.5 Goals':         { marketId: '18', outcomeId: '12', specifier: 'total=4.5' },
+  'Under 1.5 Goals':        { marketId: '18', outcomeId: '13', specifier: 'total=1.5' },
+  'Under 2.5 Goals':        { marketId: '18', outcomeId: '13', specifier: 'total=2.5' },
+  'Under 3.5 Goals':        { marketId: '18', outcomeId: '13', specifier: 'total=3.5' },
+  'Under 4.5 Goals':        { marketId: '18', outcomeId: '13', specifier: 'total=4.5' },
+  'Under 5.5 Goals':        { marketId: '18', outcomeId: '13', specifier: 'total=5.5' },
 
   'Both Teams Score (GG)':  { marketId: '29', outcomeId: '74' },
   'Both Teams Score':       { marketId: '29', outcomeId: '74' },
@@ -44,7 +45,20 @@ const MARKET_MAP = {
 
   'Draw No Bet - Home':     { marketId: '11', outcomeId: '4' },
   'Draw No Bet - Away':     { marketId: '11', outcomeId: '5' },
+
+  'Total Goals Odd':        { marketId: '26', outcomeId: '70' },
+  'Total Goals Even':       { marketId: '26', outcomeId: '72' },
 };
+
+// European Handicap is dynamic: "European Handicap 0:2 - Away" →
+// marketId 14, specifier "hcp=0:2", outcome 1711/1712/1713 (Home/Draw/Away).
+const EH_OUTCOME = { Home: '1711', Draw: '1712', Away: '1713' };
+function resolveMarket(label) {
+  if (MARKET_MAP[label]) return MARKET_MAP[label];
+  const eh = /^European Handicap (\d+):(\d+) - (Home|Draw|Away)$/.exec(label || '');
+  if (eh) return { marketId: '14', specifier: `hcp=${eh[1]}:${eh[2]}`, outcomeId: EH_OUTCOME[eh[3]] };
+  return null;
+}
 
 export const sportybet = {
   async buildCode(page, slip) {
@@ -62,7 +76,7 @@ export const sportybet = {
     const minOdds = slip.min_total_odds ?? 3;
 
     for (const leg of slip.selections) {
-      const mapped = MARKET_MAP[leg.market];
+      const mapped = resolveMarket(leg.market);
       if (!mapped) continue; // market we don't book on SportyBet — skip the leg
 
       const ev = matchEvent(events, leg);
@@ -139,16 +153,11 @@ async function shareBooking(page, selections) {
 function findOutcome(event, mapped) {
   for (const m of event.markets || []) {
     if (String(m.id) !== mapped.marketId) continue;
-    if (mapped.total !== undefined && parseSpecifierTotal(m.specifier) !== mapped.total) continue;
+    if (mapped.specifier !== undefined && (m.specifier || '') !== mapped.specifier) continue;
     const outcome = (m.outcomes || []).find((o) => String(o.id) === mapped.outcomeId);
     if (outcome) return { odds: outcome.odds, specifier: m.specifier || null };
   }
   return null;
-}
-
-function parseSpecifierTotal(specifier) {
-  const m = /total=([0-9.]+)/.exec(specifier || '');
-  return m ? m[1] : null;
 }
 
 function matchEvent(events, leg) {
