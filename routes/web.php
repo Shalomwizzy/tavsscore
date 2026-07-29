@@ -264,6 +264,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/booking-code/resend',[\App\Http\Controllers\Admin\BookingCodeController::class, 'resend'])->name('booking-code.resend');
         Route::delete('/booking-code/{bookingCode}', [\App\Http\Controllers\Admin\BookingCodeController::class, 'destroy'])->name('booking-code.destroy');
 
+        /* High-Risk (auto-built big-odds accumulators) */
+        Route::get('/high-risk', [\App\Http\Controllers\Admin\HighRiskAdminController::class, 'index'])->name('high-risk.index');
+
         /* Broadcast */
         Route::get('/broadcast',      [\App\Http\Controllers\Admin\BroadcastController::class, 'index'])->name('broadcast.index');
         Route::post('/broadcast/send',[\App\Http\Controllers\Admin\BroadcastController::class, 'send'])->name('broadcast.send');
