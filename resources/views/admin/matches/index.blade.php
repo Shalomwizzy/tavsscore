@@ -59,9 +59,7 @@
     </div>
 
     @if($matches->hasPages())
-    <div style="padding:.875rem 0 0; border-top:1px solid var(--border); margin-top:.75rem;">
-        {{ $matches->links() }}
-    </div>
+        @include('partials.pagination', ['paginator' => $matches])
     @endif
 </div>
 

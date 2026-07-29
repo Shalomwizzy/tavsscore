@@ -44,7 +44,6 @@
     .post-meta { display:flex;align-items:center;justify-content:space-between;gap:.5rem;color:#64748b;font-size:.62rem; }
     .post-meta-left { display:flex;align-items:center;gap:.3rem;flex-wrap:wrap; }
     .read-more { color:#6ee7b7;font-weight:850;white-space:nowrap; }
-    .pagination-wrap { display:flex;justify-content:center;margin:2rem 0; }
     @media(max-width:760px) { .news-hero { padding:1.65rem 1.2rem;border-radius:16px; } .news-filter-shell { align-items:flex-start;flex-direction:column;gap:.55rem; } .story-feature { grid-template-columns:1fr; } .story-feature-media { min-height:210px; } .story-feature-media::after { background:linear-gradient(180deg,transparent,rgba(19,29,48,.65)); } .story-feature-body { padding:1.25rem; } .post-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media(max-width:470px) { .post-grid { grid-template-columns:1fr; } .news-title { font-size:1.8rem; } }
 </style>
@@ -95,7 +94,9 @@
             @endforeach
         </div>
         @endif
-        <div class="pagination-wrap">{{ $posts->links() }}</div>
+        @if($posts->hasPages())
+            @include('partials.pagination', ['paginator' => $posts])
+        @endif
     @else
         <div class="state-box"><span class="state-icon">📰</span><div class="state-title">The newsroom is warming up</div><p class="state-sub">Check back soon for football news and analysis.</p></div>
     @endif
