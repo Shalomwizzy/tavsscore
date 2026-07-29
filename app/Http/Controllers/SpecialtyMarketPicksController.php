@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\Prediction;
 use App\Services\PredictionService;
+use App\Services\MatchInsightService;
 use App\Support\LeagueCoverage;
 use App\Support\PickHelpers;
 use App\Support\SpecialtyPickCatalog;
@@ -15,7 +16,10 @@ class SpecialtyMarketPicksController extends Controller
 {
     use ResolvesDateNav;
 
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(
+        private readonly PredictionService $predictionService,
+        private readonly MatchInsightService $matchInsights,
+    ) {}
 
     public function under35(Request $request): View { return $this->show($request, 'under35'); }
     public function under45(Request $request): View { return $this->show($request, 'under45'); }
@@ -60,12 +64,20 @@ class SpecialtyMarketPicksController extends Controller
         $board = is_array($pick->market_board) ? $pick->market_board : [];
         $finished = in_array($match?->status, ['FT', 'AET', 'PEN'], true) && $match?->home_score !== null;
         $live = in_array($match?->status, ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'], true);
+        preg_match('/^European Handicap ([0-5]:[0-5]) - (Home|Draw|Away)$/', $label, $european);
+        $likely = is_array($pick->likely_scores) ? ($pick->likely_scores[0] ?? null) : null;
+        $insight = $this->matchInsights->for($pick);
         return [
             'rank' => $pick->{$config['rank']}, 'label' => $label,
             'prob' => round((float) ($board[$label] ?? 0)),
             'result' => $finished ? PickHelpers::resolveForMatch($match, $label) : null,
             'score' => ($finished || $live) ? "{$match?->home_score}–" . ($match?->away_score ?? 0) : null,
             'analysis' => $pick->analysis,
+            'reasons' => PickHelpers::reasonBullets($pick->analysis, 3),
+            'likely_score' => is_array($likely) ? ($likely['score'] ?? null) : null,
+            'european_start' => $european[1] ?? null,
+            'european_selection' => $european[2] ?? null,
+            'insight' => $insight,
             'match' => [
                 'home' => $match?->home_team ?? 'Home', 'away' => $match?->away_team ?? 'Away',
                 'league' => LeagueCoverage::formatName($match?->league, $match?->league_country),

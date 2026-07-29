@@ -1540,10 +1540,10 @@ class PredictionService
                         : preg_match('/^European Handicap ([1-5]):0 - (Home|Draw|Away)$|^European Handicap 0:([1-5]) - (Home|Draw|Away)$/', (string) $label);
                     if (! $validLabel) continue;
                     $probability = (float) $probability;
-                    // Do not publish near-certain bailout lines; retain a useful,
-                    // genuinely selected handicap signal instead of a trivial one.
-                    $ceiling = $config['dynamic'] === 'european' ? 86 : 92;
-                    if ($probability >= $config['floor'] && $probability <= $ceiling && $probability > $bestProbability) {
+                    // Specialty pages are deliberately strict: no selection is
+                    // published unless this exact market has at least 90% model
+                    // probability. A very safe line is valid; forcing action is not.
+                    if ($probability >= $config['floor'] && $probability > $bestProbability) {
                         $bestLabel = (string) $label;
                         $bestProbability = $probability;
                     }
@@ -1556,10 +1556,14 @@ class PredictionService
             ->values();
 
         if ($candidates->isEmpty()) {
-            return Prediction::query()->with('match')
-                ->where($config['flag'], true)
+            // Never preserve a lower-confidence slate after the threshold has
+            // tightened. Empty is the honest result when no exact market hits 90%.
+            $clear = [$config['flag'] => false, $config['rank'] => null, $config['notified'] => false];
+            if (isset($config['label_field'])) $clear[$config['label_field']] = null;
+            Prediction::query()->where($config['flag'], true)
                 ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
-                ->orderBy($config['rank'])->get();
+                ->update($clear);
+            return new EloquentCollection();
         }
 
         $clear = [$config['flag'] => false, $config['rank'] => null, $config['notified'] => false];

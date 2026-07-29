@@ -29,12 +29,13 @@
                class="nav-pill {{ request()->routeIs('fantasy.index') ? 'active' : '' }}">🏆 Fantasy</a>
 
             {{-- Picks dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
+            <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','under35-picks.index','under45-picks.index','handicap-picks.index','european-handicap-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*','goalscorer-picks.index','corners-picks.index') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     ⭐ Picks
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
                 </button>
-                <div class="nav-drop-menu" role="menu">
+                <div class="nav-drop-menu nav-picks-menu" role="menu">
+                    <div class="np-group"><div class="np-head">Core signals</div>
                     <a href="{{ route('picks.index') }}" class="nav-drop-item {{ request()->routeIs('picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">⭐</span>
                         <span><span class="ndi-label">Daily Picks</span><span class="ndi-sub">Top 3 picks today</span></span>
@@ -59,7 +60,7 @@
                         <span class="ndi-icon">🎲</span>
                         <span><span class="ndi-label">Correct Score <span style="font-size:.6rem;color:#fca5a5;font-weight:800;">HIGH RISK</span></span><span class="ndi-sub">Hardest market · big odds · for fun</span></span>
                     </a>
-                    <div class="nav-drop-divider"></div>
+                    </div><div class="np-group"><div class="np-head">Goal lines</div>
                     <a href="{{ route('over15-picks.index') }}" class="nav-drop-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">⚽</span>
                         <span><span class="ndi-label">Over 1.5 Goals</span><span class="ndi-sub">5 daily picks</span></span>
@@ -70,6 +71,7 @@
                     </a>
                     <a href="{{ route('under35-picks.index') }}" class="nav-drop-item {{ request()->routeIs('under35-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🧊</span><span><span class="ndi-label">Under 3.5 Goals</span><span class="ndi-sub">Controlled-goal picks</span></span></a>
                     <a href="{{ route('under45-picks.index') }}" class="nav-drop-item {{ request()->routeIs('under45-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🛟</span><span><span class="ndi-label">Under 4.5 Goals</span><span class="ndi-sub">High-probability goal cap</span></span></a>
+                    </div><div class="np-group"><div class="np-head">Handicap &amp; advantage</div>
                     <a href="{{ route('handicap-picks.index') }}" class="nav-drop-item {{ request()->routeIs('handicap-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🛡️</span><span><span class="ndi-label">Asian Handicap</span><span class="ndi-sub">0.5 to 5.5 goal lines</span></span></a>
                     <a href="{{ route('european-handicap-picks.index') }}" class="nav-drop-item {{ request()->routeIs('european-handicap-picks.index') ? 'active' : '' }}" role="menuitem"><span class="ndi-icon">🏁</span><span><span class="ndi-label">European Handicap</span><span class="ndi-sub">Virtual scores, Home/Draw/Away</span></span></a>
                     <a href="{{ route('team3plus-picks.index') }}" class="nav-drop-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" role="menuitem">
@@ -80,6 +82,7 @@
                         <span class="ndi-icon">🎯</span>
                         <span><span class="ndi-label">Double Chance</span><span class="ndi-sub">1X & 2X daily picks</span></span>
                     </a>
+                    </div><div class="np-group"><div class="np-head">Player &amp; match events</div>
                     <a href="{{ route('goalscorer-picks.index') }}" class="nav-drop-item {{ request()->routeIs('goalscorer-picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">⚽</span>
                         <span><span class="ndi-label">Goalscorer Picks</span><span class="ndi-sub">Anytime scorer tips</span></span>
@@ -88,6 +91,7 @@
                         <span class="ndi-icon">🚩</span>
                         <span><span class="ndi-label">Corner Picks</span><span class="ndi-sub">Safest total-corners line</span></span>
                     </a>
+                    </div>
                 </div>
             </div>
 
@@ -244,6 +248,7 @@
                 <small>Hardest market · big odds · for fun</small>
             </span>
         </a>
+        <div class="drawer-section-label" style="margin-top:.75rem;">Goal lines</div>
         <a href="{{ route('over15-picks.index') }}" class="drawer-item {{ request()->routeIs('over15-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">⚽</span>
             <span class="di-text">
@@ -260,6 +265,7 @@
         </a>
         <a href="{{ route('under35-picks.index') }}" class="drawer-item {{ request()->routeIs('under35-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🧊</span><span class="di-text">Under 3.5 Goals<small>Controlled-goal daily picks</small></span></a>
         <a href="{{ route('under45-picks.index') }}" class="drawer-item {{ request()->routeIs('under45-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🛟</span><span class="di-text">Under 4.5 Goals<small>High-probability goal cap</small></span></a>
+        <div class="drawer-section-label" style="margin-top:.75rem;">Handicap &amp; advantage</div>
         <a href="{{ route('handicap-picks.index') }}" class="drawer-item {{ request()->routeIs('handicap-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🛡️</span><span class="di-text">Asian Handicap<small>0.5 to 5.5 goal lines</small></span></a>
         <a href="{{ route('european-handicap-picks.index') }}" class="drawer-item {{ request()->routeIs('european-handicap-picks.index') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🏁</span><span class="di-text">European Handicap<small>Virtual score, 1/X/2</small></span></a>
         <a href="{{ route('team3plus-picks.index') }}" class="drawer-item {{ request()->routeIs('team3plus-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
@@ -276,6 +282,7 @@
                 <small>1X & 2X daily picks</small>
             </span>
         </a>
+        <div class="drawer-section-label" style="margin-top:.75rem;">Player &amp; match events</div>
         <a href="{{ route('goalscorer-picks.index') }}" class="drawer-item {{ request()->routeIs('goalscorer-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">⚽</span>
             <span class="di-text">
@@ -397,6 +404,11 @@
     z-index: 300;
 }
 .nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop.open .nav-picks-menu { display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:.3rem;padding:.55rem; }
+.nav-picks-menu { min-width:510px; }
+.np-group { min-width:0;padding:.18rem; }
+.np-head { padding:.35rem .5rem .42rem;color:#8fa69a;font-size:.6rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase; }
+.np-group .nav-drop-item { padding:.5rem .55rem; }
 
 .nav-drop-item {
     display: flex;

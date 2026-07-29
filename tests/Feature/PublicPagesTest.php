@@ -145,6 +145,28 @@ class PublicPagesTest extends TestCase
         $this->get(route('european-handicap-picks.index'))->assertOk();
     }
 
+    public function test_specialty_page_shows_the_market_reason_and_full_intelligence(): void
+    {
+        $match = FootballMatch::create([
+            'api_id' => 881, 'league' => 'Premier League', 'league_country' => 'England',
+            'home_team' => 'Arsenal', 'away_team' => 'Chelsea', 'status' => 'NS',
+            'match_time' => now('Africa/Lagos')->setTime(18, 0),
+        ]);
+        Prediction::create([
+            'match_id' => $match->id, 'home_win_prob' => 52, 'draw_prob' => 25, 'away_win_prob' => 23,
+            'over_15_prob' => 82, 'over_25_prob' => 61, 'btts_prob' => 58,
+            'predicted_outcome' => 'Home Win', 'confidence' => 78,
+            'analysis' => 'Arsenal have controlled recent home matches with a stronger chance profile. Chelsea have conceded too many high-quality chances away from home. The projected game state supports a controlled total-goals outcome.',
+            'market_board' => ['Under 3.5 Goals' => 92],
+            'is_under35_pick' => true, 'under35_rank' => 1,
+        ]);
+
+        $this->get(route('under35-picks.index'))->assertOk()
+            ->assertSee('Under 3.5 Goals')
+            ->assertSee('Full match intelligence')
+            ->assertSee('90% model confidence');
+    }
+
     public function test_rollover_show_loads_for_valid_date(): void
     {
         $challenge = RolloverChallenge::create([
