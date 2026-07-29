@@ -263,6 +263,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/booking-code/resend',[\App\Http\Controllers\Admin\BookingCodeController::class, 'resend'])->name('booking-code.resend');
         Route::delete('/booking-code/{bookingCode}', [\App\Http\Controllers\Admin\BookingCodeController::class, 'destroy'])->name('booking-code.destroy');
 
+        /* Auto-bet (personal, own account) */
+        Route::get('/auto-bet',  [\App\Http\Controllers\Admin\AutoBetController::class, 'index'])->name('auto-bet.index');
+        Route::post('/auto-bet', [\App\Http\Controllers\Admin\AutoBetController::class, 'update'])->name('auto-bet.update');
+
         /* Broadcast */
         Route::get('/broadcast',      [\App\Http\Controllers\Admin\BroadcastController::class, 'index'])->name('broadcast.index');
         Route::post('/broadcast/send',[\App\Http\Controllers\Admin\BroadcastController::class, 'send'])->name('broadcast.send');
