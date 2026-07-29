@@ -9,7 +9,6 @@ use App\Services\OneSignalService;
 use App\Services\TelegramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Endpoints the external automation worker talks to (behind worker.token):
@@ -25,7 +24,7 @@ class BookingWorkerController extends Controller
         return response()->json($specs->today());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, TelegramService $telegram, OneSignalService $oneSignal): JsonResponse
     {
         $data = $request->validate([
             'platform'   => ['required', 'string', 'max:40'],
@@ -33,7 +32,9 @@ class BookingWorkerController extends Controller
             'link'       => ['nullable', 'url', 'max:500'],
             'slip_ref'   => ['nullable', 'string', 'max:60'],
             'fixtures'   => ['nullable', 'array'],
-            'total_odds' => ['nullable', 'numeric', 'min:1'],
+            // Failed worker attempts are logged without an odds value; every
+            // publishable ticket itself must clear the 2.00 minimum.
+            'total_odds' => ['nullable', 'numeric', 'min:2', 'max:500', 'required_if:status,published'],
             'status'     => ['nullable', 'in:pending,published,failed,expired'],
             'note'       => ['nullable', 'string', 'max:500'],
             'pick_date'  => ['nullable', 'date'],
@@ -59,52 +60,40 @@ class BookingWorkerController extends Controller
                 'note'       => $data['note'] ?? null,
                 'source'     => 'auto',
                 'expires_at' => $data['expires_at'] ?? null,
+                'settled_at' => null,
             ]
         );
+
+        // Push each newly-published code to Telegram + OneSignal immediately.
+        // wasRecentlyCreated / wasChanged('code') means an idempotent re-run
+        // with the same code never re-notifies; a changed code does.
+        if (($data['status'] ?? 'published') === 'published'
+            && ($code->wasRecentlyCreated || $code->wasChanged('code'))) {
+            $this->announce($code, $telegram, $oneSignal);
+        }
 
         return response()->json(['ok' => true, 'id' => $code->id], 201);
     }
 
-    /**
-     * Push today's published booking codes to Telegram + OneSignal, once. The
-     * worker calls this after posting all codes; the daily cache guard means
-     * retries or extra runs never re-send.
-     */
-    public function notify(TelegramService $telegram, OneSignalService $oneSignal): JsonResponse
+    private function announce(BookingCode $code, TelegramService $telegram, OneSignalService $oneSignal): void
     {
-        $date = now('Africa/Lagos')->toDateString();
-        if (! Cache::add("booking_notified_{$date}", true, 86400)) {
-            return response()->json(['ok' => true, 'skipped' => 'already notified today']);
-        }
-
-        $codes = BookingCode::query()
-            ->where('pick_date', $date)
-            ->where('status', 'published')
-            ->orderByDesc('total_odds')
-            ->get();
-
-        if ($codes->isEmpty()) {
-            Cache::forget("booking_notified_{$date}");
-            return response()->json(['ok' => true, 'skipped' => 'no published codes']);
-        }
+        $label = $code->note ?: ($code->slip_ref ?: 'Booking Code');
+        $odds  = $code->total_odds ? ' @ '.number_format((float) $code->total_odds, 2) : '';
 
         try {
-            $telegram->sendBookingCodesDigest($codes, config('app.url'));
+            $telegram->sendBookingCode($code->platform, strtoupper($code->code), (string) ($code->note ?? ''), config('app.url'));
         } catch (\Throwable $e) {
             report($e);
         }
 
         try {
-            $platform = ucfirst(strtolower((string) $codes->first()->platform));
             $oneSignal->sendMatchAlert(
-                '🎟️ Booking Codes Ready',
-                $codes->count()." {$platform} booking codes are live today — tap to view.",
+                '🎟️ '.$label.' — '.strtoupper($code->platform),
+                'Booking code '.strtoupper($code->code).$odds.' — tap for today’s codes.',
                 '/booking-codes',
             );
         } catch (\Throwable $e) {
             report($e);
         }
-
-        return response()->json(['ok' => true, 'notified' => $codes->count()]);
     }
 }

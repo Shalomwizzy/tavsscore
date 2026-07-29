@@ -1,128 +1,48 @@
 @extends('layouts.admin')
-@section('title', 'Booking Code')
-@section('page-title', 'Booking Code')
+@section('title', 'Booking Codes')
+@section('page-title', 'Booking Codes')
 
 @section('content')
+<style>
+    .book-stats { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.7rem;margin-bottom:1rem; }
+    .book-stat { background:linear-gradient(135deg,rgba(20,37,57,.96),rgba(13,26,39,.96));border:1px solid var(--border);border-radius:11px;padding:.8rem .9rem; }
+    .book-stat b { display:block;color:#fff;font-size:1.2rem; } .book-stat span { color:var(--dim);font-size:.68rem; }
+    .book-grid { display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:1rem;margin-bottom:1rem; }
+    .book-label { display:block;font-size:.7rem;color:var(--dim);font-weight:700;margin-bottom:.3rem; } .book-input { width:100%;box-sizing:border-box;background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:7px;color:#fff;padding:.58rem .68rem;font-size:.8rem; }
+    .book-input:focus { outline:none;border-color:rgba(45,212,191,.65);box-shadow:0 0 0 3px rgba(45,212,191,.08); }
+    .book-primary,.book-secondary,.book-danger { border-radius:8px;padding:.56rem .75rem;cursor:pointer;font-size:.74rem;font-weight:850; } .book-primary { background:#1eaa9b;color:#071715;border:1px solid #4be1d0; } .book-secondary { background:rgba(255,255,255,.04);color:#dbe7f3;border:1px solid var(--border); } .book-danger { background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.33); }
+    .book-status { padding:.22rem .45rem;border-radius:999px;font-size:.65rem;font-weight:850;text-transform:uppercase; } .book-status.published { background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);color:#69e8dc; } .book-status.won { background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#74f4c7; } .book-status.lost,.book-status.failed { background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.3);color:#fda4af; } .book-status.pending,.book-status.expired { background:rgba(245,158,11,.09);border:1px solid rgba(245,158,11,.3);color:#f8cf72; }
+    .book-op { padding:1rem;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,.018); } .book-op h3 { margin:0 0 .35rem;color:#fff;font-size:.86rem; } .book-op p { margin:0;color:var(--dim);font-size:.73rem;line-height:1.55; }
+    @media(max-width:820px){.book-stats{grid-template-columns:repeat(3,1fr)}.book-grid{grid-template-columns:1fr}.book-history th:nth-child(5),.book-history td:nth-child(5){display:none}} @media(max-width:520px){.book-stats{grid-template-columns:repeat(2,1fr)}.book-stats .book-stat:last-child{grid-column:1/-1}.book-history th:nth-child(4),.book-history td:nth-child(4){display:none}}
+</style>
 
-<div class="page-hd">
-    <span class="page-hd-title">🎟️ Send Booking Code</span>
-</div>
+<div class="page-hd"><span class="page-hd-title">🎟️ Booking code desk</span><span style="font-size:.72rem;color:var(--dim)">Automated tickets, verified outcomes, and distribution.</span></div>
+@if(session('success'))<div style="background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:9px;padding:.72rem .9rem;margin-bottom:1rem;font-size:.78rem;color:#71e8dd;">✓ {{ session('success') }}</div>@endif
 
-@if(session('success'))
-<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#6ee7b7;">
-    ✅ {{ session('success') }}
-</div>
-@endif
+<div class="book-stats"><div class="book-stat"><b>{{ $stats['total'] }}</b><span>All codes</span></div><div class="book-stat"><b>{{ $stats['published'] }}</b><span>Awaiting outcome</span></div><div class="book-stat"><b style="color:#74f4c7">{{ $stats['won'] }}</b><span>Won</span></div><div class="book-stat"><b style="color:#fda4af">{{ $stats['lost'] }}</b><span>Lost</span></div><div class="book-stat"><b>2.00+</b><span>Minimum odds</span></div></div>
 
-<div class="a-card" style="margin-bottom:1.25rem; border-color:rgba(99,102,241,.25);">
-    <div class="page-hd" style="margin-bottom:1rem;">
-        <span style="font-weight:700; font-size:.9rem; color:#fff;">📤 Send New Code</span>
-    </div>
-
-    <form method="POST" action="{{ route('admin.booking-code.send') }}">
-        @csrf
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:.75rem;">
-            <div>
-                <label style="display:block; font-size:.75rem; color:var(--dim); margin-bottom:.3rem;">Platform</label>
-                <select name="platform" required
-                    style="width:100%; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:6px; padding:.5rem .75rem; color:#fff; font-size:.85rem;">
-                    <option value="SportyBet" {{ old('platform') === 'SportyBet' ? 'selected' : '' }}>SportyBet</option>
-                    <option value="Bet9ja"    {{ old('platform') === 'Bet9ja'    ? 'selected' : '' }}>Bet9ja</option>
-                    <option value="1xBet"     {{ old('platform') === '1xBet'     ? 'selected' : '' }}>1xBet</option>
-                    <option value="1Win"      {{ old('platform') === '1Win'      ? 'selected' : '' }}>1Win</option>
-                    <option value="Betway"    {{ old('platform') === 'Betway'    ? 'selected' : '' }}>Betway</option>
-                    <option value="Parimatch" {{ old('platform') === 'Parimatch' ? 'selected' : '' }}>Parimatch</option>
-                    <option value="BetKing"   {{ old('platform') === 'BetKing'   ? 'selected' : '' }}>BetKing</option>
-                    <option value="NairaBet"  {{ old('platform') === 'NairaBet'  ? 'selected' : '' }}>NairaBet</option>
-                </select>
-                @error('platform') <span style="color:#fca5a5; font-size:.72rem;">{{ $message }}</span> @enderror
+<div class="book-grid">
+    <section class="a-card">
+        <div class="page-hd" style="margin-bottom:.85rem"><span style="font-size:.9rem;font-weight:850;color:#fff">Publish a manual booking code</span></div>
+        <form method="POST" action="{{ route('admin.booking-code.send') }}">@csrf
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem">
+                <div><label class="book-label">Sportsbook</label><select name="platform" class="book-input" required><option value="SportyBet">SportyBet</option><option value="Bet9ja">Bet9ja</option><option value="1xBet">1xBet</option><option value="1Win">1Win</option><option value="Betway">Betway</option><option value="Parimatch">Parimatch</option><option value="BetKing">BetKing</option><option value="NairaBet">NairaBet</option></select>@error('platform')<small style="color:#fda4af">{{ $message }}</small>@enderror</div>
+                <div><label class="book-label">Booking code</label><input class="book-input" style="font-family:monospace;text-transform:uppercase" name="code" value="{{ old('code') }}" placeholder="ABC12345" required>@error('code')<small style="color:#fda4af">{{ $message }}</small>@enderror</div>
             </div>
-
-            <div>
-                <label style="display:block; font-size:.75rem; color:var(--dim); margin-bottom:.3rem;">Booking Code</label>
-                <input type="text" name="code" value="{{ old('code') }}" required
-                    placeholder="e.g. ABC12345"
-                    style="width:100%; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:6px; padding:.5rem .75rem; color:#fff; font-size:.85rem; font-family:monospace; letter-spacing:.05em; text-transform:uppercase; box-sizing:border-box;">
-                @error('code') <span style="color:#fca5a5; font-size:.72rem;">{{ $message }}</span> @enderror
-            </div>
-        </div>
-
-        <div style="margin-bottom:1rem;">
-            <label style="display:block; font-size:.75rem; color:var(--dim); margin-bottom:.3rem;">Note <span style="opacity:.5;">(optional — what's included, e.g. "3 daily picks + Over 2.5")</span></label>
-            <input type="text" name="note" value="{{ old('note') }}"
-                placeholder="e.g. Today's 3 daily picks + Over 2.5 Goals"
-                style="width:100%; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:6px; padding:.5rem .75rem; color:#fff; font-size:.85rem; box-sizing:border-box;">
-            @error('note') <span style="color:#fca5a5; font-size:.72rem;">{{ $message }}</span> @enderror
-        </div>
-
-        <button type="submit"
-            style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:.6rem 1.5rem;border-radius:7px;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.4rem;">
-            📤 Send to Telegram &amp; Push
-        </button>
-    </form>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem"><div><label class="book-label">Total odds <span style="color:#f8cf72">(minimum 2.00)</span></label><input class="book-input" type="number" min="2" max="500" step="0.01" name="total_odds" value="{{ old('total_odds') }}" placeholder="2.00" required>@error('total_odds')<small style="color:#fda4af">{{ $message }}</small>@enderror</div><div><label class="book-label">Pick date</label><input class="book-input" type="date" name="pick_date" value="{{ old('pick_date', now('Africa/Lagos')->toDateString()) }}" required>@error('pick_date')<small style="color:#fda4af">{{ $message }}</small>@enderror</div></div>
+            <div style="margin-bottom:.8rem"><label class="book-label">Short ticket note</label><input class="book-input" name="note" value="{{ old('note') }}" placeholder="e.g. Today's safest goal-line ticket">@error('note')<small style="color:#fda4af">{{ $message }}</small>@enderror</div>
+            <button class="book-primary" type="submit">Publish to Telegram &amp; push</button>
+        </form>
+        <p style="color:var(--dim);font-size:.69rem;line-height:1.5;margin:.8rem 0 0">Manual codes are shared normally. Automatic win/loss grading requires an automated ticket with saved fixture selections.</p>
+    </section>
+    <aside style="display:grid;gap:.7rem;align-content:start">
+        <div class="book-op"><h3>{{ $workerReady ? '✓ Worker connected' : '⚠ Worker token missing' }}</h3><p>{{ $workerReady ? 'The booking worker can pull qualified tickets and post codes back to this desk.' : 'Set BOOKING_WORKER_TOKEN in the application and worker environments before automatic publishing.' }}</p></div>
+        <div class="book-op"><h3>Outcome monitor</h3><p>The scheduler checks every 30 minutes. Run it now after final scores arrive.</p><form method="POST" action="{{ route('admin.booking-code.grade') }}" style="margin-top:.65rem">@csrf<button class="book-secondary" type="submit">Check outcomes now</button></form></div>
+        <div class="book-op" style="border-color:rgba(239,68,68,.26)"><h3>Fresh start</h3><p>Deletes every booking code and outcome history only. It does not change predictions, fixtures, or user accounts.</p><form method="POST" action="{{ route('admin.booking-code.clear') }}" onsubmit="return confirm('Delete every booking code and its outcome history? This cannot be undone.');" style="margin-top:.65rem">@csrf<button class="book-danger" type="submit">Delete all booking codes</button></form></div>
+    </aside>
 </div>
 
-<div style="background:rgba(99,102,241,.07); border:1px solid rgba(99,102,241,.2); border-radius:8px; padding:.75rem 1rem; margin-bottom:1.25rem; font-size:.78rem; color:#a5b4fc; line-height:1.6;">
-    💡 <strong>Affiliate links</strong> are managed in the <a href="{{ route('admin.affiliate-links.index') }}" style="color:#818cf8; text-decoration:underline;">Affiliate Links</a> section.
-    When you send a booking code, the affiliate registration link for that platform is automatically appended to the Telegram message.
-</div>
-
-<div class="a-card">
-    <div class="page-hd" style="margin-bottom:.875rem;">
-        <span style="font-weight:700; font-size:.9rem; color:#fff;">📜 History</span>
-    </div>
-
-    @if($history->isEmpty())
-        <div style="text-align:center; padding:1.75rem; color:var(--dim); font-size:.85rem;">No booking codes sent yet.</div>
-    @else
-        <div style="overflow-x:auto;">
-            <table class="a-table">
-                <thead>
-                    <tr>
-                        <th>Sent</th>
-                        <th>Platform</th>
-                        <th>Code</th>
-                        <th>Note</th>
-                        <th>Odds</th>
-                        <th>Source</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($history as $item)
-                    <tr>
-                        <td style="color:var(--dim); font-size:.74rem; white-space:nowrap;">
-                            {{ $item->created_at->setTimezone('Africa/Lagos')->format('M d, H:i') }}
-                        </td>
-                        <td>
-                            <span style="background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600;">
-                                {{ $item->platform }}
-                            </span>
-                        </td>
-                        <td style="font-family:monospace; font-weight:700; color:#fff; font-size:.9rem; letter-spacing:.05em;">
-                            {{ strtoupper($item->code) }}
-                        </td>
-                        <td style="color:var(--dim); font-size:.78rem;">{{ $item->note ?: '—' }}</td>
-                        <td style="color:#fcd34d; font-size:.78rem; font-weight:700;">{{ $item->total_odds ? number_format((float) $item->total_odds, 2) : '—' }}</td>
-                        <td style="font-size:.72rem;">
-                            <span style="color:{{ $item->source === 'auto' ? '#6ee7b7' : 'var(--dim)' }};">{{ $item->source ?? 'manual' }}</span>
-                        </td>
-                        <td>
-                            <form method="POST" action="{{ route('admin.booking-code.destroy', $item) }}"
-                                  onsubmit="return confirm('Delete this booking code?');" style="margin:0;">
-                                @csrf @method('DELETE')
-                                <button type="submit" style="background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.3); padding:2px 10px; border-radius:6px; font-size:.72rem; cursor:pointer;">
-                                    Delete
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-</div>
-
+<section class="a-card"><div class="page-hd" style="margin-bottom:.8rem"><span style="font-size:.9rem;font-weight:850;color:#fff">Code history</span><span style="font-size:.7rem;color:var(--dim)">{{ $stats['settled'] }} settled ticket(s)</span></div>
+@if($history->isEmpty())<div style="text-align:center;padding:2rem;color:var(--dim);font-size:.8rem">No booking codes yet.</div>@else
+<div style="overflow-x:auto"><table class="a-table book-history"><thead><tr><th>Published</th><th>Platform / code</th><th>Outcome</th><th>Odds</th><th>Ticket</th><th></th></tr></thead><tbody>@foreach($history as $item)<tr><td style="font-size:.71rem;color:var(--dim);white-space:nowrap">{{ $item->created_at->setTimezone('Africa/Lagos')->format('M d, H:i') }}</td><td><b style="font:.78rem ui-monospace,SFMono-Regular,Menlo,monospace;color:#fff">{{ strtoupper($item->code) }}</b><small style="display:block;color:var(--dim);font-size:.65rem">{{ $item->platform }} · {{ $item->source }}</small></td><td><span class="book-status {{ $item->status }}">{{ $item->status }}</span>@if($item->settled_at)<small style="display:block;color:var(--dim);font-size:.63rem;margin-top:.25rem">{{ $item->settled_at->setTimezone('Africa/Lagos')->format('M d, H:i') }}</small>@endif</td><td style="color:#f8cf72;font-weight:800;font-size:.75rem">{{ $item->total_odds ? number_format((float)$item->total_odds,2) : '—' }}</td><td style="color:var(--dim);font-size:.7rem">{{ $item->note ?: ($item->slip_ref ?: '—') }}</td><td><form method="POST" action="{{ route('admin.booking-code.destroy',$item) }}" onsubmit="return confirm('Delete this booking code?')">@csrf @method('DELETE')<button class="book-danger" type="submit">Delete</button></form></td></tr>@endforeach</tbody></table></div>@endif</section>
 @endsection

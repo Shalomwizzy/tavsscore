@@ -14,7 +14,7 @@ export function demoSlips(pickDate) {
       ref: 'demo-over-2-5',
       title: 'DEMO — Over 2.5 Goals (test, delete me)',
       market: 'Over 2.5 Goals',
-      min_total_odds: 3,
+      min_total_odds: 2,
       max_total_odds: 500,
       selections: [
         leg('Manchester City', 'Brighton', 'Over 2.5 Goals', 1.4),
@@ -26,7 +26,7 @@ export function demoSlips(pickDate) {
       ref: 'demo-safe-builder',
       title: 'DEMO — Safe Builder (test, delete me)',
       market: 'Mixed — safest per game',
-      min_total_odds: 3,
+      min_total_odds: 2,
       max_total_odds: 500,
       selections: [
         leg('Real Madrid', 'Getafe', 'Home or Draw (1X)', 1.1),

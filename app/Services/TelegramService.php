@@ -979,26 +979,17 @@ class TelegramService
         $this->send($msg);
     }
 
-    /** One digest message listing all of today's auto-generated booking codes. */
-    public function sendBookingCodesDigest($codes, string $siteUrl): void
+    /** Result of a settled booking code (all legs won, or one leg lost). */
+    public function sendBookingOutcome(string $platform, string $code, string $note, bool $won, string $siteUrl): void
     {
-        if ($codes->isEmpty()) {
-            return;
-        }
+        $head     = $won ? '✅ <b>BOOKING CODE WON</b>' : '❌ <b>BOOKING CODE LOST</b>';
+        $notePart = $note ? "\n📋 {$note}" : '';
 
-        $platform = ucfirst(strtolower((string) $codes->first()->platform));
-        $lines = $codes->map(function ($c) {
-            $odds  = $c->total_odds ? ' @'.number_format((float) $c->total_odds, 2) : '';
-            $label = $c->note ?: ($c->slip_ref ?: 'Ticket');
-            return "🔑 <b>{$label}</b> — <code>{$c->code}</code>{$odds}";
-        })->implode("\n");
-
-        $msg = "🎟️ <b>TODAY'S BOOKING CODES — ".strtoupper((string) $codes->first()->platform)."</b>\n"
+        $msg = $head."\n"
             ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            .$lines."\n\n"
-            ."📲 Open {$platform} app → Booking Code → enter any code\n"
-            ."⚠️ Verify odds before placing. Bet responsibly.\n"
-            ."🔗 <a href=\"{$siteUrl}/booking-codes\">All booking codes →</a>";
+            ."🎟️ ".strtoupper($platform)." code: <code>{$code}</code>"
+            .$notePart."\n\n"
+            ."🔗 <a href=\"{$siteUrl}/booking-codes\">Booking code history →</a>";
 
         $this->send($msg);
     }

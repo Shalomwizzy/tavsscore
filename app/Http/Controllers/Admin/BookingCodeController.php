@@ -6,15 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BookingCodeController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        $history = BookingCode::latest()->limit(20)->get();
+        $history = BookingCode::query()
+            ->latest('created_at')
+            ->limit(50)
+            ->get();
 
-        return view('admin.booking-code.index', compact('history'));
+        $stats = [
+            'total' => BookingCode::count(),
+            'published' => BookingCode::where('status', 'published')->count(),
+            'won' => BookingCode::where('status', 'won')->count(),
+            'lost' => BookingCode::where('status', 'lost')->count(),
+        ];
+        $stats['settled'] = $stats['won'] + $stats['lost'];
+        $workerReady = filled(config('services.booking_worker.token'));
+
+        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady'));
     }
 
     public function send(Request $request, TelegramService $telegram, OneSignalService $oneSignal)
@@ -23,9 +37,14 @@ class BookingCodeController extends Controller
             'platform' => ['required', 'string', 'max:50'],
             'code'     => ['required', 'string', 'max:50'],
             'note'     => ['nullable', 'string', 'max:200'],
+            'total_odds' => ['required', 'numeric', 'min:2', 'max:500'],
+            'pick_date' => ['required', 'date'],
         ]);
 
-        BookingCode::create($data);
+        BookingCode::create($data + [
+            'source' => 'manual',
+            'status' => 'published',
+        ]);
 
         $affiliate    = \App\Models\AffiliateLink::where('slug', strtolower(str_replace(' ', '', $data['platform'])))->where('is_active', true)->first();
         $affiliateUrl = $affiliate?->register_url ?: null;
@@ -39,6 +58,23 @@ class BookingCodeController extends Controller
         );
 
         return back()->with('success', "Booking code sent to Telegram and push notifications.");
+    }
+
+    /** Clear only booking-code records after the admin has explicitly confirmed it. */
+    public function clear()
+    {
+        $count = BookingCode::count();
+        BookingCode::query()->delete();
+
+        return back()->with('success', "Fresh start complete: {$count} booking code(s) deleted.");
+    }
+
+    /** Allow an admin to run the outcome check immediately; the scheduler also runs it automatically. */
+    public function grade()
+    {
+        Artisan::call('booking:grade');
+
+        return back()->with('success', trim(Artisan::output()) ?: 'Booking-code outcomes checked.');
     }
 
     public function destroy(BookingCode $bookingCode)

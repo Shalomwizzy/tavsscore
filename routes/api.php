@@ -37,5 +37,4 @@ Route::middleware('throttle:30,1')->group(function () {
 Route::middleware('worker.token')->prefix('worker')->group(function () {
     Route::get('/betslip-spec', [BookingWorkerController::class, 'spec']);
     Route::post('/booking-codes', [BookingWorkerController::class, 'store']);
-    Route::post('/notify', [BookingWorkerController::class, 'notify']);
 });

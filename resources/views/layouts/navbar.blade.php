@@ -28,6 +28,9 @@
             <a href="{{ route('fantasy.index') }}"
                class="nav-pill {{ request()->routeIs('fantasy.index') ? 'active' : '' }}">🏆 Fantasy</a>
 
+            <a href="{{ route('booking-codes.index') }}"
+               class="nav-pill {{ request()->routeIs('booking-codes.*') ? 'active' : '' }}">🎟️ Booking Codes</a>
+
             {{-- Picks dropdown --}}
             <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','under35-picks.index','under45-picks.index','handicap-picks.index','european-handicap-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*','goalscorer-picks.index','corners-picks.index') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
@@ -233,6 +236,10 @@
                 Rollover
                 <small>10-day challenge</small>
             </span>
+        </a>
+        <a href="{{ route('booking-codes.index') }}" class="drawer-item {{ request()->routeIs('booking-codes.*') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🎟️</span>
+            <span class="di-text">Booking Codes<small>Load today's pre-built tickets</small></span>
         </a>
         <a href="{{ route('lineup-picks.index') }}" class="drawer-item {{ request()->routeIs('lineup-picks.index') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">⚡</span>

@@ -2,7 +2,7 @@
 // booking code in the browser → post the code back. Adapters isolate the
 // site-specific browser steps (the only part that needs real DOM selectors).
 
-import { fetchSpec, postCode, postNotify } from './api.js';
+import { fetchSpec, postCode } from './api.js';
 import { sportybet } from './adapters/sportybet.js';
 import { onexbet } from './adapters/onexbet.js';
 import { mock } from './adapters/mock.js';
@@ -60,11 +60,22 @@ async function run() {
         // adapter.buildCode returns { code, link, total_odds, booked } where
         // `booked` is the subset of legs it actually managed to add (some legs
         // may be missing on the bookmaker). It must respect the odds band:
-        // slip.min_total_odds .. slip.max_total_odds.
-        const result = await adapter.buildCode(page, slip);
+        // slip.min_total_odds .. slip.max_total_odds. Retried a few times so a
+        // transient failure (odds shift, brief block) doesn't fail the ticket.
+        let result = null;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            result = await adapter.buildCode(page, slip);
+            if (result && result.code) break;
+          } catch (err) {
+            lastErr = err;
+          }
+          if (attempt < 3 && page) await page.waitForTimeout(2000 * attempt);
+        }
 
         if (!result || !result.code) {
-          await postFailure(platform, slip, 'no code produced');
+          await postFailure(platform, slip, lastErr ? lastErr.message : 'no code produced');
           continue;
         }
 
@@ -75,6 +86,7 @@ async function run() {
           slip_ref: slip.ref,
           total_odds: result.total_odds || slip.est_total_odds || null,
           fixtures: (result.booked || legs).map((l) => ({
+            match_id: l.match_id ?? null,
             match: `${l.home} vs ${l.away}`,
             market: l.market,
             est_odds: l.est_odds ?? null,
@@ -94,16 +106,6 @@ async function run() {
   }
 
   if (browser) await browser.close();
-
-  // Push today's codes to Telegram + OneSignal (the app de-dupes per day).
-  if (!dryRun) {
-    try {
-      const r = await postNotify();
-      console.log(r.notified ? `✓ notified channels (${r.notified} codes)` : `notify: ${r.skipped}`);
-    } catch (e) {
-      console.warn('notify failed:', e.message);
-    }
-  }
 }
 
 async function postFailure(platform, slip, reason) {

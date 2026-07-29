@@ -33,6 +33,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('predict:matches')->everyFifteenMinutes()->withoutOverlapping(10);
         $schedule->command('predictions:check-outcomes')->everyFiveMinutes()->withoutOverlapping();
 
+        // Settle booking codes (accumulator win/loss) + push the outcome.
+        $schedule->command('booking:grade')->everyThirtyMinutes()->withoutOverlapping();
+
         // Free RESULTS fallback (football-data.org) — only fires when the
         // API-Football quota is exhausted, so today's outcomes still settle
         // instead of waiting for the next-day catch-up. No-op if nothing pending.

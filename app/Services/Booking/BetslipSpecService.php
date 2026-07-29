@@ -5,7 +5,6 @@ namespace App\Services\Booking;
 use App\Models\Prediction;
 use App\Models\RolloverChallenge;
 use App\Services\DixonColes\TeamNameNormalizer;
-use App\Support\PickHelpers;
 use Illuminate\Support\Collection;
 
 /**
@@ -14,16 +13,36 @@ use Illuminate\Support\Collection;
  *
  * One ticket per market (all Over 2.5 in one, all Over 1.5 in another, etc.),
  * each built from the SAFEST qualifying selections (highest model board
- * probability first), targeting a combined odds band of 3.00–500.00. We attach
+ * probability first), targeting a combined odds band of 2.00–500.00. We attach
  * an estimated odds per leg (from our board probability) so the worker can trim
  * to the live-odds band; the worker asserts the real odds it books.
  */
 class BetslipSpecService
 {
-    private const MIN_TOTAL_ODDS = 3.0;
+    private const MIN_TOTAL_ODDS = 2.0;
     private const MAX_TOTAL_ODDS = 500.0;
     private const MIN_LEGS       = 3;
     private const MAX_LEGS       = 30;   // hard cap so we never blow past MAX_TOTAL_ODDS
+
+    /**
+     * Markets that reliably exist on SportyBet (and the worker can book). The
+     * Safe Builder only picks from these so it never lands on a 99% line the
+     * bookmaker doesn't list (e.g. deep +4.5/+5.5 handicaps, half-time markets).
+     */
+    private const BOOKABLE = [
+        'Home Win', 'Away Win', 'Draw',
+        'Over 1.5 Goals', 'Over 2.5 Goals', 'Over 3.5 Goals',
+        'Under 2.5 Goals', 'Under 3.5 Goals', 'Under 4.5 Goals',
+        'Both Teams Score (GG)',
+        'Home or Draw (1X)', 'Draw or Away (X2)', 'Home or Away (12)',
+        'Draw No Bet - Home', 'Draw No Bet - Away',
+        'Home +1.5 (Handicap)', 'Away +1.5 (Handicap)',
+        'Home +2.5 (Handicap)', 'Away +2.5 (Handicap)',
+    ];
+
+    // In the mixed Safe Builder, no single market may cover more than this many
+    // legs — forces genuine game+market variety instead of one repeated market.
+    private const MAX_SAME_MARKET = 3;
 
     /**
      * Per-market tickets. Each entry: title, floor (min board prob %), and
@@ -55,7 +74,6 @@ class BetslipSpecService
         ];
 
         return [
-            'over-0-5'      => ['title' => 'Over 0.5 Goals (Banker)'] + $single('Over 0.5 Goals', 90),
             'over-1-5'      => ['title' => 'Over 1.5 Goals'] + $single('Over 1.5 Goals', 78),
             'over-2-5'      => ['title' => 'Over 2.5 Goals'] + $single('Over 2.5 Goals', 66),
             'gg'            => ['title' => 'Both Teams to Score'] + $single('Both Teams Score (GG)', 66),
@@ -63,8 +81,7 @@ class BetslipSpecService
             'draw-no-bet'   => ['title' => 'Draw No Bet'] + $bestOf(['Draw No Bet - Home', 'Draw No Bet - Away'], 78),
             'under-3-5'     => ['title' => 'Under 3.5 Goals'] + $single('Under 3.5 Goals', 70),
             'under-4-5'     => ['title' => 'Under 4.5 Goals'] + $single('Under 4.5 Goals', 82),
-            'under-5-5'     => ['title' => 'Under 5.5 Goals (Banker)'] + $single('Under 5.5 Goals', 90),
-            'handicap-safe' => ['title' => 'Goal Handicap Safety (+4.5)'] + $bestOf(['Home +4.5 (Handicap)', 'Away +4.5 (Handicap)'], 88),
+            'handicap-safe' => ['title' => 'Goal Handicap Safety (+2.5)'] + $bestOf(['Home +2.5 (Handicap)', 'Away +2.5 (Handicap)'], 85),
         ];
     }
 
@@ -110,10 +127,7 @@ class BetslipSpecService
             'platforms'      => ['sportybet', '1xbet'],
             'min_total_odds' => self::MIN_TOTAL_ODDS,
             'max_total_odds' => self::MAX_TOTAL_ODDS,
-            'slips'          => array_values(array_filter(
-                $slips,
-                fn ($s) => $s && count($s['selections'] ?? []) >= self::MIN_LEGS
-            )),
+            'slips'          => $this->finalizeSlips($slips, $preds),
         ];
     }
 
@@ -158,15 +172,25 @@ class BetslipSpecService
     /** Mixed ticket: the safest genuinely-playable market on each fixture. */
     private function buildSafeBuilder(Collection $preds): ?array
     {
+        // Genuine mix: pick each game's safest bookable market, but cap how many
+        // legs any single market may cover so it isn't one repeated market.
+        $used = [];
         $legs = [];
         foreach ($preds as $p) {
-            $safe = PickHelpers::safestBoardMarket($p->market_board, 80.0, PickHelpers::headlineBlock());
-            if ($safe === null) continue;
+            $chosen = null;
+            foreach ($this->bookableOptions($p->market_board, 80.0) as $opt) {
+                if (($used[$opt['market']] ?? 0) < self::MAX_SAME_MARKET) {
+                    $chosen = $opt;
+                    break;
+                }
+            }
+            if ($chosen === null) continue;
+            $used[$chosen['market']] = ($used[$chosen['market']] ?? 0) + 1;
             $legs[] = [
                 'pred'   => $p,
-                'market' => $safe['market'],
-                'prob'   => $safe['prob'],
-                'odds'   => $this->estOdds($safe['prob']),
+                'market' => $chosen['market'],
+                'prob'   => $chosen['prob'],
+                'odds'   => $this->estOdds($chosen['prob']),
             ];
         }
 
@@ -260,6 +284,81 @@ class BetslipSpecService
         return $selections;
     }
 
+    /** Top up every slip to the 2.0 minimum, recompute odds, drop those short. */
+    private function finalizeSlips(array $slips, Collection $preds): array
+    {
+        $out = [];
+        foreach ($slips as $s) {
+            if (! $s) continue;
+            $s['selections'] = $this->ensureMinOdds($s['selections'] ?? [], $preds);
+            if (count($s['selections']) < self::MIN_LEGS) continue;
+            $s['est_total_odds'] = $this->combinedOdds($s['selections']);
+            $out[] = $s;
+        }
+        return array_values($out);
+    }
+
+    /** All bookable markets on this board clearing the floor, safest first. */
+    private function bookableOptions(?array $board, float $minProb): array
+    {
+        if (! is_array($board)) return [];
+        $out = [];
+        foreach (self::BOOKABLE as $market) {
+            if (! isset($board[$market])) continue;
+            $prob = (float) $board[$market];
+            if ($prob < $minProb) continue;
+            $out[] = ['market' => $market, 'prob' => $prob];
+        }
+        usort($out, fn ($a, $b) => $b['prob'] <=> $a['prob']);
+        return $out;
+    }
+
+    /**
+     * Guarantee a ticket clears the 2.0 minimum. If its own market is too safe
+     * to reach 2.0, mix in the safest bookable market from other (unused) games
+     * until it does. Returns [] if even that can't get there.
+     */
+    private function ensureMinOdds(array $selections, Collection $preds): array
+    {
+        if ($selections === []) return [];
+
+        $combined = 1.0;
+        $used = [];
+        foreach ($selections as $s) {
+            $combined *= max(1.0, (float) ($s['est_odds'] ?? 1.0));
+            $used[($s['home'] ?? '').'|'.($s['away'] ?? '')] = true;
+        }
+        if ($combined >= self::MIN_TOTAL_ODDS) return $selections;
+
+        foreach ($this->topUpLegs($preds, $used) as $leg) {
+            if (count($selections) >= self::MAX_LEGS) break;
+            if ($combined * $leg['odds'] > self::MAX_TOTAL_ODDS) break;
+            $sel = $this->selectionFromMatch($leg['match'], $leg['market'], $leg['prob'], $leg['odds']);
+            if ($sel === null) continue;
+            $selections[] = $sel;
+            $combined *= $leg['odds'];
+            if ($combined >= self::MIN_TOTAL_ODDS) break;
+        }
+
+        return $combined >= self::MIN_TOTAL_ODDS ? $selections : [];
+    }
+
+    /** Top-up candidates: safest bookable market per unused game, odds-first. */
+    private function topUpLegs(Collection $preds, array $usedKeys): array
+    {
+        $legs = [];
+        foreach ($preds as $p) {
+            $key = ($p->match->home_team ?? '').'|'.($p->match->away_team ?? '');
+            if (isset($usedKeys[$key])) continue;
+            $opts = $this->bookableOptions($p->market_board, 80.0);
+            if ($opts === []) continue;
+            $opt = end($opts); // lowest prob among ≥80% = highest odds → reaches 2.0 with fewer legs
+            $legs[] = ['match' => $p->match, 'market' => $opt['market'], 'prob' => $opt['prob'], 'odds' => $this->estOdds($opt['prob'])];
+        }
+        usort($legs, fn ($a, $b) => $b['odds'] <=> $a['odds']);
+        return $legs;
+    }
+
     private function combinedOdds(array $selections): float
     {
         $c = 1.0;
@@ -288,6 +387,7 @@ class BetslipSpecService
         }
 
         return array_filter([
+            'match_id'   => $match->id,
             'home'       => $match->home_team,
             'away'       => $match->away_team,
             'home_norm'  => TeamNameNormalizer::key($match->home_team),

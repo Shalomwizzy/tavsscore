@@ -1,229 +1,107 @@
 @extends('layouts.app')
 
-@section('title', 'Booking Codes | TavsScore — Load AI Picks Instantly')
-@section('meta_description', "Get today's TavsScore booking codes for SportyBet, 1xBet, 1Win and more. Load our AI-picked selections with one code — no manual entry needed.")
+@section('title', 'Booking Codes | TavsScore')
+@section('meta_description', "Load today's TavsScore booking codes, view their selections, and follow verified win/loss outcomes.")
 
 @push('styles')
 <style>
-    .bc-hero {
-        padding: 3rem 0 2rem;
-        background:
-            radial-gradient(ellipse 70% 60% at 50% -10%, rgba(99,102,241,.10), transparent),
-            radial-gradient(ellipse 50% 40% at 90% 80%, rgba(16,185,129,.07), transparent);
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 2rem;
-    }
-    .bc-hero-title {
-        font-size: clamp(1.6rem, 4vw, 2.2rem);
-        font-weight: 900;
-        color: #fff;
-        margin-bottom: .5rem;
-    }
-    .bc-hero-sub {
-        font-size: .9rem;
-        color: var(--text-dim);
-        max-width: 520px;
-        line-height: 1.6;
-    }
-    .bc-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2rem;
-    }
-    .bc-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 1.25rem;
-        position: relative;
-    }
-    .bc-platform {
-        font-size: .72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        color: var(--text-dim);
-        margin-bottom: .35rem;
-    }
-    .bc-code {
-        font-family: monospace;
-        font-size: 1.75rem;
-        font-weight: 900;
-        color: #fff;
-        letter-spacing: .08em;
-        margin-bottom: .75rem;
-        word-break: break-all;
-    }
-    .bc-note {
-        font-size: .8rem;
-        color: var(--text-dim);
-        margin-bottom: .75rem;
-        line-height: 1.5;
-    }
-    .bc-how {
-        font-size: .75rem;
-        color: var(--text-dim);
-        background: rgba(255,255,255,.03);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: .6rem .75rem;
-        margin-bottom: .875rem;
-        line-height: 1.55;
-    }
-    .bc-copy-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        background: rgba(99,102,241,.15);
-        border: 1px solid rgba(99,102,241,.35);
-        border-radius: 8px;
-        color: #a5b4fc;
-        font-size: .78rem;
-        font-weight: 700;
-        padding: .45rem 1rem;
-        cursor: pointer;
-        transition: background 140ms, color 140ms;
-        margin-bottom: .75rem;
-    }
-    .bc-copy-btn:hover { background: rgba(99,102,241,.3); color: #fff; }
-    .bc-copy-btn.copied { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.35); color: #6ee7b7; }
-    .bc-affiliate-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        font-size: .75rem;
-        font-weight: 700;
-        color: #fcd34d;
-        text-decoration: none;
-        border: 1px solid rgba(245,158,11,.3);
-        border-radius: 8px;
-        padding: .4rem .9rem;
-        background: rgba(245,158,11,.07);
-        transition: background 140ms;
-    }
-    .bc-affiliate-btn:hover { background: rgba(245,158,11,.15); }
-    .bc-date {
-        font-size: .68rem;
-        color: var(--text-muted, var(--text-dim));
-        margin-top: .5rem;
-    }
-    .bc-empty {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-dim);
-    }
-    .bc-empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
-    .bc-empty-title { font-size: 1rem; font-weight: 700; color: var(--text-dim); }
-    .bc-disclaimer {
-        background: rgba(107,114,128,.07);
-        border: 1px solid rgba(107,114,128,.2);
-        border-radius: 10px;
-        padding: .875rem 1rem;
-        font-size: .74rem;
-        color: var(--text-dim);
-        line-height: 1.6;
-        margin-top: 1.5rem;
-        margin-bottom: 2rem;
-    }
+    .bc-page { padding:1.5rem 0 2.5rem; }
+    .bc-hero { padding:clamp(1.45rem,4vw,3rem); border:1px solid rgba(45,212,191,.22); border-radius:22px; background:radial-gradient(circle at 85% 10%,rgba(45,212,191,.14),transparent 30%),linear-gradient(135deg,#0c1825,#101c2a 58%,#10251f); overflow:hidden; position:relative; }
+    .bc-kicker { color:#5eead4; font-size:.72rem; font-weight:850; letter-spacing:.12em; text-transform:uppercase; }
+    .bc-title { color:#fff; margin:.45rem 0 .55rem; font-size:clamp(1.7rem,4vw,2.65rem); line-height:1.05; letter-spacing:-.04em; }
+    .bc-intro { max-width:650px; color:#b8c6d8; line-height:1.65; font-size:.92rem; margin:0; }
+    .bc-hero-chip { position:absolute;right:1.25rem;top:1.2rem;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);border-radius:999px;padding:.45rem .7rem;color:#d5f8f1;font-size:.72rem;font-weight:800; }
+    .bc-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; margin:1rem 0 1.35rem; }
+    .bc-stat { border:1px solid var(--border); background:var(--card); border-radius:13px; padding:.85rem 1rem; }
+    .bc-stat b { color:#fff; display:block; font-size:1.12rem; } .bc-stat span { color:var(--text-dim); font-size:.71rem; }
+    .bc-heading { display:flex; align-items:end; justify-content:space-between; gap:1rem; margin:1.7rem 0 .8rem; }
+    .bc-heading h2 { margin:0; color:#fff; font-size:1.1rem; } .bc-heading p { margin:.25rem 0 0; color:var(--text-dim); font-size:.77rem; }
+    .bc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(285px,1fr)); gap:1rem; }
+    .bc-card { position:relative; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1rem; overflow:hidden; }
+    .bc-card:before { content:""; position:absolute; inset:0 auto 0 0; width:3px; background:#2dd4bf; }
+    .bc-top { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; }
+    .bc-platform { color:#fff; font-size:.94rem; font-weight:850; } .bc-label { color:var(--text-dim); font-size:.69rem; margin-top:.2rem; }
+    .bc-odds { text-align:right; color:#fcd34d; font-size:1.03rem; font-weight:900; } .bc-odds small { display:block; color:var(--text-dim); font-size:.62rem; font-weight:700; text-transform:uppercase; }
+    .bc-code-box { margin:1rem 0 .7rem; padding:.8rem .85rem; border-radius:11px; background:rgba(255,255,255,.035); border:1px dashed rgba(255,255,255,.18); }
+    .bc-code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.1em; color:#fff; font-size:1.25rem; font-weight:900; overflow-wrap:anywhere; }
+    .bc-note { color:#aebed0; font-size:.77rem; line-height:1.5; min-height:2.3em; }
+    .bc-actions { display:flex; gap:.55rem; margin-top:1rem; flex-wrap:wrap; } .bc-btn { border-radius:8px; padding:.55rem .75rem; font-size:.73rem; font-weight:850; cursor:pointer; text-decoration:none; }
+    .bc-copy { background:#1eaa9b; color:#061514; border:1px solid #49dfcf; } .bc-copy:hover { background:#4cdbcc; }
+    .bc-load { color:#f5c969; border:1px solid rgba(245,201,105,.35); background:rgba(245,201,105,.07); }
+    .bc-load:hover { background:rgba(245,201,105,.14); color:#fff0bd; }
+    .bc-fixtures { margin-top:.75rem; } .bc-fixtures summary { cursor:pointer; list-style:none; color:#aebed0; font-size:.73rem; font-weight:750; } .bc-fixtures summary::-webkit-details-marker { display:none; }
+    .bc-fixtures ul { list-style:none; padding:0; margin:.55rem 0 0; border-top:1px solid var(--border); } .bc-fixtures li { padding:.42rem 0; border-bottom:1px solid var(--border); color:#aebed0; font-size:.71rem; line-height:1.35; }
+    .bc-fixtures em { color:#77e5d8; font-style:normal; font-weight:750; }
+    .bc-time { margin-top:.85rem; color:var(--text-dim); font-size:.67rem; }
+    .bc-empty { border:1px dashed var(--border); border-radius:15px; padding:2.5rem 1rem; text-align:center; color:var(--text-dim); }
+    .bc-empty b { display:block; color:#fff; margin:.5rem 0 .25rem; }
+    .bc-history { overflow:hidden; border:1px solid var(--border); background:var(--card); border-radius:15px; }
+    .bc-history-row { display:grid; grid-template-columns:86px 1fr auto auto; gap:.75rem; align-items:center; padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    .bc-history-row:last-child { border-bottom:0; } .bc-status { display:inline-flex; align-items:center; width:max-content; padding:.28rem .52rem; border-radius:999px; font-size:.65rem; font-weight:900; text-transform:uppercase; }
+    .bc-status.won { color:#74f4c7; border:1px solid rgba(52,211,153,.32); background:rgba(52,211,153,.11); } .bc-status.lost { color:#fda4af; border:1px solid rgba(251,113,133,.32); background:rgba(251,113,133,.1); }
+    .bc-history-code { color:#fff; font:800 .77rem ui-monospace,SFMono-Regular,Menlo,monospace; } .bc-history-note { color:var(--text-dim); font-size:.69rem; margin-top:.17rem; }
+    .bc-disclaimer { padding:.9rem 1rem; margin-top:1.2rem; border-radius:11px; background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.22); color:#d7bd83; font-size:.73rem; line-height:1.6; }
+    @media (max-width:650px) { .bc-page{padding-top:.85rem}.bc-hero{border-radius:15px;padding:1.25rem}.bc-hero-chip{position:static;display:inline-flex;margin-top:1rem}.bc-stat-grid{grid-template-columns:1fr 1fr}.bc-stat:last-child{grid-column:1 / -1}.bc-grid{grid-template-columns:1fr}.bc-history-row{grid-template-columns:74px 1fr auto}.bc-history-row .bc-history-time{display:none}.bc-title{font-size:1.8rem} }
 </style>
 @endpush
 
 @section('content')
+<div class="wrap bc-page">
+    <section class="bc-hero">
+        <div class="bc-kicker">TavsScore booking desk</div>
+        <h1 class="bc-title">Today's tickets, ready to load.</h1>
+        <p class="bc-intro">Copy a code into the matching sportsbook to load its saved selections. We only publish a ticket from <strong>2.00 total odds</strong>, then track its final outcome here.</p>
+        <span class="bc-hero-chip">🎟️ No account details required</span>
+    </section>
 
-<div class="bc-hero">
-    <div class="wrap">
-        <div class="bc-hero-title">🎟️ Today's Booking Codes</div>
-        <p class="bc-hero-sub">
-            A booking code lets you instantly load a pre-built bet slip. Enter the code in your sportsbook app and all picks are added automatically — no manual entry needed.
-        </p>
+    <div class="bc-stat-grid">
+        <div class="bc-stat"><b>{{ $codes->count() }}</b><span>Available today</span></div>
+        <div class="bc-stat"><b>2.00+</b><span>Minimum combined odds</span></div>
+        <div class="bc-stat"><b>{{ $settledCount ? number_format(($wonCount / $settledCount) * 100, 0) . '%' : '—' }}</b><span>Verified booking-code win rate</span></div>
     </div>
-</div>
 
-<div class="wrap">
-
+    <div class="bc-heading"><div><h2>Live booking codes</h2><p>Check the bookmaker's final prices before you place any ticket.</p></div></div>
     @if($codes->isEmpty())
-    <div class="bc-empty">
-        <div class="bc-empty-icon">🎟️</div>
-        <div class="bc-empty-title">No booking codes today — check back later</div>
-        <p style="font-size:.8rem; margin-top:.5rem;">We usually send codes each morning after picks are selected.</p>
-    </div>
+        <div class="bc-empty"><div style="font-size:2rem">🎟️</div><b>No code has been published today</b><span>New qualifying tickets appear here as soon as they are ready.</span></div>
     @else
-    <div class="bc-grid">
-        @foreach($codes as $bc)
-        @php
-            $slug = strtolower(str_replace(' ', '', $bc->platform));
-            $aff  = $affiliates->get($slug);
-            $howToMap = [
-                'bet9ja'    => "Open Bet9ja app → Booking Code → Enter code",
-                '1xbet'     => "Open 1xBet app → Coupon Code → Enter code",
-                '1win'      => "Open 1Win app → Betting Slip → Coupon Code → Enter code",
-                'sportybet' => "Open SportyBet app → Booking Code → Enter code",
-                'betway'    => "Open Betway app → Booking Code → Enter code",
-                'parimatch' => "Open Parimatch app → Booking Code → Enter code",
-            ];
-            $howTo = $howToMap[$slug] ?? "Open {$bc->platform} app → Booking Code → Enter code";
-        @endphp
-        <div class="bc-card">
-            <div class="bc-platform">{{ $bc->platform }}</div>
-            <div class="bc-code" id="code-{{ $bc->id }}">{{ strtoupper($bc->code) }}</div>
-
-            @if($bc->note)
-            <div class="bc-note">📋 {{ $bc->note }}</div>
-            @endif
-
-            @if($bc->total_odds || is_array($bc->fixtures))
-            <div class="bc-note" style="display:flex; gap:.75rem; flex-wrap:wrap;">
-                @if($bc->total_odds)<span>💰 Total odds: <strong>{{ number_format((float) $bc->total_odds, 2) }}</strong></span>@endif
-                @if(is_array($bc->fixtures))<span>🎯 {{ count($bc->fixtures) }} {{ Str::plural('game', count($bc->fixtures)) }}</span>@endif
-            </div>
-            @endif
-
-            <div class="bc-how">📲 <strong>How to load:</strong> {{ $howTo }}</div>
-
-            <button class="bc-copy-btn" onclick="copyCode('{{ strtoupper($bc->code) }}', this)">
-                📋 Copy Code
-            </button>
-
-            @if($aff)
-            <div style="margin-top:.25rem;">
-                <a href="{{ $aff->register_url }}" target="_blank" rel="noopener sponsored" class="bc-affiliate-btn">
-                    {{ $aff->logo_emoji }} Don't have a {{ $bc->platform }} account? Register free →
-                </a>
-            </div>
-            @endif
-
-            <div class="bc-date">
-                Sent {{ $bc->created_at->setTimezone('Africa/Lagos')->diffForHumans() }}
-            </div>
+        <div class="bc-grid">
+            @foreach($codes as $bc)
+                @php
+                    $slug = strtolower(str_replace(' ', '', $bc->platform));
+                    $affiliate = $affiliates->get($slug);
+                    $howToMap = ['bet9ja' => 'Bet9ja app → Booking Code', '1xbet' => '1xBet app → Coupon Code', '1win' => '1Win app → Betting Slip → Coupon Code', 'sportybet' => 'SportyBet app → Booking Code', 'betway' => 'Betway app → Booking Code', 'parimatch' => 'Parimatch app → Booking Code'];
+                    $howTo = $howToMap[$slug] ?? $bc->platform . ' app → Booking Code';
+                @endphp
+                <article class="bc-card">
+                    <div class="bc-top"><div><div class="bc-platform">{{ $bc->platform }}</div><div class="bc-label">{{ $bc->note ?: ($bc->slip_ref ? str_replace('-', ' ', $bc->slip_ref) : 'Today\'s ticket') }}</div></div><div class="bc-odds">{{ number_format((float) $bc->total_odds, 2) }}<small>total odds</small></div></div>
+                    <div class="bc-code-box"><div class="bc-label">Booking code</div><div class="bc-code">{{ strtoupper($bc->code) }}</div></div>
+                    <div class="bc-note">How to load: {{ $howTo }} → enter the code.</div>
+                    <div class="bc-actions"><button type="button" class="bc-btn bc-copy" onclick="copyBookingCode('{{ strtoupper($bc->code) }}', this)">Copy code</button>@if($bc->link)<a class="bc-btn bc-load" href="{{ $bc->link }}" target="_blank" rel="noopener sponsored">Open ticket ↗</a>@elseif($affiliate)<a class="bc-btn bc-load" href="{{ $affiliate->register_url }}" target="_blank" rel="noopener sponsored">Open {{ $bc->platform }} ↗</a>@endif</div>
+                    @if(is_array($bc->fixtures) && count($bc->fixtures))
+                        <details class="bc-fixtures"><summary>⌄ View {{ count($bc->fixtures) }} selections</summary><ul>@foreach($bc->fixtures as $leg)<li>{{ $leg['home'] ?? 'Home' }} vs {{ $leg['away'] ?? 'Away' }}<br><em>{{ $leg['market'] ?? 'Selection' }}</em></li>@endforeach</ul></details>
+                    @endif
+                    <div class="bc-time">Published {{ $bc->created_at->setTimezone('Africa/Lagos')->diffForHumans() }}</div>
+                </article>
+            @endforeach
         </div>
-        @endforeach
-    </div>
     @endif
 
-    <div class="bc-disclaimer">
-        ⚠️ <strong>For entertainment only.</strong> Verify odds before placing any bet. AI picks are never guaranteed. Never stake more than you can afford to lose. If gambling is a problem for you, visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">BeGambleAware.org</a>.
-    </div>
-
+    <div class="bc-heading"><div><h2>Verified outcomes</h2><p>Every automated ticket remains in history once every saved leg has been settled.</p></div></div>
+    @if($history->isEmpty())
+        <div class="bc-empty" style="padding:1.5rem"><b>No settled booking-code results yet</b><span>Results will appear here automatically after the final scores are checked.</span></div>
+    @else
+        <section class="bc-history">
+            @foreach($history as $item)
+                <div class="bc-history-row"><span class="bc-status {{ $item->status }}">{{ $item->status === 'won' ? '✓ Won' : '× Lost' }}</span><div><div class="bc-history-code">{{ strtoupper($item->code) }} · {{ $item->platform }}</div><div class="bc-history-note">{{ $item->note ?: 'Booking ticket' }}</div></div><strong style="color:#fcd34d;font-size:.77rem">{{ number_format((float) $item->total_odds, 2) }}</strong><time class="bc-history-time" style="color:var(--text-dim);font-size:.68rem">{{ $item->settled_at?->setTimezone('Africa/Lagos')->format('M d, H:i') }}</time></div>
+            @endforeach
+        </section>
+    @endif
+    <div class="bc-disclaimer">⚠️ <strong>For entertainment only.</strong> A booking code does not guarantee a result or lock bookmaker odds. Verify each selection before placing any bet and never stake more than you can afford to lose.</div>
 </div>
+@endsection
 
 @push('scripts')
 <script>
-function copyCode(code, btn) {
-    navigator.clipboard.writeText(code).then(function() {
-        var original = btn.innerHTML;
-        btn.innerHTML = '✅ Copied!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-            btn.innerHTML = original;
-            btn.classList.remove('copied');
-        }, 2000);
-    }).catch(function() {
-        btn.innerHTML = '⚠️ Copy failed';
-        setTimeout(function() { btn.innerHTML = '📋 Copy Code'; }, 2000);
-    });
-}
+function copyBookingCode(code, button) { navigator.clipboard.writeText(code).then(function () { var text = button.textContent; button.textContent = 'Copied ✓'; setTimeout(function () { button.textContent = text; }, 1800); }).catch(function () { button.textContent = 'Copy failed'; }); }
 </script>
 @endpush
-
-@endsection

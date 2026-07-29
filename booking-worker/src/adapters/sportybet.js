@@ -85,7 +85,7 @@ export const sportybet = {
     const booked = [];
     let combined = 1.0;
     const maxOdds = slip.max_total_odds ?? 500;
-    const minOdds = slip.min_total_odds ?? 3;
+    const minOdds = slip.min_total_odds ?? 2;
 
     for (const leg of slip.selections) {
       const mapped = resolveMarket(leg.market);
@@ -101,7 +101,7 @@ export const sportybet = {
       if (combined * odds > maxOdds) continue; // would blow the band — try the next leg
 
       selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
-      booked.push({ home: leg.home, away: leg.away, market: leg.market, est_odds: odds });
+      booked.push({ match_id: leg.match_id ?? null, home: leg.home, away: leg.away, market: leg.market, est_odds: odds });
       combined *= odds;
 
       if (booked.length >= 3 && combined >= minOdds) break;
@@ -109,6 +109,9 @@ export const sportybet = {
 
     if (selections.length < 3) {
       throw new Error(`only ${selections.length} legs matched on SportyBet (need 3)`);
+    }
+    if (combined < minOdds) {
+      throw new Error(`combined odds ${combined.toFixed(2)} below ${minOdds} minimum`);
     }
 
     const data = await shareBooking(page, selections);
