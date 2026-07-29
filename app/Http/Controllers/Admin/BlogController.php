@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
 use App\Services\Blog\HeroImageService;
+use App\Services\Blog\EditorialQualityGate;
 use App\Services\GroqBlogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -138,7 +139,7 @@ class BlogController extends Controller
     }
 
     /** Replace the text only, leaving the existing image untouched. */
-    public function regenerateArticle(BlogPost $blog, GroqBlogService $groq): RedirectResponse
+    public function regenerateArticle(BlogPost $blog, GroqBlogService $groq, EditorialQualityGate $quality): RedirectResponse
     {
         if (! $groq->configured()) {
             return back()->with('error', 'Groq API key is not configured. Add GROQ_API_KEY to your .env file.');
@@ -146,11 +147,15 @@ class BlogController extends Controller
 
         try {
             $article = $groq->writeArticle(
-                'You are a senior TavsScore football editor. Return only valid JSON with exactly "title" and "content". Use the supplied article as the only factual source. Improve clarity, originality, structure and SEO without inventing facts. Use only p, h2, h3, ul, li and strong HTML tags. Never use em dashes.',
-                "Regenerate this football news article. Keep it at least 600 words when the source contains enough factual material. Preserve every factual claim unless the source is uncertain.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
+                $quality->systemPrompt(),
+                "Regenerate this TavsScore football article. The current article below is the only factual briefing available. Preserve confirmed facts, remove unsupported claims, improve the reader value and structure, and do not invent new facts. Write at least 750 useful words, with at least three H2 headings and five substantive paragraphs.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
             );
-            $content = preg_replace('/<img[^>]*>/i', '', $article['content']);
-            $content = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $content);
+            $content = $quality->sanitise($article['content']);
+            $issues = $quality->issues($article['title'], $content, $blog->id);
+
+            if ($issues !== []) {
+                throw new \RuntimeException('Regenerated article failed editorial review: ' . implode(' ', $issues));
+            }
             $blog->update([
                 'title' => $article['title'],
                 'content' => $content,

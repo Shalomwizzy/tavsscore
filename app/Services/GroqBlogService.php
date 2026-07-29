@@ -29,8 +29,8 @@ class GroqBlogService
             ->retry(2, 1000)
             ->post(config('services.groq.url'), [
                 'model' => config('services.groq.model'),
-                'temperature' => 0.65,
-                'max_tokens' => 1800,
+                'temperature' => 0.45,
+                'max_tokens' => 2600,
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],

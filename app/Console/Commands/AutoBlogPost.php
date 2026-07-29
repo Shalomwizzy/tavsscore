@@ -10,6 +10,7 @@ use App\Models\PlayerStatistic;
 use App\Models\Standing;
 use App\Models\Transfer;
 use App\Services\GroqBlogService;
+use App\Services\Blog\EditorialQualityGate;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -71,21 +72,19 @@ class AutoBlogPost extends Command
         } else {
             $matchList   = $matches->map(fn ($m) => "{$m->home_team} vs {$m->away_team} ({$m->league})")->implode(', ');
             $newsContext = $this->buildNewsContext($matches);
+            if (blank($newsContext)) {
+                $this->warn('No verified supporting data is available for today\'s fixtures — skipping publication rather than creating a generic article.');
+                return self::SUCCESS;
+            }
             $userPrompt  = "Write a football match preview article for {$dateStr}.\n\nMatches: {$matchList}{$newsContext}\n\nJSON format required:\n{\"title\": \"<compelling headline, max 70 chars, SEO-optimised>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Minimum 600 words. Do NOT submit fewer than 600 words under any circumstances.\n- Open with a punchy, opinionated introduction, not a generic scene-setter\n- Cover each match with its own <h2> heading using the actual team names\n- For each match: form analysis, key player matchups, tactical insight, a clear prediction with a reason\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only\n- End with a short confident wrap-up, not a hedge\n- Write like a real human journalist: varied sentence lengths, natural flow, genuine opinions. Take sides.\n- No AI filler: no 'it is worth noting', 'furthermore', 'in conclusion', 'delve', 'it remains to be seen', 'tapestry'\n- Assume the reader knows football well. No basic explanations.\n- Specific details: recent form runs, head-to-head records, key player conditions, tactical setups\n- Do NOT use em dashes (—) anywhere. Use commas, colons, or full stops.";
         }
 
         try {
             $this->info("Generating AI article for {$dateStr}…");
 
-            $json = $groq->writeArticle(
-                'You are a senior football journalist writing for TavsScore. Write exactly like a real human sports writer: opinionated, direct, sometimes blunt, with natural rhythm and varied sentence length. Mix short punchy sentences with longer analytical ones. Use everyday football language that fans actually use. Show genuine personality, take sides, make bold calls. Avoid all AI-sounding patterns: no listing things in threes, no "it is worth noting", no "furthermore", no "in conclusion", no "delve", no "it remains to be seen", no generic filler phrases. Write like you watched the matches yourself and have a real opinion. Return ONLY valid JSON with exactly two keys: "title" and "content". No markdown, no code fences. NEVER use em dashes (—). Use commas, colons, or full stops instead.',
-                $userPrompt,
-            );
-
-            // Strip any <img> tags and <a> tags the AI sneaks in — they reference
-            // fake URLs that will 404. We provide the hero image separately.
-            $content = preg_replace('/<img[^>]*>/i', '', $json['content']);
-            $content = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $content);
+            $quality = app(EditorialQualityGate::class);
+            $json = $this->writeApprovedArticle($groq, $quality, $userPrompt);
+            $content = $quality->sanitise($json['content']);
 
             $category = $this->pickCategory($matchList);
             $excerpt  = $this->buildExcerpt($content);
@@ -289,6 +288,29 @@ class AutoBlogPost extends Command
         if (str_contains($text, 'ligue 1'))         return 'Ligue 1';
 
         return 'Match Previews';
+    }
+
+    /** @return array{title:string, content:string} */
+    private function writeApprovedArticle(GroqBlogService $groq, EditorialQualityGate $quality, string $userPrompt): array
+    {
+        $revisionNote = '';
+
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $article = $groq->writeArticle(
+                $quality->systemPrompt(),
+                $userPrompt . $revisionNote . "\n\nRequired output quality: write at least 750 useful words, use at least three H2 headings and five substantive paragraphs. Every claim must come from the supplied briefing.",
+            );
+            $content = $quality->sanitise($article['content']);
+            $issues = $quality->issues($article['title'], $content);
+
+            if ($issues === []) {
+                return ['title' => $article['title'], 'content' => $content];
+            }
+
+            $revisionNote = "\n\nYour previous draft failed this editorial review: " . implode(' ', $issues) . " Rewrite it completely and correct every issue.";
+        }
+
+        throw new \RuntimeException('AI article did not meet TavsScore editorial quality requirements. Nothing was published.');
     }
 
     private function buildExcerpt(string $html): string

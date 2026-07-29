@@ -110,7 +110,7 @@ $jsonLd = json_encode([
     'description' => $post->excerpt_or_generated,
     'datePublished' => $post->published_at?->toIso8601String() ?? $post->created_at->toIso8601String(),
     'dateModified' => $post->updated_at->toIso8601String(),
-    'author' => ['@type' => 'Person', 'name' => $post->author],
+    'author' => ['@type' => $post->is_ai_generated ? 'Organization' : 'Person', 'name' => $post->author],
     'publisher' => [
         '@type' => 'Organization',
         'name' => 'TavsScore',
@@ -171,6 +171,13 @@ $jsonLd = json_encode([
         <div class="article-body" id="article-body">
             {!! $post->content !!}
         </div>
+
+        @if($post->is_ai_generated)
+            <aside style="margin:1.5rem .3rem 0;padding:1rem 1.05rem;border:1px solid rgba(16,185,129,.2);border-radius:12px;background:rgba(16,185,129,.055);color:#9fb0c4;font-size:.74rem;line-height:1.65;">
+                <strong style="color:#d1fae5;">Editorial note:</strong>
+                This AI-assisted TavsScore analysis is generated from the football data available to our platform at publication time. It is for information and entertainment, not a guarantee or financial advice.
+            </aside>
+        @endif
 
         {{-- Share --}}
         <div class="share-bar">
