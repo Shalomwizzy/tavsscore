@@ -22,6 +22,8 @@ class BlogPost extends Model
         'featured_image',
         'image_path',
         'category',
+        'editorial_desk',
+        'editorial_slot',
         'author',
         'is_published',
         'is_ai_generated',

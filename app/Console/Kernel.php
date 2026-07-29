@@ -113,15 +113,21 @@ class Kernel extends ConsoleKernel
         // Post today's pick results to Telegram at 23:00 Lagos
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
-        // Football newsroom: three editorial desks every day. These use the
-        // cached RSS/Google News briefing, so checking the transfer window and
-        // club news does not spend additional API-Football fixture quota.
-        $schedule->command('blog:auto-post --desk=transfers')
-            ->dailyAt('08:30')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('blog:auto-post --desk=club')
-            ->dailyAt('14:30')->timezone('Africa/Lagos')->withoutOverlapping();
-        $schedule->command('blog:auto-post --desk=controversy')
-            ->dailyAt('20:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        // Football newsroom: six independent slots each day. A slot may only
+        // publish once; later slots receive today's titles and must choose a
+        // different verified subject, avoiding rewritten versions of one story.
+        $schedule->command('blog:auto-post --desk=transfers --slot=transfers-am')
+            ->dailyAt('07:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=club --slot=club-am')
+            ->dailyAt('11:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=football --slot=football-analysis')
+            ->dailyAt('15:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=transfers --slot=transfers-pm')
+            ->dailyAt('18:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=club --slot=club-pm')
+            ->dailyAt('21:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('blog:auto-post --desk=controversy --slot=controversy-pm')
+            ->dailyAt('23:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Tennis source update: re-import the rolling current/previous season
         // every morning, then rebuild surface and overall Elo ratings.

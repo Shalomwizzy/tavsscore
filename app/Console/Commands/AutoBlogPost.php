@@ -22,7 +22,8 @@ class AutoBlogPost extends Command
 {
     protected $signature = 'blog:auto-post
                             {--desk=auto : transfers|club|controversy|football|match|auto}
-                            {--force : Regenerate even if this desk already has a post today}';
+                            {--slot= : A unique editorial slot, e.g. transfers-am}
+                            {--force : Regenerate even if this editorial slot already has a post today}';
 
     protected $description = 'Auto-generate a football news article using AI and publish it.';
 
@@ -40,20 +41,26 @@ class AutoBlogPost extends Command
         $today    = CarbonImmutable::now(config('app.timezone'));
         $desk     = $this->resolveDesk();
         $category = $this->deskCategory($desk);
+        $slot     = trim((string) $this->option('slot')) ?: $desk;
 
         if (!$this->option('force')) {
-            $existing = BlogPost::whereDate('created_at', $today->toDateString())
+            $existing = BlogPost::whereDate('published_at', $today->toDateString())
                 ->where('is_ai_generated', true)
-                ->where('category', $category)
+                ->where('editorial_slot', $slot)
                 ->exists();
 
             if ($existing) {
-                $this->info("A {$category} AI post already exists today. Use --force to override.");
+                $this->info("The {$slot} editorial slot already has a post today. Use --force to override.");
                 return self::SUCCESS;
             }
         }
 
         $dateStr = $today->format('l, F j Y');
+        $publishedToday = BlogPost::query()->whereDate('published_at', $today->toDateString())
+            ->where('is_published', true)->pluck('title')->all();
+        $avoidPublished = empty($publishedToday)
+            ? ''
+            : "\n\nALREADY PUBLISHED TODAY — choose a materially different subject and angle; do not rewrite these stories:\n- " . implode("\n- ", $publishedToday);
 
         if ($desk !== 'match') {
             $storedContext   = $this->buildGeneralNewsContext();
@@ -66,7 +73,7 @@ class AutoBlogPost extends Command
             }
 
             $matchList  = $this->deskLabel($desk);
-            $userPrompt = $this->newsDeskPrompt($desk, $dateStr, $newsContext);
+            $userPrompt = $this->newsDeskPrompt($desk, $dateStr, $newsContext) . $avoidPublished;
         } else {
         // Prefer top-league matches today; broaden to any covered league; else
         // fall back to a news roundup so the blog never fails to post.
@@ -105,6 +112,10 @@ class AutoBlogPost extends Command
 
             $quality = app(EditorialQualityGate::class);
             $json = $this->writeApprovedArticle($writer, $quality, $userPrompt);
+            if ($this->duplicatesPublishedHeadline($json['title'], $publishedToday)) {
+                $this->warn('Generated headline is too close to a story already published today — skipped.');
+                return self::SUCCESS;
+            }
             $content = $quality->sanitise($json['content']);
 
             $category = $desk === 'match' ? $this->pickCategory($matchList) : $category;
@@ -121,6 +132,8 @@ class AutoBlogPost extends Command
                 'content'         => $content,
                 'featured_image'  => $image,
                 'category'        => $category,
+                'editorial_desk'  => $desk,
+                'editorial_slot'  => $slot,
                 'author'          => 'TavsScore AI',
                 'is_published'    => true,
                 'is_ai_generated' => true,
@@ -342,10 +355,30 @@ class AutoBlogPost extends Command
             'transfers' => 'Make transfer developments the lead. Explain what is confirmed, what is only reported, and why the potential move matters to the clubs and player.',
             'club' => 'Lead with the biggest team-news development: injury, manager, squad, contract, tactical or selection issue. Explain the football consequences.',
             'controversy' => 'Cover the biggest football-affairs story carefully. Describe allegations, disputes or investigations only as reported, state what is known and unknown, and never present an accusation as fact.',
-            default => 'Choose the strongest verified football-news angle from the briefing, prioritising transfer and club developments over fixture previews.',
+            default => 'Choose the strongest verified football-news angle from the briefing. Prefer a tactical, coaching, competition, finance, governance or major club-development story that is different from the transfer and routine team-news desks.',
         };
 
         return "Write a TavsScore football NEWS article for {$dateStr}. {$focus}\n\n{$newsContext}\n\nJSON format required:\n{\"title\": \"<clear, descriptive SEO headline, 35-85 chars>\", \"content\": \"<full HTML article>\"}\n\nContent requirements:\n- Write at least 750 useful words with at least three descriptive <h2> sections.\n- Open with the news angle, not a generic introduction.\n- Treat the CONFIRMED TAVSSCORE DATA as factual. Treat LATEST REPORTED HEADLINES as reports only: use wording such as 'reports indicate', 'has been linked', or 'the reporting suggests'.\n- Never invent a fee, quote, injury, transfer, allegation, date, source, or outcome. Never turn a rumour into a completed deal.\n- Explain why the development matters: squad fit, tactics, finances, title race, player pathway or club strategy.\n- Do not write a match preview, betting tip or predicted score unless the briefing directly requires it.\n- Use <p> <h2> <h3> <ul> <li> <strong> tags only.\n- Write in an original, calm football-journalist voice. No clickbait, generic AI filler, keyword stuffing or em dashes.";
+    }
+
+    /** Reject near-identical daily headlines before a second version is published. */
+    private function duplicatesPublishedHeadline(string $candidate, array $publishedTitles): bool
+    {
+        $tokens = static function (string $title): array {
+            $ignored = ['the', 'a', 'an', 'and', 'or', 'for', 'to', 'of', 'in', 'on', 'with', 'as', 'after', 'latest', 'news'];
+            $words = preg_split('/[^a-z0-9]+/', strtolower($title), -1, PREG_SPLIT_NO_EMPTY);
+            return array_values(array_unique(array_filter($words, fn ($word) => strlen($word) > 2 && ! in_array($word, $ignored, true))));
+        };
+
+        $candidateTokens = $tokens($candidate);
+        if (count($candidateTokens) < 3) return false;
+        foreach ($publishedTitles as $published) {
+            $existingTokens = $tokens((string) $published);
+            $overlap = count(array_intersect($candidateTokens, $existingTokens));
+            $smaller = max(1, min(count($candidateTokens), count($existingTokens)));
+            if ($overlap >= 4 && $overlap / $smaller >= 0.62) return true;
+        }
+        return false;
     }
 
     private function pickCategory(string $matchList): string
