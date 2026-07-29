@@ -168,7 +168,7 @@
     .hm-outcome { display:inline-flex;padding:.2rem .5rem;border-radius:99px;font-size:.61rem;font-weight:900; }
     .hm-outcome.win { color:var(--mint);background:var(--accdim);border:1px solid var(--accbrd); }.hm-outcome.loss { color:#fca5a5;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25); }
     .hm-tennis-band { display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--panel); }
-    .hm-tennis-image { min-height:180px;background:linear-gradient(135deg,#1f4a37,#0a1920);background-size:cover;background-position:center; }
+    .hm-tennis-image { min-height:180px;background:linear-gradient(135deg,#123b61,#0a1920);background-size:cover;background-position:center; }
     .hm-tennis-copy { padding:1.7rem;align-self:center; }
     .hm-news-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1.5rem; }
     .hm-news { border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);color:inherit;transition:transform .16s,border-color .16s; }
