@@ -54,12 +54,12 @@ return [
     ],
 
     'tennis_data' => [
-        // Self-hosted ATP/WTA match CSVs (Jeff Sackmann format). Upload the
-        // yearly files to storage/app/tennis/ named atp_matches_{year}.csv and
-        // wta_matches_{year}.csv. {year} is substituted per season. Set the env
-        // vars to a URL instead if you'd rather serve them over HTTP.
-        'atp_url' => env('TENNIS_ATP_SOURCE_URL', storage_path('app/tennis/atp_matches_{year}.csv')),
-        'wta_url' => env('TENNIS_WTA_SOURCE_URL', storage_path('app/tennis/wta_matches_{year}.csv')),
+        // Historical ATP/WTA results from Tennis-Data.co.uk (free, updated
+        // weekly, carries bookmaker odds). {year} is substituted per season.
+        // The importer parses the .xlsx directly. A local file path or a
+        // Sackmann-format CSV URL also works — the importer detects the format.
+        'atp_url' => env('TENNIS_ATP_SOURCE_URL', 'http://www.tennis-data.co.uk/{year}/{year}.xlsx'),
+        'wta_url' => env('TENNIS_WTA_SOURCE_URL', 'http://www.tennis-data.co.uk/{year}w/{year}.xlsx'),
     ],
 
     'tennis_live' => [
