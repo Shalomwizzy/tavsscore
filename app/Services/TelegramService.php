@@ -978,4 +978,28 @@ class TelegramService
 
         $this->send($msg);
     }
+
+    /** One digest message listing all of today's auto-generated booking codes. */
+    public function sendBookingCodesDigest($codes, string $siteUrl): void
+    {
+        if ($codes->isEmpty()) {
+            return;
+        }
+
+        $platform = ucfirst(strtolower((string) $codes->first()->platform));
+        $lines = $codes->map(function ($c) {
+            $odds  = $c->total_odds ? ' @'.number_format((float) $c->total_odds, 2) : '';
+            $label = $c->note ?: ($c->slip_ref ?: 'Ticket');
+            return "🔑 <b>{$label}</b> — <code>{$c->code}</code>{$odds}";
+        })->implode("\n");
+
+        $msg = "🎟️ <b>TODAY'S BOOKING CODES — ".strtoupper((string) $codes->first()->platform)."</b>\n"
+            ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            .$lines."\n\n"
+            ."📲 Open {$platform} app → Booking Code → enter any code\n"
+            ."⚠️ Verify odds before placing. Bet responsibly.\n"
+            ."🔗 <a href=\"{$siteUrl}/booking-codes\">All booking codes →</a>";
+
+        $this->send($msg);
+    }
 }

@@ -87,3 +87,10 @@ export async function postCode(payload) {
   if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/booking-codes`) + ` — body: ${(await res.text()).slice(0, 200)}`);
   return res.json();
 }
+
+/** Ask the app to push today's booking codes to Telegram + OneSignal (once). */
+export async function postNotify() {
+  const res = await fetchWithRetry(`${BASE}/api/worker/notify`, { method: 'POST', headers: headers() });
+  if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/notify`));
+  return res.json();
+}

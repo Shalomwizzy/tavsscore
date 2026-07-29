@@ -2,7 +2,7 @@
 // booking code in the browser → post the code back. Adapters isolate the
 // site-specific browser steps (the only part that needs real DOM selectors).
 
-import { fetchSpec, postCode } from './api.js';
+import { fetchSpec, postCode, postNotify } from './api.js';
 import { sportybet } from './adapters/sportybet.js';
 import { onexbet } from './adapters/onexbet.js';
 import { mock } from './adapters/mock.js';
@@ -94,6 +94,16 @@ async function run() {
   }
 
   if (browser) await browser.close();
+
+  // Push today's codes to Telegram + OneSignal (the app de-dupes per day).
+  if (!dryRun) {
+    try {
+      const r = await postNotify();
+      console.log(r.notified ? `✓ notified channels (${r.notified} codes)` : `notify: ${r.skipped}`);
+    } catch (e) {
+      console.warn('notify failed:', e.message);
+    }
+  }
 }
 
 async function postFailure(platform, slip, reason) {
