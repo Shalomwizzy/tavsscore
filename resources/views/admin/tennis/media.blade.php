@@ -11,6 +11,12 @@
         <h1 style="font-size:1.45rem;font-weight:900;color:#fff;margin:.4rem 0 .45rem;">Tennis Page Hero Image</h1>
         <p style="font-size:.8rem;line-height:1.6;color:var(--dim);max-width:660px;margin:0;">This image appears behind the tennis page’s premium header. A dark overlay is applied automatically so the text always stays easy to read.</p>
     </div>
+    <section style="margin-bottom:1.25rem;padding:1.05rem;border-radius:14px;border:1px solid rgba(103,232,249,.28);background:rgba(14,116,144,.09);">
+        <div style="font-size:.66rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#67e8f9;">ChatGPT image prompt</div>
+        <h2 style="font-size:.95rem;color:#fff;margin:.4rem 0 .55rem;font-weight:850;">Generate the tennis hero image</h2>
+        <textarea readonly class="form-textarea" style="min-height:150px;resize:vertical;font-size:.75rem;line-height:1.55;color:#dbeafe;">Photorealistic cinematic sports editorial photograph for a premium tennis prediction website: a professional tennis player in a powerful serving motion on a blue hard court, ball frozen in the air, stadium lights and a full crowd softly blurred in the background, intense match-day atmosphere, navy and cyan colour accents, realistic athletic movement, high-end sports magazine quality, wide 21:9 composition. Place the player on the right third of the image and leave the left side darker and clean for website headline text. No readable words, no team logos, no brand logos, no scoreboards, no watermarks, no collage, no illustration.</textarea>
+        <p style="font-size:.7rem;color:var(--dim);line-height:1.45;margin:.55rem 0 0;">Generate at 1920 × 900 or wider. Keep the image free of AI-generated text; upload it here, then add any TavsScore watermark separately so it stays sharp and correctly spelled.</p>
+    </section>
     @if(session('success'))<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.8rem;font-weight:700;">✓ {{ session('success') }}</div>@endif
     <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
         @csrf
