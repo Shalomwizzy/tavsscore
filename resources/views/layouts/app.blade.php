@@ -120,6 +120,11 @@
             -webkit-font-smoothing: antialiased;
         }
 
+        /* Never allow browser-default blue / underlined links to leak into the UI.
+           Components that need an accent define their own colour explicitly. */
+        a:not([class]), a:not([class]):visited { color:inherit; text-decoration-color:currentColor; }
+        a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline:2px solid #6ee7b7; outline-offset:3px; }
+
         /* ── Topnav ── */
         .topnav {
             position: sticky;
@@ -320,7 +325,7 @@
 
         .chip-green { background: var(--green-dim); border: 1px solid var(--green-border); color: #6ee7b7; }
         .chip-red   { background: var(--red-dim);   border: 1px solid rgba(239,68,68,.3);  color: #fca5a5; }
-        .chip-blue  { background: var(--blue-dim);  border: 1px solid rgba(59,130,246,.3); color: #93c5fd; }
+        .chip-blue  { background: var(--green-dim); border:1px solid var(--green-border); color:#6ee7b7; }
         .chip-gray  { background: rgba(107,114,128,.12); border: 1px solid rgba(107,114,128,.28); color: #9ca3af; }
 
         /* ── Buttons ── */
@@ -503,13 +508,13 @@
             background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.2);
             border-radius: 10px;
         }
-        .notif-box-title { font-size: .82rem; font-weight: 800; color: #93c5fd; margin-bottom: .5rem; }
+        .notif-box-title { font-size:.82rem;font-weight:800;color:#6ee7b7;margin-bottom:.5rem; }
         .notif-box-text  { font-size: .78rem; color: var(--text-dim); line-height: 1.6; }
         .notif-allow-btn {
             display: inline-flex; align-items: center; gap: .4rem;
             margin-top: .75rem; padding: .45rem 1rem; border-radius: 8px;
             background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.3);
-            color: #93c5fd; font-size: .78rem; font-weight: 700;
+            color:#6ee7b7;font-size:.78rem;font-weight:700;
             cursor: pointer;
         }
         .notif-allow-btn:hover { background: rgba(59,130,246,.22); }

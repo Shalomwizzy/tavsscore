@@ -394,7 +394,7 @@
             <div class="pred-health" aria-label="Prediction summary">
                 <div class="pred-health-card"><div class="pred-health-value" id="metric-total">—</div><div class="pred-health-label">Signals today</div></div>
                 <div class="pred-health-card"><div class="pred-health-value" id="metric-high" style="color:#6ee7b7">—</div><div class="pred-health-label">High confidence</div></div>
-                <div class="pred-health-card"><div class="pred-health-value" id="metric-resolved" style="color:#93c5fd">—</div><div class="pred-health-label">Results verified</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-resolved" style="color:#6ee7b7">—</div><div class="pred-health-label">Results verified</div></div>
             </div>
         </div>
     </section>

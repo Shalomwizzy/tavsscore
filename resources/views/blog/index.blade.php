@@ -27,7 +27,7 @@
     .story-feature-title { color:#fff;font-size:clamp(1.2rem,2.5vw,1.85rem);line-height:1.14;font-weight:900;letter-spacing:-.035em;margin:.55rem 0; }
     .story-feature-excerpt { color:#9aa9bd;font-size:.78rem;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; }
     .story-meta { display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-top:1rem;color:#718096;font-size:.66rem;font-weight:650; }
-    .story-read { display:inline-flex;align-items:center;gap:.35rem;margin-top:1.1rem;color:#93c5fd;font-size:.72rem;font-weight:850; }
+    .story-read { display:inline-flex;align-items:center;gap:.35rem;margin-top:1.1rem;color:#6ee7b7;font-size:.72rem;font-weight:850; }
     .news-section-head { display:flex;align-items:end;justify-content:space-between;gap:.75rem;margin:1.65rem 0 .8rem; }
     .news-section-title { color:#fff;font-size:1rem;font-weight:900;letter-spacing:-.025em; }
     .news-section-sub { color:var(--text-dim);font-size:.7rem; }
@@ -42,7 +42,7 @@
     .post-excerpt { flex:1;margin:.55rem 0 .75rem;color:#8796aa;font-size:.72rem;line-height:1.62;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; }
     .post-meta { display:flex;align-items:center;justify-content:space-between;gap:.5rem;color:#64748b;font-size:.62rem; }
     .post-meta-left { display:flex;align-items:center;gap:.3rem;flex-wrap:wrap; }
-    .read-more { color:#93c5fd;font-weight:850;white-space:nowrap; }
+    .read-more { color:#6ee7b7;font-weight:850;white-space:nowrap; }
     .pagination-wrap { display:flex;justify-content:center;margin:2rem 0; }
     @media(max-width:760px) { .news-hero { padding:1.65rem 1.2rem;border-radius:16px; } .news-filter-shell { align-items:flex-start;flex-direction:column;gap:.55rem; } .story-feature { grid-template-columns:1fr; } .story-feature-media { min-height:210px; } .story-feature-media::after { background:linear-gradient(180deg,transparent,rgba(19,29,48,.65)); } .story-feature-body { padding:1.25rem; } .post-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media(max-width:470px) { .post-grid { grid-template-columns:1fr; } .news-title { font-size:1.8rem; } }

@@ -136,7 +136,7 @@
 
     /* Editorial layers for the cinematic homepage experience. */
     .hm-signal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.7rem; }
-    .hm-signal { color:var(--ink);text-decoration:none;background:linear-gradient(145deg,rgba(22,33,44,.96),rgba(11,17,23,.98)); border:1px solid var(--line); border-radius:16px; padding:1rem; transition:transform .18s,border-color .18s; }
+    .hm-signal,.hm-signal:visited,.hm-signal:hover { color:var(--ink)!important;text-decoration:none!important;background:linear-gradient(145deg,rgba(22,33,44,.96),rgba(11,17,23,.98));border:1px solid var(--line);border-radius:16px;padding:1rem;transition:transform .18s,border-color .18s; }
     .hm-signal:hover { transform:translateY(-4px); border-color:var(--accbrd); }
     .hm-signal-top { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em; }
     .hm-signal-teams { display:flex;align-items:center;gap:.55rem;margin:1rem 0 .85rem; }
@@ -144,10 +144,10 @@
     .hm-signal-crest img { width:82%;height:82%;object-fit:contain; }
     .hm-signal-crest.away { margin-left:-.9rem;margin-top:1.1rem;background:linear-gradient(135deg,#1c785d,#093a31);border-color:rgba(110,231,183,.3); }
     .hm-signal-names { min-width:0;flex:1; }
-    .hm-signal-names strong { display:block;color:var(--ink);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hm-signal-names strong,.hm-signal-pick { color:var(--ink)!important;text-decoration:none!important; }
     .hm-signal-names span { display:block;color:var(--mute);font-size:.67rem;margin:.1rem 0; }
     .hm-signal-label { color:var(--mint);font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em; }
-    .hm-signal-pick { color:var(--ink);font-size:.95rem;font-weight:800;margin:.22rem 0 .65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hm-signal-pick { font-size:.95rem;font-weight:800;margin:.22rem 0 .65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .hm-signal-bar { height:5px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden; }
     .hm-signal-bar i { display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--acc),var(--mint)); }
     .hm-signal-foot { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.67rem;margin-top:.5rem; }

@@ -13,7 +13,7 @@
     .fpl-title { max-width:520px;font-size:clamp(1.8rem,4vw,3rem);font-weight:900;color:#fff;letter-spacing:-.055em;line-height:1.03;margin:.45rem 0; }
     .fpl-sub { max-width:510px;font-size:.82rem;color:#aab8c4;line-height:1.65;margin-top:.35rem; }
     .fpl-hero-links { display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.15rem; }
-    .fpl-hero-link { display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .7rem;border:1px solid rgba(255,255,255,.14);border-radius:999px;color:#dbeafe;text-decoration:none;font-size:.69rem;font-weight:800;background:rgba(255,255,255,.045); }
+    .fpl-hero-link { display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .7rem;border:1px solid rgba(255,255,255,.14);border-radius:999px;color:#ecfdf5;text-decoration:none;font-size:.69rem;font-weight:800;background:rgba(255,255,255,.045); }
     .fpl-hero-link:hover { color:#fff;border-color:rgba(52,211,153,.4); }
     .fpl-visual { position:relative;min-height:260px;background:radial-gradient(circle at 50% 20%,rgba(16,185,129,.3),transparent 38%),linear-gradient(135deg,#0c5139,#0a2022);background-position:center;background-size:cover; }
     .fpl-visual::after { content:'';position:absolute;inset:0;background:linear-gradient(90deg,#101d2d,transparent 28%,rgba(5,12,18,.1)),linear-gradient(0deg,rgba(5,12,18,.42),transparent 50%); }
