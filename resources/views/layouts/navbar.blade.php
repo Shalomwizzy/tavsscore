@@ -94,6 +94,11 @@
                         <span class="ndi-icon">🚩</span>
                         <span><span class="ndi-label">Corner Picks</span><span class="ndi-sub">Safest total-corners line</span></span>
                     </a>
+                    </div><div class="np-group"><div class="np-head">Ready-to-play</div>
+                    <a href="{{ route('booking-codes.index') }}" class="nav-drop-item {{ request()->routeIs('booking-codes.index') ? 'active' : '' }}" role="menuitem">
+                        <span class="ndi-icon">🎟️</span>
+                        <span><span class="ndi-label">Booking Codes</span><span class="ndi-sub">One-tap SportyBet slips</span></span>
+                    </a>
                     </div>
                 </div>
             </div>
