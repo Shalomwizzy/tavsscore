@@ -35,7 +35,7 @@
                             <span style="font-size:.68rem; font-weight:400; color:var(--dim); margin-left:.4rem;">auto-generated - edit if needed</span>
                         </label>
                         <div style="display:flex; align-items:center; gap:.5rem;">
-                            <span style="font-size:.78rem; color:var(--dim); white-space:nowrap; flex-shrink:0;">tavsscore.com/blog/</span>
+                            <span style="font-size:.78rem; color:var(--dim); white-space:nowrap; flex-shrink:0;">tavsscore.com/football-news/YYYY/MM/DD/</span>
                             <input id="slug" type="text" name="slug" class="form-input"
                                    value="{{ old('slug') }}" placeholder="url-friendly-slug" style="font-family:monospace; font-size:.82rem;">
                         </div>

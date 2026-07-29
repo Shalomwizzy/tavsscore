@@ -419,7 +419,7 @@
     {{-- ── NEWS ── --}}
     @if($recentPosts->isNotEmpty())
     <section class="hm-band" style="padding-top:1rem;">
-        <div class="wrap hm-reveal"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;"><div><div class="hm-eye">News &amp; insights</div><h2 class="hm-h2">The football conversation.</h2></div><a href="{{ route('blog.index') }}" class="hm-ghost" style="color:var(--mint);">View all articles →</a></div><div class="hm-news-grid">@foreach($recentPosts as $post)<a class="hm-news" href="{{ route('blog.show', $post->slug) }}"><div class="hm-news-image" @if($post->image_url) style="background-image:url('{{ $post->image_url }}')" @endif></div><div class="hm-news-body"><div class="hm-news-cat">{{ $post->category }}</div><h3>{{ \Illuminate\Support\Str::limit($post->title, 62) }}</h3><small>{{ $post->published_at?->format('M j, Y') }} · {{ $post->reading_time }} min read</small></div></a>@endforeach</div></div>
+        <div class="wrap hm-reveal"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;"><div><div class="hm-eye">News &amp; insights</div><h2 class="hm-h2">The football conversation.</h2></div><a href="{{ route('blog.index') }}" class="hm-ghost" style="color:var(--mint);">View all articles →</a></div><div class="hm-news-grid">@foreach($recentPosts as $post)<a class="hm-news" href="{{ $post->public_url }}"><div class="hm-news-image" @if($post->image_url) style="background-image:url('{{ $post->image_url }}')" @endif></div><div class="hm-news-body"><div class="hm-news-cat">{{ $post->category }}</div><h3>{{ \Illuminate\Support\Str::limit($post->title, 62) }}</h3><small>{{ $post->published_at?->format('M j, Y') }} · {{ $post->reading_time }} min read</small></div></a>@endforeach</div></div>
     </section>
     @endif
 
@@ -438,7 +438,7 @@
                 <a href="{{ route('standings.index') }}" class="hm-ex">🏆 Standings</a>
                 <a href="{{ route('top-scorers.index') }}" class="hm-ex">👟 Top Scorers</a>
                 <a href="{{ route('africa.index') }}" class="hm-ex">🌍 Africa</a>
-                <a href="{{ route('blog.index') }}" class="hm-ex">📰 Blog</a>
+                <a href="{{ route('blog.index') }}" class="hm-ex">📰 Football News</a>
                 <a href="{{ route('winners.index') }}" class="hm-ex">🥇 Winners Wall</a>
                 <a href="{{ route('stats.index') }}" class="hm-ex">📊 Stats</a>
             </div>

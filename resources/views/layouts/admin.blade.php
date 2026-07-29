@@ -385,7 +385,7 @@
                     <a href="{{ route('top-scorers.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Top Scorers</a>
                     <a href="{{ route('gg-picks.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> GG Picks</a>
                     <a href="{{ route('rollover.index') }}" target="_blank" class="sb-link"><span class="sb-icon">↗</span> Rollover</a>
-                    <a href="{{ route('blog.index') }}" target="_blank" class="sb-link"><span class="sb-icon">📰</span> Blog</a>
+                    <a href="{{ route('blog.index') }}" target="_blank" class="sb-link"><span class="sb-icon">📰</span> Football News</a>
                 </div>
             </details>
         </nav>

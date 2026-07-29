@@ -71,7 +71,7 @@
 
     @if($posts->isNotEmpty())
         @php($featured = $posts->first())
-        <a href="{{ route('blog.show', $featured->slug) }}" class="story-feature">
+        <a href="{{ $featured->public_url }}" class="story-feature">
             <div class="story-feature-media">
                 @if($featured->image_url)<img src="{{ $featured->image_url }}" alt="{{ $featured->title }}">@else<div class="post-img-placeholder">⚽</div>@endif
             </div>
@@ -88,7 +88,7 @@
         <div class="news-section-head"><div><h2 class="news-section-title">Latest from the newsroom</h2><p class="news-section-sub">Fresh context from football’s biggest conversations.</p></div></div>
         <div class="post-grid">
             @foreach($posts->slice(1) as $post)
-            <a href="{{ route('blog.show', $post->slug) }}" class="post-card">
+            <a href="{{ $post->public_url }}" class="post-card">
                 @if($post->image_url)<img src="{{ $post->image_url }}" alt="{{ $post->title }}" class="post-img" loading="lazy">@else<div class="post-img-placeholder">{{ ['⚽','🏆','🎯','📊','🌍'][crc32($post->slug) % 5] }}</div>@endif
                 <article class="post-body"><div class="post-cat">{{ $post->category }}</div><h2 class="post-title">{{ $post->title }}</h2><p class="post-excerpt">{{ $post->excerpt_or_generated }}</p><div class="post-meta"><span class="post-meta-left"><span>{{ $post->published_at?->format('M d') ?? $post->created_at->format('M d') }}</span><span>•</span><span>{{ $post->reading_time }} min</span></span><span class="read-more">Read →</span></div></article>
             </a>

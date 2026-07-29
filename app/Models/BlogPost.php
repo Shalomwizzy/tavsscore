@@ -72,6 +72,18 @@ class BlogPost extends Model
             : url($imageUrl);
     }
 
+    public function getPublicPathAttribute(): string
+    {
+        $date = $this->published_at ?? $this->created_at;
+
+        return '/football-news/' . $date->format('Y/m/d') . '/' . $this->slug;
+    }
+
+    public function getPublicUrlAttribute(): string
+    {
+        return url($this->public_path);
+    }
+
     public function getReadingTimeAttribute(): int
     {
         $wordCount = str_word_count(strip_tags($this->content));

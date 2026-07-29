@@ -21,7 +21,7 @@
 
     @foreach($posts as $post)
     <url>
-        <loc>{{ $baseUrl }}/blog/{{ $post->slug }}</loc>
+        <loc>{{ $baseUrl }}{{ $post->public_path }}</loc>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
         <lastmod>{{ $post->updated_at->toAtomString() }}</lastmod>

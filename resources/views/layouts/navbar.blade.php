@@ -95,7 +95,7 @@
 
             <a href="{{ route('blog.index') }}"
                class="nav-pill {{ request()->routeIs('blog.*') ? 'active' : '' }}">
-                📰 Blog
+                📰 Football News
             </a>
 
             {{-- More dropdown --}}
@@ -335,7 +335,7 @@
 
         <a href="{{ route('blog.index') }}" class="drawer-item {{ request()->routeIs('blog.*') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">📝</span>
-            <span class="di-text">Blog</span>
+            <span class="di-text">Football News</span>
         </a>
         <a href="{{ route('about') }}" class="drawer-item {{ request()->routeIs('about') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">ℹ️</span>

@@ -46,7 +46,7 @@ class SeoController extends Controller
             ['path' => '/booking-codes',              'priority' => '0.6', 'freq' => 'daily'],
             ['path' => '/winners',                    'priority' => '0.6', 'freq' => 'weekly'],
             ['path' => '/hall-of-fame',               'priority' => '0.6', 'freq' => 'weekly'],
-            ['path' => '/blog',                       'priority' => '0.8', 'freq' => 'daily'],
+            ['path' => '/football-news',               'priority' => '0.8', 'freq' => 'daily'],
             ['path' => '/about',                      'priority' => '0.5', 'freq' => 'monthly'],
             ['path' => '/contact',                    'priority' => '0.5', 'freq' => 'monthly'],
             ['path' => '/privacy',                    'priority' => '0.3', 'freq' => 'yearly'],

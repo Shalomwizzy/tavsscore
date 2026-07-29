@@ -39,7 +39,7 @@
     <link rel="canonical" href="@hasSection('canonical')@yield('canonical')@else{{ url()->current() }}@endif">
 
     {{-- WebSite structured data --}}
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TavsScore","url":"{{ url('/') }}","description":"Real-time football live scores, AI-powered match predictions and football news.","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"{{ url('/blog') }}?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"TavsScore","url":"{{ url('/') }}","description":"Real-time football live scores, AI-powered match predictions and football news.","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"{{ url('/football-news') }}?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
 
     {{-- Google Analytics 4 (consent-gated) --}}
     @if(config('services.ga.id'))
@@ -736,7 +736,7 @@
                     <div class="footer-col-title">Community</div>
                     <a href="{{ route('winners.index') }}">🏆 Submit a Win</a>
                     <a href="{{ route('hall-of-fame.index') }}">🥇 Hall of Fame</a>
-                    <a href="{{ route('blog.index') }}">📝 Blog</a>
+                    <a href="{{ route('blog.index') }}">📝 Football News</a>
                     @if($telegramUrl)
                     <a href="{{ $telegramUrl }}" target="_blank" rel="noopener">✈️ Telegram Channel</a>
                     @endif

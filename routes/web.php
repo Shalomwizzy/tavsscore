@@ -65,9 +65,19 @@ Route::post('/winners/submit',          [WinnersController::class, 'submit'])->m
 Route::get('/hall-of-fame',             [HallOfFameController::class, 'index'])->name('hall-of-fame.index');
 Route::get('/winners/check-username',   [HallOfFameController::class, 'checkUsername'])->name('winners.check-username');
 
-/* ── Blog ── */
-Route::get('/blog',        [BlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+/* ── Football News ── */
+Route::get('/football-news', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/football-news/{year}/{month}/{day}/{slug}', [BlogController::class, 'show'])
+    ->whereNumber('year')
+    ->where('month', '\d{2}')
+    ->where('day', '\d{2}')
+    ->where('slug', '[A-Za-z0-9-]+')
+    ->name('blog.show');
+
+// Preserve every existing blog URL permanently so Google transfers the old
+// pages' signals to the dated football-news format instead of seeing a 404.
+Route::get('/blog', [BlogController::class, 'legacyIndex'])->name('blog.legacy-index');
+Route::get('/blog/{slug}', [BlogController::class, 'legacyShow'])->name('blog.legacy-show');
 
 /* ── Static pages (required for AdSense approval) ── */
 Route::get('/about',   [PageController::class, 'about'])->name('about');

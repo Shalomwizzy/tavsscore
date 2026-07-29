@@ -203,10 +203,10 @@ class PublicPagesTest extends TestCase
     {
         $baseUrl = config('app.url');
 
-        $this->get('/blog')
+        $this->get('/football-news')
             ->assertStatus(200)
             ->assertSee('name="robots" content="index, follow', false)
-            ->assertSee('rel="canonical" href="' . $baseUrl . '/blog"', false);
+            ->assertSee('rel="canonical" href="' . $baseUrl . '/football-news"', false);
     }
 
     public function test_blog_show_loads_for_published_post(): void
@@ -222,10 +222,14 @@ class PublicPagesTest extends TestCase
             'image_path'   => 'images/blog/test-football-post.png',
         ]);
 
-        $this->get('/blog/' . $post->slug)
+        $this->get($post->public_path)
             ->assertStatus(200)
             ->assertSee('property="og:type"        content="article"', false)
             ->assertSee($baseUrl . '/images/blog/test-football-post.png', false);
+
+        $this->get('/blog/' . $post->slug)
+            ->assertStatus(301)
+            ->assertRedirect($post->public_url);
     }
 
     // ── Static pages ────────────────────────────────────────────────
@@ -258,7 +262,14 @@ class PublicPagesTest extends TestCase
         $response = $this->get('/sitemap.xml');
         $response->assertStatus(200);
         $this->assertStringContainsString('xml', $response->headers->get('Content-Type'));
-        $response->assertSee($baseUrl . '/blog', false);
+        $response->assertSee($baseUrl . '/football-news', false);
+    }
+
+    public function test_legacy_blog_index_permanently_redirects_to_football_news(): void
+    {
+        $this->get('/blog?category=Football%20News')
+            ->assertStatus(301)
+            ->assertRedirect(url('/football-news?category=Football%20News'));
     }
 
     public function test_robots_txt_loads(): void

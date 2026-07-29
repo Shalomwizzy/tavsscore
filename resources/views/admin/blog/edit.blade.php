@@ -7,7 +7,7 @@
     <div class="page-hd">
         <span class="page-hd-title">✏️ Edit: {{ Str::limit($blog->title, 50) }}</span>
         <div style="display:flex; gap:.5rem;">
-            <a href="{{ route('blog.show', $blog->slug) }}" target="_blank" class="btn-a btn-gray">🔗 View Live</a>
+            <a href="{{ $blog->public_url }}" target="_blank" class="btn-a btn-gray">🔗 View Live</a>
             <a href="{{ route('admin.blog.index') }}" class="btn-a btn-gray">← Back</a>
         </div>
     </div>
@@ -35,7 +35,7 @@
                             <span style="font-size:.68rem; font-weight:400; color:var(--dim); margin-left:.4rem;">changing this breaks existing links</span>
                         </label>
                         <div style="display:flex; align-items:center; gap:.5rem;">
-                            <span style="font-size:.78rem; color:var(--dim); white-space:nowrap; flex-shrink:0;">tavsscore.com/blog/</span>
+                            <span style="font-size:.78rem; color:var(--dim); white-space:nowrap; flex-shrink:0;">tavsscore.com/football-news/YYYY/MM/DD/</span>
                             <input id="slug" type="text" name="slug" class="form-input"
                                    value="{{ old('slug', $blog->slug) }}" style="font-family:monospace; font-size:.82rem;" required>
                         </div>

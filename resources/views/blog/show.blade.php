@@ -6,7 +6,7 @@
 @section('og_description', $post->excerpt_or_generated)
 @section('og_type', 'article')
 @section('og_image', $post->absolute_image_url ?? '')
-@section('canonical', url('/blog/' . $post->slug))
+@section('canonical', $post->public_url)
 
 @push('styles')
 <style>
@@ -116,7 +116,7 @@ $jsonLd = json_encode([
         'name' => 'TavsScore',
         'url' => url('/'),
     ],
-    'mainEntityOfPage' => url('/blog/' . $post->slug),
+    'mainEntityOfPage' => $post->public_url,
     'image' => $post->absolute_image_url,
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 @endphp
@@ -182,11 +182,11 @@ $jsonLd = json_encode([
         {{-- Share --}}
         <div class="share-bar">
             <span class="share-label">Share:</span>
-            <a href="https://twitter.com/intent/tweet?text={{ urlencode($post->title) }}&url={{ urlencode(route('blog.show', $post->slug)) }}"
+            <a href="https://twitter.com/intent/tweet?text={{ urlencode($post->title) }}&url={{ urlencode($post->public_url) }}"
                target="_blank" rel="noopener" class="share-btn">🐦 Twitter</a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('blog.show', $post->slug)) }}"
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($post->public_url) }}"
                target="_blank" rel="noopener" class="share-btn">📘 Facebook</a>
-            <a href="https://wa.me/?text={{ urlencode($post->title.' '.route('blog.show', $post->slug)) }}"
+            <a href="https://wa.me/?text={{ urlencode($post->title.' '.$post->public_url) }}"
                target="_blank" rel="noopener" class="share-btn">💬 WhatsApp</a>
         </div>
 
@@ -196,7 +196,7 @@ $jsonLd = json_encode([
             <div style="font-size:.75rem; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.07em; margin-bottom:.875rem;">Related Articles</div>
             <div class="related-grid">
                 @foreach($related as $rel)
-                <a href="{{ route('blog.show', $rel->slug) }}" class="related-card">
+                <a href="{{ $rel->public_url }}" class="related-card">
                     <div class="related-cat">{{ $rel->category }}</div>
                     <div class="related-title">{{ $rel->title }}</div>
                     <div class="related-date">{{ $rel->published_at?->format('M d, Y') }}</div>

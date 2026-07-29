@@ -144,7 +144,7 @@
                     <a href="{{ route('about') }}"   style="font-size:.78rem; color:var(--green); text-decoration:none;">→ About TavsScore</a>
                     <a href="{{ route('privacy') }}" style="font-size:.78rem; color:var(--green); text-decoration:none;">→ Privacy Policy</a>
                     <a href="{{ route('terms') }}"   style="font-size:.78rem; color:var(--green); text-decoration:none;">→ Terms of Service</a>
-                    <a href="{{ route('blog.index') }}" style="font-size:.78rem; color:var(--green); text-decoration:none;">→ Blog</a>
+                    <a href="{{ route('blog.index') }}" style="font-size:.78rem; color:var(--green); text-decoration:none;">→ Football News</a>
                 </div>
             </div>
         </div>
