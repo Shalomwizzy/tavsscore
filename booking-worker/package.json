@@ -10,6 +10,7 @@
     "capture": "node src/capture.js",
     "login-setup": "node src/login-setup.js",
     "capture-bet": "node src/capture-bet.js",
+    "place-bet": "node src/place-bet.js",
     "postinstall": "playwright install chromium"
   },
   "dependencies": {
