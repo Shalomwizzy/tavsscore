@@ -136,7 +136,7 @@
 
     /* Editorial layers for the cinematic homepage experience. */
     .hm-signal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.7rem; }
-    .hm-signal { background:linear-gradient(145deg,rgba(22,33,44,.96),rgba(11,17,23,.98)); border:1px solid var(--line); border-radius:16px; padding:1rem; transition:transform .18s,border-color .18s; }
+    .hm-signal { color:var(--ink);text-decoration:none;background:linear-gradient(145deg,rgba(22,33,44,.96),rgba(11,17,23,.98)); border:1px solid var(--line); border-radius:16px; padding:1rem; transition:transform .18s,border-color .18s; }
     .hm-signal:hover { transform:translateY(-4px); border-color:var(--accbrd); }
     .hm-signal-top { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em; }
     .hm-signal-teams { display:flex;align-items:center;gap:.55rem;margin:1rem 0 .85rem; }
@@ -147,7 +147,7 @@
     .hm-signal-names strong { display:block;color:var(--ink);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .hm-signal-names span { display:block;color:var(--mute);font-size:.67rem;margin:.1rem 0; }
     .hm-signal-label { color:var(--mint);font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em; }
-    .hm-signal-pick { font-size:.95rem;font-weight:800;margin:.22rem 0 .65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hm-signal-pick { color:var(--ink);font-size:.95rem;font-weight:800;margin:.22rem 0 .65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .hm-signal-bar { height:5px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden; }
     .hm-signal-bar i { display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--acc),var(--mint)); }
     .hm-signal-foot { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.67rem;margin-top:.5rem; }
@@ -413,7 +413,7 @@
 
     {{-- ── TENNIS ── --}}
     <section class="hm-band" style="padding-top:1rem;">
-        <div class="wrap hm-reveal"><div class="hm-tennis-band"><div class="hm-tennis-image" @if($homeMedia['tennis']) style="background-image:url('{{ asset($homeMedia['tennis']) }}')" @endif></div><div class="hm-tennis-copy"><div class="hm-eye" style="color:#93c5fd;">Tennis</div><h2 class="hm-h2" style="font-size:2rem;">More than football.<br>Smart tennis insights.</h2><p class="hm-desc">Match previews, player form and modelled signals across ATP and WTA tours.</p><a href="{{ route('tennis.index') }}" class="hm-ghost" style="display:inline-block;border:1px solid var(--line2);border-radius:10px;margin-top:1rem;color:var(--ink);">Explore tennis →</a></div></div></div>
+        <div class="wrap hm-reveal"><div class="hm-tennis-band"><div class="hm-tennis-image" @if($homeMedia['tennis']) style="background-image:url('{{ asset($homeMedia['tennis']) }}')" @endif></div><div class="hm-tennis-copy"><div class="hm-eye" style="color:var(--mint);">Tennis</div><h2 class="hm-h2" style="font-size:2rem;">More than football.<br>Smart tennis insights.</h2><p class="hm-desc">Match previews, player form and modelled signals across ATP and WTA tours.</p><a href="{{ route('tennis.index') }}" class="hm-ghost" style="display:inline-block;border:1px solid var(--line2);border-radius:10px;margin-top:1rem;color:var(--ink);">Explore tennis →</a></div></div></div>
     </section>
 
     {{-- ── NEWS ── --}}

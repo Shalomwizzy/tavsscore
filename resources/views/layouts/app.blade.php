@@ -613,7 +613,7 @@
         }
 
         /* ── Mobile nav — handled by drawer in navbar.blade.php ── */
-        @media (max-width: 860px) {
+        @media (max-width: 960px) {
             .nav-toggle { display: flex; }
             .nav-links  { display: none !important; }
         }

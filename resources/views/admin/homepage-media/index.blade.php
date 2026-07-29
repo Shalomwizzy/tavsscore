@@ -22,6 +22,7 @@
                 'homepage_hero_image' => ['Hero Stadium Image', 'Main image behind the homepage hero', 'Wide 16:9 · 1920 × 1080 recommended'],
                 'homepage_feature_image' => ['Football Feature Image', 'Football story and prediction feature image', 'Landscape or portrait · 1400 × 1000 recommended'],
                 'homepage_tennis_image' => ['Tennis Banner Image', 'Tennis prediction section image', 'Wide 16:9 · 1400 × 700 recommended'],
+                'fantasy_feature_image' => ['Fantasy Football Hero Image', 'Fantasy Best XI page hero image', 'Wide 16:9 · 1600 × 900 recommended'],
             ] as $field => [$label, $description, $hint])
                 @php($path = $settings[$field]->value ?? null)
                 <section style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">

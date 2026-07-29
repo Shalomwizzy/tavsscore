@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FantasySquad;
+use App\Models\Setting;
 use Illuminate\View\View;
 
 class FantasyController extends Controller
@@ -15,6 +16,8 @@ class FantasyController extends Controller
             ->latest('id')
             ->first();
 
-        return view('fantasy.index', compact('squad'));
+        $fantasyHero = Setting::get('fantasy_feature_image');
+
+        return view('fantasy.index', compact('squad', 'fantasyHero'));
     }
 }

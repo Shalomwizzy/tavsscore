@@ -25,6 +25,9 @@
             <a href="{{ route('tennis.index') }}"
                class="nav-pill {{ request()->routeIs('tennis.*') ? 'active' : '' }}">🎾 Tennis</a>
 
+            <a href="{{ route('fantasy.index') }}"
+               class="nav-pill {{ request()->routeIs('fantasy.index') ? 'active' : '' }}">🏆 Fantasy</a>
+
             {{-- Picks dropdown --}}
             <div class="nav-drop {{ request()->routeIs('picks.index','draw-picks.index','gg-picks.index','over15-picks.index','over25-picks.index','team3plus-picks.index','double-chance.index','lineup-picks.index','correct-score.index','rollover.*') ? 'nav-drop-active' : '' }}" id="drop-picks">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
@@ -80,10 +83,6 @@
                     <a href="{{ route('corners-picks.index') }}" class="nav-drop-item {{ request()->routeIs('corners-picks.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🚩</span>
                         <span><span class="ndi-label">Corner Picks</span><span class="ndi-sub">Safest total-corners line</span></span>
-                    </a>
-                    <a href="{{ route('fantasy.index') }}" class="nav-drop-item {{ request()->routeIs('fantasy.index') ? 'active' : '' }}" role="menuitem">
-                        <span class="ndi-icon">🏆</span>
-                        <span><span class="ndi-label">Fantasy Best XI</span><span class="ndi-sub">Weekly dream team &amp; buys</span></span>
                     </a>
                 </div>
             </div>
@@ -198,6 +197,10 @@
             <span class="di-icon">🎾</span>
             <span class="di-text">Tennis Predictions</span>
         </a>
+        <a href="{{ route('fantasy.index') }}" class="drawer-item {{ request()->routeIs('fantasy.index') ? 'active' : '' }}" onclick="closeDrawer()">
+            <span class="di-icon">🏆</span>
+            <span class="di-text">Fantasy Best XI</span>
+        </a>
         <a href="{{ route('africa.index') }}" class="drawer-item {{ request()->routeIs('africa.index') ? 'active' : '' }}" onclick="closeDrawer()" style="{{ request()->routeIs('africa.index') ? '' : 'color:#6ee7b7;' }}">
             <span class="di-icon">🌍</span>
             <span class="di-text">Africa</span>
@@ -288,13 +291,6 @@
             <span class="di-text">
                 Corner Picks
                 <small>Safest total-corners line</small>
-            </span>
-        </a>
-        <a href="{{ route('fantasy.index') }}" class="drawer-item {{ request()->routeIs('fantasy.index') ? 'active' : '' }}" onclick="closeDrawer()">
-            <span class="di-icon">🏆</span>
-            <span class="di-text">
-                Fantasy Best XI
-                <small>Weekly dream team &amp; buys</small>
             </span>
         </a>
 
@@ -582,7 +578,7 @@
 }
 
 /* ── Show on mobile only ─────────────────────────────────── */
-@media (max-width: 860px) {
+@media (max-width: 960px) {
     .nav-toggle { display: flex; }
     .nav-links  { display: none !important; }
 }
