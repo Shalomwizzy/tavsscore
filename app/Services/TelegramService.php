@@ -21,21 +21,28 @@ class TelegramService
         return ! blank($this->token) && ! blank($this->channelId);
     }
 
-    public function send(string $message): void
+    /** @param array<int, array<int, array{text: string, url: string}>>|null $inlineKeyboard */
+    public function send(string $message, ?array $inlineKeyboard = null): void
     {
         if (! $this->isConfigured()) {
             Log::info('Telegram not configured - skipping message.');
             return;
         }
 
+        $payload = [
+            'chat_id'                  => $this->channelId,
+            'text'                     => $message,
+            'parse_mode'               => 'HTML',
+            'disable_web_page_preview' => true,
+        ];
+
+        if ($inlineKeyboard !== null) {
+            $payload['reply_markup'] = ['inline_keyboard' => $inlineKeyboard];
+        }
+
         $response = Http::timeout(10)->post(
             "https://api.telegram.org/bot{$this->token}/sendMessage",
-            [
-                'chat_id'                  => $this->channelId,
-                'text'                     => $message,
-                'parse_mode'               => 'HTML',
-                'disable_web_page_preview' => false,
-            ]
+            $payload
         );
 
         if (! $response->successful()) {
@@ -56,34 +63,37 @@ class TelegramService
 
         $date  = now('Africa/Lagos')->format('l, d M Y');
         $lines = [
-            "🏆 <b>TAVSSCORE — DAILY PICKS</b>",
-            "<i>📅 {$date}</i>",
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            '⚽ <b>TODAY\'S FOOTBALL SIGNALS</b>',
+            "<i>{$date} • TavsScore data-led analysis</i>",
+            '',
+            '<b>THE SHORTLIST</b>',
         ];
 
         foreach ($picks as $i => $pick) {
-            $match  = $pick['match']      ?? '';
-            $tip    = $pick['tip']        ?? '';
+            $match  = $this->escape((string) ($pick['match'] ?? ''));
+            $tip    = $this->escape((string) ($pick['tip'] ?? ''));
             $conf   = $pick['confidence'] ?? '';
-            $league = $pick['league']     ?? '';
+            $league = $this->escape((string) ($pick['league'] ?? ''));
+            $signal = $i === 0 ? '🟢' : ($i === 1 ? '🟡' : '🔵');
+            $confidence = $conf !== '' ? " <b>• {$conf}%</b>" : '';
 
-            if ($i === 0) {
-                $lines[] = "\n👑 <b>TOP PICK</b>";
-            } else {
-                $lines[] = "\n⭐ <b>PICK " . ($i + 1) . "</b>";
-            }
-
-            if ($league) $lines[] = "🏟️ <i>{$league}</i>";
-            $lines[] = "⚽ <b>{$match}</b>";
-            $lines[] = "📌 Tip: <b>{$tip}</b>";
-            $lines[] = "📊 AI Confidence: <b>{$conf}%</b>";
+            $lines[] = "\n{$signal} <b>{$match}</b>";
+            $lines[] = "{$tip}{$confidence}";
+            if ($league !== '') $lines[] = "<i>{$league}</i>";
         }
 
-        $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
-        $lines[] = "🔗 <a href=\"{$siteUrl}/picks\">Full analysis &amp; reasoning →</a>";
-        $lines[] = "\n<i>⚠️ AI predictions — not financial advice. Gamble responsibly.</i>";
+        $lines[] = "\n<i>Data checked: form • team news • match trends</i>";
+        $lines[] = '<i>Predictions are analysis, not guarantees. Play responsibly.</i>';
 
-        $this->send(implode("\n", $lines));
+        $this->send(implode("\n", $lines), [[[
+            'text' => 'VIEW ALL PREDICTIONS →',
+            'url' => rtrim($siteUrl, '/') . '/predictions',
+        ]]]);
+    }
+
+    private function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     public function sendLineupPicks(array $picks, string $siteUrl): void

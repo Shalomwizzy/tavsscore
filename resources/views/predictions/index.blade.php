@@ -19,6 +19,24 @@
         margin-bottom: 1.25rem;
     }
 
+    .pred-experience {
+        position:relative; overflow:hidden; border:1px solid rgba(16,185,129,.24); border-radius:16px;
+        padding:1.35rem; margin:1.35rem 0 1rem;
+        background:radial-gradient(circle at 78% 0%,rgba(16,185,129,.17),transparent 31%),linear-gradient(135deg,#101b2d,#0a111e 72%);
+    }
+    .pred-experience:after { content:''; position:absolute; inset:auto -5% -90px auto; width:360px; height:220px; border:1px solid rgba(16,185,129,.15); border-radius:50%; transform:rotate(-17deg); pointer-events:none; }
+    .pred-experience-grid { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,.9fr); gap:1rem; align-items:end; }
+    .pred-kicker { color:#6ee7b7; font-size:.68rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    .pred-experience h1 { color:#fff; font-size:clamp(1.55rem,3vw,2.25rem); letter-spacing:-.04em; margin:.35rem 0; line-height:1; }
+    .pred-experience p { color:var(--text-dim); font-size:.82rem; line-height:1.55; max-width:610px; margin:.55rem 0 0; }
+    .pred-hero-actions { display:flex; gap:.55rem; flex-wrap:wrap; margin-top:1rem; }
+    .pred-hero-btn { display:inline-flex; align-items:center; gap:.35rem; padding:.52rem .75rem; border-radius:8px; text-decoration:none; color:#d1fae5; background:rgba(16,185,129,.13); border:1px solid rgba(16,185,129,.34); font-size:.72rem; font-weight:800; }
+    .pred-hero-btn.secondary { color:var(--text-dim); background:rgba(255,255,255,.04); border-color:var(--border); }
+    .pred-health { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem; }
+    .pred-health-card { padding:.75rem; min-height:78px; border-radius:10px; background:rgba(4,10,21,.48); border:1px solid rgba(255,255,255,.09); }
+    .pred-health-value { color:#fff; font-size:1.2rem; font-weight:900; letter-spacing:-.03em; }
+    .pred-health-label { color:var(--text-dim); font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-top:.25rem; }
+
     .preds-title   { font-size:1.35rem; font-weight:800; color:#fff; letter-spacing:-.02em; margin:0 0 .2rem; }
     .preds-sub     { font-size:.75rem; color:var(--text-dim); }
     .preds-actions { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
@@ -256,6 +274,8 @@
         .prob-row { grid-template-columns:1fr 3rem; }
         .prob-label { display:none; }
         .preds-header { flex-direction:column; align-items:flex-start; }
+        .pred-experience { padding:1rem; }
+        .pred-experience-grid { grid-template-columns:1fr; }
     }
 
     /* Left info block in card header */
@@ -281,29 +301,28 @@
 @section('content')
 <div class="wrap">
 
+    <section class="pred-experience">
+        <div class="pred-experience-grid">
+            <div>
+                <div class="pred-kicker">TavsScore Football Intelligence</div>
+                <h1>@if($dateMeta['is_today'])Today’s Football Signals@else Predictions for {{ $dateMeta['pretty'] }}@endif</h1>
+                <p>Clear match signals built from current form, team news and modelled match trends. Tap any prediction for the full breakdown.</p>
+                <div class="pred-hero-actions">
+                    <a href="{{ route('picks.index') }}" class="pred-hero-btn">⭐ View today’s shortlist</a>
+                    <a href="{{ route('daily-football-predictions.index', ['date' => $dateMeta['iso']]) }}" class="pred-hero-btn secondary">📅 Daily results</a>
+                </div>
+            </div>
+            <div class="pred-health" aria-label="Prediction summary">
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-total">—</div><div class="pred-health-label">Signals today</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-high" style="color:#6ee7b7">—</div><div class="pred-health-label">High confidence</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-resolved" style="color:#93c5fd">—</div><div class="pred-health-label">Results verified</div></div>
+            </div>
+        </div>
+    </section>
+
     <div class="preds-header">
-        <div>
-            <h1 class="preds-title">
-                @if($dateMeta['is_today'])📊 Match Predictions
-                @else📊 Predictions for {{ $dateMeta['pretty'] }}
-                @endif
-            </h1>
-            <p class="preds-sub">
-                @if($dateMeta['is_today'])
-                    Win / Draw / Loss · Over 2.5 Goals · BTTS · Poisson model + AI · Top leagues first
-                @else
-                    Browsing predictions archive - see what we predicted on this day and how each one turned out.
-                @endif
-            </p>
-        </div>
-        <div class="preds-actions">
-            <span class="count-text" id="pred-count"></span>
-            @unless($dateMeta['is_today'])
-            <a href="{{ route('predictions.index') }}" class="gen-btn" style="text-decoration:none;">
-                <span class="gen-icon">↩</span> Back to today
-            </a>
-            @endunless
-        </div>
+        <div><div class="preds-title">Match predictions</div><div class="preds-sub">Win / Draw / Loss · Goals · Both teams to score · Match analysis</div></div>
+        <div class="preds-actions"><span class="count-text" id="pred-count"></span></div>
     </div>
 
     <div class="ts-tabs mb-4" style="max-width:380px">
@@ -377,6 +396,9 @@
     var elEmpty   = document.getElementById('empty-state');
     var elList    = document.getElementById('preds-list');
     var elCount   = document.getElementById('pred-count');
+    var elMetricTotal = document.getElementById('metric-total');
+    var elMetricHigh = document.getElementById('metric-high');
+    var elMetricResolved = document.getElementById('metric-resolved');
 
     /* Top-league sort order (API-Football IDs) */
     var TOP_ORDER = [2,3,39,61,78,135,140,848,88,94,40,48,45,144,179,203,253,71,307,262,292];
@@ -712,6 +734,9 @@
 
         elList.innerHTML = html;
         elCount.textContent = preds.length + ' prediction'+(preds.length!==1?'s':'')+' today';
+        if (elMetricTotal) elMetricTotal.textContent = preds.length;
+        if (elMetricHigh) elMetricHigh.textContent = preds.filter(function(p){ return Number(p.confidence || 0) >= 70; }).length;
+        if (elMetricResolved) elMetricResolved.textContent = preds.filter(function(p){ return p.was_correct === true || p.was_correct === false; }).length;
         showState('ready');
     }
 

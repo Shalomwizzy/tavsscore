@@ -21,18 +21,51 @@
     .pred-detail-text  { font-size:.78rem; color:var(--text); line-height:1.6; white-space:pre-wrap; word-break:break-word; }
     .pred-detail-empty { font-size:.74rem; color:var(--dim); font-style:italic; }
     .lang-flag { font-size:.85rem; }
+    .control-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; padding:1.2rem; border:1px solid rgba(16,185,129,.24); border-radius:12px; background:radial-gradient(circle at 80% 0%,rgba(16,185,129,.15),transparent 34%),linear-gradient(135deg,#101b2d,#0a111e); }
+    .control-kicker { color:#6ee7b7; font-size:.66rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em; }
+    .control-title { color:#fff; font-weight:900; font-size:1.4rem; letter-spacing:-.03em; margin:.3rem 0; }
+    .control-sub { color:var(--dim); font-size:.75rem; max-width:560px; line-height:1.5; }
+    .control-actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .control-date { display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+    .control-date .btn-a { padding:.38rem .65rem; font-size:.72rem; }
+    .metric-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.65rem; margin-bottom:1rem; }
+    .metric-card { padding:.8rem .85rem; background:var(--card); border:1px solid var(--border); border-radius:10px; }
+    .metric-value { color:#fff; font-size:1.3rem; font-weight:900; letter-spacing:-.03em; }
+    .metric-label { color:var(--dim); font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem; }
+    @media (max-width:850px) { .metric-grid { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:900px) { .pred-detail-inner { grid-template-columns: 1fr; } }
+    @media (max-width:520px) { .metric-grid { grid-template-columns:repeat(2,1fr); } }
 </style>
 @endpush
 
 @section('content')
 
-<div class="page-hd">
-    <span class="page-hd-title">📊 Predictions</span>
-    <form method="POST" action="{{ route('admin.predictions.generate') }}">
-        @csrf
-        <button type="submit" class="btn-a btn-green">🔄 Generate Predictions</button>
-    </form>
+<section class="control-hero">
+    <div>
+        <div class="control-kicker">TavsScore operations</div>
+        <div class="control-title">Prediction Control Centre</div>
+        <div class="control-sub">Monitor every football prediction for the selected date, check verified outcomes, and generate a fresh model run when new match data arrives.</div>
+    </div>
+    <div class="control-actions">
+        <a href="{{ route('admin.daily-football-predictions.index', ['date' => $dateMeta['iso']]) }}" class="btn-a btn-gray">📅 Daily Results</a>
+        <form method="POST" action="{{ route('admin.predictions.generate') }}">@csrf<button type="submit" class="btn-a btn-green">✦ Generate Predictions</button></form>
+    </div>
+</section>
+
+<div class="control-date">
+    <a href="{{ route('admin.predictions', ['date' => $dateMeta['previous_iso']]) }}" class="btn-a btn-gray">← Previous</a>
+    <a href="{{ route('admin.predictions') }}" class="btn-a {{ $dateMeta['is_today'] ? 'btn-green' : 'btn-gray' }}">Today</a>
+    <a href="{{ route('admin.predictions', ['date' => $dateMeta['yesterday_iso']]) }}" class="btn-a {{ $dateMeta['iso'] === $dateMeta['yesterday_iso'] ? 'btn-green' : 'btn-gray' }}">Yesterday</a>
+    @if($dateMeta['next_iso'])<a href="{{ route('admin.predictions', ['date' => $dateMeta['next_iso']]) }}" class="btn-a btn-gray">Next →</a>@endif
+    <form method="GET" style="margin-left:auto"><input type="date" name="date" value="{{ $dateMeta['iso'] }}" max="{{ $dateMeta['today_iso'] }}" class="form-input" style="width:auto;padding:.38rem .5rem;" onchange="this.form.submit()"></form>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-value">{{ $metrics['total'] }}</div><div class="metric-label">Predictions</div></div>
+    <div class="metric-card"><div class="metric-value" style="color:#6ee7b7">{{ $metrics['won'] }}</div><div class="metric-label">Won</div></div>
+    <div class="metric-card"><div class="metric-value" style="color:#fca5a5">{{ $metrics['lost'] }}</div><div class="metric-label">Lost</div></div>
+    <div class="metric-card"><div class="metric-value" style="color:#fcd34d">{{ $metrics['pending'] }}</div><div class="metric-label">Pending</div></div>
+    <div class="metric-card"><div class="metric-value" style="color:#93c5fd">{{ $metrics['accuracy'] !== null ? $metrics['accuracy'].'%' : '—' }}</div><div class="metric-label">Accuracy</div></div>
 </div>
 
 <div class="a-card">
