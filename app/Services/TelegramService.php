@@ -237,6 +237,68 @@ class TelegramService
         $this->send(implode("\n", $lines));
     }
 
+    public function sendCornersPicks(array $picks, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+
+        $date  = now('Africa/Lagos')->format('l, d M Y');
+        $lines = [
+            "🚩 <b>TAVSSCORE — CORNER PICKS</b>",
+            "<i>📅 {$date}</i>",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ];
+
+        foreach ($picks as $i => $pick) {
+            $match  = $pick['match']  ?? '';
+            $line   = $pick['line']   ?? '';
+            $prob   = $pick['prob']   ?? '';
+            $league = $pick['league'] ?? '';
+            $label  = $i === 0 ? '👑 <b>TOP PICK</b>' : '🚩 <b>PICK ' . ($i + 1) . '</b>';
+
+            $lines[] = "\n{$label}";
+            if ($league) $lines[] = "🏟️ <i>{$league}</i>";
+            $lines[] = "⚽ <b>{$match}</b>";
+            $lines[] = "📌 Tip: <b>{$line}</b>";
+            if ($prob !== '') $lines[] = "📊 Probability: <b>{$prob}%</b>";
+        }
+
+        $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        $lines[] = "🔗 <a href=\"{$siteUrl}/corners-picks\">Full analysis →</a>";
+        $lines[] = "\n<i>⚠️ AI predictions — not financial advice. Gamble responsibly.</i>";
+
+        $this->send(implode("\n", $lines));
+    }
+
+    public function sendGoalscorerPicks(array $picks, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+
+        $date  = now('Africa/Lagos')->format('l, d M Y');
+        $lines = [
+            "⚽ <b>TAVSSCORE — ANYTIME GOALSCORER</b>",
+            "<i>📅 {$date}</i>",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ];
+
+        foreach ($picks as $i => $pick) {
+            $player = $pick['player'] ?? '';
+            $match  = $pick['match']  ?? '';
+            $prob   = $pick['prob']   ?? '';
+            $label  = $i === 0 ? '👑 <b>TOP PICK</b>' : '⚽ <b>PICK ' . ($i + 1) . '</b>';
+
+            $lines[] = "\n{$label}";
+            $lines[] = "🎯 <b>{$player}</b> to score";
+            if ($match) $lines[] = "⚽ <i>{$match}</i>";
+            if ($prob !== '') $lines[] = "📊 Probability: <b>{$prob}%</b>";
+        }
+
+        $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        $lines[] = "🔗 <a href=\"{$siteUrl}/goalscorer-picks\">Full list →</a>";
+        $lines[] = "\n<i>⚠️ AI predictions — not financial advice. Gamble responsibly.</i>";
+
+        $this->send(implode("\n", $lines));
+    }
+
     public function sendTeam3PlusPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) return;

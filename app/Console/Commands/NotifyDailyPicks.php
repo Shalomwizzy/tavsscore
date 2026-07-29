@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 
 class NotifyDailyPicks extends Command
 {
-    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|team3plus|doublechance|lineup|correctscore (default: all)} {--force : Bypass already-sent cache guard}';
+    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|team3plus|doublechance|lineup|correctscore|corners|goalscorer (default: all)} {--force : Bypass already-sent cache guard}';
 
     protected $description = 'Send push + Telegram for today\'s picks. Use --type= to send one group at a time for staggered scheduling.';
 
@@ -308,6 +308,65 @@ class NotifyDailyPicks extends Command
                     $this->info("Correct score picks sent: {$scorePicks->count()}");
                 } else {
                     $this->warn('No correct score predictions today — skipped.');
+                }
+            }
+        }
+
+        // ── Corner picks ───────────────────────────────────────────
+        if ($type === 'all' || $type === 'corners') {
+            if (! $force && Cache::has("picks_sent_corners_{$date}")) {
+                $this->info('Corner picks already notified today — skipping (use --force to re-send).');
+            } else {
+                $cornerPicks = Prediction::query()
+                    ->with('match')
+                    ->where('is_corners_pick', true)
+                    ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                    ->orderBy('corners_rank')
+                    ->get();
+
+                if ($cornerPicks->isNotEmpty()) {
+                    $top = $cornerPicks->first();
+                    $topMatch = $top->match ? "{$top->match->home_team} vs {$top->match->away_team}" : '';
+                    $oneSignal->notifyCornersPicks($topMatch, $top->corners_label ?? 'Corners', $cornerPicks->count());
+                    $telegram->sendCornersPicks($cornerPicks->map(function ($p) {
+                        $m = $p->match;
+                        if (! $m) return null;
+                        $board = is_array($p->market_board) ? $p->market_board : [];
+                        return [
+                            'match'  => "{$m->home_team} vs {$m->away_team}",
+                            'league' => LeagueCoverage::formatName($m->league, $m->league_country),
+                            'line'   => $p->corners_label ?? 'Corners',
+                            'prob'   => isset($board[$p->corners_label]) ? round((float) $board[$p->corners_label]) : '',
+                        ];
+                    })->filter()->values()->toArray(), $url);
+                    Cache::put("picks_sent_corners_{$date}", true, now()->addHours(36));
+                    $this->info("Corner picks sent: {$cornerPicks->count()}");
+                } else {
+                    $this->warn('No corner picks today — skipped.');
+                }
+            }
+        }
+
+        // ── Anytime goalscorer picks (computed on the fly) ─────────
+        if ($type === 'all' || $type === 'goalscorer') {
+            if (! $force && Cache::has("picks_sent_goalscorer_{$date}")) {
+                $this->info('Goalscorer picks already notified today — skipping (use --force to re-send).');
+            } else {
+                $gs = app(\App\Http\Controllers\GoalscorerPicksController::class)->buildPicks(10);
+                $scorers = collect($gs['picks'] ?? []);
+
+                if ($scorers->isNotEmpty()) {
+                    $top = $scorers->first();
+                    $oneSignal->notifyGoalscorerPicks($top['player'] ?? 'Top scorer', $scorers->count());
+                    $telegram->sendGoalscorerPicks($scorers->map(fn ($p) => [
+                        'player' => $p['player'] ?? '',
+                        'match'  => $p['match'] ?? '',
+                        'prob'   => isset($p['probability']) ? round((float) $p['probability']) : '',
+                    ])->values()->toArray(), $url);
+                    Cache::put("picks_sent_goalscorer_{$date}", true, now()->addHours(36));
+                    $this->info("Goalscorer picks sent: {$scorers->count()}");
+                } else {
+                    $this->warn('No goalscorer picks today — skipped.');
                 }
             }
         }

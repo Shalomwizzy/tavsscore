@@ -74,6 +74,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:notify --type=team3plus')->dailyAt('02:40')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=doublechance')->dailyAt('02:48')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=correctscore')->dailyAt('02:56')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=corners')->dailyAt('03:04')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=goalscorer')->dailyAt('03:12')->timezone('Africa/Lagos')->withoutOverlapping();
         // Backup runs at 08:00 — covers types where predictions aren't ready by the primary run.
         // Cache guards in NotifyDailyPicks prevent double-sending if the primary already fired.
         $schedule->command('picks:notify --type=draw')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
@@ -83,6 +85,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:notify --type=team3plus')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=doublechance')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:notify --type=correctscore')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=corners')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:notify --type=goalscorer')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Re-predict daily pick matches the moment their confirmed lineup drops
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new
@@ -95,8 +99,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('picks:fetch-closing-odds')->dailyAt('14:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Select today's rollover ticket (1-5 safest legs, ≤2.00 combined odds)
-        // at 10:30 Lagos — after the 03:00-10:00 prediction runs have boards stored.
-        $schedule->command('rollover:select')->dailyAt('10:30')->timezone('Africa/Lagos')->withoutOverlapping();
+        // at 06:00 Lagos — after the 01:30 selection has stored the market boards.
+        $schedule->command('rollover:select')->dailyAt('06:00')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Post today's pick results to Telegram at 23:00 Lagos
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();

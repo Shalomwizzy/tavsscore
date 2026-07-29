@@ -131,6 +131,24 @@ class OneSignalService
         );
     }
 
+    public function notifyCornersPicks(string $topMatch, string $topLine, int $total): void
+    {
+        $this->sendMatchAlert(
+            title:   "🚩 {$total} Corner Pick" . ($total > 1 ? 's' : '') . " Live!",
+            message: "{$topMatch} — {$topLine}. Tap for all corner picks →",
+            path:    '/corners-picks',
+        );
+    }
+
+    public function notifyGoalscorerPicks(string $topPlayer, int $total): void
+    {
+        $this->sendMatchAlert(
+            title:   "⚽ {$total} Goalscorer Pick" . ($total > 1 ? 's' : '') . " Today!",
+            message: "{$topPlayer} leads today's anytime-scorer picks. Tap to see them →",
+            path:    '/goalscorer-picks',
+        );
+    }
+
     public function notifyTeam3Picks(string $topMatch, string $topTeam, int $total): void
     {
         $this->sendMatchAlert(
