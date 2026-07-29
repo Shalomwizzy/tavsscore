@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">🎯 Team 3+ Goals Picks</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.team3plus.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, then select and send only qualifying Team 3+ picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.team3plus.refresh') }}"
               onsubmit="return confirm('Re-select today\'s Team 3+ picks? This overwrites the current selection.');">
             @csrf

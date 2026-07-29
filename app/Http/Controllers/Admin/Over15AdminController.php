@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class Over15AdminController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(private readonly PredictionService $predictionService, private readonly FootballPredictionBoardRefresher $boardRefresher) {}
 
     public function index(): View
     {
@@ -56,5 +57,17 @@ class Over15AdminController extends Controller
 
         return redirect()->route('admin.over15.index')
             ->with('success', "Re-selected {$picks->count()} Over 1.5 picks.");
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = $this->predictionService->selectOver15Picks();
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => 'over15', '--force' => true]);
+            return redirect()->route('admin.over15.index')->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} Over 1.5 pick(s) qualified and were sent where available.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.over15.index')->with('error', $exception->getMessage());
+        }
     }
 }

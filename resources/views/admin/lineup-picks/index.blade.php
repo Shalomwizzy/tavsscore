@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">⚡ Lineup Confirmed Picks</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.lineup-picks.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, check confirmed lineups, and send qualifying lineup picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.lineup-picks.notify') }}"
               onsubmit="return confirm('Push all today\'s lineup picks to Telegram and OneSignal?');">
             @csrf

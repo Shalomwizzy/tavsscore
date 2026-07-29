@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class CorrectScoreAdminController extends Controller
 {
+    public function __construct(private readonly FootballPredictionBoardRefresher $boardRefresher) {}
+
     public function index(): View
     {
         $tz     = 'Africa/Lagos';
@@ -50,5 +53,16 @@ class CorrectScoreAdminController extends Controller
 
         return redirect()->route('admin.correct-score.index')
             ->with('success', 'Correct score notification pushed to Telegram and OneSignal.');
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            Artisan::call('picks:notify', ['--type' => 'correctscore', '--force' => true]);
+            return redirect()->route('admin.correct-score.index')->with('success', 'Latest fixtures and model boards rebuilt. Qualifying correct-score signals were sent where available.');
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.correct-score.index')->with('error', $exception->getMessage());
+        }
     }
 }

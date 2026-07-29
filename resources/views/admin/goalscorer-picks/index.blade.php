@@ -6,7 +6,10 @@
 
 <div class="page-hd">
     <span class="page-hd-title">⚽ Goalscorer Picks — {{ $date }}</span>
-    <a href="{{ route('goalscorer-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Public Page</a>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.goalscorer-picks.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, standings and player statistics, then send qualifying goalscorer picks? This uses API credits.');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull player data + rebuild</button></form>
+        <a href="{{ route('goalscorer-picks.index') }}" target="_blank" class="btn-a btn-blue">↗ Public Page</a>
+    </div>
 </div>
 
 <div style="font-size:.78rem; color:var(--dim); background:var(--card,#111826); border:1px solid var(--border); border-radius:10px; padding:.7rem .9rem; margin-bottom:1.25rem;">

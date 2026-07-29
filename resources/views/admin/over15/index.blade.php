@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">⚽ Over 1.5 Picks Admin</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.over15.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, then select and send only qualifying Over 1.5 picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.over15.refresh') }}"
               onsubmit="return confirm('Re-select today\'s Over 1.5 picks? This overwrites the current selection.');">
             @csrf

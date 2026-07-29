@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class DrawPicksAdminController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(private readonly PredictionService $predictionService, private readonly FootballPredictionBoardRefresher $boardRefresher) {}
 
     public function index(): View
     {
@@ -49,5 +51,17 @@ class DrawPicksAdminController extends Controller
 
         return redirect()->route('admin.draw-picks.index')
             ->with('success', "Re-selected {$picks->count()} draw picks.");
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = $this->predictionService->selectDrawPicks();
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => 'draw', '--force' => true]);
+            return redirect()->route('admin.draw-picks.index')->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} draw pick(s) qualified and were sent where available.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.draw-picks.index')->with('error', $exception->getMessage());
+        }
     }
 }

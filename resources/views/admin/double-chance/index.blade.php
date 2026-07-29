@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">🎯 Double Chance Picks (1X / 2X)</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.double-chance.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, then select and send only qualifying Double Chance picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.double-chance.refresh') }}"
               onsubmit="return confirm('Re-select today\'s Double Chance picks? This overwrites the current selection.');">
             @csrf

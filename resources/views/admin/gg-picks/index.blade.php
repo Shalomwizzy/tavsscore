@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">⚽ GG Picks</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.gg-picks.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, then select and send only qualifying GG picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.gg-picks.refresh') }}"
               onsubmit="return confirm('Re-select today\'s GG picks? This overwrites the current selection.');">
             @csrf

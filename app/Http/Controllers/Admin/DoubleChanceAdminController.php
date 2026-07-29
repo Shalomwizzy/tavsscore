@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class DoubleChanceAdminController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(private readonly PredictionService $predictionService, private readonly FootballPredictionBoardRefresher $boardRefresher) {}
 
     public function index(): View
     {
@@ -81,5 +82,17 @@ class DoubleChanceAdminController extends Controller
             : 'No Double Chance picks found for today — nothing sent. Run Re-select first.';
 
         return redirect()->route('admin.double-chance.index')->with('success', $msg);
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = $this->predictionService->selectDoubleChancePicks();
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => 'doublechance', '--force' => true]);
+            return redirect()->route('admin.double-chance.index')->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} Double Chance pick(s) qualified and were sent where available.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.double-chance.index')->with('error', $exception->getMessage());
+        }
     }
 }

@@ -131,11 +131,11 @@ class PredictionService
                 } catch (\Throwable) {}
             }
 
-            // Ensure every prediction has the full market board, even cached ones.
-            if (blank($existing->market_board)) {
-                [$hxs, $axs] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
-                $updates['market_board'] = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($hxs, $axs), $match);
-            }
+            // Always refresh the statistical market board. The written AI analysis
+            // can remain cached, but every pick selector must work from the latest
+            // form, H2H and xG inputs after a fixture/data refresh.
+            [$hxs, $axs] = $this->h2hXgCalibration($h2h, $homeXg, $awayXg);
+            $updates['market_board'] = $this->appendEventMarkets(MarketEngine::fromExpectedGoals($hxs, $axs), $match);
 
             return Prediction::query()->updateOrCreate(['match_id' => $match->id], $updates);
         }

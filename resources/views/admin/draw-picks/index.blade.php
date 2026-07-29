@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">🤝 Draw Picks</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.draw-picks.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, then select and send only qualifying draw picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.draw-picks.refresh') }}"
               onsubmit="return confirm('Re-select today\'s draw picks? This overwrites the current selection.');">
             @csrf

@@ -128,6 +128,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Predictions */
         Route::get('/predictions',          [Admin\PredictionAdminController::class, 'index'])->name('predictions');
         Route::post('/predictions/generate',[Admin\PredictionAdminController::class, 'generate'])->name('predictions.generate');
+        Route::post('/predictions/rebuild',[Admin\PredictionAdminController::class, 'rebuild'])->name('predictions.rebuild');
         Route::get('/daily-football-predictions', [Admin\DailyFootballPredictionsAdminController::class, 'index'])->name('daily-football-predictions.index');
 
         /* Tennis (isolated from football) */
@@ -145,6 +146,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/picks/refresh',      [Admin\PicksAdminController::class, 'refresh'])->name('picks.refresh');
         Route::post('/picks/refresh-draw', [Admin\PicksAdminController::class, 'refreshDraw'])->name('picks.refresh-draw');
         Route::post('/picks/refresh-gg',   [Admin\PicksAdminController::class, 'refreshGG'])->name('picks.refresh-gg');
+        Route::post('/picks/rebuild-daily', [Admin\PicksAdminController::class, 'rebuildDaily'])->name('picks.rebuild-daily');
+        Route::post('/picks/rebuild-draw', [Admin\PicksAdminController::class, 'rebuildDraw'])->name('picks.rebuild-draw');
+        Route::post('/picks/rebuild-gg', [Admin\PicksAdminController::class, 'rebuildGG'])->name('picks.rebuild-gg');
         Route::post('/picks/recheck',      [Admin\PicksAdminController::class, 'recheck'])->name('picks.recheck');
         Route::post('/picks/{prediction}/regenerate', [Admin\PicksAdminController::class, 'regeneratePick'])->name('picks.regenerate');
 
@@ -153,6 +157,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Goalscorer Picks (read-only — computed live from player stats) */
         Route::get('/goalscorer-picks', [Admin\GoalscorerPicksAdminController::class, 'index'])->name('goalscorer-picks.index');
+        Route::post('/goalscorer-picks/rebuild', [Admin\GoalscorerPicksAdminController::class, 'rebuild'])->name('goalscorer-picks.rebuild');
 
         /* Fantasy — best XI from player stats */
         Route::get('/fantasy',         [Admin\FantasyAdminController::class, 'index'])->name('fantasy.index');
@@ -171,26 +176,32 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Draw Picks */
         Route::get('/draw-picks',          [Admin\DrawPicksAdminController::class, 'index'])->name('draw-picks.index');
         Route::post('/draw-picks/refresh', [Admin\DrawPicksAdminController::class, 'refresh'])->name('draw-picks.refresh');
+        Route::post('/draw-picks/rebuild', [Admin\DrawPicksAdminController::class, 'rebuild'])->name('draw-picks.rebuild');
 
         /* GG Picks */
         Route::get('/gg-picks',          [Admin\GGPicksAdminController::class, 'index'])->name('gg-picks.index');
         Route::post('/gg-picks/refresh', [Admin\GGPicksAdminController::class, 'refresh'])->name('gg-picks.refresh');
+        Route::post('/gg-picks/rebuild', [Admin\GGPicksAdminController::class, 'rebuild'])->name('gg-picks.rebuild');
 
         /* Lineup Picks */
         Route::get('/lineup-picks',          [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'index'])->name('lineup-picks.index');
         Route::post('/lineup-picks/notify',  [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'sendNotification'])->name('lineup-picks.notify');
+        Route::post('/lineup-picks/rebuild', [\App\Http\Controllers\Admin\LineupPicksAdminController::class, 'rebuild'])->name('lineup-picks.rebuild');
 
         /* Correct Score */
         Route::get('/correct-score',         [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'index'])->name('correct-score.index');
         Route::post('/correct-score/notify', [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'sendNotification'])->name('correct-score.notify');
+        Route::post('/correct-score/rebuild', [\App\Http\Controllers\Admin\CorrectScoreAdminController::class, 'rebuild'])->name('correct-score.rebuild');
 
         /* Over 1.5 Picks */
         Route::get('/over15',          [\App\Http\Controllers\Admin\Over15AdminController::class, 'index'])->name('over15.index');
         Route::post('/over15/refresh', [\App\Http\Controllers\Admin\Over15AdminController::class, 'refresh'])->name('over15.refresh');
+        Route::post('/over15/rebuild', [\App\Http\Controllers\Admin\Over15AdminController::class, 'rebuild'])->name('over15.rebuild');
 
         /* Over 2.5 Picks */
         Route::get('/over25',          [\App\Http\Controllers\Admin\Over25AdminController::class, 'index'])->name('over25.index');
         Route::post('/over25/refresh', [\App\Http\Controllers\Admin\Over25AdminController::class, 'refresh'])->name('over25.refresh');
+        Route::post('/over25/rebuild', [\App\Http\Controllers\Admin\Over25AdminController::class, 'rebuild'])->name('over25.rebuild');
 
         /* Under goals & Asian Handicap Picks */
         Route::get('/under35', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'under35'])->name('under35.index');
@@ -209,14 +220,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Team 3+ Picks */
         Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');
         Route::post('/team3plus/refresh', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'refresh'])->name('team3plus.refresh');
+        Route::post('/team3plus/rebuild', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'rebuild'])->name('team3plus.rebuild');
         Route::get('/double-chance',          [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'index'])->name('double-chance.index');
         Route::post('/double-chance/refresh', [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'refresh'])->name('double-chance.refresh');
+        Route::post('/double-chance/rebuild', [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'rebuild'])->name('double-chance.rebuild');
         Route::post('/double-chance/notify',  [\App\Http\Controllers\Admin\DoubleChanceAdminController::class, 'notify'])->name('double-chance.notify');
 
         /* Rollover */
         Route::get('/rollover',                      [\App\Http\Controllers\Admin\RolloverAdminController::class, 'index'])->name('rollover.index');
         Route::post('/rollover/new-challenge',       [\App\Http\Controllers\Admin\RolloverAdminController::class, 'newChallenge'])->name('rollover.new-challenge');
         Route::post('/rollover/select-pick',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'selectPick'])->name('rollover.select-pick');
+        Route::post('/rollover/rebuild-board',        [\App\Http\Controllers\Admin\RolloverAdminController::class, 'rebuildBoard'])->name('rollover.rebuild-board');
         Route::post('/rollover/{pick}/void',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'voidPick'])->name('rollover.void-pick');
         Route::post('/rollover/{pick}/override',     [\App\Http\Controllers\Admin\RolloverAdminController::class, 'overridePick'])->name('rollover.override-pick');
 

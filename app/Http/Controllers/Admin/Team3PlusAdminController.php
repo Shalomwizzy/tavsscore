@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class Team3PlusAdminController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService) {}
+    public function __construct(private readonly PredictionService $predictionService, private readonly FootballPredictionBoardRefresher $boardRefresher) {}
 
     public function index(): View
     {
@@ -58,5 +59,17 @@ class Team3PlusAdminController extends Controller
 
         return redirect()->route('admin.team3plus.index')
             ->with('success', "Re-selected {$picks->count()} Team 3+ picks.");
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = $this->predictionService->selectTeam3PlusPicks();
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => 'team3plus', '--force' => true]);
+            return redirect()->route('admin.team3plus.index')->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} Team 3+ pick(s) qualified and were sent where available.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.team3plus.index')->with('error', $exception->getMessage());
+        }
     }
 }

@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">🔄 Rollover Challenge</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.rollover.rebuild-board') }}" onsubmit="return confirm('Pull latest fixtures and rebuild all model boards before selecting a rollover pick?');">@csrf<button type="submit" class="btn-a btn-gray">↻ Pull data + rebuild board</button></form>
         <form method="POST" action="{{ route('admin.rollover.select-pick') }}">
             @csrf
             <button type="submit" class="btn-a btn-green">🎯 Select Today's Pick</button>

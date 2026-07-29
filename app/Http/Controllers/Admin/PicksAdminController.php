@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,10 @@ use Illuminate\View\View;
 
 class PicksAdminController extends Controller
 {
-    public function __construct(private readonly PredictionService $predictionService)
+    public function __construct(
+        private readonly PredictionService $predictionService,
+        private readonly FootballPredictionBoardRefresher $boardRefresher,
+    )
     {
     }
 
@@ -123,6 +127,10 @@ class PicksAdminController extends Controller
             ->with('success', "Re-selected {$picks->count()} GG picks.");
     }
 
+    public function rebuildDaily(): RedirectResponse { return $this->rebuild('daily'); }
+    public function rebuildDraw(): RedirectResponse { return $this->rebuild('draw'); }
+    public function rebuildGG(): RedirectResponse { return $this->rebuild('gg'); }
+
     public function recheck(): RedirectResponse
     {
         Artisan::call('predictions:check-outcomes', ['--days' => 7]);
@@ -149,5 +157,22 @@ class PicksAdminController extends Controller
         $label = $match ? "{$match->home_team} vs {$match->away_team}" : "match #{$prediction->id}";
 
         return back()->with('success', "Regenerated prediction for {$label} and pushed {$type} notification.");
+    }
+
+    private function rebuild(string $type): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = match ($type) {
+                'daily' => $this->predictionService->selectDailyPicks(),
+                'draw' => $this->predictionService->selectDrawPicks(),
+                'gg' => $this->predictionService->selectGGPicks(),
+            };
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => $type, '--force' => true]);
+
+            return redirect()->route('admin.picks')->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} {$type} pick(s) qualified and were sent where available.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.picks')->with('error', $exception->getMessage());
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RolloverChallenge;
 use App\Models\RolloverPick;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\RolloverService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,16 @@ class RolloverAdminController extends Controller
         }
 
         return back()->with('success', "Today's rollover pick selected: {$pick->match?->home_team} vs {$pick->match?->away_team}.");
+    }
+
+    public function rebuildBoard(FootballPredictionBoardRefresher $boardRefresher): RedirectResponse
+    {
+        try {
+            $boardRefresher->refreshFixturesAndBoards();
+            return back()->with('success', 'Latest fixtures and prediction boards rebuilt. Review the data, then select today’s rollover pick.');
+        } catch (\Throwable $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
     }
 
     public function voidPick(RolloverPick $pick): RedirectResponse

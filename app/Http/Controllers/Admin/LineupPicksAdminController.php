@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class LineupPicksAdminController extends Controller
 {
+    public function __construct(private readonly FootballPredictionBoardRefresher $boardRefresher) {}
+
     public function index(): View
     {
         $tz     = 'Africa/Lagos';
@@ -49,5 +52,17 @@ class LineupPicksAdminController extends Controller
 
         return redirect()->route('admin.lineup-picks.index')
             ->with('success', 'Lineup picks notification pushed to Telegram and OneSignal.');
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            Artisan::call('picks:update-lineups');
+            Artisan::call('picks:notify', ['--type' => 'lineup', '--force' => true]);
+            return redirect()->route('admin.lineup-picks.index')->with('success', 'Latest fixtures and boards rebuilt. Confirmed lineups were checked and qualifying lineup picks were sent where available.');
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.lineup-picks.index')->with('error', $exception->getMessage());
+        }
     }
 }

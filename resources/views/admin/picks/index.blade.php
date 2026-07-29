@@ -7,6 +7,9 @@
 <div class="page-hd">
     <span class="page-hd-title">⭐ Daily Picks</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.picks.rebuild-daily') }}" onsubmit="return confirm('Pull latest fixtures, rebuild all prediction boards, then select and send only qualifying daily picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild Daily</button></form>
+        <form method="POST" action="{{ route('admin.picks.rebuild-draw') }}" onsubmit="return confirm('Pull latest fixtures, rebuild all prediction boards, then select and send only qualifying draw picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild Draw</button></form>
+        <form method="POST" action="{{ route('admin.picks.rebuild-gg') }}" onsubmit="return confirm('Pull latest fixtures, rebuild all prediction boards, then select and send only qualifying GG picks?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild GG</button></form>
         <form method="POST" action="{{ route('admin.picks.recheck') }}">
             @csrf
             <button type="submit" class="btn-a btn-gray" title="Re-check the last 7 days of picks against current scores">🔄 Re-check Outcomes</button>

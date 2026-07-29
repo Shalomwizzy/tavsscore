@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,16 @@ class PredictionAdminController extends Controller
 {
     public function __construct(private readonly PredictionService $predictionService)
     {
+    }
+
+    public function rebuild(): RedirectResponse
+    {
+        try {
+            app(FootballPredictionBoardRefresher::class)->refreshFixturesAndBoards();
+            return redirect()->route('admin.predictions')->with('success', 'Latest fixtures were pulled and every prediction board was rebuilt.');
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.predictions')->with('error', $exception->getMessage());
+        }
     }
 
     public function index(Request $request): View

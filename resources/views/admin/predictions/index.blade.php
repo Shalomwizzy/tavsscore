@@ -55,6 +55,7 @@
     </div>
     <div class="control-actions">
         <a href="{{ route('admin.daily-football-predictions.index', ['date' => $dateMeta['iso']]) }}" class="btn-a btn-gray">📅 Daily Results</a>
+        <form method="POST" action="{{ route('admin.predictions.rebuild') }}" onsubmit="return confirm('Pull latest fixtures and rebuild every football prediction board?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild all</button></form>
         <form method="POST" action="{{ route('admin.predictions.generate') }}">@csrf<button type="submit" class="btn-a btn-green">✦ Generate Predictions</button></form>
     </div>
 </section>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prediction;
+use App\Services\FootballPredictionBoardRefresher;
 use App\Services\MatchInsightService;
 use App\Services\PredictionService;
 use App\Support\PickHelpers;
@@ -18,6 +19,7 @@ class SpecialtyMarketPicksAdminController extends Controller
     public function __construct(
         private readonly PredictionService $predictionService,
         private readonly MatchInsightService $matchInsights,
+        private readonly FootballPredictionBoardRefresher $boardRefresher,
     ) {}
 
     public function under35(): View { return $this->show('under35'); }
@@ -63,13 +65,16 @@ class SpecialtyMarketPicksAdminController extends Controller
     private function rebuild(string $type): RedirectResponse
     {
         $config = SpecialtyPickCatalog::get($type);
-        Artisan::call('fetch:matches');
-        Artisan::call('predict:matches');
-        $picks = $this->predictionService->selectSpecialtyMarketPicks($type);
-        if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => $type, '--force' => true]);
+        try {
+            $this->boardRefresher->refreshFixturesAndBoards();
+            $picks = $this->predictionService->selectSpecialtyMarketPicks($type);
+            if ($picks->isNotEmpty()) Artisan::call('picks:notify', ['--type' => $type, '--force' => true]);
 
-        return redirect()->route('admin.' . $config['admin_route'] . '.index')
-            ->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} {$config['title']} pick(s) cleared the 90% gate.");
+            return redirect()->route('admin.' . $config['admin_route'] . '.index')
+                ->with('success', "Latest fixtures and model boards rebuilt. {$picks->count()} {$config['title']} pick(s) cleared the 90% gate.");
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.' . $config['admin_route'] . '.index')->with('error', $exception->getMessage());
+        }
     }
 
     private function card(Prediction $pick, array $config): array

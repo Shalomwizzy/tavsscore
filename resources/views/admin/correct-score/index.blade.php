@@ -7,6 +7,7 @@
 <div class="page-hd">
     <span class="page-hd-title">🎯 Correct Score Predictions</span>
     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.correct-score.rebuild') }}" onsubmit="return confirm('Pull latest fixtures, rebuild model boards, and send qualifying correct-score signals?');">@csrf<button type="submit" class="btn-a btn-green">↻ Pull data + rebuild</button></form>
         <form method="POST" action="{{ route('admin.correct-score.notify') }}"
               onsubmit="return confirm('Push correct score notification to Telegram and OneSignal?');">
             @csrf
