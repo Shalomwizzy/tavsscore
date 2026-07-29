@@ -1128,14 +1128,27 @@ class TelegramService
             .$notePart."\n\n"
             ."🔗 <a href=\"{$siteUrl}/booking-codes\">Booking code history →</a>";
 
-        if ($ticketImagePath && Storage::disk('public')->exists($ticketImagePath)) {
-            $this->sendPhoto($ticketImagePath, $msg, [[[
+        $keyboard = [[[
                 'text' => '📊 VIEW BOOKING HISTORY',
                 'url' => rtrim($siteUrl, '/').'/booking-codes',
-            ]]]);
+        ]]];
+
+        $outcomeCard = app(BookingOutcomeCardService::class)->render($platform, $code, $note, $won, $totalOdds);
+        if ($outcomeCard) {
+            try {
+                if ($this->sendPhoto($outcomeCard, $msg, $keyboard, fallbackToText: false)) {
+                    return;
+                }
+            } finally {
+                Storage::disk('public')->delete($outcomeCard);
+            }
+        }
+
+        if ($ticketImagePath && Storage::disk('public')->exists($ticketImagePath)) {
+            $this->sendPhoto($ticketImagePath, $msg, $keyboard);
             return;
         }
 
-        $this->send($msg);
+        $this->send($msg, $keyboard);
     }
 }
