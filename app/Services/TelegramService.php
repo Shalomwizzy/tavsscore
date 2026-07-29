@@ -1039,16 +1039,28 @@ class TelegramService
     }
 
     /** Result of a settled booking code (all legs won, or one leg lost). */
-    public function sendBookingOutcome(string $platform, string $code, string $note, bool $won, string $siteUrl): void
+    public function sendBookingOutcome(string $platform, string $code, string $note, bool $won, string $siteUrl, ?string $ticketImagePath = null, ?float $totalOdds = null): void
     {
         $head     = $won ? '✅ <b>BOOKING CODE WON</b>' : '❌ <b>BOOKING CODE LOST</b>';
-        $notePart = $note ? "\n📋 {$note}" : '';
+        $safeCode = $this->escape($code);
+        $notePart = $note ? "\n📋 ".$this->escape($note) : '';
 
         $msg = $head."\n"
             ."━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            ."🎟️ ".strtoupper($platform)." code: <code>{$code}</code>"
+            ."🔐 <b>BOOKING CODE</b>\n"
+            ."<b>🔥 {$safeCode} 🔥</b>\n"
+            ."<code>{$safeCode}</code>\n"
+            .($totalOdds ? '📈 Total odds: <b>'.number_format($totalOdds, 2).'</b>' : '')
             .$notePart."\n\n"
             ."🔗 <a href=\"{$siteUrl}/booking-codes\">Booking code history →</a>";
+
+        if ($ticketImagePath && Storage::disk('public')->exists($ticketImagePath)) {
+            $this->sendPhoto($ticketImagePath, $msg, [[[
+                'text' => '📊 VIEW BOOKING HISTORY',
+                'url' => rtrim($siteUrl, '/').'/booking-codes',
+            ]]]);
+            return;
+        }
 
         $this->send($msg);
     }

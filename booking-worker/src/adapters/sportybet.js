@@ -117,15 +117,21 @@ export const sportybet = {
     const data = await shareBooking(page, selections);
     if (!data || !data.shareCode) throw new Error('share call returned no shareCode');
 
-    // The photo is attached only when SportyBet visibly renders the exact code
-    // on the shared ticket page. This is proof of the real ticket, never a
-    // fabricated template with substituted text.
-    const ticketScreenshot = await captureTicketScreenshot(page, data.shareURL, data.shareCode);
+    // Prefer proof from the real SportyBet shared-ticket page. If SportyBet
+    // delays or blocks that page, render a branded ticket card in Playwright
+    // with the exact generated code, actual odds and Lagos timestamp. Either
+    // way, every automated booking-code Telegram post has a truthful image.
+    const totalOdds = Math.round(combined * 100) / 100;
+    const ticketScreenshot = await captureTicketScreenshot(page, data.shareURL, data.shareCode)
+      || await captureTavsScoreTicketCard(page, {
+        platform: 'SportyBet', code: data.shareCode, totalOdds,
+      });
+    if (!ticketScreenshot) throw new Error('could not create the required booking-ticket image');
 
     return {
       code: data.shareCode,
       link: data.shareURL || `${BASE}/ng/?shareCode=${data.shareCode}`,
-      total_odds: Math.round(combined * 100) / 100,
+      total_odds: totalOdds,
       booked,
       ticket_screenshot: ticketScreenshot,
     };
@@ -176,6 +182,46 @@ async function captureTicketScreenshot(page, shareUrl, shareCode) {
   } finally {
     if (ticketPage) await ticketPage.close().catch(() => {});
   }
+}
+
+/**
+ * A JPEG fallback for when SportyBet's share page does not visibly render the
+ * ticket. It is explicitly TavsScore-branded rather than imitating SportyBet,
+ * but every number is copied from the just-created real ticket.
+ */
+export async function captureTavsScoreTicketCard(page, { platform, code, totalOdds }) {
+  let cardPage = null;
+  try {
+    const now = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Lagos', day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date()).replace(',', '');
+    const safeCode = escapeHtml(String(code).toUpperCase());
+    const safePlatform = escapeHtml(platform);
+    const odds = Number(totalOdds).toFixed(2);
+
+    cardPage = await page.context().newPage();
+    await cardPage.setViewportSize({ width: 1080, height: 720 });
+    await cardPage.setContent(`<!doctype html><html><head><style>
+      *{box-sizing:border-box} body{margin:0;background:#0d1520;font-family:Arial,sans-serif;color:#fff}
+      .ticket{height:720px;padding:42px;background:radial-gradient(circle at 85% 10%,#164e63 0,transparent 30%),linear-gradient(135deg,#0b1320,#121d2d 60%,#0d2928)}
+      .top{display:flex;justify-content:space-between;align-items:center;padding-bottom:28px;border-bottom:1px solid rgba(255,255,255,.13)}
+      .brand{font-size:31px;font-weight:900;letter-spacing:-1px}.brand span{color:#2dd4bf}.meta{text-align:right;color:#b9cad6;font-size:17px;line-height:1.45}.meta b{display:block;color:#fff;font-size:22px}
+      .eyebrow{margin:58px 0 12px;text-align:center;color:#75f3e5;font-size:16px;font-weight:800;letter-spacing:3px}.code{text-align:center;font-size:82px;line-height:1;font-weight:900;letter-spacing:7px;color:#36dfbe;text-shadow:0 10px 32px rgba(45,212,191,.23)}
+      .bar{height:5px;width:180px;border-radius:99px;background:#2dd4bf;margin:26px auto 35px}.panel{max-width:770px;margin:auto;border:1px solid rgba(255,255,255,.15);border-radius:18px;background:rgba(255,255,255,.08);padding:25px 31px;display:flex;justify-content:space-between;align-items:center}.panel small{display:block;color:#a9bec9;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:13px}.panel b{font-size:42px;color:#fff}.footer{max-width:770px;margin:32px auto 0;text-align:center;color:#b8c9d4;font-size:16px}.footer strong{color:#fff}
+    </style></head><body><main class="ticket"><div class="top"><div class="brand">Tavs<span>Score</span></div><div class="meta"><b>${safePlatform} booking ticket</b>${now} · Lagos</div></div><div class="eyebrow">YOUR BOOKING CODE</div><div class="code">${safeCode}</div><div class="bar"></div><div class="panel"><div><small>Combined odds</small><b>${odds}</b></div><div style="text-align:right"><small>Ticket status</small><b style="font-size:25px;color:#75f3e5">READY TO LOAD</b></div></div><div class="footer">Use <strong>Copy Code</strong> below, then verify the selections and final odds in the sportsbook before placing a bet.</div></main></body></html>`);
+    const image = await cardPage.screenshot({ type: 'jpeg', quality: 88, fullPage: false });
+    return `data:image/jpeg;base64,${image.toString('base64')}`;
+  } catch (error) {
+    console.warn(`Could not render the TavsScore ticket card: ${error.message}`);
+    return null;
+  } finally {
+    if (cardPage) await cardPage.close().catch(() => {});
+  }
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
 async function shareBooking(page, selections) {

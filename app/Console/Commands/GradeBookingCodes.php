@@ -56,7 +56,15 @@ class GradeBookingCodes extends Command
         $label = $code->note ?: ($code->slip_ref ?: 'Booking code');
 
         try {
-            $telegram->sendBookingOutcome($code->platform, strtoupper($code->code), (string) ($code->note ?? ''), $won, config('app.url'));
+            $telegram->sendBookingOutcome(
+                $code->platform,
+                strtoupper($code->code),
+                (string) ($code->note ?? ''),
+                $won,
+                config('app.url'),
+                $code->ticket_image_path,
+                $code->total_odds,
+            );
         } catch (\Throwable $e) {
             report($e);
         }
