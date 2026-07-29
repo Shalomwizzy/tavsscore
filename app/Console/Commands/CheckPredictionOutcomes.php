@@ -9,6 +9,7 @@ use App\Services\RolloverService;
 use App\Services\TelegramService;
 use App\Support\LeagueCoverage;
 use App\Support\PickHelpers;
+use App\Support\SpecialtyPickCatalog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -195,6 +196,9 @@ class CheckPredictionOutcomes extends Command
                 ->orWhere('is_team3plus_pick', true)
                 ->orWhere('is_double_chance_pick', true)
                 ->orWhere('is_corners_pick', true)
+                ->orWhere('is_under35_pick', true)
+                ->orWhere('is_under45_pick', true)
+                ->orWhere('is_handicap_pick', true)
             )
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
@@ -251,6 +255,29 @@ class CheckPredictionOutcomes extends Command
                     $prediction->update(['winner_reminder_sent' => true]);
                 }
                 $prediction->update(['over25_notified' => true]);
+            }
+
+            // Under-goals and Asian Handicap specialist markets. Half-goal
+            // handicap lines are resolved by PickHelpers with no push state.
+            foreach (SpecialtyPickCatalog::types() as $specialtyType) {
+                $config = SpecialtyPickCatalog::get($specialtyType);
+                if (! $prediction->{$config['flag']} || $prediction->{$config['notified']}) continue;
+                $label = $config['market'] ?? $prediction->{$config['label_field']};
+                $won = PickHelpers::resolveForMatch($match, $label);
+                if ($won === null) continue;
+                $this->line($won
+                    ? "  {$config['icon']}✅  {$matchLabel} {$score} — {$label} HIT"
+                    : "  {$config['icon']}❌  {$matchLabel} {$score} — {$label} missed");
+                $won
+                    ? $oneSignal->notifyPickWon($matchLabel, $label, $score, $league, $config['path'])
+                    : $oneSignal->notifyPickLost($matchLabel, $label, $score, $league, $config['path']);
+                $telegram->sendSpecialtyOutcome($matchLabel, $label, $score, $won, $config['path'], $siteUrl, $league);
+                if ($won && ! $prediction->winner_reminder_sent) {
+                    $oneSignal->notifyWinnerReminder();
+                    $telegram->sendWinnerUploadReminder($siteUrl);
+                    $prediction->update(['winner_reminder_sent' => true]);
+                }
+                $prediction->update([$config['notified'] => true]);
             }
 
             // Team goals NO pick — wins when the named team scores fewer than the market threshold

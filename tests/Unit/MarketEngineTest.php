@@ -79,6 +79,17 @@ class MarketEngineTest extends TestCase
         $this->assertGreaterThan($b['Home +3.5 (Handicap)'], $b['Home +4.5 (Handicap)']);
     }
 
+    public function test_all_supported_asian_handicap_ranges_are_available(): void
+    {
+        $b = $this->board();
+        foreach (['0.5', '1.5', '2.5', '3.5', '4.5', '5.5'] as $line) {
+            foreach (['Home', 'Away'] as $team) {
+                $this->assertArrayHasKey("{$team} +{$line} (Handicap)", $b);
+                $this->assertArrayHasKey("{$team} -{$line} (Handicap)", $b);
+            }
+        }
+    }
+
     public function test_over_lines_decrease_monotonically(): void
     {
         $b = $this->board();

@@ -247,6 +247,17 @@ class PickHelpersTest extends TestCase
         $this->assertTrue(PickHelpers::resolveForMatch($this->match(4, 0), 'Away +4.5 (Handicap)'));
     }
 
+    public function test_every_published_asian_handicap_line_is_resolved_without_a_push(): void
+    {
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(1, 0), 'Home -0.5 (Handicap)'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(0, 0), 'Home -0.5 (Handicap)'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(0, 5), 'Home +5.5 (Handicap)'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(0, 6), 'Home +5.5 (Handicap)'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(5, 0), 'Away +5.5 (Handicap)'));
+        $this->assertTrue(PickHelpers::resolveForMatch($this->match(4, 1), 'Home -2.5 (Handicap)'));
+        $this->assertFalse(PickHelpers::resolveForMatch($this->match(3, 1), 'Home -2.5 (Handicap)'));
+    }
+
     public function test_winning_margin(): void
     {
         $this->assertTrue(PickHelpers::resolveForMatch($this->match(2, 1), 'Home to win by 1'));

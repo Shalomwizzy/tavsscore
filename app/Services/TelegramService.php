@@ -247,6 +247,35 @@ class TelegramService
         $this->send(implode("\n", $lines));
     }
 
+    /** A readable shared Telegram card for Under and Asian Handicap slates. */
+    public function sendSpecialtyPicks(array $picks, string $title, string $path, string $siteUrl): void
+    {
+        if (empty($picks)) return;
+        $lines = ["<b>TAVSSCORE — " . $this->escape($title) . "</b>", '<i>' . now('Africa/Lagos')->format('l, d M Y') . '</i>', '━━━━━━━━━━━━━━━━━━━━━━━━━━'];
+        foreach ($picks as $i => $pick) {
+            $lines[] = "\n" . ($i === 0 ? '👑 <b>TOP PICK</b>' : '⚽ <b>PICK ' . ($i + 1) . '</b>');
+            if (! empty($pick['league'])) $lines[] = '🏟️ <i>' . $this->escape((string) $pick['league']) . '</i>';
+            $lines[] = '⚽ <b>' . $this->escape((string) ($pick['match'] ?? '')) . '</b>';
+            $lines[] = '📌 Tip: <b>' . $this->escape((string) ($pick['tip'] ?? '')) . '</b>';
+            $lines[] = '📊 Model probability: <b>' . (int) ($pick['prob'] ?? 0) . '%</b>';
+        }
+        $lines[] = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        $lines[] = '🔗 <a href="' . rtrim($siteUrl, '/') . $path . '">Full analysis →</a>';
+        $lines[] = '<i>Predictions are analysis, not guarantees. Play responsibly.</i>';
+        $this->send(implode("\n", $lines));
+    }
+
+    public function sendSpecialtyOutcome(string $match, string $market, string $score, bool $won, string $path, string $siteUrl, string $league = ''): void
+    {
+        $status = $won ? '✅ WON' : '❌ MISSED';
+        $message = "<b>{$status} — " . $this->escape($market) . "</b>\n"
+            . "⚽ <b>" . $this->escape($match) . "</b>\n"
+            . ($league ? "🏟️ <i>" . $this->escape($league) . "</i>\n" : '')
+            . "📊 Final score: <b>{$this->escape($score)}</b>\n\n"
+            . "🔗 <a href=\"" . rtrim($siteUrl, '/') . $path . "\">View the picks →</a>";
+        $this->send($message);
+    }
+
     public function sendCornersPicks(array $picks, string $siteUrl): void
     {
         if (empty($picks)) return;

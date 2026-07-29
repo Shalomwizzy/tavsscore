@@ -16,6 +16,7 @@ use App\Http\Controllers\DrawPicksController;
 use App\Http\Controllers\GGPicksController;
 use App\Http\Controllers\LineupPicksController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\SpecialtyMarketPicksController;
 use App\Http\Controllers\TrackRecordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LiveScoreController;
@@ -41,6 +42,9 @@ Route::get('/lineup-picks',  [LineupPicksController::class, 'index'])->name('lin
 Route::get('/correct-score', [CorrectScoreController::class, 'index'])->name('correct-score.index');
 Route::get('/over-1-5',     [Over15PicksController::class,  'index'])->name('over15-picks.index');
 Route::get('/over-2-5',     [Over25PicksController::class,  'index'])->name('over25-picks.index');
+Route::get('/under-3-5',    [SpecialtyMarketPicksController::class, 'under35'])->name('under35-picks.index');
+Route::get('/under-4-5',    [SpecialtyMarketPicksController::class, 'under45'])->name('under45-picks.index');
+Route::get('/handicap-picks',[SpecialtyMarketPicksController::class, 'handicap'])->name('handicap-picks.index');
 Route::get('/team-3-plus',    [Team3PlusController::class,    'index'])->name('team3plus-picks.index');
 Route::get('/double-chance',  [DoubleChanceController::class,  'index'])->name('double-chance.index');
 Route::get('/rollover',           [RolloverController::class, 'index'])->name('rollover.index');
@@ -185,6 +189,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Over 2.5 Picks */
         Route::get('/over25',          [\App\Http\Controllers\Admin\Over25AdminController::class, 'index'])->name('over25.index');
         Route::post('/over25/refresh', [\App\Http\Controllers\Admin\Over25AdminController::class, 'refresh'])->name('over25.refresh');
+
+        /* Under goals & Asian Handicap Picks */
+        Route::get('/under35', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'under35'])->name('under35.index');
+        Route::post('/under35/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshUnder35'])->name('under35.refresh');
+        Route::get('/under45', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'under45'])->name('under45.index');
+        Route::post('/under45/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshUnder45'])->name('under45.refresh');
+        Route::get('/handicap', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'handicap'])->name('handicap.index');
+        Route::post('/handicap/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshHandicap'])->name('handicap.refresh');
 
         /* Team 3+ Picks */
         Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');

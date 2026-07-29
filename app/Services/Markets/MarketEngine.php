@@ -254,8 +254,16 @@ class MarketEngine
         $m['Away 3+ Goals']  = $pct($bucketAtLeast($awayGoalsDist, 3));
 
         // ── Handicaps, winning margin & combo markets (joint pass) ──
-        $ahHomeM15 = $ahHomeP15 = $ahAwayM15 = $ahAwayP15 = $ahHomeM25 = $ahAwayM25 = 0.0;
-        $ahHomeP35 = $ahAwayP35 = $ahHomeP45 = $ahAwayP45 = 0.0;
+        // Half-goal Asian lines deliberately avoid a push/void. Keep all the
+        // common 0.5–5.5 ranges available for the specialist handicap picks.
+        $handicapLines = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5];
+        $handicaps = [];
+        foreach ($handicapLines as $line) {
+            foreach (['Home', 'Away'] as $side) {
+                $handicaps["{$side} +{$line} (Handicap)"] = 0.0;
+                $handicaps["{$side} -{$line} (Handicap)"] = 0.0;
+            }
+        }
         $mH1 = $mH2 = $mH3 = $mA1 = $mA2 = $mA3 = 0.0;
         $hwO = $hwU = $dO = $dU = $awO = $awU = 0.0;               // result × O/U 2.5
         $hwBt = $hwNb = $awBt = $awNb = $drawBt = 0.0;              // result × BTTS
@@ -265,16 +273,12 @@ class MarketEngine
                 if ($p <= 0) continue;
                 $d = $h - $a; $over = ($h + $a) > 2.5; $bt = ($h >= 1 && $a >= 1);
 
-                if ($d >= 2)  $ahHomeM15 += $p;   // Home -1.5
-                if ($d >= -1) $ahHomeP15 += $p;   // Home +1.5
-                if (-$d >= 2) $ahAwayM15 += $p;   // Away -1.5
-                if (-$d >= -1) $ahAwayP15 += $p;  // Away +1.5
-                if ($d >= 3)  $ahHomeM25 += $p;   // Home -2.5
-                if (-$d >= 3) $ahAwayM25 += $p;   // Away -2.5
-                if ($d >= -3) $ahHomeP35 += $p;   // Home +3.5
-                if (-$d >= -3) $ahAwayP35 += $p;  // Away +3.5
-                if ($d >= -4) $ahHomeP45 += $p;   // Home +4.5
-                if (-$d >= -4) $ahAwayP45 += $p;  // Away +4.5
+                foreach ($handicapLines as $line) {
+                    if ($d + $line > 0)  $handicaps["Home +{$line} (Handicap)"] += $p;
+                    if ($d - $line > 0)  $handicaps["Home -{$line} (Handicap)"] += $p;
+                    if (-$d + $line > 0) $handicaps["Away +{$line} (Handicap)"] += $p;
+                    if (-$d - $line > 0) $handicaps["Away -{$line} (Handicap)"] += $p;
+                }
 
                 if ($d === 1) $mH1 += $p; elseif ($d === 2) $mH2 += $p; elseif ($d >= 3) $mH3 += $p;
                 elseif ($d === -1) $mA1 += $p; elseif ($d === -2) $mA2 += $p; elseif ($d <= -3) $mA3 += $p;
@@ -287,16 +291,9 @@ class MarketEngine
             }
         }
 
-        $m['Home -1.5 (Handicap)'] = $pct($ahHomeM15);
-        $m['Home +1.5 (Handicap)'] = $pct($ahHomeP15);
-        $m['Away -1.5 (Handicap)'] = $pct($ahAwayM15);
-        $m['Away +1.5 (Handicap)'] = $pct($ahAwayP15);
-        $m['Home -2.5 (Handicap)'] = $pct($ahHomeM25);
-        $m['Away -2.5 (Handicap)'] = $pct($ahAwayM25);
-        $m['Home +3.5 (Handicap)'] = $pct($ahHomeP35);
-        $m['Away +3.5 (Handicap)'] = $pct($ahAwayP35);
-        $m['Home +4.5 (Handicap)'] = $pct($ahHomeP45);
-        $m['Away +4.5 (Handicap)'] = $pct($ahAwayP45);
+        foreach ($handicaps as $label => $probability) {
+            $m[$label] = $pct($probability);
+        }
 
         $m['Home to win by 1']  = $pct($mH1);
         $m['Home to win by 2']  = $pct($mH2);

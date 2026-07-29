@@ -131,6 +131,15 @@ class OneSignalService
         );
     }
 
+    public function notifySpecialtyPicks(string $title, string $topMatch, string $topTip, string $topProb, int $total, string $path): void
+    {
+        $this->sendMatchAlert(
+            title: "{$total} {$title} Pick" . ($total > 1 ? 's' : '') . ' Live!',
+            message: "{$topMatch} — {$topTip} ({$topProb}). Tap to see all picks →",
+            path: $path,
+        );
+    }
+
     public function notifyCornersPicks(string $topMatch, string $topLine, int $total): void
     {
         $this->sendMatchAlert(

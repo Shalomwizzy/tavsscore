@@ -221,6 +221,14 @@ class PickHelpers
         $ftSign  = $home > $away ? 'H' : ($home === $away ? 'D' : 'A');
         $htSign  = $hasHt ? ($htHome > $htAway ? 'H' : ($htHome === $htAway ? 'D' : 'A')) : null;
 
+        // Asian half-goal handicaps never push. This accepts every published
+        // Home/Away +/- 0.5 through 5.5 line without maintaining fragile cases.
+        if (preg_match('/^(Home|Away) ([+-])(0\.5|1\.5|2\.5|3\.5|4\.5|5\.5) \(Handicap\)$/', $outcome, $parts)) {
+            $teamMargin = $parts[1] === 'Home' ? $diff : -$diff;
+            $line = (float) $parts[3];
+            return $parts[2] === '+' ? $teamMargin + $line > 0 : $teamMargin - $line > 0;
+        }
+
         return match ($outcome) {
             // ── 1X2 / double chance / DNB ──
             'Home Win'                     => $home > $away,

@@ -10,6 +10,7 @@ use App\Support\LeagueCoverage;
 use App\Support\TeamEventAverages;
 use App\Support\MatchStatsContext;
 use App\Support\PickHelpers;
+use App\Support\SpecialtyPickCatalog;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -1499,6 +1500,78 @@ class PredictionService
         });
 
         return new EloquentCollection($candidates->all());
+    }
+
+    /**
+     * Select the specialist Under 3.5, Under 4.5 and Asian Handicap slates.
+     * Handicap picks are always half-goal lines, so a settled match is either
+     * a win or loss and cannot be incorrectly reported as a lost void.
+     */
+    public function selectSpecialtyMarketPicks(string $type): EloquentCollection
+    {
+        $config   = SpecialtyPickCatalog::get($type);
+        $today    = now('Africa/Lagos')->startOfDay();
+        $cutoff   = now('Africa/Lagos')->endOfDay();
+        $excluded = ['CANC', 'PST', 'ABD', 'AWD', 'WO'];
+
+        $candidates = Prediction::query()
+            ->with('match')
+            ->whereNotNull('market_board')
+            ->where('analysis', '!=', GroqService::FALLBACK_ANALYSIS)
+            ->where('analysis', '!=', 'Prediction pending')
+            ->whereNotNull('analysis')
+            ->whereHas('match', fn ($q) => $q
+                ->whereBetween('match_time', [$today, $cutoff])
+                ->whereNotIn('status', $excluded))
+            ->get()
+            ->map(function (Prediction $prediction) use ($type, $config) {
+                $board = is_array($prediction->market_board) ? $prediction->market_board : [];
+                if ($type !== 'handicap') {
+                    $label = $config['market'];
+                    $probability = (float) ($board[$label] ?? 0);
+                    return $probability >= $config['floor'] ? compact('prediction', 'label', 'probability') : null;
+                }
+
+                $bestLabel = null;
+                $bestProbability = 0.0;
+                foreach ($board as $label => $probability) {
+                    if (! preg_match('/^(Home|Away) [+-](0\.5|1\.5|2\.5|3\.5|4\.5|5\.5) \(Handicap\)$/', (string) $label)) continue;
+                    $probability = (float) $probability;
+                    // Do not publish near-certain bailout lines; retain a useful,
+                    // genuinely selected handicap signal instead of a trivial one.
+                    if ($probability >= $config['floor'] && $probability <= 92 && $probability > $bestProbability) {
+                        $bestLabel = (string) $label;
+                        $bestProbability = $probability;
+                    }
+                }
+                return $bestLabel ? ['prediction' => $prediction, 'label' => $bestLabel, 'probability' => $bestProbability] : null;
+            })
+            ->filter()
+            ->sortByDesc(fn (array $item) => (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + $item['probability'])
+            ->take(5)
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            return Prediction::query()->with('match')
+                ->where($config['flag'], true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy($config['rank'])->get();
+        }
+
+        $clear = [$config['flag'] => false, $config['rank'] => null, $config['notified'] => false];
+        if (isset($config['label_field'])) $clear[$config['label_field']] = null;
+        Prediction::query()->where($config['flag'], true)
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->update($clear);
+
+        $selected = $candidates->map(function (array $item, int $index) use ($config) {
+            $updates = [$config['flag'] => true, $config['rank'] => $index + 1, $config['notified'] => false];
+            if (isset($config['label_field'])) $updates[$config['label_field']] = $item['label'];
+            $item['prediction']->update($updates);
+            return $item['prediction']->fresh(['match']);
+        });
+
+        return new EloquentCollection($selected->all());
     }
 
     /**

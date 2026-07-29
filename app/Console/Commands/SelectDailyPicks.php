@@ -110,6 +110,27 @@ class SelectDailyPicks extends Command
             }
         }
 
+        // ── Specialist under-goals and Asian Handicap picks ─────────
+        foreach (['under35', 'under45', 'handicap'] as $type) {
+            if (! $force && Cache::has("picks_sent_{$type}_{$date}")) {
+                $this->info("{$type} picks already notified — skipping re-selection.");
+                continue;
+            }
+            $this->info("Selecting {$type} picks…");
+            $picks = $service->selectSpecialtyMarketPicks($type);
+            if ($picks->isEmpty()) {
+                $this->warn("No qualifying {$type} picks today.");
+                continue;
+            }
+            foreach ($picks as $pick) {
+                $match = $pick->match;
+                $label = $type === 'handicap' ? $pick->handicap_label : ($type === 'under35' ? 'Under 3.5 Goals' : 'Under 4.5 Goals');
+                $probability = (float) ((is_array($pick->market_board) ? $pick->market_board : [])[$label] ?? 0);
+                $this->line(sprintf('  %s #%d  %s vs %s  (%s, %s%%)', $type === 'handicap' ? '🛡️' : '🧊', $pick->{"{$type}_rank"}, $match?->home_team ?? '?', $match?->away_team ?? '?', $label, round($probability)));
+            }
+            $this->info("✅ {$picks->count()} {$type} picks selected.");
+        }
+
         // ── Corner picks ───────────────────────────────────────────
         if (! $force && Cache::has("picks_sent_corners_{$date}")) {
             $this->info('Corner picks already notified — skipping re-selection.');

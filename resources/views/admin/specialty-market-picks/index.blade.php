@@ -1,0 +1,10 @@
+@extends('layouts.admin')
+@section('title', $config['title'] . ' Admin')
+@section('page-title', $config['title'])
+@section('content')
+<div class="page-hd"><span class="page-hd-title">{{ $config['icon'] }} {{ $config['title'] }} Picks</span><form method="POST" action="{{ route('admin.' . $config['admin_route'] . '.refresh') }}" style="display:inline">@csrf<button class="btn btn-primary" onclick="return confirm('Re-select and send this market now?')">Refresh + notify</button></form></div>
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+<div class="stat-grid"><div class="stat-card"><span>Settled picks</span><strong>{{ $total }}</strong></div><div class="stat-card"><span>Won</span><strong>{{ $correct }}</strong></div><div class="stat-card"><span>Accuracy</span><strong>{{ $total ? round($correct / $total * 100, 1) : '—' }}{{ $total ? '%' : '' }}</strong></div></div>
+<div class="card"><div class="card-title">Today's published picks</div>@forelse($picks as $pick)<div style="display:flex;justify-content:space-between;gap:1rem;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.08)"><span><strong>#{{ $pick->{$config['rank']} }} {{ $pick->match?->home_team }} vs {{ $pick->match?->away_team }}</strong><br><small>{{ $pick->match?->league }} · {{ $pick->match?->match_time?->format('H:i') }}</small></span><span style="color:#67e8f9;font-weight:800">{{ $config['market'] ?? $pick->{$config['label_field']} }}</span></div>@empty<div class="empty-state">No qualified picks yet today.</div>@endforelse</div>
+<div class="card" style="margin-top:1rem"><div class="card-title">Recent history</div>@forelse($history as $pick)<div style="padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.08)">{{ $pick->match?->match_time?->format('d M') }} · {{ $pick->match?->home_team }} vs {{ $pick->match?->away_team }} · <strong>{{ $config['market'] ?? $pick->{$config['label_field']} }}</strong></div>@empty<div class="empty-state">No history yet.</div>@endforelse</div>
+@endsection

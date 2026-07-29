@@ -6,13 +6,14 @@ use App\Models\Prediction;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
 use App\Support\LeagueCoverage;
+use App\Support\SpecialtyPickCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 class NotifyDailyPicks extends Command
 {
-    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|team3plus|doublechance|lineup|correctscore|corners|goalscorer (default: all)} {--force : Bypass already-sent cache guard}';
+    protected $signature = 'picks:notify {--type= : Which pick type to notify: daily|draw|gg|over15|over25|under35|under45|handicap|team3plus|doublechance|lineup|correctscore|corners|goalscorer (default: all)} {--force : Bypass already-sent cache guard}';
 
     protected $description = 'Send push + Telegram for today\'s picks. Use --type= to send one group at a time for staggered scheduling.';
 
@@ -161,6 +162,37 @@ class NotifyDailyPicks extends Command
                     $this->warn('No Over 2.5 picks today — skipped.');
                 }
             }
+        }
+
+        // ── Under 3.5, Under 4.5 and Asian Handicap picks ──────────
+        foreach (SpecialtyPickCatalog::types() as $specialtyType) {
+            if ($type !== 'all' && $type !== $specialtyType) continue;
+            $config = SpecialtyPickCatalog::get($specialtyType);
+            if (! $force && Cache::has("picks_sent_{$specialtyType}_{$date}")) {
+                $this->info("{$config['title']} already notified today — skipping (use --force to re-send).");
+                continue;
+            }
+            $picks = Prediction::query()->with('match')->where($config['flag'], true)
+                ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+                ->orderBy($config['rank'])->get();
+            if ($picks->isEmpty()) {
+                $this->warn("No {$config['title']} picks today — skipped.");
+                continue;
+            }
+            $payload = $picks->map(function (Prediction $pick) use ($config) {
+                $market = $config['market'] ?? $pick->{$config['label_field']};
+                $board = is_array($pick->market_board) ? $pick->market_board : [];
+                return $pick->match ? [
+                    'match' => "{$pick->match->home_team} vs {$pick->match->away_team}",
+                    'league' => LeagueCoverage::formatName($pick->match->league, $pick->match->league_country),
+                    'tip' => $market, 'prob' => round((float) ($board[$market] ?? 0)),
+                ] : null;
+            })->filter()->values();
+            $top = $payload->first();
+            $oneSignal->notifySpecialtyPicks($config['title'], $top['match'], $top['tip'], $top['prob'] . '%', $payload->count(), $config['path']);
+            $telegram->sendSpecialtyPicks($payload->all(), $config['title'], $config['path'], $url);
+            Cache::put("picks_sent_{$specialtyType}_{$date}", true, now()->addHours(36));
+            $this->info("{$config['title']} picks sent: {$payload->count()}");
         }
 
         // ── Team 3+ picks ──────────────────────────────────────────
