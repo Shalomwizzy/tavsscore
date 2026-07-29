@@ -32,6 +32,7 @@ class ResultsFallbackService
     private const RESULT_NAME_ALIASES = [
         'aarhus' => ['agf'],
         'copenhagen' => ['kobenhavn'],
+        'polessya' => ['polissya', 'polissya zhitomir'],
         'hapoel beer sheva' => ['hapoel be er'],
         'universitatea craiova' => ['csu craiova'],
         'crvena zvezda' => ['red star belgrade'],

@@ -254,6 +254,37 @@ class ResultsFallbackTest extends TestCase
         $this->assertSame(0, (int) $match->fresh()->away_score);
     }
 
+    public function test_espn_settles_city_and_transliteration_name_variants(): void
+    {
+        Config::set('services.football_data.key', null);
+        Config::set('services.espn.leagues', ['all']);
+
+        $match = $this->pendingMatch('FC Copenhagen', 'Polessya');
+        Prediction::create([
+            'match_id' => $match->id, 'home_win_prob' => 70.0, 'draw_prob' => 18.0, 'away_win_prob' => 12.0,
+            'predicted_outcome' => 'Home Win', 'confidence' => 90, 'analysis' => 'Test.',
+        ]);
+
+        Http::fake([
+            'site.api.espn.com/*' => Http::response(['events' => [[
+                'date' => now()->toIso8601String(),
+                'competitions' => [[
+                    'status' => ['type' => ['completed' => true, 'name' => 'STATUS_FULL_TIME']],
+                    'competitors' => [
+                        ['homeAway' => 'home', 'score' => '2', 'team' => ['id' => '1', 'displayName' => 'F.C. København']],
+                        ['homeAway' => 'away', 'score' => '1', 'team' => ['id' => '2', 'displayName' => 'Polissya Zhitomir']],
+                    ],
+                ]],
+            ]]], 200),
+        ]);
+
+        $result = app(ResultsFallbackService::class)->settlePending(2);
+
+        $this->assertSame(1, $result['predicted_updated']);
+        $this->assertSame(2, (int) $match->fresh()->home_score);
+        $this->assertSame(1, (int) $match->fresh()->away_score);
+    }
+
     public function test_espn_penalty_score_uses_regulation_time_not_shootout_total(): void
     {
         Config::set('services.football_data.key', null);
