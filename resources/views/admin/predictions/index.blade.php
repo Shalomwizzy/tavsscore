@@ -102,13 +102,8 @@
                 <tr class="pred-row" data-pred="{{ $pred->id }}">
                     <td><span class="expander">▶</span></td>
                     <td>
-                        <div class="admin-match-cell">
-                            <div class="admin-club-marks"><span class="admin-club-mark">{{ $initials($m?->home_team) }}</span><span class="admin-club-mark">{{ $initials($m?->away_team) }}</span></div>
-                            <div class="admin-match-teams">
-                                <strong>@if($pred->is_daily_pick)<span title="Daily Pick #{{ $pred->pick_rank }}">{{ $pred->pick_rank === 1 ? '👑 ' : '⭐ ' }}</span>@endif{{ $m?->home_team ?? '?' }}</strong>
-                                <span>vs {{ $m?->away_team ?? '?' }}</span>
-                            </div>
-                        </div>
+                        @if($pred->is_daily_pick)<span title="Daily Pick #{{ $pred->pick_rank }}" style="display:inline-block;margin-right:.25rem;vertical-align:middle;">{{ $pred->pick_rank === 1 ? '👑' : '⭐' }}</span>@endif
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                     </td>
                     <td style="color:var(--dim); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}</td>
                     <td style="color:#6ee7b7; font-weight:700; font-variant-numeric:tabular-nums;">{{ number_format($pred->home_win_prob, 1) }}%</td>

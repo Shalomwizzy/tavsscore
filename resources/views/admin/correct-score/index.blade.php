@@ -55,7 +55,7 @@
                 @foreach($todayPredictions as $pred)
                 @php $m = $pred->match; $scores = $pred->likely_scores ?? []; @endphp
                 <tr>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $m?->home_team }} vs {{ $m?->away_team }}</td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $m])</td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $m?->league }}</td>
                     <td style="color:#6ee7b7; font-weight:700;">{{ $pred->predicted_outcome ?? '-' }}</td>
                     <td style="font-weight:700; color:#fff;">{{ $pred->confidence ?? '-' }}%</td>
@@ -115,8 +115,8 @@
                         @foreach($dayPreds as $pred)
                         @php $m = $pred->match; $scores = $pred->likely_scores ?? []; @endphp
                         <tr>
-                            <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                                {{ $m?->home_team }} vs {{ $m?->away_team }}
+                            <td>
+                                @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
                                     <span style="color:var(--dim); font-size:.7rem;">({{ $m->home_score }}-{{ $m->away_score }})</span>
                                 @endif

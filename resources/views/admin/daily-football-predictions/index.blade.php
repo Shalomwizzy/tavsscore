@@ -28,7 +28,7 @@
     @php($match = $prediction->match)
     <tr>
         <td style="color:var(--dim);white-space:nowrap;">{{ $match?->match_time?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</td>
-        <td style="color:#fff;font-weight:650;">{{ $match?->home_team ?? '?' }} vs {{ $match?->away_team ?? '?' }}</td>
+        <td>@include('admin.partials.fixture-mini', ['match' => $match])</td>
         <td style="color:var(--dim);">{{ \App\Support\LeagueCoverage::formatName($match?->league, $match?->league_country) }}</td>
         <td style="color:#93c5fd;font-weight:700;">{{ $prediction->predicted_outcome ?? '—' }}</td>
         <td style="font-weight:700;">{{ $match?->home_score !== null ? $match->home_score.'–'.$match->away_score : '—' }}</td>

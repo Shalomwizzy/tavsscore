@@ -28,9 +28,7 @@
             <tbody>
                 @forelse($matches as $match)
                 <tr>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $match->home_team }} <span style="color:var(--dim)">vs</span> {{ $match->away_team }}
-                    </td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $match])</td>
                     <td style="color:var(--dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $match->league }}</td>
                     <td style="color:var(--dim)">{{ $match->league_country }}</td>
                     <td style="color:#fff; font-weight:700; font-variant-numeric:tabular-nums;">

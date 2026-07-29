@@ -55,7 +55,7 @@
                 @foreach($todayPicks as $pick)
                 @php $m = $pick->match; $topScore = is_array($pick->likely_scores) ? ($pick->likely_scores[0] ?? null) : null; @endphp
                 <tr>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $m?->home_team }} vs {{ $m?->away_team }}</td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $m])</td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $m?->league }}</td>
                     <td style="color:#6ee7b7; font-weight:700;">{{ $pick->predicted_outcome }}</td>
                     <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
@@ -115,7 +115,7 @@
                         @foreach($dayPicks as $pick)
                         @php $m = $pick->match; @endphp
                         <tr>
-                            <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $m?->home_team }} vs {{ $m?->away_team }}</td>
+                            <td>@include('admin.partials.fixture-mini', ['match' => $m])</td>
                             <td style="color:#6ee7b7; font-weight:700;">{{ $pick->predicted_outcome }}</td>
                             <td style="color:var(--dim);">{{ $pick->confidence }}%</td>
                             <td style="color:var(--dim); font-size:.72rem;">{{ $m?->match_time?->setTimezone('Africa/Lagos')->format('H:i') }}</td>

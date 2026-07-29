@@ -160,12 +160,7 @@
                         </span>
                     </div>
 
-                    {{-- The NO team is highlighted in red --}}
-                    <div class="pick-match-row">
-                        <div class="pick-team {{ $isHome ? 'no-team' : '' }}">{{ $pick['match']['home'] }}</div>
-                        <div class="pick-vs">vs</div>
-                        <div class="pick-team away {{ !$isHome ? 'no-team' : '' }}">{{ $pick['match']['away'] }}</div>
-                    </div>
+                    @include('partials.fixture-showcase', ['predictionId' => $pick['id'], 'accent' => '#fca5a5'])
 
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>

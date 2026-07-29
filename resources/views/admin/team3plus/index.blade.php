@@ -88,8 +88,8 @@
                 @endphp
                 <tr>
                     <td style="font-weight:800; color:#fca5a5;">🚫 #{{ $pick->team3plus_rank }}</td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
                             <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                         @endif
@@ -163,8 +163,8 @@
                         @endphp
                         <tr>
                             <td style="width:50px; font-weight:700; color:#fca5a5;">#{{ $pick->team3plus_rank }}</td>
-                            <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                                {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                            <td>
+                                @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
                                     <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                                 @endif

@@ -275,8 +275,8 @@
             $legIcon = match($leg->status) { 'won' => '✅', 'lost' => '❌', 'void' => '↩️', default => '⏳' };
         @endphp
         <div class="rv-leg" style="border-top:1px solid var(--border); padding:.85rem 0;">
-            <div class="rv-pick-teams" style="font-size:.95rem;">{{ $m?->home_team }} vs {{ $m?->away_team }}</div>
-            <div class="rv-pick-league">{{ $m?->league }}{{ $m?->league_country ? ' · ' . $m->league_country : '' }} · 🕐 {{ $kickoff }}</div>
+            <div class="rv-pick-league">{{ $m?->league }}{{ $m?->league_country ? ' · ' . $m->league_country : '' }}</div>
+            @include('partials.fixture-showcase', ['match' => $m, 'accent' => '#fcd34d', 'compact' => true])
             <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-top:.4rem;">
                 <span class="rv-pick-tip" style="margin:0;">{{ $legIcon }} {{ $leg->groq_verdict }}</span>
                 <span class="rv-odds-val" style="color:#fcd34d; font-weight:700;">@ {{ $leg->implied_odds }}

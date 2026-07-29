@@ -197,11 +197,7 @@
             @endif
 
             <div class="lp-league">{{ $match?->league }} · {{ $match?->league_country }}</div>
-            <div class="lp-teams lp-teams-row">
-                <div class="lp-team-side">@if($match?->home_team_logo)<img class="lp-team-logo" src="{{ $match->home_team_logo }}" alt="" loading="lazy">@endif<span class="lp-team-name">{{ $match?->home_team }}</span></div>
-                <span class="lp-vs">vs</span>
-                <div class="lp-team-side away"><span class="lp-team-name">{{ $match?->away_team }}</span>@if($match?->away_team_logo)<img class="lp-team-logo" src="{{ $match->away_team_logo }}" alt="" loading="lazy">@endif</div>
-            </div>
+            @include('partials.fixture-showcase', ['match' => $match, 'accent' => '#fcd34d'])
 
             <div class="lp-tip">
                 <span class="lp-tip-label">{{ $outcome }}</span>

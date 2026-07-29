@@ -56,7 +56,7 @@
         @endphp
         <div class="cn-card {{ $cls }}">
             <div class="cn-league">{{ $pick['match']['league'] }} · {{ $pick['match']['time'] }}</div>
-            <div class="cn-teams">{{ $pick['match']['home'] }} vs {{ $pick['match']['away'] }}</div>
+            @include('partials.fixture-showcase', ['predictionId' => $pick['id'], 'accent' => '#6ee7b7', 'compact' => true])
             <div class="cn-pick">
                 <span class="cn-market">{{ $pick['market'] }}</span>
                 <span>

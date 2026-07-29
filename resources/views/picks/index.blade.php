@@ -611,11 +611,7 @@ if (! function_exists('stripTip')) {
                         </span>
                     </div>
 
-                    <div class="pick-match-row">
-                        <span class="pick-team home">{{ $pick['match']['home'] }}</span>
-                        <span class="pick-vs">vs</span>
-                        <span class="pick-team away">{{ $pick['match']['away'] }}</span>
-                    </div>
+                    @include('partials.fixture-showcase', ['predictionId' => $pick['id'], 'accent' => '#fcd34d'])
 
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>

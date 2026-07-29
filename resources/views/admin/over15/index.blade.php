@@ -77,8 +77,8 @@
                 @php $m = $pick->match; $tips = is_array($pick->tips) ? $pick->tips : []; @endphp
                 <tr>
                     <td style="font-weight:800; color:#93c5fd;">⚽ #{{ $pick->over15_rank }}</td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
                             <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                         @endif
@@ -164,8 +164,8 @@
                         @php $m = $pick->match; @endphp
                         <tr>
                             <td style="width:50px; font-weight:700; color:#93c5fd;">#{{ $pick->over15_rank }}</td>
-                            <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                                {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                            <td>
+                                @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
                                     <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                                 @endif

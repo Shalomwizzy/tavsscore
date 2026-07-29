@@ -141,11 +141,7 @@
         @endphp
         <div class="cs-card fade-up">
             <div class="cs-league">{{ $match?->league }} · {{ $match?->league_country }}</div>
-            <div class="cs-teams">
-                {{ $match?->home_team }}
-                <span class="cs-vs">vs</span>
-                {{ $match?->away_team }}
-            </div>
+            @include('partials.fixture-showcase', ['match' => $match, 'accent' => '#c4b5fd'])
 
             {{-- Likely scorelines --}}
             <div class="cs-scores">

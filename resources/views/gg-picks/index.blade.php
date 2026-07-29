@@ -233,11 +233,7 @@
                         </span>
                     </div>
 
-                    <div class="pick-match-row">
-                        <div class="pick-team">{{ $pick['match']['home'] }}</div>
-                        <div class="pick-vs">vs</div>
-                        <div class="pick-team away">{{ $pick['match']['away'] }}</div>
-                    </div>
+                    @include('partials.fixture-showcase', ['predictionId' => $pick['id'], 'accent' => '#6ee7b7'])
 
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>

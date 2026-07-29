@@ -70,7 +70,7 @@
                 @foreach($leaderLineup as $pick)
                 @php $m = $pick->match; $topScore = is_array($pick->likely_scores) ? ($pick->likely_scores[0] ?? null) : null; @endphp
                 <tr>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $m?->home_team }} vs {{ $m?->away_team }}</td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $m])</td>
                     <td style="color:var(--dim); font-size:.74rem;">{{ $m?->league }}</td>
                     <td style="color:#6ee7b7; font-weight:700;">{{ $pick->predicted_outcome }}</td>
                     <td style="font-weight:700; color:#fff;">{{ $pick->confidence }}%</td>
@@ -157,8 +157,8 @@
                     <td style="font-weight:800; color:#fcd34d;">
                         {{ $pick->pick_rank === 1 ? '👑' : '⭐' }} #{{ $pick->pick_rank }}
                     </td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
                             <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                         @endif
@@ -232,8 +232,8 @@
                         @php $m = $pick->match; @endphp
                         <tr>
                             <td style="width:60px; font-weight:700; color:#fcd34d;">#{{ $pick->pick_rank }}</td>
-                            <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                                {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                            <td>
+                                @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
                                     <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                                 @endif
@@ -287,8 +287,8 @@
                 @foreach($lineupPicks as $pick)
                 @php $m = $pick->match; @endphp
                 <tr>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                     </td>
                     <td style="color:var(--dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {{ $m?->league }}
@@ -353,8 +353,8 @@
                 @php $m = $pick->match; $tips = is_array($pick->tips) ? $pick->tips : []; @endphp
                 <tr>
                     <td style="font-weight:800; color:#fcd34d;">🤝 #{{ $pick->draw_rank }}</td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
                             <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                         @endif
@@ -429,8 +429,8 @@
                 @php $m = $pick->match; $tips = is_array($pick->tips) ? $pick->tips : []; @endphp
                 <tr>
                     <td style="font-weight:800; color:#6ee7b7;">⚽ #{{ $pick->gg_rank }}</td>
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">
-                        {{ $m?->home_team ?? '?' }} vs {{ $m?->away_team ?? '?' }}
+                    <td>
+                        @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
                             <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
                         @endif

@@ -96,7 +96,7 @@
                     @if($i === 0)
                     <td rowspan="{{ $legs->count() }}" style="font-weight:800; color:#fcd34d; vertical-align:top; white-space:nowrap;">Day {{ $day }}@if($legs->count() > 1)<br><span style="font-size:.62rem; color:var(--dim); font-weight:600;">{{ $legs->count() }} legs</span>@endif</td>
                     @endif
-                    <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $rm?->home_team }} vs {{ $rm?->away_team }}</td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $rm])</td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {{ \App\Support\LeagueCoverage::formatName($rm?->league, $rm?->league_country) }}
                     </td>
@@ -233,7 +233,7 @@
                 @php $rm = $rp->match; @endphp
                 <tr>
                     @if($i === 0)<td rowspan="{{ $legs->count() }}" style="font-weight:800; color:#fcd34d; vertical-align:top;">Day {{ $day }}</td>@endif
-                    <td style="color:#fff; white-space:nowrap;">{{ $rm?->home_team }} vs {{ $rm?->away_team }}</td>
+                    <td>@include('admin.partials.fixture-mini', ['match' => $rm])</td>
                     <td style="color:#6ee7b7; font-weight:600;">{{ $rp->groq_verdict }}</td>
                     <td style="color:#fcd34d;">{{ $rp->implied_odds }}</td>
                     <td style="color:var(--dim);">{{ $rp->result_score ?? '-' }}</td>
