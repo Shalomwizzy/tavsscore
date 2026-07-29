@@ -70,6 +70,15 @@ class MarketEngineTest extends TestCase
         $this->assertLessThan($b['Home Win'], $b['Home -1.5 (Handicap)']);
     }
 
+    public function test_large_positive_handicaps_are_available_and_safer_than_smaller_positive_lines(): void
+    {
+        $b = $this->board();
+
+        $this->assertArrayHasKey('Home +4.5 (Handicap)', $b);
+        $this->assertArrayHasKey('Away +4.5 (Handicap)', $b);
+        $this->assertGreaterThan($b['Home +3.5 (Handicap)'], $b['Home +4.5 (Handicap)']);
+    }
+
     public function test_over_lines_decrease_monotonically(): void
     {
         $b = $this->board();

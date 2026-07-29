@@ -6,12 +6,9 @@
 |--------------------------------------------------------------------------
 | API-Football identifies competitions by integer ID. We track:
 |   • the canonical Euro/global IDs we know (top European + UCL/UEL etc.)
-|   • a list of African countries — anything in API-Football tagged with
-|     these as `league.country` is auto-included. This avoids hardcoding
-|     dozens of African league IDs that change between seasons.
 |
 | The Predictions/AutoBlog pipelines also use `top_european` so that the
-| daily-pick selector still leans toward marquee matches when both fire.
+| daily-pick selector leans toward marquee matches.
 |
 */
 
@@ -63,38 +60,6 @@ return [
         61,  // Ligue 1 (Fra)
         88,  // Eredivisie (Ned)
         144, // Belgian Pro League
-    ],
-
-    // Africa-focused expansion. We match by `league.country` rather than
-    // ID so that all NPFL/PSL/Ghana Premier/Botola fixtures auto-include
-    // even if their league ID changes between seasons. Add CAF Champions
-    // League etc. by country = "World" with explicit ID below.
-    'africa_countries' => [
-        'Nigeria',
-        'South Africa',
-        'Ghana',
-        'Egypt',
-        'Morocco',
-        'Tunisia',
-        'Algeria',
-        'Kenya',
-        'Tanzania',
-        'Senegal',
-        'Ivory Coast',
-        'Cameroon',
-        'Zambia',
-        'Uganda',
-        'Ethiopia',
-        'Sudan',
-    ],
-
-    // Pan-African continental competitions. League IDs in API-Football
-    // for international tournaments are stable — keep these explicit.
-    'africa_continental' => [
-        12,  // CAF Champions League
-        20,  // CAF Confederation Cup
-        36,  // Africa Cup of Nations
-        37,  // AFCON Qualification
     ],
 
 ];

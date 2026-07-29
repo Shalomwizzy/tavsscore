@@ -87,12 +87,6 @@
                 </div>
             </div>
 
-            <a href="{{ route('africa.index') }}"
-               class="nav-pill {{ request()->routeIs('africa.index') ? 'active' : '' }}"
-               style="{{ request()->routeIs('africa.index') ? '' : 'background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);color:#6ee7b7;' }}">
-                🌍 Africa
-            </a>
-
             <a href="{{ route('blog.index') }}"
                class="nav-pill {{ request()->routeIs('blog.*') ? 'active' : '' }}">
                 📰 Football News
@@ -201,11 +195,6 @@
             <span class="di-icon">🏆</span>
             <span class="di-text">Fantasy Best XI</span>
         </a>
-        <a href="{{ route('africa.index') }}" class="drawer-item {{ request()->routeIs('africa.index') ? 'active' : '' }}" onclick="closeDrawer()" style="{{ request()->routeIs('africa.index') ? '' : 'color:#6ee7b7;' }}">
-            <span class="di-icon">🌍</span>
-            <span class="di-text">Africa</span>
-        </a>
-
         {{-- Picks --}}
         <div class="drawer-section-label" style="margin-top:.75rem;">Picks</div>
 

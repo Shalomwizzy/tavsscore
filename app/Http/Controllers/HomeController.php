@@ -20,33 +20,6 @@ class HomeController extends Controller
         $today  = now($tz)->startOfDay();
         $cutoff = now($tz)->endOfDay();
 
-        // ── African matches ───────────────────────────────────────
-        $africanCountries   = config('leagues.africa_countries', []);
-        $africanContinental = config('leagues.africa_continental', []);
-
-        $africanQuery = FootballMatch::query()
-            ->with('prediction')
-            ->where(fn ($q) => $q
-                ->whereIn('league_country', $africanCountries)
-                ->orWhereIn('league_id', $africanContinental)
-            );
-
-        $africanMatches = (clone $africanQuery)
-            ->where('match_time', '>=', now($tz))
-            ->where('match_time', '<=', now($tz)->addHours(36))
-            ->whereNotIn('status', ['CANC', 'PST', 'ABD', 'AWD', 'WO'])
-            ->orderBy('match_time')
-            ->limit(6)
-            ->get();
-
-        if ($africanMatches->isEmpty()) {
-            $africanMatches = (clone $africanQuery)
-                ->whereIn('status', ['FT', 'AET', 'PEN', '1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'])
-                ->orderByDesc('match_time')
-                ->limit(6)
-                ->get();
-        }
-
         // ── Today's top daily pick ────────────────────────────────
         $topPick = Prediction::query()
             ->with('match')
@@ -179,7 +152,6 @@ class HomeController extends Controller
         ];
 
         return view('home.index', [
-            'africanMatches'    => $africanMatches,
             'topPick'           => $topPick,
             'featuredSignals'   => $featuredSignals,
             'todayPickCount'    => $todayPickCount,

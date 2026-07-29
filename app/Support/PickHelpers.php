@@ -91,7 +91,7 @@ class PickHelpers
      * beats value there); the user-facing headline wants a real, playable edge.
      */
     private const HEADLINE_TRIVIAL = [
-        'Over 0.5 Goals', 'Under 5.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals',
+        'Over 0.5 Goals', 'Under 5.5 Goals', 'Over 4.5 Goals',
         'Home or Away (12)', 'Total Goals Odd', 'Total Goals Even',
     ];
 
@@ -297,6 +297,10 @@ class PickHelpers
             'Away +1.5 (Handicap)'         => -$diff >= -1,
             'Home -2.5 (Handicap)'         => $diff >= 3,
             'Away -2.5 (Handicap)'         => -$diff >= 3,
+            'Home +3.5 (Handicap)'         => $diff >= -3,
+            'Away +3.5 (Handicap)'         => -$diff >= -3,
+            'Home +4.5 (Handicap)'         => $diff >= -4,
+            'Away +4.5 (Handicap)'         => -$diff >= -4,
             // Legacy whole-goal handicap labels (void on exact line handled as loss upstream)
             'Home -1 Handicap'             => $diff >= 2,
             'Home -2 Handicap'             => $diff >= 3,

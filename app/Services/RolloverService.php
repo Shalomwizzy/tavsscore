@@ -120,14 +120,9 @@ class RolloverService
 
         $stake = $this->calculateStake($challenge, $dayNumber);
 
-        // Find the best match from today's predictions
-        // Rollover stakes real money — restrict to top European + CAF continental only.
-        // African domestic leagues (NPFL, PSL, etc.) are excluded here because bookmaker
-        // odds are thin, data is sparse, and AI calibration is weaker on those fixtures.
-        $eligibleLeagues = array_merge(
-            \App\Support\LeagueCoverage::topEuropean(),
-            \App\Support\LeagueCoverage::africaContinental(),
-        );
+        // Find the best match from today's predictions. Rollover stakes real
+        // money, so restrict it to the configured top competitions.
+        $eligibleLeagues = \App\Support\LeagueCoverage::topEuropean();
 
         // Safety-first: consider every covered fixture that has a market board;
         // we derive the leg from the board, not from the arbiter's headline pick.

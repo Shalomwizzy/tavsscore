@@ -53,7 +53,7 @@ class PredictionServiceTest extends TestCase
     {
         $probs = $this->callPoisson(1.5, 1.0);
 
-        foreach (['home_win','draw','away_win','over_15','over_25','over_35','btts',
+        foreach (['home_win','draw','away_win','over_15','over_25','over_35','over_45','btts',
                   'home_clean_sheet','away_clean_sheet'] as $key) {
             $this->assertArrayHasKey($key, $probs, "Missing key: {$key}");
         }

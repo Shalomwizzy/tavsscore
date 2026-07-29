@@ -41,7 +41,6 @@ class SeoController extends Controller
             ['path' => '/top-scorers',                'priority' => '0.7', 'freq' => 'daily'],
             ['path' => '/results',                    'priority' => '0.7', 'freq' => 'daily'],
             ['path' => '/track-record',               'priority' => '0.7', 'freq' => 'monthly'],
-            ['path' => '/africa',                     'priority' => '0.7', 'freq' => 'daily'],
             ['path' => '/rollover',                   'priority' => '0.7', 'freq' => 'daily'],
             ['path' => '/booking-codes',              'priority' => '0.6', 'freq' => 'daily'],
             ['path' => '/winners',                    'priority' => '0.6', 'freq' => 'weekly'],

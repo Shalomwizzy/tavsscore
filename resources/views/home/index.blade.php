@@ -437,7 +437,6 @@
                 <a href="{{ route('double-chance.index') }}" class="hm-ex">🧩 Double Chance</a>
                 <a href="{{ route('standings.index') }}" class="hm-ex">🏆 Standings</a>
                 <a href="{{ route('top-scorers.index') }}" class="hm-ex">👟 Top Scorers</a>
-                <a href="{{ route('africa.index') }}" class="hm-ex">🌍 Africa</a>
                 <a href="{{ route('blog.index') }}" class="hm-ex">📰 Football News</a>
                 <a href="{{ route('winners.index') }}" class="hm-ex">🥇 Winners Wall</a>
                 <a href="{{ route('stats.index') }}" class="hm-ex">📊 Stats</a>

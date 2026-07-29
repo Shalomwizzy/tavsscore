@@ -255,6 +255,7 @@ class MarketEngine
 
         // ── Handicaps, winning margin & combo markets (joint pass) ──
         $ahHomeM15 = $ahHomeP15 = $ahAwayM15 = $ahAwayP15 = $ahHomeM25 = $ahAwayM25 = 0.0;
+        $ahHomeP35 = $ahAwayP35 = $ahHomeP45 = $ahAwayP45 = 0.0;
         $mH1 = $mH2 = $mH3 = $mA1 = $mA2 = $mA3 = 0.0;
         $hwO = $hwU = $dO = $dU = $awO = $awU = 0.0;               // result × O/U 2.5
         $hwBt = $hwNb = $awBt = $awNb = $drawBt = 0.0;              // result × BTTS
@@ -270,6 +271,10 @@ class MarketEngine
                 if (-$d >= -1) $ahAwayP15 += $p;  // Away +1.5
                 if ($d >= 3)  $ahHomeM25 += $p;   // Home -2.5
                 if (-$d >= 3) $ahAwayM25 += $p;   // Away -2.5
+                if ($d >= -3) $ahHomeP35 += $p;   // Home +3.5
+                if (-$d >= -3) $ahAwayP35 += $p;  // Away +3.5
+                if ($d >= -4) $ahHomeP45 += $p;   // Home +4.5
+                if (-$d >= -4) $ahAwayP45 += $p;  // Away +4.5
 
                 if ($d === 1) $mH1 += $p; elseif ($d === 2) $mH2 += $p; elseif ($d >= 3) $mH3 += $p;
                 elseif ($d === -1) $mA1 += $p; elseif ($d === -2) $mA2 += $p; elseif ($d <= -3) $mA3 += $p;
@@ -288,6 +293,10 @@ class MarketEngine
         $m['Away +1.5 (Handicap)'] = $pct($ahAwayP15);
         $m['Home -2.5 (Handicap)'] = $pct($ahHomeM25);
         $m['Away -2.5 (Handicap)'] = $pct($ahAwayM25);
+        $m['Home +3.5 (Handicap)'] = $pct($ahHomeP35);
+        $m['Away +3.5 (Handicap)'] = $pct($ahAwayP35);
+        $m['Home +4.5 (Handicap)'] = $pct($ahHomeP45);
+        $m['Away +4.5 (Handicap)'] = $pct($ahAwayP45);
 
         $m['Home to win by 1']  = $pct($mH1);
         $m['Home to win by 2']  = $pct($mH2);

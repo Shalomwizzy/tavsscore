@@ -42,13 +42,10 @@ class PredictionService
         private readonly MatchInsightService      $matchInsights,
     ) {}
 
-    /** League priority order — most prestigious first; African coverage appended. */
+    /** League priority order — most prestigious first. */
     private function leaguePriorityIds(): array
     {
-        return array_values(array_unique(array_merge(
-            LeagueCoverage::topEuropean(),
-            LeagueCoverage::africaContinental(),
-        )));
+        return LeagueCoverage::topEuropean();
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -207,6 +204,7 @@ class PredictionService
             $btts    = round(($groq['btts']    + $poisson['btts'])    / 2, 1);
             $over15  = $poisson['over_15'];
             $over35  = $poisson['over_35'];
+            $over45  = $poisson['over_45'];
             $tips    = $groq['tips'] ?? [];
             $analysis = $groq['analysis'];
         } else {
@@ -217,6 +215,7 @@ class PredictionService
             $over15   = $poisson['over_15'];
             $over25   = $poisson['over_25'];
             $over35   = $poisson['over_35'];
+            $over45   = $poisson['over_45'];
             $btts     = $poisson['btts'];
             $tips     = [];
             $analysis = GroqService::FALLBACK_ANALYSIS;
@@ -271,6 +270,7 @@ class PredictionService
                 $homeWin, $draw, $awayWin, $over15, $over25, $over35, $btts,
                 (float) ($poisson['home_clean_sheet'] ?? 0),
                 (float) ($poisson['away_clean_sheet'] ?? 0),
+                $over45,
             );
         }
 
@@ -368,7 +368,7 @@ class PredictionService
     private function tipsFromProbabilities(
         float $hw, float $d, float $aw,
         float $over15, float $over25, float $over35, float $btts,
-        float $homeClean = 0.0, float $awayClean = 0.0
+        float $homeClean = 0.0, float $awayClean = 0.0, float $over45 = 0.0
     ): array {
         $candidates = [
             ['market' => 'Home Win',            'confidence' => (int) round($hw),           'rationale' => 'Strongest 1X2 probability'],
@@ -385,6 +385,7 @@ class PredictionService
             ['market' => 'Under 2.5 Goals',     'confidence' => (int) round(100 - $over25), 'rationale' => 'Goal-line projection'],
             ['market' => 'Over 3.5 Goals',      'confidence' => (int) round($over35),       'rationale' => 'Goal-line projection'],
             ['market' => 'Under 3.5 Goals',     'confidence' => (int) round(100 - $over35), 'rationale' => 'Goal-line projection'],
+            ['market' => 'Under 4.5 Goals',     'confidence' => (int) round(100 - $over45), 'rationale' => 'Goal-line projection'],
             ['market' => 'Both Teams Score',    'confidence' => (int) round($btts),         'rationale' => 'BTTS Poisson estimate'],
             ['market' => 'No Both Teams Score', 'confidence' => (int) round(100 - $btts),   'rationale' => 'BTTS Poisson estimate'],
         ];
@@ -438,15 +439,13 @@ class PredictionService
      * and annotate each tip with `market_implied` (%) and `market_agrees` (bool).
      * Disagreement threshold = 15pp.
      *
-     * Only fires for top-priority leagues to conserve API quota — bookmakers
-     * don't price African club fixtures consistently anyway.
+     * Only fires for top-priority leagues to conserve API quota.
      */
     private function annotateWithMarketConsensus(array $tips, FootballMatch $match): array
     {
         if (empty($tips)) return $tips;
 
-        // Skip lower-tier / African leagues: bookmakers rarely price these well
-        // and we save API calls for matches where the consensus actually matters
+        // Save odds calls for the competitions where consensus is most useful.
         if (! in_array((int) $match->league_id, LeagueCoverage::topEuropean(), true)) {
             return $tips;
         }
@@ -749,7 +748,7 @@ class PredictionService
         string $outcome,
         float $hw, float $d, float $aw,
         float $over15, float $over25, float $over35, float $btts,
-        float $homeClean = 0.0, float $awayClean = 0.0
+        float $homeClean = 0.0, float $awayClean = 0.0, float $over45 = 0.0
     ): int {
         return (int) round(match (true) {
             $outcome === 'Home Win'                                            => $hw,
@@ -761,6 +760,7 @@ class PredictionService
             $outcome === 'Under 2.5 Goals'                                     => 100 - $over25,
             $outcome === 'Over 3.5 Goals'                                      => $over35,
             $outcome === 'Under 3.5 Goals'                                     => 100 - $over35,
+            $outcome === 'Under 4.5 Goals' && $over45 > 0                      => 100 - $over45,
             in_array($outcome, ['Both Teams Score', 'Both Teams Score (GG)'], true)      => $btts,
             in_array($outcome, ['No Both Teams Score', 'No Both Teams Score (NG)'], true) => 100 - $btts,
             $outcome === 'Home or Draw (1X)'                                   => $hw + $d,
@@ -985,9 +985,8 @@ class PredictionService
         $today  = now($tz)->startOfDay();
         $cutoff = now($tz)->endOfDay();
 
-        // FIELD() returns 0 for IDs not in the list — without correction, unlisted
-        // African domestic leagues sort FIRST (0 < 1). IF(...) remaps 0 → 9999
-        // so unlisted leagues always sort after all explicitly ranked leagues.
+        // FIELD() returns 0 for IDs not in the list. IF(...) remaps 0 → 9999
+        // so explicitly ranked leagues always come first.
         return FootballMatch::query()
             ->where(fn ($q) => LeagueCoverage::scopeCovered($q))
             ->whereNotIn('status', self::EXCLUDED_UPCOMING_STATUSES)
@@ -1198,9 +1197,8 @@ class PredictionService
         ))
         ->sortByDesc('score');
 
-        // Tier-first selection: European/global leagues are always preferred over
-        // African domestic leagues regardless of confidence scores.
-        // Only backfill with non-European picks if we can't reach 3 from European.
+        // Tier-first selection: preferred competitions are selected first.
+        // Backfill only if that pool does not reach three picks.
         $europeanIds     = LeagueCoverage::topEuropean();
         $europeanScored  = $scored->filter(fn ($s) => in_array((int) $s['prediction']->match?->league_id, $europeanIds, true));
         $nonEuroScored   = $scored->reject(fn ($s) => in_array((int) $s['prediction']->match?->league_id, $europeanIds, true));
@@ -1857,7 +1855,7 @@ class PredictionService
             return 1.0;
         };
 
-        $hw = $d = $aw = $o15 = $o25 = $o35 = $btts = $tot = $h3p = $a3p = $h2p = $a2p = 0.0;
+        $hw = $d = $aw = $o15 = $o25 = $o35 = $o45 = $btts = $tot = $h3p = $a3p = $h2p = $a2p = 0.0;
 
         for ($h = 0; $h <= self::MAX_GOALS_GRID; $h++) {
             $ph = $this->poisson($homeXg, $h);
@@ -1871,6 +1869,7 @@ class PredictionService
                 if ($g >= 2)  { $o15 += $p; }
                 if ($g >= 3)  { $o25 += $p; }
                 if ($g >= 4)  { $o35 += $p; }
+                if ($g >= 5)  { $o45 += $p; }
                 if ($h >= 1 && $a >= 1) { $btts += $p; }
                 if ($h >= 2)  { $h2p += $p; }
                 if ($a >= 2)  { $a2p += $p; }
@@ -1894,6 +1893,7 @@ class PredictionService
             'over_15'          => round($o15  / $tot * 100, 1),
             'over_25'          => round($o25  / $tot * 100, 1),
             'over_35'          => round($o35  / $tot * 100, 1),
+            'over_45'          => round($o45  / $tot * 100, 1),
             'btts'             => round($btts / $tot * 100, 1),
             'home_clean_sheet' => $homeClean,
             'away_clean_sheet' => $awayClean,

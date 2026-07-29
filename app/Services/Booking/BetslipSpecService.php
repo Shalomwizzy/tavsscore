@@ -61,6 +61,8 @@ class BetslipSpecService
             'double-chance' => ['title' => 'Double Chance'] + $bestOf(['Home or Draw (1X)', 'Draw or Away (X2)'], 80),
             'draw-no-bet'   => ['title' => 'Draw No Bet'] + $bestOf(['Draw No Bet - Home', 'Draw No Bet - Away'], 78),
             'under-3-5'     => ['title' => 'Under 3.5 Goals'] + $single('Under 3.5 Goals', 70),
+            'under-4-5'     => ['title' => 'Under 4.5 Goals'] + $single('Under 4.5 Goals', 82),
+            'handicap-safe' => ['title' => 'Goal Handicap Safety (+4.5)'] + $bestOf(['Home +4.5 (Handicap)', 'Away +4.5 (Handicap)'], 88),
         ];
     }
 

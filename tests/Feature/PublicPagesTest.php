@@ -168,7 +168,7 @@ class PublicPagesTest extends TestCase
         $this->get('/rollover/' . now()->toDateString())->assertStatus(200);
     }
 
-    // ── Stats / Results / Africa ────────────────────────────────────
+    // ── Stats / Results ─────────────────────────────────────────────
 
     public function test_stats_page_loads(): void
     {
@@ -180,9 +180,9 @@ class PublicPagesTest extends TestCase
         $this->get('/results')->assertStatus(200);
     }
 
-    public function test_africa_page_loads(): void
+    public function test_removed_africa_page_returns_not_found(): void
     {
-        $this->get('/africa')->assertStatus(200);
+        $this->get('/africa')->assertNotFound();
     }
 
     // ── Winners / Hall of Fame ──────────────────────────────────────

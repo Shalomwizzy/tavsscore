@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin;
-use App\Http\Controllers\AfricaController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CorrectScoreController;
 use App\Http\Controllers\HallOfFameController;
@@ -54,7 +53,6 @@ Route::get('/standings',    [App\Http\Controllers\LeagueStatsController::class, 
 Route::get('/top-scorers',  [App\Http\Controllers\LeagueStatsController::class, 'topScorers'])->name('top-scorers.index');
 Route::get('/track-record', [TrackRecordController::class, 'index'])->name('track-record.index');
 Route::get('/results',     [ResultsController::class, 'index'])->name('results.index');
-Route::get('/africa',      [AfricaController::class, 'index'])->name('africa.index');
 
 /* ── Booking Codes (public) ── */
 Route::get('/booking-codes', [App\Http\Controllers\BookingCodesController::class, 'index'])->name('booking-codes.index');
