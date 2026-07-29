@@ -54,7 +54,9 @@ class TelegramPickCardService
 
             $footerY = $height - 76; $this->line($image, 58, $footerY, 1142, $footerY, [41, 64, 87]);
             $this->text($image, $font, 15, 58, $footerY + 40, 'Selections are model analysis, not guarantees. Verify final information before any decision.', [155, 176, 196]);
-            ob_start(); imagejpeg($image, null, 90); $binary = (string) ob_get_clean(); imagedestroy($image);
+            // Keep source detail high before Telegram applies its own delivery
+            // compression; small match labels remain noticeably clearer.
+            ob_start(); imagejpeg($image, null, 96); $binary = (string) ob_get_clean(); imagedestroy($image);
             if ($binary === '' || ! str_starts_with($binary, "\xFF\xD8\xFF")) return null;
             $path = 'telegram/picks/'.now('Africa/Lagos')->format('Y-m-d').'/'.uniqid('pick-', true).'.jpg';
             Storage::disk('public')->put($path, $binary); return $path;
