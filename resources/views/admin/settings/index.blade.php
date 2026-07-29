@@ -12,7 +12,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.settings.update') }}">
+    <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
         @csrf
 
         <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem;">
@@ -75,6 +75,25 @@
                 @enderror
             </div>
 
+        </div>
+
+        <h2 style="font-size:1rem; font-weight:700; margin:2rem 0 1rem;">🖼️ Homepage Media</h2>
+        <p style="font-size:.75rem;line-height:1.55;color:var(--dim);margin:-.5rem 0 1rem;">Upload the cinematic images used on the homepage. JPG, PNG or WebP, maximum 5 MB. The layout works without them, but these images create the premium visual experience.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;">
+            @foreach([
+                'homepage_hero_image' => ['Hero Stadium Image', 'Wide 16:9 image, recommended 1920 × 1080'],
+                'homepage_feature_image' => ['Football Feature Image', 'Portrait or wide action image, recommended 1400 × 1000'],
+                'homepage_tennis_image' => ['Tennis Banner Image', 'Wide 16:9 image, recommended 1400 × 700'],
+            ] as $field => [$label, $hint])
+                @php($path = $settings[$field]->value ?? null)
+                <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+                    <div style="font-size:.78rem;font-weight:800;color:#fff;margin-bottom:.35rem;">{{ $label }}</div>
+                    @if($path)<img src="{{ asset($path) }}" alt="{{ $label }}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:7px;border:1px solid var(--border);margin:.25rem 0 .6rem;">@endif
+                    <input type="file" name="{{ $field }}" accept="image/jpeg,image/png,image/webp" class="form-input" style="font-size:.72rem;">
+                    <div style="font-size:.67rem;color:var(--dim);line-height:1.45;margin-top:.4rem;">{{ $hint }}</div>
+                    @error($field)<p style="color:#f87171;font-size:.72rem;margin:.35rem 0 0;">{{ $message }}</p>@enderror
+                </div>
+            @endforeach
         </div>
 
         <h2 style="font-size:1rem; font-weight:700; margin:2rem 0 1rem;">⚙️ Prediction Tuning</h2>

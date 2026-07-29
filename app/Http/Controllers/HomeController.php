@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\FootballMatch;
 use App\Models\Prediction;
 use App\Models\RolloverChallenge;
+use App\Models\BlogPost;
+use App\Models\Setting;
 use App\Services\GroqService;
 use App\Support\LeagueCoverage;
 use Carbon\CarbonImmutable;
@@ -58,6 +60,17 @@ class HomeController extends Controller
             ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
             ->count();
 
+        // ── Three strongest model signals for the redesigned homepage ──
+        $featuredSignals = Prediction::query()
+            ->with('match')
+            ->whereNotNull('predicted_outcome')
+            ->where('predicted_outcome', '!=', 'Competitive Match')
+            ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
+            ->orderByDesc('is_daily_pick')
+            ->orderByDesc('confidence')
+            ->limit(3)
+            ->get();
+
         // ── Live now + today's upcoming slate (for the cinematic hero) ──
         $liveCount = FootballMatch::query()
             ->whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])
@@ -109,7 +122,8 @@ class HomeController extends Controller
             ->where('is_daily_pick', true)
             ->whereNotNull('was_correct')
             ->orderByDesc('created_at')
-            ->get(['was_correct', 'confidence', 'predicted_outcome', 'created_at']);
+            ->with('match')
+            ->get(['match_id', 'was_correct', 'confidence', 'predicted_outcome', 'created_at']);
 
         $totalResolved = $allResolved->count();
         $totalCorrect  = $allResolved->where('was_correct', true)->count();
@@ -153,9 +167,21 @@ class HomeController extends Controller
             ->whereHas('match', fn ($q) => $q->whereBetween('match_time', [$today, $cutoff]))
             ->count();
 
+        $recentPosts = BlogPost::published()
+            ->orderByDesc('published_at')
+            ->limit(4)
+            ->get();
+
+        $homeMedia = [
+            'hero' => Setting::get('homepage_hero_image'),
+            'feature' => Setting::get('homepage_feature_image'),
+            'tennis' => Setting::get('homepage_tennis_image'),
+        ];
+
         return view('home.index', [
             'africanMatches'    => $africanMatches,
             'topPick'           => $topPick,
+            'featuredSignals'   => $featuredSignals,
             'todayPickCount'    => $todayPickCount,
             'liveCount'         => $liveCount,
             'upcoming'          => $upcoming,
@@ -172,6 +198,8 @@ class HomeController extends Controller
             'streakType'        => $streakType,
             'correctScoreCount' => $correctScoreCount,
             'lineupPickCount'   => $lineupPickCount,
+            'recentPosts'       => $recentPosts,
+            'homeMedia'         => $homeMedia,
         ]);
     }
 }

@@ -29,6 +29,8 @@
         -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 58%, transparent);
         mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 58%, transparent); }
     .hm-hgrid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 3rem; align-items: center; }
+    .hm-hero-image { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:.46; filter:saturate(.85) contrast(1.08); }
+    .hm-hero-image:after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,#080b0f 4%,rgba(8,11,15,.72) 48%,rgba(8,11,15,.16)),linear-gradient(0deg,#080b0f 0%,transparent 45%); }
     @media (max-width: 900px) { .hm-hgrid { grid-template-columns: 1fr; gap: 2.25rem; } .hm-hero { padding: 3rem 0 2.25rem; } }
 
     .hm-eyebrow { display: inline-flex; align-items: center; gap: .5rem; font-size: .71rem; font-weight: 700;
@@ -131,6 +133,47 @@
     .hm-footcta h2 { font-size: clamp(2rem,5vw,3.1rem); font-weight: 850; letter-spacing: -.035em; text-wrap: balance; margin: 0 0 1rem; }
     .hm-footcta p { color: var(--mute); max-width: 30rem; margin: 0 auto 2rem; }
 
+    /* Editorial layers for the cinematic homepage experience. */
+    .hm-signal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.7rem; }
+    .hm-signal { background:linear-gradient(145deg,rgba(22,33,44,.96),rgba(11,17,23,.98)); border:1px solid var(--line); border-radius:16px; padding:1rem; transition:transform .18s,border-color .18s; }
+    .hm-signal:hover { transform:translateY(-4px); border-color:var(--accbrd); }
+    .hm-signal-top { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em; }
+    .hm-signal-teams { display:flex;align-items:center;gap:.55rem;margin:1rem 0 .85rem; }
+    .hm-signal-crest { display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#285d92,#0b2545);border:1px solid rgba(147,197,253,.35);color:#fff;font-size:.6rem;font-weight:900; }
+    .hm-signal-crest.away { margin-left:-.9rem;margin-top:1.1rem;background:linear-gradient(135deg,#1c785d,#093a31);border-color:rgba(110,231,183,.3); }
+    .hm-signal-names { min-width:0;flex:1; }
+    .hm-signal-names strong { display:block;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hm-signal-names span { display:block;color:var(--mute);font-size:.67rem;margin:.1rem 0; }
+    .hm-signal-label { color:var(--mint);font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em; }
+    .hm-signal-pick { font-size:.95rem;font-weight:800;margin:.22rem 0 .65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .hm-signal-bar { height:5px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden; }
+    .hm-signal-bar i { display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--acc),var(--mint)); }
+    .hm-signal-foot { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.67rem;margin-top:.5rem; }
+    .hm-signal-foot b { color:var(--mint);font-family:var(--mono);font-size:.78rem; }
+    .hm-feature-band { display:grid;grid-template-columns:1fr 1fr;min-height:315px;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px; }
+    .hm-feature-copy { padding:2.4rem;display:flex;flex-direction:column;justify-content:center; }
+    .hm-feature-image { min-height:260px;background:radial-gradient(circle at 50% 30%,rgba(16,185,129,.24),transparent 50%),linear-gradient(135deg,#142334,#081018);background-size:cover;background-position:center; }
+    .hm-feature-points { display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-top:1.4rem; }
+    .hm-feature-point { color:var(--mute);font-size:.66rem;line-height:1.45; }
+    .hm-feature-point b { display:block;color:var(--ink);font-size:.73rem;margin-top:.25rem; }
+    .hm-results-card { border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;margin-top:1.5rem; }
+    .hm-results-head { display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem;border-bottom:1px solid var(--line); }
+    .hm-results-title { font-size:.86rem;font-weight:800; }
+    .hm-results-table { width:100%;border-collapse:collapse; }
+    .hm-results-table th { padding:.65rem .9rem;text-align:left;color:var(--mute);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em; }
+    .hm-results-table td { padding:.72rem .9rem;border-top:1px solid rgba(255,255,255,.05);font-size:.74rem;color:var(--mute); }
+    .hm-results-table td strong { color:var(--ink); }
+    .hm-outcome { display:inline-flex;padding:.2rem .5rem;border-radius:99px;font-size:.61rem;font-weight:900; }
+    .hm-outcome.win { color:var(--mint);background:var(--accdim);border:1px solid var(--accbrd); }.hm-outcome.loss { color:#fca5a5;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25); }
+    .hm-tennis-band { display:grid;grid-template-columns:.9fr 1.1fr;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--panel); }
+    .hm-tennis-image { min-height:180px;background:linear-gradient(135deg,#1f4a37,#0a1920);background-size:cover;background-position:center; }
+    .hm-tennis-copy { padding:1.7rem;align-self:center; }
+    .hm-news-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1.5rem; }
+    .hm-news { border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);color:inherit;transition:transform .16s,border-color .16s; }
+    .hm-news:hover { transform:translateY(-3px);border-color:var(--accbrd); }.hm-news-image { height:105px;background:linear-gradient(135deg,#173144,#0b1117);background-size:cover;background-position:center; }.hm-news-body { padding:.8rem; }.hm-news-cat { color:var(--mint);font-size:.58rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em; }.hm-news h3 { font-size:.82rem;line-height:1.4;margin:.4rem 0;color:var(--ink); }.hm-news small { color:var(--mute);font-size:.63rem; }
+    @media(max-width:860px) { .hm-signal-grid{grid-template-columns:1fr}.hm-feature-band,.hm-tennis-band{grid-template-columns:1fr}.hm-news-grid{grid-template-columns:repeat(2,1fr)}.hm-feature-image{min-height:220px} }
+    @media(max-width:560px) { .hm-feature-copy{padding:1.35rem}.hm-feature-points{grid-template-columns:1fr}.hm-news-grid{grid-template-columns:1fr}.hm-results-table th:nth-child(1),.hm-results-table td:nth-child(1),.hm-results-table th:nth-child(3),.hm-results-table td:nth-child(3){display:none;} }
+
     @media (prefers-reduced-motion: reduce) {
         .hm-flood { animation: none; } .hm-pdot { animation: none; }
         .hm-reveal { opacity: 1; transform: none; transition: none; }
@@ -145,22 +188,24 @@
     $agreement = $tips[0]['agreement_level'] ?? null;
     $winRate   = $last7Acc ?? $overallAcc;
     $crest     = fn ($name) => strtoupper(mb_substr(preg_replace('/[^A-Za-z ]/', '', (string) $name), 0, 3));
+    $initials  = fn ($name) => collect(preg_split('/\s+/', trim((string) $name)))->filter()->take(3)->map(fn ($part) => mb_substr($part, 0, 1))->join('');
 @endphp
 <div class="hm">
 
     {{-- ── HERO ── --}}
     <header class="hm-hero">
+        @if($homeMedia['hero'])<div class="hm-hero-image" style="background-image:url('{{ asset($homeMedia['hero']) }}')"></div>@endif
         <div class="hm-flood"></div>
         <div class="hm-lines"></div>
         <div class="wrap">
             <div class="hm-hgrid">
                 <div>
-                    <span class="hm-eyebrow"><span class="hm-pdot"></span> AI-Powered Football Predictions</span>
-                    <h1 class="hm-title">Every match.<br>Every market.<br><span class="g">Called before kickoff.</span></h1>
-                    <p class="hm-sub">A four-model AI engine crunches the numbers, cross-checks every fixture, and makes one final call — across 100+ markets, verified every single day.</p>
+                    <span class="hm-eyebrow"><span class="hm-pdot"></span> TavsScore Football Intelligence</span>
+                    <h1 class="hm-title">Football,<br><span class="g">Read Better.</span></h1>
+                    <p class="hm-sub">Live scores, modelled match signals and verified daily results — one calm, clear football experience.</p>
                     <div class="hm-ctas">
-                        <a href="{{ route('picks.index') }}" class="hm-btn">See today's picks →</a>
-                        <a href="{{ route('track-record.index') }}" class="hm-ghost">View track record</a>
+                        <a href="{{ route('predictions.index') }}" class="hm-btn">Explore today’s signals →</a>
+                        <a href="{{ route('live.index') }}" class="hm-ghost">See live scores</a>
                     </div>
                 </div>
 
@@ -224,6 +269,33 @@
         </div>
     </header>
 
+    {{-- ── TODAY'S STRONGEST SIGNALS ── --}}
+    <section class="hm-band" style="padding-top:2.2rem;">
+        <div class="wrap hm-reveal">
+            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:end;flex-wrap:wrap;">
+                <div><div class="hm-eye">Today at a glance</div><h2 class="hm-h2">Today’s strongest signals</h2></div>
+                <a href="{{ route('predictions.index') }}" class="hm-ghost" style="color:var(--mint);">View all predictions →</a>
+            </div>
+            @if($featuredSignals->isNotEmpty())
+            <div class="hm-signal-grid">
+                @foreach($featuredSignals as $signal)
+                    @php($match = $signal->match)
+                    @continue(! $match)
+                    @php($confidence = (int) round($signal->confidence ?? 0))
+                    <a href="{{ route('predictions.show', $match->slug) }}" class="hm-signal">
+                        <div class="hm-signal-top"><span>{{ \App\Support\LeagueCoverage::formatName($match->league, $match->league_country) }}</span><span>{{ $match->match_time?->timezone(config('app.timezone'))->format('H:i') }}</span></div>
+                        <div class="hm-signal-teams"><div><span class="hm-signal-crest">{{ $initials($match->home_team) }}</span><span class="hm-signal-crest away">{{ $initials($match->away_team) }}</span></div><div class="hm-signal-names"><strong>{{ $match->home_team }}</strong><span>vs</span><strong>{{ $match->away_team }}</strong></div></div>
+                        <div class="hm-signal-label">Model signal</div><div class="hm-signal-pick">{{ $signal->predicted_outcome }}</div>
+                        <div class="hm-signal-bar"><i style="width:{{ max(0, min(100, $confidence)) }}%"></i></div><div class="hm-signal-foot"><span>{{ $signal->is_daily_pick ? '⭐ Daily shortlist' : 'Form • team news • trends' }}</span><b>{{ $confidence }}%</b></div>
+                    </a>
+                @endforeach
+            </div>
+            @else
+                <div style="margin-top:1.5rem;padding:1.4rem;border:1px dashed var(--line2);border-radius:14px;color:var(--mute);">Today’s match signals are being prepared. Check back shortly.</div>
+            @endif
+        </div>
+    </section>
+
     {{-- ── VERIFIED PROOF ── --}}
     @if($overallAcc !== null && $totalResolved > 0)
     <section class="hm-band">
@@ -274,6 +346,40 @@
         </div>
     </section>
 
+    {{-- ── DATA FEATURE ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal">
+            <div class="hm-feature-band">
+                <div class="hm-feature-copy">
+                    <div class="hm-eye" style="color:var(--mint);">The TavsScore difference</div>
+                    <h2 class="hm-h2">See the game<br><span style="color:var(--mint);">before kickoff.</span></h2>
+                    <p class="hm-desc">Our signals connect recent performance, team availability and match patterns so every prediction is easier to understand, not just easier to follow.</p>
+                    <div class="hm-feature-points"><div class="hm-feature-point">📈<b>Recent form</b>Momentum and scoring trends</div><div class="hm-feature-point">📋<b>Team news</b>Injuries, suspensions and lineups</div><div class="hm-feature-point">◌<b>Match patterns</b>Goals, styles and matchup history</div></div>
+                </div>
+                <div class="hm-feature-image" @if($homeMedia['feature']) style="background-image:url('{{ asset($homeMedia['feature']) }}')" @endif></div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ── VERIFIED RESULTS ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal">
+            <div class="hm-eye">Transparent performance</div><h2 class="hm-h2">Verified results, not empty claims.</h2>
+            <div class="hm-results-card">
+                <div class="hm-results-head"><div><div class="hm-results-title">Recent daily results</div><div style="font-size:.68rem;color:var(--mute);margin-top:.18rem;">Every resolved daily pick is recorded as won or lost.</div></div><a href="{{ route('daily-football-predictions.index') }}" class="hm-ghost" style="color:var(--mint);">View all results →</a></div>
+                @if($recentResults->isNotEmpty())
+                    <table class="hm-results-table"><thead><tr><th>Date</th><th>Match</th><th>Prediction</th><th>Outcome</th></tr></thead><tbody>
+                    @foreach($recentResults->take(5) as $result)
+                        <tr><td>{{ $result->created_at?->timezone(config('app.timezone'))->format('M j') }}</td><td><strong>{{ $result->match?->home_team ?? 'Match' }} vs {{ $result->match?->away_team ?? '' }}</strong></td><td>{{ $result->predicted_outcome }}</td><td><span class="hm-outcome {{ $result->was_correct ? 'win' : 'loss' }}">{{ $result->was_correct ? '✓ WON' : '✗ LOST' }}</span></td></tr>
+                    @endforeach
+                    </tbody></table>
+                @else
+                    <div style="padding:1.5rem;color:var(--mute);font-size:.8rem;">Verified results will appear once daily picks are settled.</div>
+                @endif
+            </div>
+        </div>
+    </section>
+
     {{-- ── ROLLOVER ── --}}
     <section class="hm-band" style="padding-top:1rem;">
         <div class="wrap hm-reveal">
@@ -302,6 +408,18 @@
             </div>
         </div>
     </section>
+
+    {{-- ── TENNIS ── --}}
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal"><div class="hm-tennis-band"><div class="hm-tennis-image" @if($homeMedia['tennis']) style="background-image:url('{{ asset($homeMedia['tennis']) }}')" @endif></div><div class="hm-tennis-copy"><div class="hm-eye" style="color:#93c5fd;">Tennis</div><h2 class="hm-h2" style="font-size:2rem;">More than football.<br>Smart tennis insights.</h2><p class="hm-desc">Match previews, player form and modelled signals across ATP and WTA tours.</p><a href="{{ route('tennis.index') }}" class="hm-ghost" style="display:inline-block;border:1px solid var(--line2);border-radius:10px;margin-top:1rem;color:var(--ink);">Explore tennis →</a></div></div></div>
+    </section>
+
+    {{-- ── NEWS ── --}}
+    @if($recentPosts->isNotEmpty())
+    <section class="hm-band" style="padding-top:1rem;">
+        <div class="wrap hm-reveal"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;"><div><div class="hm-eye">News &amp; insights</div><h2 class="hm-h2">The football conversation.</h2></div><a href="{{ route('blog.index') }}" class="hm-ghost" style="color:var(--mint);">View all articles →</a></div><div class="hm-news-grid">@foreach($recentPosts as $post)<a class="hm-news" href="{{ route('blog.show', $post->slug) }}"><div class="hm-news-image" @if($post->image_url) style="background-image:url('{{ $post->image_url }}')" @endif></div><div class="hm-news-body"><div class="hm-news-cat">{{ $post->category }}</div><h3>{{ \Illuminate\Support\Str::limit($post->title, 62) }}</h3><small>{{ $post->published_at?->format('M j, Y') }} · {{ $post->reading_time }} min read</small></div></a>@endforeach</div></div>
+    </section>
+    @endif
 
     {{-- ── EXPLORE ── --}}
     <section class="hm-band" style="padding-top:1rem;">
