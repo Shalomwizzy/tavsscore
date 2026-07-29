@@ -18,9 +18,14 @@
 {{-- Active challenge card --}}
 @if($challenge)
 @php
-    $wonPicks   = $challenge->picks->where('status', 'won')->count();
-    $lostPicks  = $challenge->picks->where('status', 'lost')->count();
-    $pendPicks  = $challenge->picks->where('status', 'pending')->count();
+    // A day is one rollover step, however many legs its ticket holds.
+    $dayGroups  = $challenge->picks->groupBy('day_number')->sortKeys();
+    $dayStatus  = fn ($legs) => $legs->contains(fn ($l) => $l->status === 'lost') ? 'lost'
+                    : ($legs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
+    $wonPicks   = $dayGroups->filter(fn ($l) => $dayStatus($l) === 'won')->count();
+    $lostPicks  = $dayGroups->filter(fn ($l) => $dayStatus($l) === 'lost')->count();
+    $pendPicks  = $dayGroups->filter(fn ($l) => $dayStatus($l) === 'pending')->count();
+    $totalDays  = $dayGroups->count();
     $balance    = $challenge->currentBalance();
 @endphp
 <div class="a-card" style="margin-bottom:1.25rem; border-color:rgba(245,158,11,.3);">
@@ -59,7 +64,7 @@
             <span class="stat-lbl">⏳ Pending</span>
         </div>
         <div class="stat-card">
-            <span class="stat-val">{{ $challenge->picks->count() }}/10</span>
+            <span class="stat-val">{{ $totalDays }}/10</span>
             <span class="stat-lbl">Days Used</span>
         </div>
     </div>
@@ -84,10 +89,13 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($challenge->picks->sortBy('day_number') as $rp)
+                @foreach($dayGroups as $day => $legs)
+                @foreach($legs as $i => $rp)
                 @php $rm = $rp->match; @endphp
                 <tr>
-                    <td style="font-weight:800; color:#fcd34d;">Day {{ $rp->day_number }}</td>
+                    @if($i === 0)
+                    <td rowspan="{{ $legs->count() }}" style="font-weight:800; color:#fcd34d; vertical-align:top; white-space:nowrap;">Day {{ $day }}@if($legs->count() > 1)<br><span style="font-size:.62rem; color:var(--dim); font-weight:600;">{{ $legs->count() }} legs</span>@endif</td>
+                    @endif
                     <td style="color:#fff; font-weight:600; white-space:nowrap;">{{ $rm?->home_team }} vs {{ $rm?->away_team }}</td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {{ \App\Support\LeagueCoverage::formatName($rm?->league, $rm?->league_country) }}
@@ -157,6 +165,7 @@
                         </div>
                     </td>
                 </tr>
+                @endforeach
                 @endforeach
             </tbody>
         </table>
