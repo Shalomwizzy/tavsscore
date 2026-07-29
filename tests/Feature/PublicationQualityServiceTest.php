@@ -34,6 +34,8 @@ class PublicationQualityServiceTest extends TestCase
             'league_country' => 'Test',
             'status' => 'NS',
             'match_time' => now()->addHours(3),
+            'fixture_data_checked_at' => now(),
+            'intel_checked_at' => now(),
         ]);
 
         return Prediction::create(array_merge([
@@ -147,5 +149,63 @@ class PublicationQualityServiceTest extends TestCase
         $this->assertNotNull($row);
         $this->assertSame('proven', $row['state']);
         $this->assertSame(100, $row['settled_n']);
+    }
+
+    public function test_it_holds_a_pick_when_fixture_or_near_kickoff_intel_is_stale(): void
+    {
+        $prediction = $this->prediction();
+        $prediction->match->update([
+            'fixture_data_checked_at' => now()->subMinutes(91),
+            'intel_checked_at' => now()->subHours(9),
+        ]);
+
+        $result = app(PublicationQualityService::class)->evaluate(
+            $prediction->fresh('match'),
+            PredictionLog::MARKET_1X2,
+            0.72,
+            'Home Win',
+        );
+
+        $this->assertFalse($result['allowed']);
+        $this->assertSame('held', $result['status']);
+        $this->assertFalse($result['freshness']['fresh']);
+    }
+
+    public function test_it_uses_a_smaller_league_sample_when_local_calibration_is_poor(): void
+    {
+        $prediction = $this->prediction();
+        foreach (range(1, 15) as $i) {
+            $this->log($prediction, PredictionLog::MARKET_1X2, 0.72, $i <= 3 ? PredictionLog::RESULT_WIN : PredictionLog::RESULT_LOSS);
+        }
+
+        $result = app(PublicationQualityService::class)->evaluate(
+            $prediction->fresh('match'),
+            PredictionLog::MARKET_1X2,
+            0.72,
+            'Home Win',
+        );
+
+        $this->assertFalse($result['allowed']);
+        $this->assertSame('league', $result['calibration_scope']);
+        $this->assertSame(15, $result['calibration_sample']);
+    }
+
+    public function test_logger_records_a_selected_specialty_market_as_its_own_experiment(): void
+    {
+        $prediction = $this->prediction([
+            'market_board' => ['Under 3.5 Goals' => 92],
+            'is_under35_pick' => true,
+        ]);
+
+        app(PredictionLogger::class)->logLive($prediction->fresh('match'));
+
+        $row = PredictionLog::query()
+            ->where('market', PredictionLog::MARKET_UNDER35)
+            ->where('match_id', $prediction->match_id)
+            ->first();
+
+        $this->assertNotNull($row);
+        $this->assertSame('Under 3.5 Goals', $row->predicted_outcome);
+        $this->assertEqualsWithDelta(0.92, (float) $row->p_outcome, 0.0001);
     }
 }

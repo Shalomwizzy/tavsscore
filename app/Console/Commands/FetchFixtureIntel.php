@@ -27,7 +27,7 @@ class FetchFixtureIntel extends Command
 
     public function handle(FixtureIntelService $service, Client $api): int
     {
-        $hours   = max(1, (int) $this->option('hours-ahead'));
+        $hours = max(1, (int) $this->option('hours-ahead'));
         $sleepUs = max(0, (int) $this->option('sleep')) * 1000;
 
         $matches = FootballMatch::query()
@@ -40,6 +40,7 @@ class FetchFixtureIntel extends Command
 
         if ($matches->isEmpty()) {
             $this->info('No upcoming covered fixtures in window.');
+
             return self::SUCCESS;
         }
 
@@ -47,7 +48,7 @@ class FetchFixtureIntel extends Command
         $inj = 0;
         $pred = 0;
 
-        $force   = (bool) $this->option('force');
+        $force = (bool) $this->option('force');
         $skipped = 0;
 
         foreach ($matches as $match) {
@@ -64,7 +65,9 @@ class FetchFixtureIntel extends Command
                     ->exists();
                 if ($force || ! $freshInjuries) {
                     $inj += $service->fetchInjuries($match);
-                    if ($sleepUs > 0) usleep($sleepUs);
+                    if ($sleepUs > 0) {
+                        usleep($sleepUs);
+                    }
                 } else {
                     $skipped++;
                 }
@@ -74,11 +77,22 @@ class FetchFixtureIntel extends Command
             if (! $this->option('skip-predictions') && ! $api->quotaExhausted()) {
                 $havePrediction = ApiPrediction::query()->where('match_id', $match->id)->exists();
                 if ($force || ! $havePrediction) {
-                    if ($service->fetchApiPrediction($match)) $pred++;
-                    if ($sleepUs > 0) usleep($sleepUs);
+                    if ($service->fetchApiPrediction($match)) {
+                        $pred++;
+                    }
+                    if ($sleepUs > 0) {
+                        usleep($sleepUs);
+                    }
                 } else {
                     $skipped++;
                 }
+            }
+
+            // A completed intel pass is meaningful even when it returns zero
+            // injuries. The publication gate needs to know that "none listed"
+            // is fresh, rather than treating it as missing information.
+            if (! $api->quotaExhausted()) {
+                $match->update(['intel_checked_at' => now()]);
             }
         }
 

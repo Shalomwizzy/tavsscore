@@ -29,19 +29,23 @@ class FootballMatch extends Model
         'status',
         'elapsed',
         'match_time',
+        'fixture_data_checked_at',
+        'intel_checked_at',
         'integrity_flags',
         'held_for_review',
     ];
 
     protected $casts = [
-        'api_id'          => 'integer',
-        'league_id'       => 'integer',
-        'home_score'      => 'integer',
-        'away_score'      => 'integer',
-        'home_score_ht'   => 'integer',
-        'away_score_ht'   => 'integer',
-        'elapsed'         => 'integer',
-        'match_time'      => 'datetime',
+        'api_id' => 'integer',
+        'league_id' => 'integer',
+        'home_score' => 'integer',
+        'away_score' => 'integer',
+        'home_score_ht' => 'integer',
+        'away_score_ht' => 'integer',
+        'elapsed' => 'integer',
+        'match_time' => 'datetime',
+        'fixture_data_checked_at' => 'datetime',
+        'intel_checked_at' => 'datetime',
         'integrity_flags' => 'array',
         'held_for_review' => 'boolean',
     ];
@@ -57,6 +61,6 @@ class FootballMatch extends Model
      */
     public function getSlugAttribute(): string
     {
-        return Str::slug($this->home_team . ' vs ' . $this->away_team) . '-' . $this->api_id;
+        return Str::slug($this->home_team.' vs '.$this->away_team).'-'.$this->api_id;
     }
 }

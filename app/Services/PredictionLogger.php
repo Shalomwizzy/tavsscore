@@ -62,10 +62,14 @@ class PredictionLogger
      */
     private function activeVersion(Prediction $p): string
     {
-        if (! config('prediction.dc_enabled')) return self::VERSION_BASELINE;
+        if (! config('prediction.dc_enabled')) {
+            return self::VERSION_BASELINE;
+        }
 
-        $match = $p->relationLoaded('match') ? $p->match : \App\Models\FootballMatch::find($p->match_id);
-        if (! $match || ! $match->league_id) return self::VERSION_BASELINE;
+        $match = $p->relationLoaded('match') ? $p->match : FootballMatch::find($p->match_id);
+        if (! $match || ! $match->league_id) {
+            return self::VERSION_BASELINE;
+        }
 
         return in_array((int) $match->league_id, (array) config('prediction.dc_1x2_leagues'), true)
             ? self::VERSION_DC_HYBRID
@@ -100,7 +104,7 @@ class PredictionLogger
             return 0;
         }
 
-        $now     = $now ?? now();
+        $now = $now ?? now();
         $kickoff = $match->match_time;
 
         // Kickoff guard — the exact class of accidentally-cheating metrics
@@ -109,10 +113,11 @@ class PredictionLogger
         if (! $isBackfill && $now->gte($kickoff)) {
             Log::warning('PredictionLogger: refusing to log post-kickoff prediction', [
                 'prediction_id' => $p->id,
-                'match_id'      => $p->match_id,
-                'kickoff_at'    => $kickoff->toIso8601String(),
-                'now'           => $now->toIso8601String(),
+                'match_id' => $p->match_id,
+                'kickoff_at' => $kickoff->toIso8601String(),
+                'now' => $now->toIso8601String(),
             ]);
+
             return 0;
         }
 
@@ -124,22 +129,22 @@ class PredictionLogger
 
             PredictionLog::updateOrCreate(
                 [
-                    'match_id'         => $p->match_id,
-                    'market'           => $market,
-                    'model_version'    => $modelVersion,
+                    'match_id' => $p->match_id,
+                    'market' => $market,
+                    'model_version' => $modelVersion,
                     'prediction_stage' => $stage,
                 ],
                 [
-                    'prediction_id'     => $p->id,
-                    'league_id'         => $match->league_id,
+                    'prediction_id' => $p->id,
+                    'league_id' => $match->league_id,
                     'predicted_outcome' => $outcome,
-                    'p_outcome'         => $this->clampProb($pOutcome),
-                    'p_home'            => $this->clampProb($p->home_win_prob / 100),
-                    'p_draw'            => $this->clampProb($p->draw_prob / 100),
-                    'p_away'            => $this->clampProb($p->away_win_prob / 100),
-                    'is_backfill'       => $isBackfill,
-                    'kickoff_at'        => $kickoff,
-                    'created_at'        => $isBackfill ? $p->created_at : $now,
+                    'p_outcome' => $this->clampProb($pOutcome),
+                    'p_home' => $this->clampProb($p->home_win_prob / 100),
+                    'p_draw' => $this->clampProb($p->draw_prob / 100),
+                    'p_away' => $this->clampProb($p->away_win_prob / 100),
+                    'is_backfill' => $isBackfill,
+                    'kickoff_at' => $kickoff,
+                    'created_at' => $isBackfill ? $p->created_at : $now,
                 ],
             );
             $rows++;
@@ -164,7 +169,7 @@ class PredictionLogger
         // 1X2 forecast it produces, not just the ones promoted to picks.
         $probs = [
             'Home Win' => (float) $p->home_win_prob,
-            'Draw'     => (float) $p->draw_prob,
+            'Draw' => (float) $p->draw_prob,
             'Away Win' => (float) $p->away_win_prob,
         ];
         if (max($probs) > 0) {
@@ -201,30 +206,47 @@ class PredictionLogger
                 ->sortByDesc(fn ($s) => $s['probability'] ?? 0)
                 ->first();
             $scoreStr = $top['score'] ?? null;
-            $prob     = isset($top['probability']) ? ((float) $top['probability']) / 100 : null;
+            $prob = isset($top['probability']) ? ((float) $top['probability']) / 100 : null;
             if ($scoreStr && $prob !== null) {
                 $markets[] = [PredictionLog::MARKET_CORRECT_SCORE, $scoreStr, $prob];
             }
         }
 
         if ($p->is_double_chance_pick) {
-            $label   = $p->double_chance_label ?: '1X';
+            $label = $p->double_chance_label ?: '1X';
             $outcome = $label === '1X' ? 'Home or Draw (1X)' : 'Draw or Away (X2)';
-            $prob    = $label === '1X'
+            $prob = $label === '1X'
                 ? ($p->home_win_prob + $p->draw_prob)
-                : ($p->draw_prob    + $p->away_win_prob);
+                : ($p->draw_prob + $p->away_win_prob);
             $markets[] = [PredictionLog::MARKET_DOUBLE_CHANCE, $outcome, $prob / 100];
         }
 
         if ($p->is_team3plus_pick) {
-            $label     = $p->team3plus_label ?: 'Home 3+';
-            $isHome    = str_starts_with($label, 'Home');
+            $label = $p->team3plus_label ?: 'Home 3+';
+            $isHome = str_starts_with($label, 'Home');
             $threshold = str_ends_with($label, '2+') ? '2plus' : '3plus';
-            $key       = ($isHome ? 'home_' : 'away_') . $threshold . '_prob';
-            $prob      = $p->{$key} ?? null;
+            $key = ($isHome ? 'home_' : 'away_').$threshold.'_prob';
+            $prob = $p->{$key} ?? null;
             if ($prob !== null) {
                 $markets[] = [PredictionLog::MARKET_TEAM3PLUS, $label, $prob / 100];
             }
+        }
+
+        // Specialist markets are selected after the initial prediction write,
+        // so the observer calls logLive again when their flag flips. Recording
+        // the exact label is essential: "Home +3.5" and "Away -1.5" are not
+        // interchangeable experiments and must never share a scorecard.
+        $board = is_array($p->market_board) ? $p->market_board : [];
+        foreach ([
+            ['is_under35_pick', PredictionLog::MARKET_UNDER35, 'Under 3.5 Goals'],
+            ['is_under45_pick', PredictionLog::MARKET_UNDER45, 'Under 4.5 Goals'],
+            ['is_handicap_pick', PredictionLog::MARKET_ASIAN_HANDICAP, $p->handicap_label],
+            ['is_european_handicap_pick', PredictionLog::MARKET_EUROPEAN_HANDICAP, $p->european_handicap_label],
+        ] as [$flag, $market, $label]) {
+            if (! $p->{$flag} || ! $label || ! isset($board[$label])) {
+                continue;
+            }
+            $markets[] = [$market, $label, (float) $board[$label] / 100];
         }
 
         return $markets;
@@ -232,7 +254,10 @@ class PredictionLogger
 
     private function clampProb(float|int|null $v): float
     {
-        if ($v === null) return 0.0;
+        if ($v === null) {
+            return 0.0;
+        }
+
         return max(0.0, min(1.0, (float) $v));
     }
 }

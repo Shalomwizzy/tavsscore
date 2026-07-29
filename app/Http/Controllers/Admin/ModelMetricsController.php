@@ -76,12 +76,14 @@ class ModelMetricsController extends Controller
             ->pluck('market');
 
         $publicationScorecard = $this->publicationQuality->scorecard();
+        $publicationLeagueScorecard = $this->publicationQuality->leagueScorecard();
 
         return view('admin.model-metrics.index', compact(
             'overview', 'byMarket', 'byLeague', 'calibration',
             'stage', 'includeBackfill', 'bucketVersion', 'bucketMarket',
             'versions', 'markets',
             'publicationScorecard',
+            'publicationLeagueScorecard',
         ));
     }
 

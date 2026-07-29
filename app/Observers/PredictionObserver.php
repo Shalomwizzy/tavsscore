@@ -16,12 +16,10 @@ use Illuminate\Support\Facades\Log;
  *   alongside the original pre_lineup one, so calibration can compare like
  *   for like.
  *
- * All other updates (was_correct, pick flag flips, notification bookkeeping)
- * do not re-log: the pick-flag flips are captured because deriveMarkets()
- * enumerates all active markets at the time of the original create.
- * If a pick flag flips true *after* creation, it is not currently captured —
- * that's a Phase 1 known limitation; today's pipeline sets all pick flags in
- * the same save as prediction creation, so the miss is rare in practice.
+ * Pick flags can flip after a prediction is first created. The observer logs
+ * that transition once, allowing specialty boards to be measured from their
+ * actual published label rather than pretending their later selection existed
+ * at generation time. Outcome and notification updates remain unlogged.
  */
 class PredictionObserver
 {
@@ -36,6 +34,7 @@ class PredictionObserver
     {
         if ($prediction->wasChanged('has_lineup') && $prediction->has_lineup) {
             $this->safeLog($prediction);
+
             return;
         }
 
@@ -50,6 +49,7 @@ class PredictionObserver
         foreach ($pickFlags as $flag) {
             if ($prediction->wasChanged($flag) && $prediction->{$flag}) {
                 $this->safeLog($prediction);
+
                 return;
             }
         }
@@ -62,7 +62,7 @@ class PredictionObserver
         } catch (\Throwable $e) {
             Log::error('PredictionObserver: logLive failed', [
                 'prediction_id' => $prediction->id,
-                'error'         => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

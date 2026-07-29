@@ -70,7 +70,7 @@ class FetchMatches extends Command
                 // integrity check held the match — bad data would corrupt the
                 // rating.
                 $isNowFT = in_array($match['status'], ['FT', 'AET', 'PEN'], true);
-                $wasLive = $existing && in_array($existing->status, ['1H','2H','ET','BT','P','LIVE','HT'], true);
+                $wasLive = $existing && in_array($existing->status, ['1H', '2H', 'ET', 'BT', 'P', 'LIVE', 'HT'], true);
                 if ($isNowFT && $wasLive && ! $updated->held_for_review) {
                     $cacheKey = "pi_rated_{$updated->id}";
                     if (! Cache::has($cacheKey)) {
@@ -97,11 +97,11 @@ class FetchMatches extends Command
 
         } catch (Throwable $exception) {
             Log::error('Failed to fetch matches.', [
-                'message'   => $exception->getMessage(),
+                'message' => $exception->getMessage(),
                 'exception' => $exception,
             ]);
 
-            $this->error('Failed to fetch matches: ' . $exception->getMessage());
+            $this->error('Failed to fetch matches: '.$exception->getMessage());
 
             return self::FAILURE;
         }
@@ -114,8 +114,8 @@ class FetchMatches extends Command
         }
 
         $liveStatuses = ['1H', '2H', 'ET', 'BT', 'P', 'LIVE', 'HT'];
-        $wasLive      = in_array($existing->status, $liveStatuses, true);
-        $isNowFT      = in_array($newData['status'], ['FT', 'AET', 'PEN'], true);
+        $wasLive = in_array($existing->status, $liveStatuses, true);
+        $isNowFT = in_array($newData['status'], ['FT', 'AET', 'PEN'], true);
 
         if (! $wasLive || ! $isNowFT) {
             return;
@@ -132,14 +132,14 @@ class FetchMatches extends Command
         $home = $newData['home_score'] ?? $existing->home_score;
         $away = $newData['away_score'] ?? $existing->away_score;
 
-        $result = match(true) {
+        $result = match (true) {
             $home > $away => "{$existing->home_team} Win",
             $away > $home => "{$existing->away_team} Win",
-            default       => 'Draw',
+            default => 'Draw',
         };
 
         $oneSignal->sendMatchAlert(
-            title:   "🏁 FT: {$existing->home_team} {$home} - {$away} {$existing->away_team}",
+            title: "🏁 FT: {$existing->home_team} {$home} - {$away} {$existing->away_team}",
             message: "{$result} · {$existing->league} - Tap for more results",
         );
 
@@ -169,12 +169,12 @@ class FetchMatches extends Command
         Cache::put($cacheKey, true, now()->addMinutes(30));
 
         $oneSignal->sendGoalAlert(
-            homeTeam:  $existing->home_team,
-            awayTeam:  $existing->away_team,
+            homeTeam: $existing->home_team,
+            awayTeam: $existing->away_team,
             homeScore: (int) $newData['home_score'],
             awayScore: (int) $newData['away_score'],
-            league:    $existing->league,
-            elapsed:   $newData['elapsed'] ?? null,
+            league: $existing->league,
+            elapsed: $newData['elapsed'] ?? null,
         );
 
         $this->info("Goal alert sent: {$existing->home_team} {$newData['home_score']} - {$newData['away_score']} {$existing->away_team}");
@@ -183,20 +183,25 @@ class FetchMatches extends Command
     private function matchData(array $match): array
     {
         return [
-            'league'         => $match['league'],
-            'league_id'      => $match['league_id'],
+            'league' => $match['league'],
+            'league_id' => $match['league_id'],
             'league_country' => $match['league_country'],
-            'home_team'      => $match['home_team'],
+            'home_team' => $match['home_team'],
             'home_team_logo' => $match['home_team_logo'] ?? null,
-            'away_team'      => $match['away_team'],
+            'away_team' => $match['away_team'],
             'away_team_logo' => $match['away_team_logo'] ?? null,
-            'home_score'     => $match['home_score'],
-            'away_score'     => $match['away_score'],
-            'home_score_ht'  => $match['home_score_ht'] ?? null,
-            'away_score_ht'  => $match['away_score_ht'] ?? null,
-            'status'         => $match['status'],
-            'elapsed'        => $match['elapsed'],
-            'match_time'     => $match['match_time'],
+            'home_score' => $match['home_score'],
+            'away_score' => $match['away_score'],
+            'home_score_ht' => $match['home_score_ht'] ?? null,
+            'away_score_ht' => $match['away_score_ht'] ?? null,
+            'status' => $match['status'],
+            'elapsed' => $match['elapsed'],
+            'match_time' => $match['match_time'],
+            // This is a source-check timestamp, not a change timestamp. It
+            // must move on every successful fixture response so the quality
+            // gate can hold stale data without mistaking an unchanged fixture
+            // for a fresh one.
+            'fixture_data_checked_at' => now(),
         ];
     }
 }

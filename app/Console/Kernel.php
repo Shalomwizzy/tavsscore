@@ -2,8 +2,12 @@
 
 namespace App\Console;
 
+use App\Models\FootballMatch;
+use App\Models\RequestLog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 
 class Kernel extends ConsoleKernel
 {
@@ -17,12 +21,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('fetch:matches')
             ->everyMinute()
             ->withoutOverlapping()
-            ->when(fn () => \App\Models\FootballMatch::whereIn('status', ['1H','HT','2H','ET','BT','P','LIVE'])->exists());
+            ->when(fn () => FootballMatch::whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])->exists());
 
         $schedule->command('fetch:matches')
             ->everyFifteenMinutes()
             ->withoutOverlapping()
-            ->when(fn () => ! \App\Models\FootballMatch::whereIn('status', ['1H','HT','2H','ET','BT','P','LIVE'])->exists());
+            ->when(fn () => ! FootballMatch::whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])->exists());
 
         // Expiry (10 min) so a killed run can't leave a stale lock that blocks
         // predictions for the default 24h — they'd stop generating until manual clear.
@@ -35,13 +39,13 @@ class Kernel extends ConsoleKernel
         $schedule->command('results:fallback')
             ->everyThirtyMinutes()
             ->withoutOverlapping()
-            ->when(fn () => (bool) \Illuminate\Support\Facades\Cache::get('api_football_quota_exhausted'));
+            ->when(fn () => (bool) Cache::get('api_football_quota_exhausted'));
 
         // ── Early-morning pipeline, sequenced so picks are ready by 01:30 ──
         // API-Football quota resets ~01:00 Lagos. Clear the exhausted flag at
         // 01:00 so the chain below can fetch immediately.
         $schedule->call(function () {
-            \Illuminate\Support\Facades\Cache::forget('api_football_quota_exhausted');
+            Cache::forget('api_football_quota_exhausted');
         })->dailyAt('01:00')->timezone('Africa/Lagos')->name('clear-quota-flag');
 
         // 01:03 — load today's fixtures. 01:05 — reconcile/settle yesterday.
@@ -99,6 +103,10 @@ class Kernel extends ConsoleKernel
         // Re-predict daily pick matches the moment their confirmed lineup drops
         // Runs every minute (same as live fetch) — only fires Groq when lineup is new
         $schedule->command('picks:update-lineups')->everyMinute()->withoutOverlapping();
+        // Applies the same calibrated gate after late lineups, injury intel,
+        // odds movement and fixture refreshes; sends a correction only when a
+        // published board actually changes.
+        $schedule->command('picks:revalidate')->everyTenMinutes()->withoutOverlapping();
 
         // Fetch near-closing bookmaker odds at 10:00 and 14:00 Lagos.
         // Runs after most European morning kickoffs have odds settled, and again
@@ -146,7 +154,7 @@ class Kernel extends ConsoleKernel
 
         // Trim request_logs older than 30 days so the table never grows forever.
         $schedule->call(function () {
-            \App\Models\RequestLog::where('created_at', '<', now()->subDays(30))->delete();
+            RequestLog::where('created_at', '<', now()->subDays(30))->delete();
         })->dailyAt('03:00')->timezone('Africa/Lagos')->name('prune-request-logs')->withoutOverlapping();
 
         // ── Dixon-Coles (Phase 2) ────────────────────────────────────────
@@ -195,12 +203,12 @@ class Kernel extends ConsoleKernel
         // Runs monthly Jul–Sep to catch late fixture publications and
         // schedule changes; matches:backfill is idempotent per api_id.
         $schedule->call(function () {
-            \Illuminate\Support\Facades\Artisan::call('matches:backfill', [
+            Artisan::call('matches:backfill', [
                 '--seasons' => (string) now('Africa/Lagos')->year,
             ]);
         })->monthlyOn(15, '02:30')->timezone('Africa/Lagos')
-          ->when(fn () => in_array(now('Africa/Lagos')->month, [7, 8, 9], true))
-          ->name('yearly-season-ingest')->withoutOverlapping();
+            ->when(fn () => in_array(now('Africa/Lagos')->month, [7, 8, 9], true))
+            ->name('yearly-season-ingest')->withoutOverlapping();
 
         // ── Deep settlement sweep ────────────────────────────────────────
         // The 5-minute predictions:check-outcomes only looks back 3 days.
@@ -268,6 +276,19 @@ class Kernel extends ConsoleKernel
             ->dailyAt('09:30')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
+            ->runInBackground();
+        // Shorter late-day windows keep injury/suspension intelligence fresh
+        // for evening kickoffs without repeatedly spending quota on the full
+        // 48-hour fixture slate.
+        $schedule->command('stats:fetch-fixture-intel --hours-ahead=12')
+            ->dailyAt('15:30')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(20)
+            ->runInBackground();
+        $schedule->command('stats:fetch-fixture-intel --hours-ahead=12')
+            ->dailyAt('21:30')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(20)
             ->runInBackground();
 
         // Post-match statistics (shots/corners/cards/xG) for finished fixtures —

@@ -33,7 +33,7 @@ class PublicationQualityService
      * already-captured opening odds. It never fetches odds, so select commands
      * cannot burn API quota merely by applying the gate.
      *
-     * @return array{allowed:bool,status:string,market:string,probability:float,calibration_sample:int,calibration_realized:?float,calibration_gap:?float,edge:?float,reasons:array<int,string>}
+     * @return array{allowed:bool,status:string,market:string,probability:float,calibration_sample:int,calibration_realized:?float,calibration_gap:?float,calibration_scope:string,edge:?float,freshness:array{fresh:bool,reasons:array<int,string>},reasons:array<int,string>}
      */
     public function evaluate(Prediction $prediction, string $market, float $probability, ?string $outcome = null): array
     {
@@ -43,13 +43,15 @@ class PublicationQualityService
             : PredictionLog::STAGE_PRE_LINEUP;
         $version = $this->versionFor($prediction);
         $leagueId = $prediction->match?->league_id;
-        $history = $this->calibrationFor($version, $stage, $market, $leagueId, $probability);
+        $history = $this->calibrationFor($version, $stage, $market, $leagueId, $probability, $outcome);
+        $freshness = $this->freshnessFor($prediction);
 
         $allowed = true;
-        $status = $history['sample'] >= self::MIN_CALIBRATION_SAMPLE ? 'measured' : 'shadow';
+        $sampleThreshold = $history['scope'] === 'league' ? self::MIN_LEAGUE_SAMPLE : self::MIN_CALIBRATION_SAMPLE;
+        $status = $history['sample'] >= $sampleThreshold ? 'measured' : 'shadow';
         $reasons = [];
 
-        if ($history['sample'] >= self::MIN_CALIBRATION_SAMPLE && $history['gap'] !== null) {
+        if ($history['sample'] >= $sampleThreshold && $history['gap'] !== null) {
             if ($history['gap'] < -self::MAX_OVERCONFIDENCE) {
                 $allowed = false;
                 $status = 'held';
@@ -59,6 +61,12 @@ class PublicationQualityService
             }
         } else {
             $reasons[] = 'Shadow market: not enough settled like-for-like results to prove this confidence band yet.';
+        }
+
+        if (! $freshness['fresh']) {
+            $allowed = false;
+            $status = 'held';
+            array_push($reasons, ...$freshness['reasons']);
         }
 
         $edge = $this->edgeFromCapturedOdds($prediction, $market, $outcome, $probability);
@@ -82,7 +90,9 @@ class PublicationQualityService
             'calibration_sample' => $history['sample'],
             'calibration_realized' => $history['realized'],
             'calibration_gap' => $history['gap'],
+            'calibration_scope' => $history['scope'],
             'edge' => $edge,
+            'freshness' => $freshness,
             'reasons' => $reasons,
         ];
     }
@@ -138,6 +148,17 @@ class PublicationQualityService
         return $this->evaluate($prediction, $context['market'], $context['probability'], $context['outcome'])['allowed'];
     }
 
+    public function specialtyMarketFor(string $type): string
+    {
+        return match ($type) {
+            'under35' => PredictionLog::MARKET_UNDER35,
+            'under45' => PredictionLog::MARKET_UNDER45,
+            'handicap' => PredictionLog::MARKET_ASIAN_HANDICAP,
+            'europeanhandicap' => PredictionLog::MARKET_EUROPEAN_HANDICAP,
+            default => 'untracked',
+        };
+    }
+
     /**
      * Compact scorecard consumed by the admin metrics page.
      *
@@ -180,15 +201,53 @@ class PublicationQualityService
     {
         Cache::forget('publication_quality_scorecard_v1');
         Cache::forget('publication_quality_calibration_v1');
+        Cache::forget('publication_quality_league_scorecard_v1');
     }
 
-    /** @return array{sample:int,realized:?float,gap:?float} */
-    private function calibrationFor(string $version, string $stage, string $market, mixed $leagueId, float $probability): array
+    /**
+     * The league view prevents a good global aggregate from hiding a poor
+     * local competition. It is only shown after a meaningful 15 settled rows.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function leagueScorecard(): array
+    {
+        return Cache::remember('publication_quality_league_scorecard_v1', now()->addHours(6), function (): array {
+            return PredictionLog::query()
+                ->selectRaw("\n                    model_version, market, league_id, prediction_stage,\n                    COUNT(*) AS settled_n,\n                    AVG(CASE WHEN actual_result = 'WIN' THEN 1.0 WHEN actual_result = 'LOSS' THEN 0.0 END) AS realized,\n                    AVG(CASE WHEN actual_result IN ('WIN','LOSS') THEN p_outcome END) AS stated\n                ")
+                ->where('model_version', '!=', MarketClosingLogger::MODEL_VERSION)
+                ->whereIn('actual_result', [PredictionLog::RESULT_WIN, PredictionLog::RESULT_LOSS])
+                ->groupBy('model_version', 'market', 'league_id', 'prediction_stage')
+                ->havingRaw('COUNT(*) >= ?', [self::MIN_LEAGUE_SAMPLE])
+                ->orderBy('market')
+                ->orderByDesc('settled_n')
+                ->get()
+                ->map(function ($row): array {
+                    $gap = (float) $row->realized - (float) $row->stated;
+
+                    return [
+                        'model_version' => $row->model_version,
+                        'market' => $row->market,
+                        'league_id' => $row->league_id,
+                        'stage' => $row->prediction_stage,
+                        'settled_n' => (int) $row->settled_n,
+                        'stated' => (float) $row->stated,
+                        'realized' => (float) $row->realized,
+                        'gap' => $gap,
+                        'state' => $gap < -self::MAX_OVERCONFIDENCE ? 'held' : 'measured',
+                    ];
+                })
+                ->all();
+        });
+    }
+
+    /** @return array{sample:int,realized:?float,gap:?float,scope:string} */
+    private function calibrationFor(string $version, string $stage, string $market, mixed $leagueId, float $probability, ?string $outcome): array
     {
         $band = min(9, max(0, (int) floor($probability * 10)));
-        $key = implode(':', [$version, $stage, $market, $leagueId ?: 'all', $band]);
+        $key = implode(':', [$version, $stage, $market, $leagueId ?: 'all', $band, $outcome ?: 'any']);
 
-        return Cache::remember('publication_quality_calibration_v1:'.$key, now()->addHours(6), function () use ($version, $stage, $market, $leagueId, $band): array {
+        return Cache::remember('publication_quality_calibration_v1:'.$key, now()->addHours(6), function () use ($version, $stage, $market, $leagueId, $band, $outcome): array {
             $base = PredictionLog::query()
                 ->where('model_version', $version)
                 ->where('prediction_stage', $stage)
@@ -196,6 +255,10 @@ class PublicationQualityService
                 ->whereIn('actual_result', [PredictionLog::RESULT_WIN, PredictionLog::RESULT_LOSS])
                 ->where('p_outcome', '>=', $band / 10)
                 ->where('p_outcome', '<', min(1, ($band + 1) / 10));
+
+            if (in_array($market, [PredictionLog::MARKET_ASIAN_HANDICAP, PredictionLog::MARKET_EUROPEAN_HANDICAP], true) && $outcome) {
+                $base->where('predicted_outcome', $outcome);
+            }
 
             // Prefer a league-specific estimate once it is large enough; the
             // all-league estimate is the honest fallback for a small league.
@@ -209,8 +272,34 @@ class PublicationQualityService
                 'sample' => $sample,
                 'realized' => $realized,
                 'gap' => $sample ? $realized - $stated : null,
+                'scope' => $league->count() >= self::MIN_LEAGUE_SAMPLE ? 'league' : 'global',
             ];
         });
+    }
+
+    /** @return array{fresh:bool,reasons:array<int,string>} */
+    private function freshnessFor(Prediction $prediction): array
+    {
+        $match = $prediction->match;
+        if (! $match) {
+            return ['fresh' => false, 'reasons' => ['Held: the fixture record is missing.']];
+        }
+
+        $reasons = [];
+        if (! in_array($match->status, ['NS', 'TBD'], true) || ! $match->match_time || $match->match_time->lte(now()->addMinutes(5))) {
+            $reasons[] = 'Held: fixture is no longer safely pre-match.';
+        }
+        if (! $match->fixture_data_checked_at || $match->fixture_data_checked_at->lt(now()->subMinutes(90))) {
+            $reasons[] = 'Held: fixture data has not been refreshed in the last 90 minutes.';
+        }
+        if ($match->match_time && $match->match_time->lte(now()->addHours(8)) && (! $match->intel_checked_at || $match->intel_checked_at->lt(now()->subHours(8)))) {
+            $reasons[] = 'Held: team-news and injury data is stale for a near-kickoff match.';
+        }
+        if (! $prediction->created_at || $prediction->created_at->lt(now()->subHours(28))) {
+            $reasons[] = 'Held: model board is older than the allowed pre-match window.';
+        }
+
+        return ['fresh' => empty($reasons), 'reasons' => $reasons];
     }
 
     private function versionFor(Prediction $prediction): string

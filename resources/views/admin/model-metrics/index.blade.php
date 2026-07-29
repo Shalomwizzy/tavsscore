@@ -92,6 +92,32 @@
 </table></div>
 @endif
 
+<div class="mm-section-title">League-specific readiness — minimum 15 settled rows</div>
+<div class="mm-note">
+    A league with enough evidence can override the global market view. A negative gap worse than 7 percentage points holds that league and market combination, even if the global market looks healthy.
+</div>
+@if(empty($publicationLeagueScorecard))
+    <div class="mm-empty">No league-market combination has 15 settled like-for-like results yet.</div>
+@else
+<div class="mm-scroll"><table class="mm-table">
+    <thead><tr><th>Version</th><th>Market</th><th>League ID</th><th>Stage</th><th class="num">Settled</th><th class="num">Stated</th><th class="num">Realized</th><th class="num">Gap</th><th>Gate</th></tr></thead>
+    <tbody>
+    @foreach($publicationLeagueScorecard as $row)
+        @php
+            $gapClass = $row['gap'] >= -0.03 ? 'mm-diag-ok' : ($row['gap'] >= -0.07 ? 'mm-diag-warn' : 'mm-diag-bad');
+            $stateClass = $row['state'] === 'held' ? 'mm-diag-bad' : 'mm-diag-ok';
+        @endphp
+        <tr>
+            <td><span class="mm-tag">{{ $row['model_version'] }}</span></td><td>{{ $row['market'] }}</td><td>{{ $row['league_id'] ?? '—' }}</td><td>{{ str_replace('_', ' ', $row['stage']) }}</td>
+            <td class="num">{{ number_format($row['settled_n']) }}</td><td class="num">{{ $pct($row['stated']) }}</td><td class="num">{{ $pct($row['realized']) }}</td>
+            <td class="num {{ $gapClass }}">{{ ($row['gap'] >= 0 ? '+' : '') . number_format($row['gap'] * 100, 1) }}pp</td>
+            <td class="{{ $stateClass }}" style="font-weight:800;text-transform:capitalize">{{ $row['state'] }}</td>
+        </tr>
+    @endforeach
+    </tbody>
+</table></div>
+@endif
+
 <form method="GET" class="mm-filters">
     <label>
         Stage

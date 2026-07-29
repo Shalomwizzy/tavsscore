@@ -1619,6 +1619,12 @@ class PredictionService
                 return $bestLabel ? ['prediction' => $prediction, 'label' => $bestLabel, 'probability' => $bestProbability] : null;
             })
             ->filter()
+            ->filter(fn (array $item) => $this->publicationQuality->evaluate(
+                $item['prediction'],
+                $this->publicationQuality->specialtyMarketFor($type),
+                (float) $item['probability'] / 100,
+                (string) $item['label'],
+            )['allowed'])
             ->sortByDesc(fn (array $item) => (in_array((int) $item['prediction']->match?->league_id, LeagueCoverage::topEuropean(), true) ? 1000 : 0) + $item['probability'])
             ->take(5)
             ->values();

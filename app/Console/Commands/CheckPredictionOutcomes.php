@@ -28,7 +28,7 @@ class CheckPredictionOutcomes extends Command
         RolloverService $rollover,
         PredictionLogSettler $logSettler,
     ): int {
-        $days  = (int) $this->option('days');
+        $days = (int) $this->option('days');
         $since = now()->subDays($days)->startOfDay();
         $siteUrl = config('app.url');
 
@@ -56,6 +56,7 @@ class CheckPredictionOutcomes extends Command
 
             if ($prediction->predicted_outcome === 'Competitive Match') {
                 $prediction->update(['was_correct' => null]);
+
                 continue;
             }
 
@@ -68,8 +69,8 @@ class CheckPredictionOutcomes extends Command
             $prediction->update(['was_correct' => $wasCorrect]);
             $resolved++;
 
-            $home  = (int) $match->home_score;
-            $away  = (int) $match->away_score;
+            $home = (int) $match->home_score;
+            $away = (int) $match->away_score;
             $score = "{$home}-{$away}";
             // Each specialty market is graded from the score itself, NOT the
             // shared $wasCorrect (which is the headline market). A 2-0 is a GG
@@ -78,10 +79,10 @@ class CheckPredictionOutcomes extends Command
             $drawWon = $home === $away;
 
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
-            $league     = LeagueCoverage::formatName($match->league, $match->league_country);
-            $cacheKey   = "outcome_notified_{$prediction->id}";
+            $league = LeagueCoverage::formatName($match->league, $match->league_country);
+            $cacheKey = "outcome_notified_{$prediction->id}";
 
-            $this->line(($wasCorrect ? '  ✅  ' : '  ❌  ') . "{$matchLabel} → {$prediction->predicted_outcome} ({$score})");
+            $this->line(($wasCorrect ? '  ✅  ' : '  ❌  ')."{$matchLabel} → {$prediction->predicted_outcome} ({$score})");
 
             if (! Cache::has($cacheKey)) {
                 // Daily + lineup pages track the headline market ($wasCorrect).
@@ -153,14 +154,16 @@ class CheckPredictionOutcomes extends Command
 
         foreach ($scorePredictions as $prediction) {
             $match = $prediction->match;
-            if (! $match) continue;
+            if (! $match) {
+                continue;
+            }
 
-            $actualScore   = (int) $match->home_score . '-' . (int) $match->away_score;
-            $league        = LeagueCoverage::formatName($match->league, $match->league_country);
-            $matchLabel    = "{$match->home_team} vs {$match->away_team}";
-            $likelyScores  = is_array($prediction->likely_scores) ? $prediction->likely_scores : [];
+            $actualScore = (int) $match->home_score.'-'.(int) $match->away_score;
+            $league = LeagueCoverage::formatName($match->league, $match->league_country);
+            $matchLabel = "{$match->home_team} vs {$match->away_team}";
+            $likelyScores = is_array($prediction->likely_scores) ? $prediction->likely_scores : [];
             $predictedList = collect($likelyScores)->pluck('score')->filter()->implode(', ');
-            $won           = collect($likelyScores)->pluck('score')->contains($actualScore);
+            $won = collect($likelyScores)->pluck('score')->contains($actualScore);
 
             $this->line($won
                 ? "  🎯  {$matchLabel} correct score {$actualScore} — HIT!"
@@ -199,6 +202,7 @@ class CheckPredictionOutcomes extends Command
                 ->orWhere('is_under35_pick', true)
                 ->orWhere('is_under45_pick', true)
                 ->orWhere('is_handicap_pick', true)
+                ->orWhere('is_european_handicap_pick', true)
             )
             ->whereHas('match', fn ($q) => $q
                 ->whereIn('status', self::FINISHED_STATUSES)
@@ -210,14 +214,16 @@ class CheckPredictionOutcomes extends Command
 
         foreach ($goalsFinished as $prediction) {
             $match = $prediction->match;
-            if (! $match) continue;
+            if (! $match) {
+                continue;
+            }
 
-            $home  = (int) $match->home_score;
-            $away  = (int) $match->away_score;
+            $home = (int) $match->home_score;
+            $away = (int) $match->away_score;
             $total = $home + $away;
             $score = "{$home}-{$away}";
             $matchLabel = "{$match->home_team} vs {$match->away_team}";
-            $league     = LeagueCoverage::formatName($match->league, $match->league_country);
+            $league = LeagueCoverage::formatName($match->league, $match->league_country);
 
             // Over 1.5
             if ($prediction->is_over15_pick && ! $prediction->over15_notified) {
@@ -261,10 +267,14 @@ class CheckPredictionOutcomes extends Command
             // handicap lines are resolved by PickHelpers with no push state.
             foreach (SpecialtyPickCatalog::types() as $specialtyType) {
                 $config = SpecialtyPickCatalog::get($specialtyType);
-                if (! $prediction->{$config['flag']} || $prediction->{$config['notified']}) continue;
+                if (! $prediction->{$config['flag']} || $prediction->{$config['notified']}) {
+                    continue;
+                }
                 $label = $config['market'] ?? $prediction->{$config['label_field']};
                 $won = PickHelpers::resolveForMatch($match, $label);
-                if ($won === null) continue;
+                if ($won === null) {
+                    continue;
+                }
                 $this->line($won
                     ? "  {$config['icon']}✅  {$matchLabel} {$score} — {$label} HIT"
                     : "  {$config['icon']}❌  {$matchLabel} {$score} — {$label} missed");
@@ -282,14 +292,19 @@ class CheckPredictionOutcomes extends Command
 
             // Team goals NO pick — wins when the named team scores fewer than the market threshold
             if ($prediction->is_team3plus_pick && ! $prediction->team3plus_notified) {
-                $label    = $prediction->team3plus_label ?? 'Home 3+';
-                $isHome   = str_starts_with($label, 'Home');
+                $label = $prediction->team3plus_label ?? 'Home 3+';
+                $isHome = str_starts_with($label, 'Home');
                 $teamName = $isHome ? $match->home_team : $match->away_team;
-                $goals    = $isHome ? $home : $away;
+                $goals = $isHome ? $home : $away;
 
                 // 2+ NO: wins when team scores 0 or 1. 3+ NO (new & legacy): wins when team scores < 3.
-                if (str_ends_with($label, '2+')) { $won = $goals < 2; $marketLabel = '2+ Goals: NO'; }
-                else                              { $won = $goals < 3; $marketLabel = '3+ Goals: NO'; }
+                if (str_ends_with($label, '2+')) {
+                    $won = $goals < 2;
+                    $marketLabel = '2+ Goals: NO';
+                } else {
+                    $won = $goals < 3;
+                    $marketLabel = '3+ Goals: NO';
+                }
 
                 $this->line($won
                     ? "  🚫✅  {$matchLabel} {$score} — {$teamName} {$marketLabel} hit"
@@ -310,7 +325,7 @@ class CheckPredictionOutcomes extends Command
             // Double Chance — wins when the result matches the 1X or 2X label
             if ($prediction->is_double_chance_pick && ! $prediction->double_chance_notified) {
                 $label = $prediction->double_chance_label ?? '1X';
-                $won   = $label === '1X' ? ($home >= $away) : ($away >= $home);
+                $won = $label === '1X' ? ($home >= $away) : ($away >= $home);
 
                 $this->line($won
                     ? "  🎯✅  {$matchLabel} {$score} — Double Chance {$label} hit"
