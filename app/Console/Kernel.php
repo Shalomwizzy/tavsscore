@@ -37,27 +37,28 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->when(fn () => (bool) \Illuminate\Support\Facades\Cache::get('api_football_quota_exhausted'));
 
-        // API-Football quota resets at 01:00 Lagos each day.
-        // At 01:30 we clear the quota-exhausted cache flag so fetch:matches
-        // resumes immediately and has ~90 min to load today's fixtures before
-        // picks are selected at 03:00.
+        // ── Early-morning pipeline, sequenced so picks are ready by 01:30 ──
+        // API-Football quota resets ~01:00 Lagos. Clear the exhausted flag at
+        // 01:00 so the chain below can fetch immediately.
         $schedule->call(function () {
             \Illuminate\Support\Facades\Cache::forget('api_football_quota_exhausted');
-        })->dailyAt('01:30')->timezone('Africa/Lagos')->name('clear-quota-flag');
+        })->dailyAt('01:00')->timezone('Africa/Lagos')->name('clear-quota-flag');
 
-        // FIRST thing after the quota resets: reconcile any past match whose
-        // result was missed (quota was down when it finished) and settle every
-        // pending outcome, so nothing is left ungraded. 14-day catch-up window.
+        // 01:03 — load today's fixtures. 01:05 — reconcile/settle yesterday.
+        $schedule->command('fetch:matches')->dailyAt('01:03')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('results:catch-up --days=14')
-            ->dailyAt('01:35')
+            ->dailyAt('01:05')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();
 
-        // Picks: force-select at 03:00 (fixtures loaded, predictions generated).
+        // 01:27 — generate predictions (after standings + intel at 01:25).
+        $schedule->command('predict:matches')->dailyAt('01:27')->timezone('Africa/Lagos')->withoutOverlapping(15);
+
+        // Picks: force-select at 01:30 (fixtures + predictions + intel ready).
         // Silent re-runs at 05:00, 08:00, 10:00 — these are blocked by the
         // "picks_sent_{type}_{date}" cache flags so notified picks are never replaced.
-        $schedule->command('picks:select --force')->dailyAt('03:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('picks:select --force')->dailyAt('01:30')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('05:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('08:00')->timezone('Africa/Lagos')->withoutOverlapping();
         $schedule->command('picks:select')->dailyAt('10:00')->timezone('Africa/Lagos')->withoutOverlapping();
@@ -190,12 +191,12 @@ class Kernel extends ConsoleKernel
         // pick-selection (03:00) and odds (10:00/14:00) depend on. Each fetcher
         // short-circuits the moment the daily quota flag trips.
         //
-        // Standings → weekly (Monday 02:30) to conserve quota. Tables persist in
-        // the DB between runs; the tradeoff is they can be a few matchdays stale
-        // mid-week. Runs before the Monday team/player-stat jobs that read team
-        // IDs from the standings table.
+        // Standings → weekly (Monday 01:06) to conserve quota, before the Monday
+        // team/player-stat jobs that read team IDs from it and before the 01:12
+        // prediction run. Tables persist between runs (a few matchdays stale
+        // mid-week is the accepted tradeoff).
         $schedule->command('stats:fetch-standings')
-            ->weeklyOn(1, '02:30')
+            ->weeklyOn(1, '01:25')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();
@@ -233,7 +234,7 @@ class Kernel extends ConsoleKernel
         // arbiter chain. Refreshed before the primary pick-selection at 03:00
         // and again mid-morning so late injury/suspension news is captured.
         $schedule->command('stats:fetch-fixture-intel --hours-ahead=48')
-            ->dailyAt('02:40')
+            ->dailyAt('01:25')
             ->timezone('Africa/Lagos')
             ->withoutOverlapping(30)
             ->runInBackground();
