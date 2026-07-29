@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Blog\GroqRateLimitException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -37,6 +38,12 @@ class GroqBlogService
                     ['role' => 'user', 'content' => $userPrompt],
                 ],
             ]);
+
+        if ($response->status() === 429) {
+            $retryAfter = max(60, (int) ($response->header('Retry-After') ?: 60));
+
+            throw new GroqRateLimitException($retryAfter);
+        }
 
         if ($response->failed()) {
             throw new RuntimeException('Groq API error: status ' . $response->status());

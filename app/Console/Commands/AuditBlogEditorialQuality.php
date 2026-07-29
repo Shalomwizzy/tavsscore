@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\BlogPost;
 use App\Services\Blog\EditorialQualityGate;
+use App\Services\Blog\GroqRateLimitException;
 use App\Services\GroqBlogService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +15,8 @@ class AuditBlogEditorialQuality extends Command
 {
     protected $signature = 'blog:audit-editorial
         {--fix : Rewrite only articles that fail the editorial quality gate}
-        {--limit=100 : Maximum number of published articles to inspect}';
+        {--limit=100 : Maximum number of published articles to inspect}
+        {--delay=60 : Seconds to wait between AI rewrites}';
 
     protected $description = 'Audit published blog articles and safely improve eligible low-quality AI drafts.';
 
@@ -40,6 +42,8 @@ class AuditBlogEditorialQuality extends Command
         $flagged = 0;
         $fixed = 0;
         $unchanged = 0;
+        $rewritesAttempted = 0;
+        $delay = max(0, (int) $this->option('delay'));
 
         foreach ($posts as $post) {
             $content = $quality->sanitise($post->content);
@@ -58,6 +62,11 @@ class AuditBlogEditorialQuality extends Command
             }
 
             try {
+                if ($rewritesAttempted > 0 && $delay > 0) {
+                    $this->line("  ↳ waiting {$delay}s before the next AI rewrite to respect Groq limits…");
+                    sleep($delay);
+                }
+                $rewritesAttempted++;
                 $article = $this->rewriteUntilApproved($groq, $quality, $post);
                 $post->update([
                     // Keep the existing slug so links already crawled by Google
@@ -69,6 +78,10 @@ class AuditBlogEditorialQuality extends Command
                 ]);
                 $fixed++;
                 $this->info("  ↳ improved safely: {$post->title}");
+            } catch (GroqRateLimitException $e) {
+                $this->warn("  ↳ Groq rate limit reached. Stopping safely; wait at least {$e->retryAfterSeconds} seconds before running the command again.");
+
+                return self::FAILURE;
             } catch (Throwable $e) {
                 $unchanged++;
                 Log::warning('Blog editorial audit could not improve article', [
