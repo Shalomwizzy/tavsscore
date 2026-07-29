@@ -33,7 +33,7 @@ class ImageWatermarkService
             if (str_starts_with($binary, "\x89PNG\r\n\x1A\n")) {
                 imagepng($image, null, 7);
             } else {
-                imagejpeg($image, null, 90);
+                imagejpeg($image, null, 96);
             }
             return (string) ob_get_clean();
         } finally {

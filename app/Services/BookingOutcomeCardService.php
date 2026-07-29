@@ -56,7 +56,7 @@ class BookingOutcomeCardService
             $this->text($image, $font, 'tavsscore.com  •  Data-led football analysis', 15, 76, 598, $muted);
 
             ob_start();
-            imagejpeg($image, null, 91);
+            imagejpeg($image, null, 96);
             $binary = (string) ob_get_clean();
         } finally {
             imagedestroy($image);
