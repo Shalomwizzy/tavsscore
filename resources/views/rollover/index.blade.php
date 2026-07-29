@@ -283,6 +283,7 @@
                     @if($leg->result_score)<span style="color:var(--text-dim); font-weight:500; font-size:.72rem;"> ({{ $leg->result_score }})</span>@endif
                 </span>
             </div>
+            @include('partials.match-intelligence', ['prediction' => $leg->prediction, 'accent' => '#fcd34d'])
         </div>
         @endforeach
 
