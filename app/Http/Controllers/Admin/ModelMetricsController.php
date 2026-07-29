@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PredictionLog;
 use App\Services\MarketClosingLogger;
+use App\Services\PublicationQualityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -27,12 +28,14 @@ class ModelMetricsController extends Controller
      */
     private const EPS = '0.001';
 
+    public function __construct(private readonly PublicationQualityService $publicationQuality) {}
+
     public function index(Request $request): View
     {
-        $stage        = $request->query('stage', PredictionLog::STAGE_PRE_LINEUP);
+        $stage = $request->query('stage', PredictionLog::STAGE_PRE_LINEUP);
         $includeBackfill = $request->boolean('include_backfill', true);
         $bucketVersion = $request->query('bucket_version');
-        $bucketMarket  = $request->query('bucket_market');
+        $bucketMarket = $request->query('bucket_market');
 
         $baseFilters = [
             'prediction_stage' => $stage,
@@ -72,10 +75,13 @@ class ModelMetricsController extends Controller
             ->orderBy('market')
             ->pluck('market');
 
+        $publicationScorecard = $this->publicationQuality->scorecard();
+
         return view('admin.model-metrics.index', compact(
             'overview', 'byMarket', 'byLeague', 'calibration',
             'stage', 'includeBackfill', 'bucketVersion', 'bucketMarket',
             'versions', 'markets',
+            'publicationScorecard',
         ));
     }
 
@@ -106,8 +112,8 @@ class ModelMetricsController extends Controller
 
     /**
      * @param  array<string,mixed>  $filters
-     * @param  array<int,string>    $groupBy
-     * @param  array<int,string>    $orderBy
+     * @param  array<int,string>  $groupBy
+     * @param  array<int,string>  $orderBy
      */
     private function groupedMetrics(array $filters, array $groupBy, array $orderBy, ?string $having = null): array
     {
@@ -162,7 +168,9 @@ class ModelMetricsController extends Controller
      */
     private function attachMarketDelta(array $rows, array $baseFilters, array $groupBy): void
     {
-        if (empty($rows)) return;
+        if (empty($rows)) {
+            return;
+        }
 
         $selectCols = implode(', ', array_map(fn ($c) => "pl.{$c}", $groupBy));
         $groupBySql = implode(', ', array_map(fn ($c) => "pl.{$c}", $groupBy));
@@ -170,9 +178,9 @@ class ModelMetricsController extends Controller
         $q = DB::table('prediction_logs as pl')
             ->join('prediction_logs as mc', function ($j) {
                 $j->on('mc.match_id', '=', 'pl.match_id')
-                  ->on('mc.market', '=', 'pl.market')
-                  ->on('mc.prediction_stage', '=', 'pl.prediction_stage')
-                  ->where('mc.model_version', '=', MarketClosingLogger::MODEL_VERSION);
+                    ->on('mc.market', '=', 'pl.market')
+                    ->on('mc.prediction_stage', '=', 'pl.prediction_stage')
+                    ->where('mc.model_version', '=', MarketClosingLogger::MODEL_VERSION);
             })
             ->selectRaw("
                 {$selectCols},
@@ -203,7 +211,7 @@ class ModelMetricsController extends Controller
         foreach ($rows as $row) {
             $key = implode('|', array_map(fn ($c) => (string) $row->{$c}, $groupBy));
             $row->delta_vs_market = $lookup[$key]->delta_vs_market ?? null;
-            $row->paired_n        = (int) ($lookup[$key]->paired_n ?? 0);
+            $row->paired_n = (int) ($lookup[$key]->paired_n ?? 0);
         }
     }
 

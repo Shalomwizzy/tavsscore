@@ -65,6 +65,33 @@
     Comparisons must stay like-for-like — pre-lineup vs pre-lineup, never across stages.
 </div>
 
+<div class="mm-section-title">Publication readiness — this is the live quality gate</div>
+<div class="mm-note">
+    <strong>Proven</strong> means 100+ settled like-for-like results with no material over-confidence. <strong>Measured</strong> has 30+ settled results and is checked before publishing. <strong>Shadow</strong> remains visible for measurement but does not make a proven-accuracy claim. A candidate is held when its calibrated band is materially over-confident or when captured odds show less than a 3pp model edge.
+</div>
+@if(empty($publicationScorecard))
+    <div class="mm-empty">No internal market logs are available yet. The gate will label new markets as shadow until results settle.</div>
+@else
+<div class="mm-scroll"><table class="mm-table">
+    <thead><tr><th>Version</th><th>Market</th><th>Stage</th><th class="num">Settled</th><th class="num">Stated</th><th class="num">Realized</th><th class="num">Gap</th><th>Readiness</th></tr></thead>
+    <tbody>
+    @foreach($publicationScorecard as $row)
+        @php
+            $gap = $row['gap'];
+            $gapClass = $gap === null ? '' : ($gap >= -0.03 ? 'mm-diag-ok' : ($gap >= -0.07 ? 'mm-diag-warn' : 'mm-diag-bad'));
+            $stateClass = $row['state'] === 'proven' ? 'mm-diag-ok' : ($row['state'] === 'measured' ? 'mm-diag-warn' : 'mm-diag-bad');
+        @endphp
+        <tr>
+            <td><span class="mm-tag">{{ $row['model_version'] }}</span></td><td>{{ $row['market'] }}</td><td>{{ str_replace('_', ' ', $row['stage']) }}</td>
+            <td class="num">{{ number_format($row['settled_n']) }}</td><td class="num">{{ $pct($row['stated']) }}</td><td class="num">{{ $pct($row['realized']) }}</td>
+            <td class="num {{ $gapClass }}">{{ $gap === null ? '—' : (($gap >= 0 ? '+' : '') . number_format($gap * 100, 1) . 'pp') }}</td>
+            <td class="{{ $stateClass }}" style="font-weight:800;text-transform:capitalize">{{ $row['state'] }}</td>
+        </tr>
+    @endforeach
+    </tbody>
+</table></div>
+@endif
+
 <form method="GET" class="mm-filters">
     <label>
         Stage

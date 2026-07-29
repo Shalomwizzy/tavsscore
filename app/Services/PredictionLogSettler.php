@@ -35,9 +35,9 @@ class PredictionLogSettler
      */
     public function settleSince(int $sinceDays = 3): array
     {
-        $since   = now()->subDays($sinceDays)->startOfDay();
+        $since = now()->subDays($sinceDays)->startOfDay();
         $settled = 0;
-        $voided  = 0;
+        $voided = 0;
 
         // ── WIN / LOSS ──────────────────────────────────────────────────
         // held_for_review excludes blowout scorelines (8+ per side) from
@@ -61,7 +61,7 @@ class PredictionLogSettler
                     }
                     $log->update([
                         'actual_result' => $result,
-                        'settled_at'    => now(),
+                        'settled_at' => now(),
                     ]);
                     $settled++;
                 }
@@ -78,7 +78,7 @@ class PredictionLogSettler
                 foreach ($chunk as $log) {
                     $log->update([
                         'actual_result' => PredictionLog::RESULT_VOID,
-                        'settled_at'    => now(),
+                        'settled_at' => now(),
                     ]);
                     $voided++;
                 }
@@ -99,11 +99,17 @@ class PredictionLogSettler
                 foreach ($chunk as $log) {
                     $log->update([
                         'actual_result' => PredictionLog::RESULT_VOID,
-                        'settled_at'    => now(),
+                        'settled_at' => now(),
                     ]);
                     $voided++;
                 }
             });
+
+        if ($settled > 0 || $voided > 0) {
+            // The publication gate is based on settled logs, so never leave it
+            // showing a six-hour-old sample after fresh results arrive.
+            app(PublicationQualityService::class)->forget();
+        }
 
         return ['settled' => $settled, 'voided' => $voided];
     }
@@ -128,6 +134,7 @@ class PredictionLogSettler
         if ($outcome === null) {
             return null;
         }
+
         return $outcome ? PredictionLog::RESULT_WIN : PredictionLog::RESULT_LOSS;
     }
 
@@ -138,9 +145,12 @@ class PredictionLogSettler
     private function resolveCorrectScore(PredictionLog $log): ?string
     {
         $match = $log->match;
-        if (! $match || $match->home_score === null || $match->away_score === null) return null;
+        if (! $match || $match->home_score === null || $match->away_score === null) {
+            return null;
+        }
 
-        $actual = ((int) $match->home_score) . '-' . ((int) $match->away_score);
+        $actual = ((int) $match->home_score).'-'.((int) $match->away_score);
+
         return $actual === $log->predicted_outcome
             ? PredictionLog::RESULT_WIN
             : PredictionLog::RESULT_LOSS;
@@ -153,10 +163,10 @@ class PredictionLogSettler
             return null;
         }
 
-        $label     = $log->predicted_outcome;
-        $isHome    = str_starts_with($label, 'Home');
+        $label = $log->predicted_outcome;
+        $isHome = str_starts_with($label, 'Home');
         $threshold = str_ends_with($label, '2+') ? 2 : 3;
-        $goals     = $isHome ? (int) $match->home_score : (int) $match->away_score;
+        $goals = $isHome ? (int) $match->home_score : (int) $match->away_score;
 
         return $goals >= $threshold ? PredictionLog::RESULT_WIN : PredictionLog::RESULT_LOSS;
     }
