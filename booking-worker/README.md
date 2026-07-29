@@ -60,6 +60,21 @@ BOOKING_WORKER_TOKEN=<the same token as Hostinger>
 Use `./run.sh` to create the tickets. It retries until every eligible ticket
 gets a real code, without adding failed placeholder rows to the website.
 
+### Generate from the admin button
+
+To make **Admin → Booking Code → Generate codes on Mac** work immediately,
+start this listener once on the Nigerian-IP Mac and keep it running:
+
+```bash
+cd booking-worker
+chmod +x watch.sh
+./watch.sh
+```
+
+The listener checks TavsScore once per minute. An admin click only queues a
+request; the Mac remains the only machine that visits SportyBet and creates a
+real code. If a valid ticket cannot be built, it remains queued and retries.
+
 ### 3. Test the whole pipeline first (no bookmaker needed)
 Before touching any bookmaker, prove the plumbing works with the built-in
 **mock adapter** — it "books" the safest legs and posts a `MOCK-…` code back,

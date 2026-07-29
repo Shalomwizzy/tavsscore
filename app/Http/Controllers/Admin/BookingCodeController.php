@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
+use App\Services\Booking\BookingCodeGenerationRequest;
 use App\Services\Booking\BookingOutcomeLearningService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use Illuminate\View\View;
 
 class BookingCodeController extends Controller
 {
-    public function index(BookingOutcomeLearningService $learning): View
+    public function index(BookingOutcomeLearningService $learning, BookingCodeGenerationRequest $generationRequests): View
     {
         $history = BookingCode::query()
             ->with('legs')
@@ -30,8 +31,21 @@ class BookingCodeController extends Controller
         $stats['settled'] = $stats['won'] + $stats['lost'];
         $workerReady = filled(config('services.booking_worker.token'));
         $learningFeedback = $learning->marketFeedback();
+        $generationRequest = $generationRequests->pending();
 
-        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady', 'learningFeedback'));
+        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady', 'learningFeedback', 'generationRequest'));
+    }
+
+    /** Queue a real code-generation run for the authenticated local Mac worker. */
+    public function generate(BookingCodeGenerationRequest $generationRequests)
+    {
+        if (blank(config('services.booking_worker.token'))) {
+            return back()->with('error', 'BOOKING_WORKER_TOKEN is missing. Add it on Hostinger and on the Mac worker before generating codes.');
+        }
+
+        $request = $generationRequests->request();
+
+        return back()->with('success', 'Code generation requested at '.now('Africa/Lagos')->format('H:i').' Lagos. The connected Mac worker will build only real, qualifying SportyBet codes and publish them here.');
     }
 
     public function send(Request $request, TelegramService $telegram, OneSignalService $oneSignal)

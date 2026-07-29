@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\Booking\BookingCodeGenerationRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -188,6 +189,20 @@ class AdminTest extends TestCase
         }
 
         $this->actingAs($admin)->get('/admin/corners')->assertStatus(200)->assertSee('Corner Intelligence', false);
+    }
+
+    public function test_admin_can_queue_booking_code_generation_for_mac_worker(): void
+    {
+        config(['services.booking_worker.token' => 'test-worker-token']);
+        $admin = User::create([
+            'name' => 'Booking Admin', 'email' => 'booking-admin@example.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)->post('/admin/booking-code/generate')
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertNotNull(app(BookingCodeGenerationRequest::class)->pending());
     }
 
     public function test_admin_login_with_valid_credentials(): void

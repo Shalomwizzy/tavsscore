@@ -256,6 +256,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         /* Booking Code */
         Route::get('/booking-code',      [\App\Http\Controllers\Admin\BookingCodeController::class, 'index'])->name('booking-code.index');
+        Route::post('/booking-code/generate', [\App\Http\Controllers\Admin\BookingCodeController::class, 'generate'])->name('booking-code.generate');
         Route::post('/booking-code/send',[\App\Http\Controllers\Admin\BookingCodeController::class, 'send'])->name('booking-code.send');
         Route::post('/booking-code/clear',[\App\Http\Controllers\Admin\BookingCodeController::class, 'clear'])->name('booking-code.clear');
         Route::post('/booking-code/grade',[\App\Http\Controllers\Admin\BookingCodeController::class, 'grade'])->name('booking-code.grade');

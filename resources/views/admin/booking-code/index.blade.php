@@ -19,6 +19,7 @@
 
 <div class="page-hd"><span class="page-hd-title">🎟️ Booking code desk</span><span style="font-size:.72rem;color:var(--dim)">Automated tickets, verified outcomes, and distribution.</span></div>
 @if(session('success'))<div style="background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:9px;padding:.72rem .9rem;margin-bottom:1rem;font-size:.78rem;color:#71e8dd;">✓ {{ session('success') }}</div>@endif
+@if(session('error'))<div style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.3);border-radius:9px;padding:.72rem .9rem;margin-bottom:1rem;font-size:.78rem;color:#fda4af;">⚠ {{ session('error') }}</div>@endif
 
 <div class="book-stats"><div class="book-stat"><b>{{ $stats['total'] }}</b><span>All codes</span></div><div class="book-stat"><b>{{ $stats['published'] }}</b><span>Awaiting outcome</span></div><div class="book-stat"><b style="color:#74f4c7">{{ $stats['won'] }}</b><span>Won</span></div><div class="book-stat"><b style="color:#fda4af">{{ $stats['lost'] }}</b><span>Lost</span></div><div class="book-stat"><b>2.00+</b><span>Minimum odds</span></div></div>
 
@@ -37,7 +38,16 @@
         <p style="color:var(--dim);font-size:.69rem;line-height:1.5;margin:.8rem 0 0">Manual codes are shared normally. Automatic win/loss grading requires an automated ticket with saved fixture selections.</p>
     </section>
     <aside style="display:grid;gap:.7rem;align-content:start">
-        <div class="book-op"><h3>{{ $workerReady ? '✓ Worker connected' : '⚠ Worker token missing' }}</h3><p>{{ $workerReady ? 'The booking worker can pull qualified tickets and post codes back to this desk.' : 'Set BOOKING_WORKER_TOKEN in the application and worker environments before automatic publishing.' }}</p></div>
+        <div class="book-op" style="border-color:rgba(45,212,191,.34);background:linear-gradient(135deg,rgba(45,212,191,.09),rgba(15,23,42,.04));">
+            <h3>⚡ Generate real codes</h3>
+            <p>Queues a secure request for your Mac worker. The Mac opens SportyBet, verifies the current odds and only sends back usable codes with 3+ legs and 2.00+ total odds.</p>
+            @if($generationRequest)
+                <div style="margin-top:.65rem;padding:.5rem .6rem;border-radius:7px;background:rgba(251,191,36,.1);color:#fde68a;font-size:.7rem;line-height:1.4;">⏳ Waiting for the Mac worker since {{ \Carbon\Carbon::parse($generationRequest['requested_at'])->timezone('Africa/Lagos')->format('H:i') }} Lagos.</div>
+            @endif
+            <form method="POST" action="{{ route('admin.booking-code.generate') }}" style="margin-top:.65rem" onsubmit="return confirm('Ask the Mac worker to generate today\'s real SportyBet booking codes now? Only qualified tickets will be published.');">@csrf<button class="book-primary" type="submit" {{ $workerReady ? '' : 'disabled' }}>⚡ Generate codes on Mac</button></form>
+            @unless($workerReady)<small style="display:block;margin-top:.45rem;color:#fda4af;font-size:.66rem;">Add BOOKING_WORKER_TOKEN before this can run.</small>@endunless
+        </div>
+        <div class="book-op"><h3>{{ $workerReady ? '✓ Worker token configured' : '⚠ Worker token missing' }}</h3><p>{{ $workerReady ? 'Keep watch.sh running on the Mac so it can collect Generate requests, pull qualified tickets and post real codes back to this desk.' : 'Set BOOKING_WORKER_TOKEN in the application and worker environments before automatic publishing.' }}</p></div>
         <div class="book-op"><h3>Outcome monitor</h3><p>The scheduler checks every 30 minutes. Run it now after final scores arrive.</p><form method="POST" action="{{ route('admin.booking-code.grade') }}" style="margin-top:.65rem">@csrf<button class="book-secondary" type="submit">Check outcomes now</button></form></div>
         <div class="book-op"><h3>Telegram delivery</h3><p>Re-send today's active codes with the Copy Code and Open Ticket buttons. This does not create duplicate codes.</p><form method="POST" action="{{ route('admin.booking-code.resend') }}" style="margin-top:.65rem">@csrf<button class="book-secondary" type="submit">Re-send today's codes</button></form></div>
         <div class="book-op" style="border-color:rgba(239,68,68,.26)"><h3>Fresh start</h3><p>Deletes every booking code and outcome history only. It does not change predictions, fixtures, or user accounts.</p><form method="POST" action="{{ route('admin.booking-code.clear') }}" onsubmit="return confirm('Delete every booking code and its outcome history? This cannot be undone.');" style="margin-top:.65rem">@csrf<button class="book-danger" type="submit">Delete all booking codes</button></form></div>

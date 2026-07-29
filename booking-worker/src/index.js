@@ -22,6 +22,7 @@ async function run() {
     Number.parseInt(process.env.BOOKING_SLIP_MAX_ATTEMPTS || '8', 10) || 8,
   );
   const unresolvedSlips = [];
+  let publishedCodes = 0;
   const platforms = dryRun
     ? ['mock']
     : (process.env.PLATFORMS || spec.platforms?.join(',') || 'sportybet')
@@ -36,6 +37,9 @@ async function run() {
 
   if (!slips.length) {
     console.log('No slips in today\'s spec — nothing to build.');
+    if (process.env.REQUIRE_BOOKING_CODE === 'true') {
+      throw new Error('No qualified tickets are available yet; keeping the admin request queued.');
+    }
     return;
   }
 
@@ -108,6 +112,7 @@ async function run() {
           note: slip.title,
           pick_date: spec.pick_date,
         });
+        publishedCodes++;
         console.log(`✓ ${platform}/${slip.ref}: ${result.code} @ ${result.total_odds || '?'}`);
       } catch (err) {
         console.error(`✗ ${platform}/${slip.ref}: ${err.message}`);
@@ -126,6 +131,9 @@ async function run() {
   // Successfully-created tickets are idempotent, so users are not spammed.
   if (unresolvedSlips.length) {
     throw new Error(`Booking codes still unresolved: ${unresolvedSlips.join(', ')}`);
+  }
+  if (process.env.REQUIRE_BOOKING_CODE === 'true' && publishedCodes === 0) {
+    throw new Error('No real booking code was created; keeping the admin request queued.');
   }
 }
 

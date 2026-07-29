@@ -6,6 +6,7 @@
   "description": "External Playwright worker that turns TavsScore's daily betslip spec into SportyBet / 1xBet booking codes and posts them back.",
   "scripts": {
     "start": "node src/index.js",
+    "watch": "node src/watch.js",
     "capture": "node src/capture.js",
     "postinstall": "playwright install chromium"
   },

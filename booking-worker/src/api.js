@@ -77,6 +77,22 @@ export async function fetchSpec() {
   return res.json();
 }
 
+/** Read a button-triggered code-generation request from the admin desk. */
+export async function fetchGenerationRequest() {
+  const res = await fetchWithRetry(`${BASE}/api/worker/booking-generation-request`, { headers: headers() });
+  if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/booking-generation-request`) + ` — body: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
+/** Mark the exact admin request complete after the worker created its codes. */
+export async function completeGenerationRequest(requestId) {
+  const res = await fetchWithRetry(`${BASE}/api/worker/booking-generation-request/complete`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ request_id: requestId }),
+  });
+  if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/booking-generation-request/complete`) + ` — body: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
 /** POST a finished booking code back to the app. */
 export async function postCode(payload) {
   const res = await fetchWithRetry(`${BASE}/api/worker/booking-codes`, {

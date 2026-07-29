@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
 use App\Services\Booking\BetslipSpecService;
+use App\Services\Booking\BookingCodeGenerationRequest;
 use App\Services\Booking\BookingCodeLedgerService;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
@@ -23,6 +24,25 @@ class BookingWorkerController extends Controller
     public function spec(BetslipSpecService $specs): JsonResponse
     {
         return response()->json($specs->today());
+    }
+
+    /** Read the latest admin “Generate codes” request from the Mac worker. */
+    public function generationRequest(BookingCodeGenerationRequest $generationRequests): JsonResponse
+    {
+        $request = $generationRequests->pending();
+
+        return response()->json([
+            'requested' => $request !== null,
+            'request' => $request,
+        ]);
+    }
+
+    /** Clear a request only after the Mac worker completed that exact run. */
+    public function completeGenerationRequest(Request $request, BookingCodeGenerationRequest $generationRequests): JsonResponse
+    {
+        $data = $request->validate(['request_id' => ['required', 'uuid']]);
+
+        return response()->json(['ok' => $generationRequests->complete($data['request_id'])]);
     }
 
     public function store(Request $request, BookingCodeLedgerService $ledger, TelegramService $telegram, OneSignalService $oneSignal): JsonResponse

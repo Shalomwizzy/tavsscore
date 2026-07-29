@@ -36,5 +36,7 @@ Route::middleware('throttle:30,1')->group(function () {
 // Booking-code automation worker (external, token-authenticated).
 Route::middleware('worker.token')->prefix('worker')->group(function () {
     Route::get('/betslip-spec', [BookingWorkerController::class, 'spec']);
+    Route::get('/booking-generation-request', [BookingWorkerController::class, 'generationRequest']);
+    Route::post('/booking-generation-request/complete', [BookingWorkerController::class, 'completeGenerationRequest']);
     Route::post('/booking-codes', [BookingWorkerController::class, 'store']);
 });
