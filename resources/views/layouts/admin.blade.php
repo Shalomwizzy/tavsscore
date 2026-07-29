@@ -343,7 +343,6 @@
                 <div class="sb-group-body">
                     <a href="{{ route('admin.rollover.index') }}" class="sb-link {{ request()->routeIs('admin.rollover.*') ? 'active' : '' }}"><span class="sb-icon">🔄</span> Rollover Challenge</a>
                     <a href="{{ route('admin.booking-code.index') }}" class="sb-link {{ request()->routeIs('admin.booking-code.*') ? 'active' : '' }}"><span class="sb-icon">🎟️</span> Booking Code</a>
-                    <a href="{{ route('admin.auto-bet.index') }}" class="sb-link {{ request()->routeIs('admin.auto-bet.*') ? 'active' : '' }}"><span class="sb-icon">🤖</span> Auto-Bet</a>
                 </div>
             </details>
 

@@ -77,13 +77,6 @@ export async function fetchSpec() {
   return res.json();
 }
 
-/** Auto-bet config + the owner's decrypted SportyBet credentials (worker only). */
-export async function fetchAutobetConfig() {
-  const res = await fetchWithRetry(`${BASE}/api/worker/autobet-config`, { headers: headers() });
-  if (!res.ok) throw new Error(explain(res.status, `${BASE}/api/worker/autobet-config`));
-  return res.json();
-}
-
 /** Read a button-triggered code-generation request from the admin desk. */
 export async function fetchGenerationRequest() {
   const res = await fetchWithRetry(`${BASE}/api/worker/booking-generation-request`, { headers: headers() });
