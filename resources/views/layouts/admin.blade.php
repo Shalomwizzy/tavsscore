@@ -273,7 +273,7 @@
             $isMainPicks = request()->routeIs('admin.picks','admin.draw-picks.*','admin.gg-picks.*','admin.double-chance.*');
             $isGoalMarkets = request()->routeIs('admin.over15.*','admin.over25.*','admin.under35.*','admin.under45.*','admin.team3plus.*');
             $isHandicapMarkets = request()->routeIs('admin.handicap.*','admin.european-handicap.*');
-            $isSpecialistPicks = request()->routeIs('admin.correct-score.*','admin.lineup-picks.*','admin.goalscorer-picks.*');
+            $isSpecialistPicks = request()->routeIs('admin.correct-score.*','admin.lineup-picks.*','admin.goalscorer-picks.*','admin.corners.*');
             $isRollover = request()->routeIs('admin.booking-code.*','admin.rollover.*');
             $isData  = request()->routeIs('admin.matches','admin.predictions','admin.daily-football-predictions.*','admin.api-stats.*','admin.fantasy.*');
             $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.shalom-ai.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
@@ -335,6 +335,7 @@
                     <a href="{{ route('admin.goalscorer-picks.index') }}" class="sb-link {{ request()->routeIs('admin.goalscorer-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Goalscorer Picks</a>
                     <a href="{{ route('admin.correct-score.index') }}" class="sb-link {{ request()->routeIs('admin.correct-score.*') ? 'active' : '' }}"><span class="sb-icon">🎯</span> Correct Score</a>
                     <a href="{{ route('admin.lineup-picks.index') }}" class="sb-link {{ request()->routeIs('admin.lineup-picks.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Lineup Picks</a>
+                    <a href="{{ route('admin.corners.index') }}" class="sb-link {{ request()->routeIs('admin.corners.*') ? 'active' : '' }}"><span class="sb-icon">🚩</span> Corner Picks</a>
                 </div>
             </details>
             <details class="sb-group" data-admin-group="rollover" {{ $isRollover ? 'open' : '' }}>

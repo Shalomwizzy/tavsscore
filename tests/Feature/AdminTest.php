@@ -47,6 +47,11 @@ class AdminTest extends TestCase
         $this->get('/admin/correct-score')->assertRedirect('/admin/login');
     }
 
+    public function test_admin_corner_picks_redirects_guests(): void
+    {
+        $this->get('/admin/corners')->assertRedirect('/admin/login');
+    }
+
     public function test_admin_draw_picks_redirects_guests(): void
     {
         $this->get('/admin/draw-picks')->assertRedirect('/admin/login');
@@ -181,6 +186,8 @@ class AdminTest extends TestCase
         foreach (['/admin/under35', '/admin/under45', '/admin/handicap', '/admin/european-handicap'] as $path) {
             $this->actingAs($admin)->get($path)->assertStatus(200)->assertSee("Today's", false);
         }
+
+        $this->actingAs($admin)->get('/admin/corners')->assertStatus(200)->assertSee('Corner Intelligence', false);
     }
 
     public function test_admin_login_with_valid_credentials(): void

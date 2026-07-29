@@ -224,6 +224,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/european-handicap/refresh', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'refreshEuropeanHandicap'])->name('european-handicap.refresh');
         Route::post('/european-handicap/rebuild', [\App\Http\Controllers\Admin\SpecialtyMarketPicksAdminController::class, 'rebuildEuropeanHandicap'])->name('european-handicap.rebuild');
 
+        /* Corner Picks */
+        Route::get('/corners', [\App\Http\Controllers\Admin\CornersPicksAdminController::class, 'index'])->name('corners.index');
+        Route::post('/corners/refresh', [\App\Http\Controllers\Admin\CornersPicksAdminController::class, 'refresh'])->name('corners.refresh');
+        Route::post('/corners/rebuild', [\App\Http\Controllers\Admin\CornersPicksAdminController::class, 'rebuild'])->name('corners.rebuild');
+
         /* Team 3+ Picks */
         Route::get('/team3plus',          [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'index'])->name('team3plus.index');
         Route::post('/team3plus/refresh', [\App\Http\Controllers\Admin\Team3PlusAdminController::class, 'refresh'])->name('team3plus.refresh');
