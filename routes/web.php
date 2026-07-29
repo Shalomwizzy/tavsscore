@@ -173,6 +173,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/ai-learning',      [Admin\AILearningController::class, 'index'])->name('ai-learning.index');
         Route::post('/ai-learning/recalibrate', [Admin\AILearningController::class, 'recalibrate'])->name('ai-learning.recalibrate');
 
+        /* Shalom AI — isolated first-party shadow model and editorial lab */
+        Route::get('/shalom-ai', [Admin\ShalomAIController::class, 'index'])->name('shalom-ai.index');
+        Route::post('/shalom-ai/train', [Admin\ShalomAIController::class, 'train'])->name('shalom-ai.train');
+        Route::post('/shalom-ai/predict', [Admin\ShalomAIController::class, 'predict'])->name('shalom-ai.predict');
+        Route::post('/shalom-ai/settle', [Admin\ShalomAIController::class, 'settle'])->name('shalom-ai.settle');
+        Route::post('/shalom-ai/draft', [Admin\ShalomAIController::class, 'draft'])->name('shalom-ai.draft');
+
         /* Draw Picks */
         Route::get('/draw-picks',          [Admin\DrawPicksAdminController::class, 'index'])->name('draw-picks.index');
         Route::post('/draw-picks/refresh', [Admin\DrawPicksAdminController::class, 'refresh'])->name('draw-picks.refresh');

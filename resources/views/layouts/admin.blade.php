@@ -276,7 +276,7 @@
             $isSpecialistPicks = request()->routeIs('admin.correct-score.*','admin.lineup-picks.*','admin.goalscorer-picks.*');
             $isRollover = request()->routeIs('admin.booking-code.*','admin.rollover.*');
             $isData  = request()->routeIs('admin.matches','admin.predictions','admin.daily-football-predictions.*','admin.api-stats.*','admin.fantasy.*');
-            $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
+            $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.shalom-ai.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
             $isContent = request()->routeIs('admin.blog.*');
             $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*','admin.winners.*');
             $isRevenue = request()->routeIs('admin.affiliate-links.*','admin.settings.*');
@@ -372,6 +372,7 @@
                     <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Stats</a>
                     <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Model Metrics</a>
                     <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}"><span class="sb-icon">🧠</span> AI Learning</a>
+                    <a href="{{ route('admin.shalom-ai.index') }}" class="sb-link {{ request()->routeIs('admin.shalom-ai.*') ? 'active' : '' }}"><span class="sb-icon">✦</span> Shalom AI Lab</a>
                     <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Pi-Ratings</a>
                     <a href="{{ route('admin.team-aliases.index') }}" class="sb-link {{ request()->routeIs('admin.team-aliases.*') ? 'active' : '' }}"><span class="sb-icon">🏷️</span> Team Aliases</a>
                 </div>

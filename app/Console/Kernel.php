@@ -183,6 +183,26 @@ class Kernel extends ConsoleKernel
             ->timezone('Africa/Lagos')
             ->withoutOverlapping();
 
+        // ── Shalom AI (first-party shadow lab) ─────────────────────────
+        // Completely isolated from public picks and publishing. It trains,
+        // predicts and settles its own versioned record for admin review.
+        $schedule->command('shalom:train')
+            ->weeklyOn(1, '05:30')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping()
+            ->runInBackground();
+        $schedule->command('shalom:predict --hours-ahead=48')
+            ->dailyAt('03:35')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+        $schedule->command('shalom:settle')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping();
+        $schedule->command('shalom:draft')
+            ->dailyAt('11:00')
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping();
+
         // ── Data integrity (Phase 1.5.2) ─────────────────────────────────
         // Weekly ingestion / prediction coverage sanity check.
         $schedule->command('coverage:report --days=7')
