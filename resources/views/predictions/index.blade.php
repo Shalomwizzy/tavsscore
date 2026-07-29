@@ -46,8 +46,10 @@
     .signal-time { color:var(--text-dim); font-size:.68rem; font-weight:700; line-height:1.45; }
     .signal-time strong { color:#fff; display:block; font-size:.9rem; }
     .signal-clubs { display:flex; align-items:center; gap:.55rem; min-width:0; }
-    .signal-crest { width:31px; height:31px; display:grid; place-items:center; border-radius:50%; flex-shrink:0; color:#fff; font-size:.61rem; font-weight:900; letter-spacing:-.02em; background:linear-gradient(135deg,#285d92,#0b2545); border:1px solid rgba(147,197,253,.38); box-shadow:0 4px 12px rgba(0,0,0,.25); }
+    .signal-crest { width:31px; height:31px; display:grid; place-items:center; overflow:hidden; border-radius:50%; flex-shrink:0; color:#fff; font-size:.61rem; font-weight:900; letter-spacing:-.02em; background:linear-gradient(135deg,#285d92,#0b2545); border:1px solid rgba(147,197,253,.38); box-shadow:0 4px 12px rgba(0,0,0,.25); }
     .signal-crest.away { background:linear-gradient(135deg,#1c785d,#093a31); border-color:rgba(110,231,183,.34); margin-left:-.8rem; margin-top:1.15rem; }
+    .signal-crest img { width:82%; height:82%; object-fit:contain; }
+    .signal-crest .crest-fallback { display:none; }
     .signal-team-names { min-width:0; }
     .signal-team-names strong { display:block; color:#fff; font-size:.84rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .signal-team-names span { display:block; color:var(--text-dim); font-size:.68rem; margin:.12rem 0; }
@@ -480,6 +482,12 @@
     function initials(name) {
         return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 3).map(function(part){ return part.charAt(0); }).join('').toUpperCase();
     }
+    function clubCrest(logo, name, away) {
+        var classes = 'signal-crest' + (away ? ' away' : '');
+        var fallback = esc(initials(name));
+        if (!logo) return '<span class="'+classes+'">'+fallback+'</span>';
+        return '<span class="'+classes+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\';"><span class="crest-fallback">'+fallback+'</span></span>';
+    }
 
     /* Outcome helpers */
     function outcomes(p) {
@@ -712,7 +720,7 @@
         return '<article class="signal-card fade-up">'
             +'<div class="signal-time"><strong>'+esc(fmtTime(m.match_time))+'</strong><span>'+esc(m.status || 'Scheduled')+'</span></div>'
             +'<div class="signal-clubs">'
-            +'<div><span class="signal-crest">'+esc(initials(m.home_team))+'</span><span class="signal-crest away">'+esc(initials(m.away_team))+'</span></div>'
+            +'<div>'+clubCrest(m.home_team_logo, m.home_team, false)+clubCrest(m.away_team_logo, m.away_team, true)+'</div>'
             +'<div class="signal-team-names"><strong>'+esc(m.home_team||'?')+formDots(p.home_form)+'</strong><span>vs</span><strong>'+esc(m.away_team||'?')+formDots(p.away_form)+'</strong><div class="signal-state">'+statusText+'</div></div>'
             +'</div>'
             +'<div class="signal-pick"><div class="signal-pick-label">Model signal</div><div class="signal-pick-value">'+verdict+'</div><div class="signal-actions">'+resultBadge+'<button class="share-btn" id="'+shareBtnId+'" onclick="sharePred(\''+shareText.replace(/'/g,"\\'")+ '\',\''+shareBtnId+'\')" title="Share">Share</button>'+detailLink+'</div></div>'

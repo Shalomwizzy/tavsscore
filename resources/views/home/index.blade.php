@@ -58,8 +58,9 @@
     .hm-pick-league { font-size: .7rem; color: var(--mute); font-family: var(--mono); text-align: right; }
     .hm-teams { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; }
     .hm-team { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 1; min-width: 0; }
-    .hm-crest { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .95rem;
+    .hm-crest { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; overflow:hidden; font-weight: 800; font-size: .95rem;
         background: radial-gradient(circle at 30% 25%, #223040, #0e1620); border: 1px solid var(--line); }
+    .hm-crest img { width:82%; height:82%; object-fit:contain; }
     .hm-tname { font-size: .8rem; font-weight: 700; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .hm-vs { font-family: var(--mono); font-size: .7rem; color: var(--mute); }
     .hm-pickbody { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;
@@ -139,7 +140,8 @@
     .hm-signal:hover { transform:translateY(-4px); border-color:var(--accbrd); }
     .hm-signal-top { display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em; }
     .hm-signal-teams { display:flex;align-items:center;gap:.55rem;margin:1rem 0 .85rem; }
-    .hm-signal-crest { display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#285d92,#0b2545);border:1px solid rgba(147,197,253,.35);color:#fff;font-size:.6rem;font-weight:900; }
+    .hm-signal-crest { display:grid;place-items:center;width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#285d92,#0b2545);border:1px solid rgba(147,197,253,.35);color:#fff;font-size:.6rem;font-weight:900; }
+    .hm-signal-crest img { width:82%;height:82%;object-fit:contain; }
     .hm-signal-crest.away { margin-left:-.9rem;margin-top:1.1rem;background:linear-gradient(135deg,#1c785d,#093a31);border-color:rgba(110,231,183,.3); }
     .hm-signal-names { min-width:0;flex:1; }
     .hm-signal-names strong { display:block;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -220,9 +222,9 @@
 
                     @if($topPick && $topPick->match)
                         <div class="hm-teams">
-                            <div class="hm-team"><div class="hm-crest">{{ $crest($topPick->match->home_team) }}</div><div class="hm-tname">{{ $topPick->match->home_team }}</div></div>
+                            <div class="hm-team"><div class="hm-crest">@if($topPick->match->home_team_logo)<img src="{{ $topPick->match->home_team_logo }}" alt="" loading="lazy">@else{{ $crest($topPick->match->home_team) }}@endif</div><div class="hm-tname">{{ $topPick->match->home_team }}</div></div>
                             <div class="hm-vs">VS</div>
-                            <div class="hm-team"><div class="hm-crest">{{ $crest($topPick->match->away_team) }}</div><div class="hm-tname">{{ $topPick->match->away_team }}</div></div>
+                            <div class="hm-team"><div class="hm-crest">@if($topPick->match->away_team_logo)<img src="{{ $topPick->match->away_team_logo }}" alt="" loading="lazy">@else{{ $crest($topPick->match->away_team) }}@endif</div><div class="hm-tname">{{ $topPick->match->away_team }}</div></div>
                         </div>
                         <div class="hm-pickbody">
                             <div>
@@ -284,7 +286,7 @@
                     @php($confidence = (int) round($signal->confidence ?? 0))
                     <a href="{{ route('predictions.show', $match->slug) }}" class="hm-signal">
                         <div class="hm-signal-top"><span>{{ \App\Support\LeagueCoverage::formatName($match->league, $match->league_country) }}</span><span>{{ $match->match_time?->timezone(config('app.timezone'))->format('H:i') }}</span></div>
-                        <div class="hm-signal-teams"><div><span class="hm-signal-crest">{{ $initials($match->home_team) }}</span><span class="hm-signal-crest away">{{ $initials($match->away_team) }}</span></div><div class="hm-signal-names"><strong>{{ $match->home_team }}</strong><span>vs</span><strong>{{ $match->away_team }}</strong></div></div>
+                        <div class="hm-signal-teams"><div><span class="hm-signal-crest">@if($match->home_team_logo)<img src="{{ $match->home_team_logo }}" alt="" loading="lazy">@else{{ $initials($match->home_team) }}@endif</span><span class="hm-signal-crest away">@if($match->away_team_logo)<img src="{{ $match->away_team_logo }}" alt="" loading="lazy">@else{{ $initials($match->away_team) }}@endif</span></div><div class="hm-signal-names"><strong>{{ $match->home_team }}</strong><span>vs</span><strong>{{ $match->away_team }}</strong></div></div>
                         <div class="hm-signal-label">Model signal</div><div class="hm-signal-pick">{{ $signal->predicted_outcome }}</div>
                         <div class="hm-signal-bar"><i style="width:{{ max(0, min(100, $confidence)) }}%"></i></div><div class="hm-signal-foot"><span>{{ $signal->is_daily_pick ? '⭐ Daily shortlist' : 'Form • team news • trends' }}</span><b>{{ $confidence }}%</b></div>
                     </a>
