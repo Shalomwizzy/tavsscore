@@ -134,6 +134,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/tennis/fetch-fixtures', [Admin\TennisAdminController::class, 'fetchFixtures'])->name('tennis.fetch');
         Route::post('/tennis/generate', [Admin\TennisAdminController::class, 'generatePredictions'])->name('tennis.generate');
         Route::post('/tennis/settle', [Admin\TennisAdminController::class, 'settleResults'])->name('tennis.settle');
+        Route::get('/tennis/images', [Admin\SettingsController::class, 'tennisMedia'])->name('tennis.media');
 
         /* Analytics */
         Route::get('/analytics', [Admin\AnalyticsController::class, 'index'])->name('analytics');

@@ -25,6 +25,13 @@ class SettingsController extends Controller
         return view('admin.homepage-media.index', compact('settings'));
     }
 
+    public function tennisMedia(): View
+    {
+        $settings = Setting::all()->keyBy('key');
+
+        return view('admin.tennis.media', compact('settings'));
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -39,6 +46,7 @@ class SettingsController extends Controller
             'homepage_feature_image'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'homepage_tennis_image'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'fantasy_feature_image'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'tennis_page_hero_image'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
 
         foreach ($data as $key => $value) {
@@ -51,6 +59,7 @@ class SettingsController extends Controller
             'homepage_feature_image' => 'homepage_feature_image',
             'homepage_tennis_image' => 'homepage_tennis_image',
             'fantasy_feature_image' => 'fantasy_feature_image',
+            'tennis_page_hero_image' => 'tennis_page_hero_image',
         ] as $input => $setting) {
             if (! $request->hasFile($input)) continue;
 

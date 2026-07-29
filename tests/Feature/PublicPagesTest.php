@@ -71,6 +71,11 @@ class PublicPagesTest extends TestCase
         $this->get('/live')->assertStatus(200);
     }
 
+    public function test_tennis_page_loads(): void
+    {
+        $this->get(route('tennis.index'))->assertOk();
+    }
+
     // ── Predictions ───────────────────────────────────────────────────
 
     public function test_predictions_index_loads(): void
