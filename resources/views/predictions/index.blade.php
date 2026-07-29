@@ -64,7 +64,7 @@
     .signal-confidence-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#10b981,#6ee7b7); }
     .signal-actions { display:flex; gap:.4rem; align-items:center; margin-top:.5rem; }
     .signal-details { grid-column:2/-1; margin-top:-.35rem; }
-    .signal-details > summary { cursor:pointer; list-style:none; color:#93c5fd; font-size:.69rem; font-weight:800; padding:.35rem 0; }
+    .signal-details > summary { cursor:pointer;list-style:none;color:#6ee7b7;font-size:.69rem;font-weight:800;padding:.35rem 0; }
     .signal-details > summary::-webkit-details-marker { display:none; }
     .signal-details > summary:after { content:'+'; margin-left:.35rem; color:var(--text-dim); }
     .signal-details[open] > summary:after { content:'−'; }
@@ -303,16 +303,58 @@
         color-scheme: dark;
     }
 
-    @media (max-width:560px) {
-        .prob-row { grid-template-columns:1fr 3rem; }
+    @media (max-width:640px) {
+        .pred-experience { margin:1rem 0 .85rem;padding:1rem;border-radius:14px; }
+        .pred-experience:after { width:220px;height:150px;bottom:-80px;right:-30px; }
+        .pred-experience-grid { grid-template-columns:1fr;gap:.85rem; }
+        .pred-experience h1 { font-size:1.65rem;line-height:1.06; }
+        .pred-hero-actions { display:grid;grid-template-columns:1fr 1fr;gap:.45rem; }
+        .pred-hero-btn { justify-content:center;text-align:center;padding:.58rem .5rem; }
+        .pred-health { gap:.35rem; }
+        .pred-health-card { min-height:66px;padding:.55rem .45rem; }
+        .pred-health-value { font-size:1rem; }
+        .pred-health-label { font-size:.54rem;letter-spacing:.035em; }
+        .preds-header { padding:1rem 0 .85rem;margin-bottom:.85rem;flex-direction:column;align-items:flex-start; }
+        .preds-title { font-size:1.15rem; }
+        .pred-league-section { border-radius:12px;margin-bottom:.75rem; }
+        .pred-league-head { padding:.62rem .7rem; }
+        .plh-name { font-size:.69rem;max-width:185px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .signal-card { grid-template-columns:minmax(0,1fr) auto;gap:.7rem;padding:.8rem .72rem .72rem; }
+        .signal-time { grid-column:1;grid-row:1;display:flex;align-items:center;gap:.45rem;font-size:.63rem; }
+        .signal-time strong { display:inline;font-size:.78rem; }
+        .signal-clubs { grid-column:1/-1;grid-row:2;padding:.15rem 0 .7rem;border-bottom:1px solid rgba(255,255,255,.07); }
+        .signal-crest { width:30px;height:30px; }
+        .signal-team-names strong { font-size:.8rem; }
+        .signal-state { font-size:.61rem; }
+        .signal-pick { grid-column:1/-1;grid-row:3;border-left:0;border-top:0;padding:.1rem 0 0; }
+        .signal-pick-label { font-size:.58rem; }
+        .signal-pick-value { white-space:normal;font-size:.95rem;line-height:1.28; }
+        .signal-actions { margin-top:.42rem; }
+        .signal-confidence { grid-column:2;grid-row:1;min-width:82px;padding:.42rem .5rem;border-radius:8px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.16); }
+        .signal-confidence-top { font-size:.57rem; }
+        .signal-confidence-top strong { font-size:.82rem; }
+        .signal-details { grid-column:1/-1;grid-row:4;margin-top:0; }
+        .signal-details > summary { padding:.55rem 0 .1rem;font-size:.71rem; }
+        .signal-details-body { padding:.65rem; }
+        .signal-details-body [style*="grid-template-columns:repeat(2"] { grid-template-columns:1fr !important; }
+        .signal-details-body [style*="minmax(120px"] { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+        .prob-row { grid-template-columns:1fr 3rem;gap:.45rem; }
         .prob-label { display:none; }
-        .preds-header { flex-direction:column; align-items:flex-start; }
-        .pred-experience { padding:1rem; }
-        .pred-experience-grid { grid-template-columns:1fr; }
-        .signal-card { grid-template-columns:58px minmax(0,1fr) 82px; gap:.65rem; padding:.85rem .65rem; }
-        .signal-pick { grid-column:2/-1; border-left:0; border-top:1px solid rgba(255,255,255,.07); padding:.55rem 0 0; }
-        .signal-confidence { grid-column:3; grid-row:1; }
-        .signal-details { grid-column:2/-1; }
+        .goal-lines { gap:.3rem; }
+        .gl-chip { padding:3px 7px;font-size:.64rem; }
+        .analysis-box { padding:.7rem; }
+        .tip-headline { padding:.6rem .65rem; }
+        .tip-headline-row { align-items:flex-start; }
+        .tip-headline-market { font-size:.82rem; }
+        .archive-nav-p { padding:.48rem;gap:.35rem; }
+        .arch-btn-p { padding:.38rem .55rem;font-size:.68rem; }
+        .arch-input-p { flex:1;min-width:135px; }
+    }
+    @media (max-width:380px) {
+        .pred-hero-actions { grid-template-columns:1fr; }
+        .pred-health { grid-template-columns:1fr 1fr; }
+        .pred-health-card:last-child { grid-column:1/-1; }
+        .signal-details-body [style*="minmax(120px"] { grid-template-columns:1fr !important; }
     }
 
     /* Left info block in card header */
