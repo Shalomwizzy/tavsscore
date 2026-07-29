@@ -98,4 +98,25 @@ class BlogArticleWriterTest extends TestCase
 
         $this->assertSame('Recovered article', $article['title']);
     }
+
+    public function test_mistral_article_json_can_be_wrapped_in_text_or_a_code_fence(): void
+    {
+        config([
+            'services.groq.key' => null,
+            'services.gemini.key' => null,
+            'services.mistral.key' => 'mistral-test-key',
+        ]);
+        Http::fake([
+            'https://api.mistral.ai/*' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => "Here is the article:\n```json\n{\"title\":\"Recovered Mistral article\",\"content\":\"<p>Original analysis.</p>\"}\n```"],
+                ]],
+            ]),
+        ]);
+
+        $article = app(BlogArticleWriter::class)->writeArticle('System rules', 'Article briefing');
+
+        $this->assertSame('Recovered Mistral article', $article['title']);
+        $this->assertSame('<p>Original analysis.</p>', $article['content']);
+    }
 }

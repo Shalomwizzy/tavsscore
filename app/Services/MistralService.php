@@ -40,7 +40,10 @@ class MistralService
                     ['role' => 'user', 'content' => $userPrompt],
                 ],
                 'temperature' => 0.45,
-                'max_tokens' => 2000,
+                // A 750-word HTML article plus its JSON wrapper can exceed
+                // 2,000 tokens. Truncation leaves invalid JSON and used to
+                // make Mistral look unavailable during editorial rewrites.
+                'max_tokens' => 5000,
                 'response_format' => ['type' => 'json_object'],
             ]);
 
@@ -48,20 +51,65 @@ class MistralService
             throw new RuntimeException('Mistral API error: status ' . $response->status());
         }
 
-        $raw = trim((string) data_get($response->json(), 'choices.0.message.content'));
-        $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw);
-        $raw = preg_replace('/\s*```\s*$/', '', $raw);
-        $article = json_decode($raw, true);
+        $article = $this->decodeArticleResponse(data_get($response->json(), 'choices.0.message.content'));
 
         if (! is_array($article)
             || ! is_string($article['title'] ?? null)
             || ! is_string($article['content'] ?? null)
             || blank($article['title'])
             || blank($article['content'])) {
-            throw new RuntimeException('Mistral returned an invalid article response.');
+            $finishReason = (string) data_get($response->json(), 'choices.0.finish_reason', 'unknown');
+            throw new RuntimeException("Mistral returned an invalid article response (finish reason: {$finishReason}).");
         }
 
         return ['title' => trim($article['title']), 'content' => trim($article['content'])];
+    }
+
+    /**
+     * Mistral normally returns a JSON string, but some model versions wrap it
+     * in a markdown fence or a short sentence. Its newer content-part shape is
+     * also an array. Extract only a valid title/content object; never invent a
+     * fallback article here.
+     */
+    private function decodeArticleResponse(mixed $content): ?array
+    {
+        if (is_array($content)) {
+            $content = collect($content)
+                ->map(fn ($part) => is_array($part) ? ($part['text'] ?? $part['content'] ?? '') : $part)
+                ->filter(fn ($part) => is_string($part))
+                ->implode("\n");
+        }
+
+        if (! is_string($content) || blank($content)) {
+            return null;
+        }
+
+        $raw = trim($content);
+        $raw = preg_replace('/```(?:json)?/i', '', $raw) ?? $raw;
+        $raw = trim($raw);
+
+        $candidates = [$raw];
+        if (preg_match('/\{[\s\S]*\}/', $raw, $match)) {
+            $candidates[] = $match[0];
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            $article = json_decode($candidate, true);
+            if (! is_array($article)) {
+                continue;
+            }
+
+            if (is_array($article['content'] ?? null)) {
+                $article['content'] = collect($article['content'])
+                    ->map(fn ($part) => is_array($part) ? ($part['text'] ?? $part['content'] ?? '') : $part)
+                    ->filter(fn ($part) => is_string($part))
+                    ->implode("\n");
+            }
+
+            return $article;
+        }
+
+        return null;
     }
 
     /**

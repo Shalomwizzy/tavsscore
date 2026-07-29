@@ -68,7 +68,7 @@ class BlogArticleWriter
         }
 
         throw new RuntimeException(
-            'No configured blog-writing provider could generate the article.' . ($lastError ? ' Last error: ' . $lastError->getMessage() : '')
+            'Every configured blog-writing provider failed to generate the article.' . ($lastError ? ' Last error: ' . $lastError->getMessage() : '')
         );
     }
 }
