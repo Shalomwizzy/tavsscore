@@ -239,9 +239,10 @@
             display: flex;
             flex-direction: column;
             min-height: calc(100vh - 56px);
+            min-width:0;
         }
 
-        .page-main { flex: 1; }
+        .page-main { flex:1;min-width:0; }
         .more-rail { border-bottom:1px solid rgba(148,163,184,.1);background:rgba(15,23,42,.54); }
         .more-rail-inner { display:flex;align-items:center;gap:.38rem;min-height:45px;overflow-x:auto;scrollbar-width:none; }
         .more-rail-inner::-webkit-scrollbar { display:none; }
@@ -630,6 +631,15 @@
        the page wide (last-resort guard for tables/pre blocks in content). */
     .wrap { min-width: 0; }
     @media (max-width: 640px) {
+        html, body { width:100%;max-width:100%;overflow-x:clip; }
+        .page-shell, .page-main, .wrap { width:100%;max-width:100%;min-width:0; }
+        .wrap { padding-left:1rem;padding-right:1rem; }
+        .page-main [class*="grid"] > *, .page-main [class*="row"] > * { min-width:0; }
+        .page-main [style*="overflow-x"] { max-width:100%; }
+        .ts-tabs { max-width:100% !important;overflow-x:auto; }
+        .ts-tab { flex:0 0 auto;white-space:nowrap; }
+        table { max-width:100%; }
+        pre, code { overflow-wrap:anywhere; }
         .pick-card-top { padding: 1.25rem 1rem 0 !important; }
         .pick-card-footer { padding: .75rem 1rem !important; }
         .prob-section, .pick-analysis-section { padding: 0 1rem !important; }
