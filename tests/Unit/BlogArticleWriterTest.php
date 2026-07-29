@@ -73,4 +73,29 @@ class BlogArticleWriterTest extends TestCase
         $this->assertSame('Mistral football analysis', $article['title']);
         $this->assertSame('<p>Original analysis.</p>', $article['content']);
     }
+
+    public function test_it_falls_back_when_a_provider_returns_malformed_article_json(): void
+    {
+        config([
+            'services.groq.key' => null,
+            'services.gemini.key' => 'gemini-test-key',
+            'services.mistral.key' => 'mistral-test-key',
+        ]);
+        Http::fake([
+            'https://generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => '{"title":["invalid"],"content":"<p>Bad shape.</p>"}']]],
+                ]],
+            ]),
+            'https://api.mistral.ai/*' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => '{"title":"Recovered article","content":"<p>Original analysis.</p>"}'],
+                ]],
+            ]),
+        ]);
+
+        $article = app(BlogArticleWriter::class)->writeArticle('System rules', 'Article briefing');
+
+        $this->assertSame('Recovered article', $article['title']);
+    }
 }

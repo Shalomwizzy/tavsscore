@@ -56,7 +56,11 @@ class GroqBlogService
         $raw = preg_replace('/\s*```\s*$/', '', $raw);
         $article = json_decode($raw, true);
 
-        if (! is_array($article) || blank($article['title'] ?? null) || blank($article['content'] ?? null)) {
+        if (! is_array($article)
+            || ! is_string($article['title'] ?? null)
+            || ! is_string($article['content'] ?? null)
+            || blank($article['title'])
+            || blank($article['content'])) {
             throw new RuntimeException('Groq returned an invalid article response.');
         }
 
