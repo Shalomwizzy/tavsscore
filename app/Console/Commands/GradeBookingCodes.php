@@ -3,10 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\BookingCode;
-use App\Models\FootballMatch;
+use App\Services\Booking\BookingCodeLedgerService;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
-use App\Support\PickHelpers;
 use Illuminate\Console\Command;
 
 /**
@@ -21,9 +20,7 @@ class GradeBookingCodes extends Command
 
     protected $description = 'Settle booking codes (accumulator win/loss) and notify the outcome.';
 
-    private const FINISHED = ['FT', 'AET', 'PEN'];
-
-    public function handle(TelegramService $telegram, OneSignalService $oneSignal): int
+    public function handle(BookingCodeLedgerService $ledger, TelegramService $telegram, OneSignalService $oneSignal): int
     {
         $codes = BookingCode::query()
             ->where('status', 'published')
@@ -35,46 +32,14 @@ class GradeBookingCodes extends Command
         $settled = 0;
 
         foreach ($codes as $code) {
-            $legs = is_array($code->fixtures) ? $code->fixtures : [];
-            if ($legs === []) {
-                continue;
-            }
+            $result = $ledger->grade($code);
 
-            $anyLost = false;
-            $pending = false;
-            $decided = 0;
-
-            foreach ($legs as $leg) {
-                $match = ! empty($leg['match_id']) ? FootballMatch::find($leg['match_id']) : null;
-                if (! $match) {
-                    // Keep checking rather than marking an accumulator won while
-                    // a saved leg cannot yet be matched to a final result.
-                    $pending = true;
-                    continue;
-                }
-                if (! in_array($match->status, self::FINISHED, true)) {
-                    $pending = true;
-                    continue;
-                }
-                $result = PickHelpers::resolveForMatch($match, $leg['market'] ?? null);
-                if ($result === null) {
-                    // A void/ungradeable leg needs review; never silently turn a
-                    // partly-known code into a false "won" result.
-                    $pending = true;
-                    continue;
-                }
-                $decided++;
-                if ($result === false) {
-                    $anyLost = true;
-                }
-            }
-
-            // A dead leg kills the accumulator even while others are pending.
-            if ($anyLost) {
+            // A dead leg kills the accumulator even while other saved legs are pending.
+            if ($result['settled'] && ! $result['won']) {
                 $code->update(['status' => 'lost', 'settled_at' => now()]);
                 $this->announce($code, false, $telegram, $oneSignal);
                 $settled++;
-            } elseif (! $pending && $decided > 0) {
+            } elseif ($result['settled'] && $result['won']) {
                 $code->update(['status' => 'won', 'settled_at' => now()]);
                 $this->announce($code, true, $telegram, $oneSignal);
                 $settled++;

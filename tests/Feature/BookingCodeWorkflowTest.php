@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\BookingCode;
+use App\Models\BookingCodeLeg;
 use App\Models\FootballMatch;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
@@ -62,6 +63,14 @@ class BookingCodeWorkflowTest extends TestCase
 
         $this->assertSame('won', $code->fresh()->status);
         $this->assertNotNull($code->fresh()->settled_at);
+        $this->assertDatabaseHas('booking_code_legs', [
+            'booking_code_id' => $code->id,
+            'match_id' => $first->id,
+            'market' => 'Home Win',
+            'status' => 'won',
+            'home_score' => 2,
+            'away_score' => 0,
+        ]);
     }
 
     public function test_one_losing_leg_settles_an_accumulator_as_lost(): void
@@ -122,7 +131,7 @@ class BookingCodeWorkflowTest extends TestCase
 
     public function test_public_booking_page_shows_today_code_and_outcome_history(): void
     {
-        BookingCode::create([
+        $today = BookingCode::create([
             'platform' => 'SportyBet', 'code' => 'TODAY22', 'total_odds' => 2.22,
             'status' => 'published', 'pick_date' => now('Africa/Lagos')->toDateString(),
         ]);
@@ -131,6 +140,13 @@ class BookingCodeWorkflowTest extends TestCase
             'status' => 'won', 'pick_date' => now('Africa/Lagos')->subDay()->toDateString(), 'settled_at' => now(),
         ]);
 
-        $this->get('/booking-codes')->assertOk()->assertSee('TODAY22')->assertSee('WON22')->assertSee('Booking Codes');
+        BookingCodeLeg::create([
+            'booking_code_id' => $today->id,
+            'source_key' => 'manual-public-leg',
+            'home_team' => 'Lagos FC', 'away_team' => 'Abuja FC',
+            'market' => 'Under 3.5 Goals', 'status' => 'pending',
+        ]);
+
+        $this->get('/booking-codes')->assertOk()->assertSee('TODAY22')->assertSee('WON22')->assertSee('Lagos FC')->assertSee('Under 3.5 Goals')->assertSee('Booking Codes');
     }
 }

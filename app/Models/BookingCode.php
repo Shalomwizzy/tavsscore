@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BookingCode extends Model
 {
@@ -18,4 +19,9 @@ class BookingCode extends Model
         'expires_at' => 'datetime',
         'settled_at' => 'datetime',
     ];
+
+    public function legs(): HasMany
+    {
+        return $this->hasMany(BookingCodeLeg::class)->orderBy('id');
+    }
 }

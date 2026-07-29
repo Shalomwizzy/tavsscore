@@ -89,6 +89,7 @@ async function run() {
             match_id: l.match_id ?? null,
             match: `${l.home} vs ${l.away}`,
             market: l.market,
+            model_prob: l.model_prob ?? null,
             est_odds: l.est_odds ?? null,
           })),
           status: 'published',

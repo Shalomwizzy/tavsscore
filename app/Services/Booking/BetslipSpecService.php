@@ -44,6 +44,8 @@ class BetslipSpecService
     // legs — forces genuine game+market variety instead of one repeated market.
     private const MAX_SAME_MARKET = 3;
 
+    public function __construct(private readonly BookingOutcomeLearningService $bookingLearning) {}
+
     /**
      * Per-market tickets. Each entry: title, floor (min board prob %), and
      * pick(board) → [market, prob] | null.
@@ -106,6 +108,9 @@ class BetslipSpecService
 
         // ── Per-market tickets ──
         foreach ($this->ticketConfigs() as $ref => $cfg) {
+            if (! $this->bookingLearning->permits($cfg['title'])) {
+                continue;
+            }
             $ticket = $this->buildMarketTicket($preds, $ref, $cfg['title'], $cfg['pick'], $cfg['floor']);
             if ($ticket) {
                 $slips[] = $ticket;
@@ -141,7 +146,7 @@ class BetslipSpecService
         $legs = [];
         foreach ($preds as $p) {
             $chosen = $pick($p->market_board);
-            if ($chosen === null || $chosen['prob'] < $floor) {
+            if ($chosen === null || $chosen['prob'] < $floor || ! $this->bookingLearning->permits($chosen['market'])) {
                 continue;
             }
             $legs[] = [
@@ -304,6 +309,7 @@ class BetslipSpecService
         if (! is_array($board)) return [];
         $out = [];
         foreach (self::BOOKABLE as $market) {
+            if (! $this->bookingLearning->permits($market)) continue;
             if (! isset($board[$market])) continue;
             $prob = (float) $board[$market];
             if ($prob < $minProb) continue;

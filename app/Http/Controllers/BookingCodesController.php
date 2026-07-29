@@ -16,6 +16,7 @@ class BookingCodesController extends Controller
         $today = now('Africa/Lagos')->toDateString();
 
         $codes = BookingCode::query()
+            ->with('legs')
             ->where('status', 'published')
             ->where('total_odds', '>=', 2)
             ->where(function ($q) use ($today) {
@@ -29,6 +30,7 @@ class BookingCodesController extends Controller
 
         // Settled history — the won/lost record for the last 14 days.
         $history = BookingCode::query()
+            ->with('legs')
             ->whereIn('status', ['won', 'lost'])
             ->whereNotNull('settled_at')
             ->where('pick_date', '>=', now('Africa/Lagos')->subDays(14)->toDateString())
@@ -38,7 +40,6 @@ class BookingCodesController extends Controller
 
         $wonCount = $history->where('status', 'won')->count();
         $settledCount = $history->count();
-
         $affiliates = AffiliateLink::active()->get()->keyBy('slug');
 
         return view('booking-codes.index', compact('codes', 'affiliates', 'history', 'wonCount', 'settledCount'));

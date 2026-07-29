@@ -101,7 +101,7 @@ export const sportybet = {
       if (combined * odds > maxOdds) continue; // would blow the band — try the next leg
 
       selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
-      booked.push({ match_id: leg.match_id ?? null, home: leg.home, away: leg.away, market: leg.market, est_odds: odds });
+      booked.push({ match_id: leg.match_id ?? null, home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
       combined *= odds;
 
       if (booked.length >= 3 && combined >= minOdds) break;

@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
+use App\Services\Booking\BookingOutcomeLearningService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BookingCodeController extends Controller
 {
-    public function index(): View
+    public function index(BookingOutcomeLearningService $learning): View
     {
         $history = BookingCode::query()
+            ->with('legs')
             ->latest('created_at')
             ->limit(50)
             ->get();
@@ -27,8 +29,9 @@ class BookingCodeController extends Controller
         ];
         $stats['settled'] = $stats['won'] + $stats['lost'];
         $workerReady = filled(config('services.booking_worker.token'));
+        $learningFeedback = $learning->marketFeedback();
 
-        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady'));
+        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady', 'learningFeedback'));
     }
 
     public function send(Request $request, TelegramService $telegram, OneSignalService $oneSignal)

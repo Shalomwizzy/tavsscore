@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
 use App\Services\Booking\BetslipSpecService;
+use App\Services\Booking\BookingCodeLedgerService;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class BookingWorkerController extends Controller
         return response()->json($specs->today());
     }
 
-    public function store(Request $request, TelegramService $telegram, OneSignalService $oneSignal): JsonResponse
+    public function store(Request $request, BookingCodeLedgerService $ledger, TelegramService $telegram, OneSignalService $oneSignal): JsonResponse
     {
         $data = $request->validate([
             'platform'   => ['required', 'string', 'max:40'],
@@ -63,6 +64,10 @@ class BookingWorkerController extends Controller
                 'settled_at' => null,
             ]
         );
+
+        if (($data['status'] ?? 'published') === 'published') {
+            $ledger->syncLegs($code);
+        }
 
         // Push each newly-published code to Telegram + OneSignal immediately.
         // wasRecentlyCreated / wasChanged('code') means an idempotent re-run
