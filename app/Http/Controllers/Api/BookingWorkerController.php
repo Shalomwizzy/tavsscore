@@ -9,6 +9,7 @@ use App\Services\Booking\BookingCodeGenerationRequest;
 use App\Services\Booking\BookingCodeLedgerService;
 use App\Services\OneSignalService;
 use App\Services\TelegramService;
+use App\Services\ImageWatermarkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -170,6 +171,7 @@ class BookingWorkerController extends Controller
         $extension = $isPng ? 'png' : 'jpg';
         $date = ($code->pick_date ?? now('Africa/Lagos'))->format('Y-m-d');
         $path = "booking-codes/{$date}/ticket-{$code->id}.{$extension}";
+        $binary = app(ImageWatermarkService::class)->stamp($binary);
         Storage::disk('public')->put($path, $binary);
 
         return $path;
