@@ -49,6 +49,7 @@ class MatchInsightService
             'away'      => $away,
             'h2h'       => $h2h,
             'reasons'   => $this->reasons($prediction, $match, $home, $away, $h2h),
+            'market'    => $this->marketEvidence($prediction, $match, $home, $away),
             'injuries'  => [
                 'home' => $this->injuryRows($injuries->get($match->home_team)),
                 'away' => $this->injuryRows($injuries->get($match->away_team)),
@@ -171,7 +172,7 @@ class MatchInsightService
 
     private function reasons(Prediction $prediction, FootballMatch $match, array $home, array $away, array $h2h): array
     {
-        $reasons = [];
+        $reasons = $this->marketEvidence($prediction, $match, $home, $away)['reasons'];
         $topTip = is_array($prediction->tips) ? ($prediction->tips[0] ?? []) : [];
 
         if (! empty($topTip['rationale'])) {
@@ -201,6 +202,91 @@ class MatchInsightService
         return array_slice(array_values(array_unique($reasons)), 0, 4);
     }
 
+    /** Market-specific evidence prevents a GG or draw pick being explained like a 1X2 pick. */
+    private function marketEvidence(Prediction $prediction, FootballMatch $match, array $home, array $away): array
+    {
+        $outcome = (string) ($prediction->predicted_outcome ?? 'Model pick');
+        $metrics = [];
+        $reasons = [];
+        $homeWin = round((float) $prediction->home_win_prob, 1);
+        $draw = round((float) $prediction->draw_prob, 1);
+        $awayWin = round((float) $prediction->away_win_prob, 1);
+        $over15 = round((float) ($prediction->over_15_prob ?? 0), 1);
+        $over25 = round((float) ($prediction->over_25_prob ?? 0), 1);
+        $btts = round((float) ($prediction->btts_prob ?? 0), 1);
+
+        $add = function (string $label, float|int|string|null $value, string $hint = '') use (&$metrics): void {
+            if ($value === null || $value === '') return;
+            $metrics[] = ['label' => $label, 'value' => is_numeric($value) ? rtrim(rtrim(number_format((float) $value, 1, '.', ''), '0'), '.') . '%' : $value, 'hint' => $hint];
+        };
+
+        $isDraw = $prediction->is_draw_pick || $outcome === 'Draw';
+        $isGg = $prediction->is_gg_pick || str_contains($outcome, 'Both Teams Score');
+        $isOver15 = $prediction->is_over15_pick || str_contains($outcome, 'Over 1.5');
+        $isOver25 = $prediction->is_over25_pick || str_contains($outcome, 'Over 2.5');
+
+        if ($isDraw) {
+            $add('Draw probability', $draw, 'Model chance of a level finish');
+            $add('Win-probability gap', abs($homeWin - $awayWin), 'Smaller gap means a more even matchup');
+            $reasons[] = "The model gives the draw a {$draw}% chance and rates the two teams only ".number_format(abs($homeWin - $awayWin), 1)." percentage points apart for an outright win.";
+        } elseif ($isGg) {
+            $add('BTTS probability', $btts, 'Both teams to score');
+            $add("{$match->home_team} BTTS", $home['recent']['played'] ? round($home['recent']['btts'] / $home['recent']['played'] * 100, 1) : null, 'Across recent matches');
+            $add("{$match->away_team} BTTS", $away['recent']['played'] ? round($away['recent']['btts'] / $away['recent']['played'] * 100, 1) : null, 'Across recent matches');
+            $reasons[] = "Both Teams to Score is rated at {$btts}% by the model, supported by each side's recent scoring profile.";
+        } elseif ($isOver25 || $isOver15) {
+            $line = $isOver25 ? 'Over 2.5 Goals' : 'Over 1.5 Goals';
+            $probability = $isOver25 ? $over25 : $over15;
+            $threshold = $isOver25 ? 3 : 2;
+            $add("{$line} probability", $probability, "Chance of {$threshold}+ total goals");
+            $add("{$match->home_team} high-scoring games", $home['recent']['played'] ? round($home['recent']['over_25'] / $home['recent']['played'] * 100, 1) : null, 'Recent matches with 3+ goals');
+            $add("{$match->away_team} high-scoring games", $away['recent']['played'] ? round($away['recent']['over_25'] / $away['recent']['played'] * 100, 1) : null, 'Recent matches with 3+ goals');
+            $reasons[] = "{$line} is rated at {$probability}% after combining both teams' recent goal output and defensive records.";
+        } elseif ($prediction->is_double_chance_pick || str_contains($outcome, 'Home or Draw') || str_contains($outcome, 'Draw or Away')) {
+            $homeSide = str_contains($outcome, 'Home') || $prediction->double_chance_label === '1X';
+            $probability = $homeSide ? $homeWin + $draw : $draw + $awayWin;
+            $label = $homeSide ? '1X · Home or Draw' : 'X2 · Draw or Away';
+            $add($label, $probability, 'Two outcomes covered by the model');
+            $add('Loss probability', 100 - $probability, 'Only the uncovered result loses');
+            $reasons[] = "{$label} covers {$probability}% of the model's 1X2 probability, leaving ".number_format(100 - $probability, 1)."% on the only losing outcome.";
+        } elseif ($prediction->is_team3plus_pick) {
+            $homeSide = $prediction->team3plus_label === 'Home';
+            $team = $homeSide ? $match->home_team : $match->away_team;
+            $threePlus = $homeSide ? (float) $prediction->home_3plus_prob : (float) $prediction->away_3plus_prob;
+            $add("{$team} 3+ goals", $threePlus, 'Model chance of scoring at least three');
+            $add("{$team} under 3 goals", 100 - $threePlus, 'Probability behind the selected NO market');
+            $reasons[] = "{$team}'s chance of scoring three or more is only ".number_format($threePlus, 1)."%, which supports the selected team-goals market.";
+        } elseif ($prediction->is_corners_pick) {
+            $label = (string) ($prediction->corners_label ?: $outcome);
+            $probability = is_array($prediction->market_board) ? ($prediction->market_board[$label] ?? null) : null;
+            $add($label, $probability, 'Model probability from stored market board');
+            $reasons[] = $probability !== null
+                ? "{$label} is the strongest stored corners line for this fixture at ".number_format((float) $probability, 1).'%.'
+                : 'This corners line was selected from the available team corner history and market model.';
+        } elseif (! empty($prediction->likely_scores)) {
+            $topScore = $prediction->likely_scores[0] ?? null;
+            if (is_array($topScore)) {
+                $add('Most likely score', $topScore['score'] ?? null, 'Top Poisson scoreline');
+                $add('Scoreline probability', $topScore['pct'] ?? null, 'Exact-score model probability');
+                $reasons[] = 'The score forecast is led by '.$topScore['score'].' at '.($topScore['pct'] ?? '—').'%, based on the goal model.';
+            }
+        } else {
+            $winner = max(['home' => $homeWin, 'draw' => $draw, 'away' => $awayWin]);
+            $label = $winner === $homeWin ? $match->home_team.' win' : ($winner === $awayWin ? $match->away_team.' win' : 'Draw');
+            $add($match->home_team.' win', $homeWin, '1X2 model probability');
+            $add('Draw', $draw, '1X2 model probability');
+            $add($match->away_team.' win', $awayWin, '1X2 model probability');
+            $reasons[] = "The 1X2 model's strongest outcome is {$label} at ".number_format($winner, 1).'%.';
+        }
+
+        $topTip = is_array($prediction->tips) ? ($prediction->tips[0] ?? []) : [];
+        if (! empty($topTip['market_implied'])) {
+            $add('Bookmaker implied chance', $topTip['market_implied'], ($topTip['market_agrees'] ?? false) ? 'Market agrees with this pick' : 'Market does not fully agree');
+        }
+
+        return ['outcome' => $outcome, 'confidence' => $prediction->confidence, 'metrics' => $metrics, 'reasons' => $reasons];
+    }
+
     private function injuryRows($rows): array
     {
         return collect($rows ?? [])->take(4)->map(fn (MatchInjury $injury) => [
@@ -211,6 +297,6 @@ class MatchInsightService
 
     private function empty(): array
     {
-        return ['available' => false, 'home' => [], 'away' => [], 'h2h' => [], 'reasons' => [], 'injuries' => ['home' => [], 'away' => []]];
+        return ['available' => false, 'home' => [], 'away' => [], 'h2h' => [], 'market' => [], 'reasons' => [], 'injuries' => ['home' => [], 'away' => []]];
     }
 }

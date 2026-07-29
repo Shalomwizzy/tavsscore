@@ -21,6 +21,21 @@
         </div>
         @endif
 
+        @if(!empty($matchInsight['market']['metrics']))
+        <div style="margin-bottom:1rem;">
+            <div style="font-size:.64rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.5rem;">Numbers behind this {{ $matchInsight['market']['outcome'] ?? 'pick' }}</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.45rem;">
+                @foreach($matchInsight['market']['metrics'] as $metric)
+                <div style="padding:.6rem;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.022);">
+                    <div style="font-size:.61rem;color:var(--text-dim);line-height:1.35;">{{ $metric['label'] }}</div>
+                    <div style="font-size:.94rem;font-weight:900;color:{{ $accent }};margin-top:.18rem;">{{ $metric['value'] }}</div>
+                    @if(!empty($metric['hint']))<div style="font-size:.58rem;color:var(--text-muted);line-height:1.35;margin-top:.18rem;">{{ $metric['hint'] }}</div>@endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;">
             @foreach(['home', 'away'] as $side)
                 @php($team = $matchInsight[$side])
