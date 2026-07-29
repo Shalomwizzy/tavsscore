@@ -129,8 +129,9 @@ class ResultsFallbackTest extends TestCase
 
     public function test_espn_settles_predicted_match_football_data_misses(): void
     {
-        // football-data returns nothing for this fixture; ESPN (broad) must still
-        // settle it because we predicted it — matched via a name variant.
+        // ESPN must work on its own when football-data.org is not configured,
+        // then settle a predicted match via a name variant.
+        Config::set('services.football_data.key', null);
         Config::set('services.espn.leagues', ['uefa.champions_qual']);
 
         $match = FootballMatch::create([

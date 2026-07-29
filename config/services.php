@@ -89,6 +89,9 @@ return [
         'leagues' => env('ESPN_SOCCER_LEAGUES')
             ? array_values(array_filter(array_map('trim', explode(',', (string) env('ESPN_SOCCER_LEAGUES')))))
             : [
+                // Major domestic leagues. ESPN must cover these too when the
+                // football-data.org key is absent or its source is delayed.
+                'eng.1', 'eng.2', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1',
                 'uefa.champions_qual', 'uefa.europa_qual', 'uefa.europa.conf_qual',
                 'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'uefa.super_cup',
                 'usa.1', 'mex.1', 'bra.1', 'arg.1', 'jpn.1', 'kor.1', 'aus.1', 'ksa.1',

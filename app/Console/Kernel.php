@@ -40,13 +40,20 @@ class Kernel extends ConsoleKernel
         // locally and are never stored as booking codes in the first place.
         $schedule->command('booking:clear --failed --force')->hourly()->withoutOverlapping();
 
-        // Free RESULTS fallback (football-data.org) — only fires when the
-        // API-Football quota is exhausted, so today's outcomes still settle
-        // instead of waiting for the next-day catch-up. No-op if nothing pending.
+        // Free results fallback: do not rely only on the API quota cache flag.
+        // A failed/expired flag must never leave a finished predicted match
+        // pending. The command is a no-op unless a predicted fixture has been
+        // stale for 150+ minutes, then football-data.org and ESPN reconcile it.
         $schedule->command('results:fallback')
             ->everyThirtyMinutes()
             ->withoutOverlapping()
-            ->when(fn () => (bool) Cache::get('api_football_quota_exhausted'));
+            ->when(fn () => (bool) Cache::get('api_football_quota_exhausted')
+                || FootballMatch::query()
+                    ->whereHas('prediction')
+                    ->where('match_time', '<', now()->subMinutes(150))
+                    ->where('match_time', '>=', now()->subDays(4))
+                    ->whereNotIn('status', ['FT', 'AET', 'PEN', 'CANC', 'PST', 'ABD', 'AWD', 'WO'])
+                    ->exists());
 
         // ── Early-morning pipeline, sequenced so picks are ready by 01:30 ──
         // API-Football quota resets ~01:00 Lagos. Clear the exhausted flag at
