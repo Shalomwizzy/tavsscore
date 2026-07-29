@@ -16,7 +16,7 @@ import { chromium } from 'playwright';
 import { writeFileSync } from 'node:fs';
 
 const START_URL = process.env.CAPTURE_URL || 'https://www.sportybet.com/ng/sport/football';
-const KEYWORDS = ['order', 'share', 'book', 'betslip', 'bet-slip', 'selection', 'outcome', 'coupon', 'ticket'];
+const KEYWORDS = ['order', 'share', 'book', 'betslip', 'bet-slip', 'selection', 'outcome', 'coupon', 'ticket', 'factscenter', 'event', 'upcoming', 'match', 'wapconfigurable', 'sportlist'];
 const isInteresting = (url) => KEYWORDS.some((k) => url.toLowerCase().includes(k));
 
 const captured = [];

@@ -46,7 +46,10 @@ async function run() {
       continue;
     }
 
-    const context = adapter.usesBrowser === false ? null : await browser.newContext();
+    // A real desktop UA — SportyBet blocks the default HeadlessChrome UA.
+    const context = adapter.usesBrowser === false ? null : await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+    });
     const page = context ? await context.newPage() : null;
 
     for (const slip of slips) {

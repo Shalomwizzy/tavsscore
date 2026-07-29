@@ -1,88 +1,194 @@
-// SportyBet adapter.
+// SportyBet adapter — API-based (no DOM clicking, no login).
 //
-// This is the ONLY file with site-specific browser steps. SportyBet's DOM,
-// market names and booking-code flow change often, so the selectors below are
-// marked TODO and must be filled in against the live site (run locally with
-// HEADLESS=false to inspect). The structure — search fixture → open market →
-// add safe selection → respect odds band → read booking code — is stable.
+// Booking a code on SportyBet is two calls, both captured from the live site:
+//   1. GET  /api/ng/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=…
+//        → upcoming events, each with eventId, team names, kickoff and markets
+//          (marketId + specifier + outcomes[{id,odds}]).
+//   2. POST /api/ng/orders/share  { selections:[{eventId,marketId,specifier,outcomeId}] }
+//        → { data:{ shareCode, shareURL } }   ← the booking code.
 //
-// buildCode(page, slip) must return:
-//   { code, link, total_odds, booked: [legs actually added] }
+// We run both through page.evaluate(fetch) so they use the real browser origin,
+// cookies and TLS fingerprint from a SportyBet-reachable (Nigerian) IP.
 
-// Map our internal market labels to SportyBet's on-site market/outcome wording.
+const BASE = 'https://www.sportybet.com';
+const EVENTS_PATH = '/api/ng/factsCenter/pcUpcomingEvents';
+const SHARE_PATH = '/api/ng/orders/share';
+const MARKET_IDS = '1,18,10,29,11'; // 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet
+const MAX_PAGES = 12;
+
+// Our internal market label → SportyBet { marketId, outcomeId, total? }.
+// total is the Over/Under line, encoded on the wire as specifier "total=X".
 const MARKET_MAP = {
-  'Over 1.5 Goals': { group: 'Over/Under', outcome: 'Over 1.5' },
-  'Over 2.5 Goals': { group: 'Over/Under', outcome: 'Over 2.5' },
-  'Under 3.5 Goals': { group: 'Over/Under', outcome: 'Under 3.5' },
-  'Both Teams Score (GG)': { group: 'GG/NG', outcome: 'Yes' },
-  'Home or Draw (1X)': { group: 'Double Chance', outcome: '1X' },
-  'Draw or Away (X2)': { group: 'Double Chance', outcome: 'X2' },
-  'Draw No Bet - Home': { group: 'Draw No Bet', outcome: 'Home' },
-  'Draw No Bet - Away': { group: 'Draw No Bet', outcome: 'Away' },
+  'Home Win':               { marketId: '1', outcomeId: '1' },
+  'Draw':                   { marketId: '1', outcomeId: '2' },
+  'Away Win':               { marketId: '1', outcomeId: '3' },
+
+  'Over 0.5 Goals':         { marketId: '18', outcomeId: '12', total: '0.5' },
+  'Over 1.5 Goals':         { marketId: '18', outcomeId: '12', total: '1.5' },
+  'Over 2.5 Goals':         { marketId: '18', outcomeId: '12', total: '2.5' },
+  'Over 3.5 Goals':         { marketId: '18', outcomeId: '12', total: '3.5' },
+  'Over 4.5 Goals':         { marketId: '18', outcomeId: '12', total: '4.5' },
+  'Under 1.5 Goals':        { marketId: '18', outcomeId: '13', total: '1.5' },
+  'Under 2.5 Goals':        { marketId: '18', outcomeId: '13', total: '2.5' },
+  'Under 3.5 Goals':        { marketId: '18', outcomeId: '13', total: '3.5' },
+  'Under 4.5 Goals':        { marketId: '18', outcomeId: '13', total: '4.5' },
+  'Under 5.5 Goals':        { marketId: '18', outcomeId: '13', total: '5.5' },
+
+  'Both Teams Score (GG)':  { marketId: '29', outcomeId: '74' },
+  'Both Teams Score':       { marketId: '29', outcomeId: '74' },
+  'No Goal (NG)':           { marketId: '29', outcomeId: '76' },
+
+  'Home or Draw (1X)':      { marketId: '10', outcomeId: '9' },
+  'Home or Away (12)':      { marketId: '10', outcomeId: '10' },
+  'Draw or Away (X2)':      { marketId: '10', outcomeId: '11' },
+
+  'Draw No Bet - Home':     { marketId: '11', outcomeId: '4' },
+  'Draw No Bet - Away':     { marketId: '11', outcomeId: '5' },
 };
 
 export const sportybet = {
   async buildCode(page, slip) {
-    await page.goto('https://www.sportybet.com/ng/sport/football', { waitUntil: 'domcontentloaded' });
+    // Establish the SportyBet session (cookies) that page.request reuses.
+    if (!page.url().includes('sportybet.com')) {
+      await page.goto(`${BASE}/ng/sport/football`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    }
+    const events = await loadEvents(page);
+    if (!events.length) throw new Error('SportyBet returned no upcoming events');
 
+    const selections = [];
     const booked = [];
     let combined = 1.0;
+    const maxOdds = slip.max_total_odds ?? 500;
+    const minOdds = slip.min_total_odds ?? 3;
 
     for (const leg of slip.selections) {
-      if (combined >= (slip.max_total_odds ?? 500)) break;
-
       const mapped = MARKET_MAP[leg.market];
-      if (!mapped) continue; // market we can't place on this book — skip the leg
+      if (!mapped) continue; // market we don't book on SportyBet — skip the leg
 
-      const added = await addSelection(page, leg, mapped);
-      if (added) {
-        booked.push(leg);
-        combined *= leg.est_odds || 1.0;
-      }
+      const ev = matchEvent(events, leg);
+      if (!ev) continue;
 
-      // Stop once we're safely inside the odds band with a real accumulator.
-      if (booked.length >= 3 && combined >= (slip.min_total_odds ?? 3)) break;
+      const hit = findOutcome(ev, mapped);
+      if (!hit) continue;
+
+      const odds = parseFloat(hit.odds) || leg.est_odds || 1.0;
+      if (combined * odds > maxOdds) continue; // would blow the band — try the next leg
+
+      selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
+      booked.push({ home: leg.home, away: leg.away, market: leg.market, est_odds: odds });
+      combined *= odds;
+
+      if (booked.length >= 3 && combined >= minOdds) break;
     }
 
-    if (booked.length < 3) {
-      throw new Error(`only ${booked.length} legs could be added`);
+    if (selections.length < 3) {
+      throw new Error(`only ${selections.length} legs matched on SportyBet (need 3)`);
     }
 
-    const { code, link, total_odds } = await readBookingCode(page);
-    return { code, link, total_odds, booked };
+    const data = await shareBooking(page, selections);
+    if (!data || !data.shareCode) throw new Error('share call returned no shareCode');
+
+    return {
+      code: data.shareCode,
+      link: data.shareURL || `${BASE}/ng/?shareCode=${data.shareCode}`,
+      total_odds: Math.round(combined * 100) / 100,
+      booked,
+    };
   },
 };
 
-// ── Site-specific steps — fill these in against the live DOM ──
+// ── SportyBet calls, run inside the page so they carry the real session ──
 
-async function addSelection(page, leg, mapped) {
-  // TODO: implement against SportyBet.
-  // 1. Search for the fixture: `${leg.home} vs ${leg.away}` (use leg.home_norm /
-  //    leg.away_norm for fuzzy matching; confirm kickoff ~= leg.kickoff).
-  // 2. Open the fixture's market group `mapped.group`.
-  // 3. Click the outcome `mapped.outcome`.
-  // 4. Return true if the bet was added to the slip, false otherwise.
-  //
-  // Example skeleton (selectors are placeholders):
-  //   await page.fill('input[type="search"]', `${leg.home} ${leg.away}`);
-  //   await page.click(`text=${leg.home}`);
-  //   await page.click(`text=${mapped.group}`);
-  //   const btn = page.locator(`.m-outcome:has-text("${mapped.outcome}")`);
-  //   if (!(await btn.count())) return false;
-  //   await btn.first().click();
-  //   return true;
-  void page; void leg; void mapped;
-  throw new Error('sportybet.addSelection not implemented — fill in live selectors');
+// page.request runs the HTTP call from Node using the browser context's cookies
+// — it shares the session established by the initial page.goto but bypasses
+// SportyBet's in-page fetch wrapper (which rejects programmatic fetch()).
+const apiHeaders = { accept: 'application/json', referer: `${BASE}/ng/sport/football`, 'x-requested-with': 'XMLHttpRequest' };
+
+async function loadEvents(page) {
+  const all = [];
+  for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
+    const url = `${BASE}${EVENTS_PATH}?sportId=sr:sport:1&marketId=${MARKET_IDS}&pageSize=100&pageNum=${pageNum}&option=1&_t=${Date.now()}`;
+    const resp = await page.request.get(url, { headers: apiHeaders });
+    if (!resp.ok()) break;
+    const body = await resp.json().catch(() => null);
+    const tournaments = body?.data?.tournaments || (Array.isArray(body?.data) ? body.data : []);
+    const events = tournaments.flatMap((t) => t.events || []);
+    if (!events.length) break;
+    all.push(...events);
+    if (events.length < 100) break;
+  }
+  return all;
 }
 
-async function readBookingCode(page) {
-  // TODO: open the betslip, click "Book bet" / "Share", and read the booking
-  // code + shareable link + displayed total odds.
-  //   await page.click('text=Book Bet');
-  //   const code = await page.locator('.booking-code').innerText();
-  //   const link = await page.locator('.share-link').getAttribute('href');
-  //   const total = parseFloat(await page.locator('.total-odds').innerText());
-  //   return { code, link, total_odds: total };
-  void page;
-  throw new Error('sportybet.readBookingCode not implemented — fill in live selectors');
+async function shareBooking(page, selections) {
+  const resp = await page.request.post(`${BASE}${SHARE_PATH}`, {
+    headers: { ...apiHeaders, 'content-type': 'application/json' },
+    data: { selections },
+  });
+  if (!resp.ok()) throw new Error(`share HTTP ${resp.status()}`);
+  const body = await resp.json().catch(() => null);
+  if (!body) throw new Error('share returned non-JSON');
+  if (body.bizCode && body.bizCode !== 10000) {
+    throw new Error(`share bizCode ${body.bizCode}: ${body.message || 'rejected'}`);
+  }
+  return body.data;
+}
+
+// ── Matching helpers ──
+
+function findOutcome(event, mapped) {
+  for (const m of event.markets || []) {
+    if (String(m.id) !== mapped.marketId) continue;
+    if (mapped.total !== undefined && parseSpecifierTotal(m.specifier) !== mapped.total) continue;
+    const outcome = (m.outcomes || []).find((o) => String(o.id) === mapped.outcomeId);
+    if (outcome) return { odds: outcome.odds, specifier: m.specifier || null };
+  }
+  return null;
+}
+
+function parseSpecifierTotal(specifier) {
+  const m = /total=([0-9.]+)/.exec(specifier || '');
+  return m ? m[1] : null;
+}
+
+function matchEvent(events, leg) {
+  const home = normTeam(leg.home);
+  const away = normTeam(leg.away);
+  const kickoff = leg.kickoff ? Date.parse(leg.kickoff) : null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const ev of events) {
+    const eh = normTeam(ev.homeTeamName);
+    const ea = normTeam(ev.awayTeamName);
+    const score = teamScore(home, eh) + teamScore(away, ea);
+    if (score < 1.2) continue; // both sides must be a decent match
+
+    let total = score;
+    if (kickoff && ev.estimateStartTime) {
+      const hours = Math.abs(ev.estimateStartTime - kickoff) / 3.6e6;
+      if (hours <= 6) total += 0.3 - hours * 0.02; // small bonus for a close kickoff
+    }
+    if (total > bestScore) { bestScore = total; best = ev; }
+  }
+  return best;
+}
+
+// Normalise a team name to comparable tokens (drop accents, punctuation and
+// generic club words that carry no identity).
+const STOP = new Set(['fc', 'afc', 'sc', 'cf', 'ac', 'club', 'the']);
+function normTeam(name) {
+  return String(name || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/).filter((t) => t && !STOP.has(t));
+}
+
+// Similarity of two token lists: shared tokens / longer list, plus a bonus for
+// any overlap so single-distinct-token names (e.g. "Arsenal") still match.
+function teamScore(a, b) {
+  if (!a.length || !b.length) return 0;
+  const setB = new Set(b);
+  const shared = a.filter((t) => setB.has(t)).length;
+  return shared / Math.max(a.length, b.length) + (shared > 0 ? 0.6 : 0);
 }
