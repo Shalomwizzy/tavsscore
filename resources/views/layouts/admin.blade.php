@@ -27,7 +27,7 @@
             --yellow:  #f59e0b;
             --blue:    #3b82f6;
             --blue-d:  rgba(59,130,246,0.12);
-            --sidebar: 220px;
+            --sidebar: 268px;
         }
 
         body { font-family:'Inter',system-ui,sans-serif; font-size:14px; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
@@ -38,70 +38,95 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar);
-            background: var(--surface);
-            border-right: 1px solid var(--border);
+            background:
+                radial-gradient(circle at 14% -6%, rgba(16,185,129,.15), transparent 30%),
+                linear-gradient(180deg, #111b2d 0%, #0b1220 48%, #080d1a 100%);
+            border-right: 1px solid rgba(148,163,184,.13);
             display: flex; flex-direction: column;
             position: fixed; top:0; left:0; bottom:0;
             z-index: 100; overflow-y: auto;
+            box-shadow: 18px 0 48px rgba(0,0,0,.16);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148,163,184,.25) transparent;
         }
+        .sidebar::-webkit-scrollbar { width:5px; }
+        .sidebar::-webkit-scrollbar-thumb { background:rgba(148,163,184,.24); border-radius:99px; }
 
         .sb-brand {
-            display: flex; align-items: center; gap: .55rem;
-            padding: 1rem 1rem .875rem;
-            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: .7rem;
+            padding: 1.15rem 1rem 1rem;
+            border-bottom: 1px solid rgba(148,163,184,.12);
             text-decoration: none; color: #fff;
-            font-weight: 800; font-size: .95rem;
+            transition:background 180ms ease;
         }
+        .sb-brand:hover { background:rgba(255,255,255,.025); }
 
         .sb-brand-icon {
-            width: 30px; height: 30px; border-radius: 7px;
-            background: linear-gradient(135deg,#10b981,#059669);
+            width: 36px; height: 36px; border-radius: 11px;
+            background: linear-gradient(135deg,#22c55e,#059669 58%,#047857);
             display: flex; align-items: center; justify-content: center;
-            font-size: 15px; flex-shrink: 0;
+            font-size: 18px; flex-shrink: 0;
+            box-shadow:0 8px 20px rgba(16,185,129,.24);
         }
+        .sb-brand-copy { display:grid; gap:2px; min-width:0; }
+        .sb-brand-copy strong { font-size:.91rem; letter-spacing:-.02em; }
+        .sb-brand-copy small { color:#94a3b8; font-size:.6rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+        .sb-brand-arrow { margin-left:auto; color:#64748b; font-size:.8rem; }
 
-        .sb-nav { padding: .75rem .5rem; flex: 1; }
+        .sb-nav { padding: .8rem .7rem 1rem; flex: 1; }
 
         .sb-section-label {
-            font-size: .63rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: .07em;
-            padding: .75rem .5rem .3rem;
+            font-size: .6rem; font-weight: 800; color: #64748b;
+            text-transform: uppercase; letter-spacing: .11em;
+            padding: .55rem .5rem .38rem;
         }
 
         .sb-link {
-            display: flex; align-items: center; gap: .55rem;
-            padding: .5rem .65rem; border-radius: 7px;
-            color: var(--dim); text-decoration: none;
-            font-size: .8rem; font-weight: 600;
-            transition: color 150ms, background 150ms;
-            margin-bottom: 2px;
+            display: flex; align-items: center; gap: .62rem;
+            padding: .57rem .65rem; border-radius: 9px;
+            color: #9aa9bd; text-decoration: none;
+            font-size: .76rem; font-weight: 650;
+            transition: color 160ms, background 160ms, transform 160ms, box-shadow 160ms;
+            margin-bottom: 3px;
         }
 
-        .sb-link:hover { color: var(--text); background: rgba(255,255,255,.04); }
-        .sb-link.active { color: #fff; background: var(--green-d); border-left: 2px solid var(--green); padding-left: calc(.65rem - 2px); }
+        .sb-link:hover { color:#fff; background:rgba(255,255,255,.055); transform:translateX(2px); }
+        .sb-link.active { color:#ecfdf5; background:linear-gradient(90deg,rgba(16,185,129,.21),rgba(16,185,129,.07)); box-shadow:inset 2px 0 0 #34d399, 0 5px 16px rgba(0,0,0,.1); }
 
-        .sb-icon { font-size: .95rem; flex-shrink: 0; width: 18px; text-align: center; }
+        .sb-icon { display:grid;place-items:center;font-size:.84rem;flex-shrink:0;width:25px;height:25px;text-align:center;border-radius:7px;background:rgba(148,163,184,.09); }
+        .sb-link:hover .sb-icon, .sb-link.active .sb-icon { background:rgba(255,255,255,.11); }
+        .sb-spotlight { display:block; margin:.15rem 0 .85rem; padding:.78rem; border:1px solid rgba(16,185,129,.28); border-radius:12px; text-decoration:none; background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(14,116,144,.1)); box-shadow:inset 0 1px 0 rgba(255,255,255,.04); transition:transform 160ms, border-color 160ms; }
+        .sb-spotlight:hover { transform:translateY(-1px); border-color:rgba(52,211,153,.55); }
+        .sb-spotlight.active { border-color:rgba(52,211,153,.65); box-shadow:0 8px 24px rgba(16,185,129,.13), inset 0 1px 0 rgba(255,255,255,.06); }
+        .sb-spotlight-kicker { color:#86efac; font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em; }
+        .sb-spotlight-title { color:#fff; font-size:.78rem; font-weight:800; margin-top:.22rem; display:flex; align-items:center; justify-content:space-between; }
+        .sb-spotlight-sub { color:#a7f3d0; font-size:.63rem; line-height:1.35; margin-top:.25rem; opacity:.78; }
 
         /* Collapsible groups */
-        .sb-group { margin-bottom: .1rem; }
+        .sb-group { margin:.28rem 0; border:1px solid transparent; border-radius:10px; }
+        .sb-group[open] { background:rgba(255,255,255,.018); border-color:rgba(148,163,184,.08); }
         .sb-group > summary {
             list-style: none; cursor: pointer;
             display: flex; align-items: center; justify-content: space-between;
-            padding: .55rem .5rem; border-radius: 7px;
-            font-size: .63rem; font-weight: 700; color: var(--dim);
-            text-transform: uppercase; letter-spacing: .07em; user-select: none;
+            padding:.65rem .65rem; border-radius:9px;
+            font-size:.68rem; font-weight:800; color:#8fa0b6;
+            letter-spacing:.015em; user-select:none;
         }
         .sb-group > summary::-webkit-details-marker { display: none; }
-        .sb-group > summary:hover { color: var(--text); background: rgba(255,255,255,.03); }
-        .sb-caret { font-size: .55rem; transition: transform .15s ease; opacity: .7; }
+        .sb-group > summary:hover { color:#fff; background:rgba(255,255,255,.035); }
+        .sb-caret { font-size:.58rem; transition:transform .15s ease; opacity:.75; }
         .sb-group[open] > summary .sb-caret { transform: rotate(90deg); }
-        .sb-group-body { padding: 0 0 .35rem; }
+        .sb-group-body { padding:0 .32rem .38rem; }
+        .sb-group-body .sb-link { font-size:.735rem; }
 
         .sb-footer {
-            padding: .75rem 1rem;
-            border-top: 1px solid var(--border);
-            font-size: .72rem; color: var(--dim);
+            padding:.8rem .7rem;
+            border-top:1px solid rgba(148,163,184,.12);
+            font-size:.72rem; color:var(--dim);
         }
+        .sb-footer form { border:1px solid rgba(148,163,184,.12); border-radius:9px; background:rgba(255,255,255,.025); padding:.1rem; }
+        .sb-footer button { border-radius:7px; padding:.52rem .55rem !important; transition:background 160ms,color 160ms; }
+        .sb-footer button:hover { background:rgba(239,68,68,.1) !important; color:#fca5a5 !important; }
 
         /* Main */
         .admin-main {
@@ -224,7 +249,7 @@
 
         /* Mobile */
         @media (max-width:768px) {
-            .sidebar { transform:translateX(-100%); transition:transform 220ms ease; }
+            .sidebar { transform:translateX(-100%); transition:transform 220ms ease; box-shadow:18px 0 48px rgba(0,0,0,.38); }
             .sidebar.open { transform:translateX(0); }
             .admin-main { margin-left:0; }
             .admin-topbar { padding:0 1rem; }
@@ -238,7 +263,9 @@
     {{-- Sidebar --}}
     <aside class="sidebar" id="admin-sidebar">
         <a href="{{ route('admin.dashboard') }}" class="sb-brand">
-            <span class="sb-brand-icon">⚽</span> TavsScore
+            <span class="sb-brand-icon">⚽</span>
+            <span class="sb-brand-copy"><strong>TavsScore</strong><small>Admin Command Centre</small></span>
+            <span class="sb-brand-arrow">↗</span>
         </a>
 
         @php
@@ -258,8 +285,10 @@
             <a href="{{ route('admin.analytics') }}" class="sb-link {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
                 <span class="sb-icon">📈</span> Analytics
             </a>
-            <a href="{{ route('admin.homepage-media.index') }}" class="sb-link {{ $isHomepageMedia ? 'active' : '' }}">
-                <span class="sb-icon">🖼️</span> Homepage Images
+            <a href="{{ route('admin.homepage-media.index') }}" class="sb-spotlight {{ $isHomepageMedia ? 'active' : '' }}">
+                <div class="sb-spotlight-kicker">Content studio</div>
+                <div class="sb-spotlight-title"><span>🖼️ Homepage Images</span><span>→</span></div>
+                <div class="sb-spotlight-sub">Upload and preview your homepage visuals.</div>
             </a>
             @if(config('services.ga.id'))
             <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener" class="sb-link">
@@ -399,9 +428,18 @@
 <script>
 var toggle  = document.getElementById('sb-toggle');
 var sidebar = document.getElementById('admin-sidebar');
-if (toggle) {
-    toggle.style.display = 'block';
+var compactAdmin = window.matchMedia('(max-width: 768px)');
+
+function syncAdminMenu() {
+    if (!toggle || !sidebar) return;
+    toggle.style.display = compactAdmin.matches ? 'block' : 'none';
+    if (!compactAdmin.matches) sidebar.classList.remove('open');
+}
+
+if (toggle && sidebar) {
     toggle.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+    compactAdmin.addEventListener('change', syncAdminMenu);
+    syncAdminMenu();
 }
 </script>
 @stack('scripts')
