@@ -132,7 +132,7 @@ class ResultsFallbackTest extends TestCase
         // ESPN must work on its own when football-data.org is not configured,
         // then settle a predicted match via a name variant.
         Config::set('services.football_data.key', null);
-        Config::set('services.espn.leagues', ['uefa.champions_qual']);
+        Config::set('services.espn.leagues', ['all']);
 
         $match = FootballMatch::create([
             'api_id'     => rand(10000, 99999),
@@ -170,6 +170,7 @@ class ResultsFallbackTest extends TestCase
         $result = app(ResultsFallbackService::class)->settlePending(3);
 
         $this->assertSame(1, $result['predicted_updated']);
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/soccer/all/scoreboard'));
         $this->assertSame('FT', $match->fresh()->status);
         $this->assertSame(0, (int) $match->fresh()->home_score);
         $this->assertSame(2, (int) $match->fresh()->away_score);

@@ -186,9 +186,9 @@ class ResultsFallbackService
     }
 
     /**
-     * ESPN public scoreboard — one call per configured league slug covers the
-     * whole date window. Covers UEFA qualifiers and many non-European leagues
-     * football-data's free tier omits. No API key required.
+     * ESPN public scoreboard. The default `all` slug is ESPN's global soccer
+     * board for the date range; optional configured league slugs supplement it
+     * when a deployment needs a competition-specific feed. No key required.
      */
     private function fetchEspn(int $days, string $tz): ?array
     {

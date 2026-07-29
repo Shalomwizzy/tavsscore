@@ -82,22 +82,17 @@ return [
     ],
 
     // Second, broader free results source — ESPN's public scoreboard (no key).
-    // Covers the competitions football-data's free tier misses, incl. UEFA
-    // qualifiers and non-European leagues. One call per league slug per run.
+    // `all` is ESPN's global soccer scoreboard, so new/less-common competitions
+    // do not get lost because they were missing from a hand-maintained list.
+    // Extra league slugs may still be appended through ESPN_SOCCER_LEAGUES.
     'espn' => [
         'url'     => env('ESPN_SOCCER_URL', 'https://site.api.espn.com/apis/site/v2/sports/soccer'),
-        'leagues' => env('ESPN_SOCCER_LEAGUES')
-            ? array_values(array_filter(array_map('trim', explode(',', (string) env('ESPN_SOCCER_LEAGUES')))))
-            : [
-                // Major domestic leagues. ESPN must cover these too when the
-                // football-data.org key is absent or its source is delayed.
-                'eng.1', 'eng.2', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1',
-                'uefa.champions_qual', 'uefa.europa_qual', 'uefa.europa.conf_qual',
-                'uefa.champions', 'uefa.europa', 'uefa.europa.conf', 'uefa.super_cup',
-                'usa.1', 'mex.1', 'bra.1', 'arg.1', 'jpn.1', 'kor.1', 'aus.1', 'ksa.1',
-                'nor.1', 'swe.1', 'den.1', 'fin.1', 'rus.1', 'tur.1', 'gre.1', 'sco.1',
-                'bel.1', 'aut.1', 'sui.1', 'pol.1', 'cze.1', 'rou.1', 'srb.1', 'cro.1',
-            ],
+        'leagues' => array_values(array_unique(array_filter(array_merge(
+            ['all'],
+            env('ESPN_SOCCER_LEAGUES')
+                ? array_map('trim', explode(',', (string) env('ESPN_SOCCER_LEAGUES')))
+                : [],
+        )))),
     ],
 
     'gemini' => [
