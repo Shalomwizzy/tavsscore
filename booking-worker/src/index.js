@@ -81,7 +81,9 @@ async function run() {
         // transient odds changes or a briefly blocked bookmaker page.
         let result = null;
         let lastErr = null;
+        let attemptsMade = 0;
         for (let attempt = 1; attempt <= maxSlipAttempts; attempt++) {
+          attemptsMade = attempt;
           try {
             result = await adapter.buildCode(page, slip);
             if (result && result.code) break;
@@ -99,7 +101,7 @@ async function run() {
 
         if (!result || !result.code) {
           const reason = lastErr ? lastErr.message : 'no code produced';
-          console.error(`✗ ${platform}/${slip.ref}: no code after ${maxSlipAttempts} attempts (${reason}). No failed code was saved; the worker run will retry it.`);
+          console.error(`✗ ${platform}/${slip.ref}: no code after ${attemptsMade} attempt${attemptsMade === 1 ? '' : 's'} (${reason}). No failed code was saved; the worker run will retry it.`);
           unresolvedSlips.push(`${platform}/${slip.ref}`);
           continue;
         }

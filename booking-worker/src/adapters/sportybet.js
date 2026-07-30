@@ -17,6 +17,10 @@ const SHARE_PATH = '/api/ng/orders/share';
 // Asian Handicap, Odd/Even
 const MARKET_IDS = '1,18,10,29,11,14,16,26';
 const MAX_PAGES = 12;
+// All tickets in one worker run use the same upcoming-fixture board. Reusing
+// it avoids 12 SportyBet requests per ticket and prevents a late ticket (such
+// as High Risk) being throttled after the earlier tickets have already loaded.
+const eventsByPage = new WeakMap();
 
 // Our internal market label → SportyBet { marketId, outcomeId, specifier? }.
 // specifier is the exact on-wire specifier (e.g. "total=2.5", "hcp=0:2").
@@ -164,6 +168,9 @@ export const sportybet = {
 const apiHeaders = { accept: 'application/json', referer: `${BASE}/ng/sport/football`, 'x-requested-with': 'XMLHttpRequest' };
 
 async function loadEvents(page) {
+  const cached = eventsByPage.get(page);
+  if (cached) return cached;
+
   const all = [];
   for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
     const url = `${BASE}${EVENTS_PATH}?sportId=sr:sport:1&marketId=${MARKET_IDS}&pageSize=100&pageNum=${pageNum}&option=1&_t=${Date.now()}`;
@@ -182,6 +189,7 @@ async function loadEvents(page) {
     const total = Number(body?.data?.totalNum || 0);
     if (total > 0 && pageNum * 100 >= total) break;
   }
+  if (all.length) eventsByPage.set(page, all);
   return all;
 }
 
