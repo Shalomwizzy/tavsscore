@@ -46,12 +46,15 @@ class NotifyTennisPicks extends Command
             return self::SUCCESS;
         }
 
-        $payload = $preds->map(fn ($p) => [
-            'match'      => $p->match->player_one.' vs '.$p->match->player_two,
-            'winner'     => $p->predicted_winner,
-            'confidence' => (int) $p->confidence,
-            'tournament' => trim(($p->match->tournament ?? '').($p->match->tour ? " ({$p->match->tour})" : '')),
-        ])->values()->all();
+        $payload = $preds->map(function ($p) {
+            $best = is_array($p->features) ? ($p->features['best_market'] ?? null) : null;
+            return [
+                'match'      => $p->match->player_one.' vs '.$p->match->player_two,
+                'winner'     => $best['label'] ?? ($p->predicted_winner.' to win'),
+                'confidence' => (int) round($best['prob'] ?? $p->confidence),
+                'tournament' => trim(($p->match->tournament ?? '').($p->match->tour ? " ({$p->match->tour})" : '')),
+            ];
+        })->values()->all();
 
         try { $telegram->sendTennisPicks($payload, config('app.url')); } catch (\Throwable $e) { report($e); }
 

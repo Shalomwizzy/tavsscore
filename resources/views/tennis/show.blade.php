@@ -9,11 +9,30 @@
 @endpush
 
 @section('content')
-@php($features=is_array($prediction->features)?$prediction->features:[];$one=$features['one']??[];$two=$features['two']??[];$h2h=$features['h2h']??[])
+@php
+    $features = is_array($prediction->features) ? $prediction->features : [];
+    $one = $features['one'] ?? [];
+    $two = $features['two'] ?? [];
+    $h2h = $features['h2h'] ?? [];
+    $markets = $features['markets'] ?? [];
+    $best = $features['best_market'] ?? null;
+@endphp
 <main class="td-page">
     <a class="td-back" href="{{ route('tennis.index') }}">← Back to tennis signals</a>
     <section class="td-main" @if($heroImage) style="background-image:linear-gradient(100deg,rgba(3,12,22,.94),rgba(3,12,22,.48)),url('{{ asset($heroImage) }}');background-size:cover;background-position:center;" @endif>
-        <div class="td-content"><div class="td-meta">{{ $match->tour }} · {{ $match->tournament }} · {{ $match->surface ?: 'Surface pending' }}</div><h1 class="td-title">{{ $match->player_one }} <span>vs</span> {{ $match->player_two }}</h1><div class="td-time">{{ $match->scheduled_at?->timezone(config('app.timezone'))->format('l, M j · H:i') ?? $match->match_date?->format('l, M j') }}</div><div class="td-board"><div class="td-names"><span>{{ $match->player_one }}</span><span>{{ $match->player_two }}</span></div><div class="td-rail"><span class="td-one" style="width:{{ $prediction->player_one_win_prob }}%"></span><span class="td-two" style="width:{{ $prediction->player_two_win_prob }}%"></span></div><div class="td-probs"><span>{{ number_format($prediction->player_one_win_prob,1) }}%</span><span>{{ number_format($prediction->player_two_win_prob,1) }}%</span></div><div class="td-pick">🎯 Model pick: {{ $prediction->predicted_winner }} to win · {{ $prediction->confidence }}% confidence</div></div></div>
+        <div class="td-content"><div class="td-meta">{{ $match->tour }} · {{ $match->tournament }} · {{ $match->surface ?: 'Surface pending' }}</div><h1 class="td-title">{{ $match->player_one }} <span>vs</span> {{ $match->player_two }}</h1><div class="td-time">{{ $match->scheduled_at?->timezone(config('app.timezone'))->format('l, M j · H:i') ?? $match->match_date?->format('l, M j') }}</div><div class="td-board"><div class="td-names"><span>{{ $match->player_one }}</span><span>{{ $match->player_two }}</span></div><div class="td-rail"><span class="td-one" style="width:{{ $prediction->player_one_win_prob }}%"></span><span class="td-two" style="width:{{ $prediction->player_two_win_prob }}%"></span></div><div class="td-probs"><span>{{ number_format($prediction->player_one_win_prob,1) }}%</span><span>{{ number_format($prediction->player_two_win_prob,1) }}%</span></div><div class="td-pick">🎯 Safest market: {{ $best['label'] ?? ($prediction->predicted_winner.' to win') }} · {{ $best['prob'] ?? $prediction->confidence }}%</div></div>
+        @if(!empty($markets))
+        <div class="td-markets" style="margin-top:1rem;">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:.5rem;">Market board — safest first</div>
+            @foreach($markets as $mk)
+                <div style="display:flex;justify-content:space-between;gap:.6rem;padding:.45rem 0;border-top:1px solid rgba(255,255,255,.08);font-size:.85rem;">
+                    <span>{{ $mk['label'] }}</span>
+                    <strong style="font-variant-numeric:tabular-nums;">{{ $mk['prob'] }}%</strong>
+                </div>
+            @endforeach
+        </div>
+        @endif
+        </div>
     </section>
     <section class="td-grid"><article class="td-card"><div class="td-label">Model reading</div><p class="td-analysis">{{ $prediction->analysis }}</p>@if($prediction->was_correct !== null)<p class="td-result {{ $prediction->was_correct ? 'td-won' : 'td-lost' }}">{{ $prediction->was_correct ? '✓ Prediction won' : '✕ Prediction lost' }}@if($match->score) · Final score: {{ $match->score }}@endif</p>@endif</article><aside class="td-card"><div class="td-label">Evidence snapshot</div><div class="td-signals"><div class="td-signal"><span>Surface</span><span>{{ ucfirst($match->surface ?: 'Pending') }}</span></div><div class="td-signal"><span>{{ $match->player_one }} recent form</span><span>{{ $one['recent_wins'] ?? '—' }}/{{ $one['recent_matches'] ?? '—' }}</span></div><div class="td-signal"><span>{{ $match->player_two }} recent form</span><span>{{ $two['recent_wins'] ?? '—' }}/{{ $two['recent_matches'] ?? '—' }}</span></div><div class="td-signal"><span>H2H sample</span><span>{{ $h2h['total'] ?? 0 }} match{{ ($h2h['total'] ?? 0) === 1 ? '' : 'es' }}</span></div></div></aside></section>
 </main>

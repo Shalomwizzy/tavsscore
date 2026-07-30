@@ -17,9 +17,11 @@ class TennisPredictionController extends Controller
             return view('tennis.coming-soon', compact('heroImage'));
         }
 
+        // Only today's matches (Lagos) — never carry yesterday's fixtures over.
+        $today = now('Africa/Lagos')->toDateString();
         $predictions = TennisPrediction::query()->with('match')
-            ->whereHas('match')
-            ->orderByDesc('created_at')->paginate(30);
+            ->whereHas('match', fn ($q) => $q->whereDate('match_date', $today))
+            ->orderByDesc('confidence')->paginate(30);
         return view('tennis.index', compact('predictions', 'heroImage'));
     }
 
