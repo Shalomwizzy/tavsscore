@@ -13,7 +13,13 @@
     <header class="tn-hero" @if($heroImage) style="background-image:linear-gradient(122deg,rgba(3,12,22,.94),rgba(11,42,67,.6),rgba(3,12,22,.18)),url('{{ asset($heroImage) }}');background-size:cover;background-position:center;" @endif>
         <div class="tn-copy"><div class="tn-kicker"><i></i> TavsScore tennis intelligence</div><h1 class="tn-title">Read the <em>court.</em><br>Not the noise.</h1><p class="tn-desc">Independent ATP and WTA winner signals, built separately from football around surface Elo, current form, rankings and head-to-head evidence.</p><div class="tn-pills"><span class="tn-pill">ATP &amp; WTA</span><span class="tn-pill">Surface-aware model</span><span class="tn-pill">Evidence-first picks</span></div></div>
     </header>
-    <div class="tn-toolbar"><div><div class="tn-eyebrow">Today’s tennis board</div><h2 class="tn-heading">The selected match signals</h2></div><div class="tn-count">{{ $predictions->total() }} published prediction{{ $predictions->total() === 1 ? '' : 's' }}</div></div>
+    <div class="tn-toolbar"><div><div class="tn-eyebrow">{{ $dateMeta['is_today'] ? 'Today’s tennis board' : $dateMeta['pretty'] }}</div><h2 class="tn-heading">The selected match signals</h2></div><div class="tn-count">{{ $predictions->total() }} prediction{{ $predictions->total() === 1 ? '' : 's' }}</div></div>
+    @if($winStats['total'] > 0)
+    <div style="margin:.2rem 0 1rem;padding:.7rem 1rem;border:1px solid rgba(45,212,191,.25);border-radius:12px;background:rgba(16,185,129,.08);color:#d5f8f1;font-size:.85rem;">
+        <strong style="color:#6ee7b7;">Verified last 30 days:</strong> {{ $winStats['won'] }}/{{ $winStats['total'] }} winners · {{ round($winStats['won'] / $winStats['total'] * 100) }}% strike rate
+    </div>
+    @endif
+    @include('partials.date-nav')
     @if($predictions->isEmpty())
         <section class="tn-empty"><div style="font-size:2.3rem">🎾</div><strong>We are still reading today’s court.</strong><span>Qualified ATP and WTA fixtures appear here after the latest data sync and evidence check.</span></section>
     @else

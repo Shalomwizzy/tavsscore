@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\TennisPrediction;
 use App\Models\Setting;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TennisPredictionController extends Controller
 {
-    public function index(): View
+    use ResolvesDateNav;
+
+    public function index(Request $request): View
     {
         $heroImage = Setting::get('tennis_page_hero_image');
         // Predictions are hidden until the historical data is current enough to
@@ -17,12 +21,26 @@ class TennisPredictionController extends Controller
             return view('tennis.coming-soon', compact('heroImage'));
         }
 
-        // Only today's matches (Lagos) — never carry yesterday's fixtures over.
-        $today = now('Africa/Lagos')->toDateString();
+        // Date picker: default today, browse up to a year of history.
+        $tz       = 'Africa/Lagos';
+        $date     = $this->resolveDate($request->query('date'), $tz);
+        $dateMeta = $this->buildDateMeta($date, $tz, 'tennis.index');
+
         $predictions = TennisPrediction::query()->with('match')
-            ->whereHas('match', fn ($q) => $q->whereDate('match_date', $today))
-            ->orderByDesc('confidence')->paginate(30);
-        return view('tennis.index', compact('predictions', 'heroImage'));
+            ->whereHas('match', fn ($q) => $q->whereDate('match_date', $date->toDateString()))
+            ->orderByDesc('confidence')->paginate(30)->withQueryString();
+
+        // Win record over the last 30 settled days, shown to build trust.
+        $settled = TennisPrediction::query()
+            ->whereNotNull('was_correct')
+            ->whereHas('match', fn ($q) => $q->whereDate('match_date', '>=', now($tz)->subDays(30)->toDateString()))
+            ->get(['was_correct']);
+        $winStats = [
+            'total' => $settled->count(),
+            'won'   => $settled->where('was_correct', true)->count(),
+        ];
+
+        return view('tennis.index', compact('predictions', 'heroImage', 'dateMeta', 'winStats'));
     }
 
     public function show(TennisPrediction $tennisPrediction)
