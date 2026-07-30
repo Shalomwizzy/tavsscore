@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookingCode;
+use App\Services\Booking\BetslipSpecService;
 use Illuminate\View\View;
 
 /**
@@ -13,7 +14,7 @@ use Illuminate\View\View;
  */
 class HighRiskAdminController extends Controller
 {
-    public function index(): View
+    public function index(BetslipSpecService $specs): View
     {
         $today = now('Africa/Lagos')->toDateString();
 
@@ -31,6 +32,7 @@ class HighRiskAdminController extends Controller
             ->limit(30)
             ->get();
 
-        return view('admin.high-risk.index', compact('today_codes', 'history'));
+        $preview = collect($specs->today()['slips'] ?? [])->firstWhere('ref', 'high-risk');
+        return view('admin.high-risk.index', compact('today_codes', 'history', 'preview'));
     }
 }

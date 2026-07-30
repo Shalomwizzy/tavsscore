@@ -49,6 +49,11 @@
 
     <aside class="risk-warning"><span class="risk-alert">⚠</span><span><strong>High risk means a high chance of losing.</strong> A large combined odds number is not a safety signal. Never chase losses, never use money needed for essentials, and verify all ticket details in the bookmaker app before deciding.</span></aside>
 
+    @if($preview)
+        <div class="risk-section-head"><div><h2>Today’s High Risk predictions</h2><p>Data-qualified Football + Tennis selections. The booking code appears after SportyBet confirms live availability.</p></div><span class="risk-live">Model board live</span></div>
+        <section class="risk-ticket"><div class="risk-ticket-top"><div class="risk-platform"><span>📊</span>{{ $preview['title'] }}</div><span class="risk-odds">Target 20.00×+</span></div><details class="risk-legs" open><summary>Model selections <span>{{ count($preview['selections'] ?? []) }} legs</span></summary>@foreach(($preview['selections'] ?? []) as $leg)<div class="risk-leg"><div class="risk-leg-main"><span>{{ ($leg['sport'] ?? 'football') === 'tennis' ? '🎾 ' : '⚽ ' }}{{ $leg['home'] }} vs {{ $leg['away'] }}</span><span class="risk-leg-prob">{{ number_format((float)($leg['model_prob'] ?? 0),0) }}%</span></div><div class="risk-leg-market">@nodash($leg['market'] ?? 'Model market')</div></div>@endforeach</details></section>
+    @endif
+
     <div class="risk-section-head"><div><h2>Today’s high-odds tickets</h2><p>Booking codes are generated after model and availability checks.</p></div>@if($codes->isNotEmpty())<span class="risk-live">Open today</span>@endif</div>
 
     @if($codes->isNotEmpty())

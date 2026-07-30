@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookingCode;
+use App\Services\Booking\BetslipSpecService;
 use Illuminate\View\View;
 
 /**
@@ -12,7 +13,7 @@ use Illuminate\View\View;
  */
 class HighRiskController extends Controller
 {
-    public function index(): View
+    public function index(BetslipSpecService $specs): View
     {
         $today = now('Africa/Lagos')->toDateString();
 
@@ -32,7 +33,8 @@ class HighRiskController extends Controller
             ->get();
 
         $wonCount = $history->where('status', 'won')->count();
+        $preview = collect($specs->today()['slips'] ?? [])->firstWhere('ref', 'high-risk');
 
-        return view('high-risk.index', compact('codes', 'history', 'wonCount'));
+        return view('high-risk.index', compact('codes', 'history', 'wonCount', 'preview'));
     }
 }
