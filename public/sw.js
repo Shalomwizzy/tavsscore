@@ -1,4 +1,7 @@
-const CACHE = 'tavsscore-v1';
+// Version this deliberately whenever a site-wide layout changes. Some users
+// installed TavsScore as a PWA, so a new version clears the old HTML/CSS cache
+// instead of letting an old page survive after deployment.
+const CACHE = 'tavsscore-v2';
 
 const PRECACHE = ['/', '/picks', '/predictions', '/live', '/favicon.svg', '/manifest.json'];
 
