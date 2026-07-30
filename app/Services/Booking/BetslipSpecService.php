@@ -238,9 +238,10 @@ class BetslipSpecService
     }
 
     /**
-     * High-Risk ticket: the model's single most-confident bookable call on each
-     * game (≥50%), stacked safest-first into a long-shot accumulator with total
-     * odds in the 100–1500 band. Genuinely risky — every leg must land.
+     * High-Risk ticket: one still-model-approved (≥50%) bookable call per game,
+     * deliberately favouring the lower-confidence eligible line so the ticket
+     * can honestly reach its 100–1500 odds band. It is separate from the safe
+     * boards and must never borrow their near-certain selections.
      */
     private function buildHighRisk(Collection $preds): ?array
     {
@@ -248,8 +249,12 @@ class BetslipSpecService
         foreach ($preds as $p) {
             $opts = $this->bookableOptions($p->market_board, self::HR_FLOOR);
             if ($opts === []) continue;
-            $best = $opts[0]; // most confident bookable pick on this game
-            $legs[] = ['pred' => $p, 'market' => $best['market'], 'prob' => $best['prob'], 'odds' => $this->estOdds($best['prob'])];
+            // bookableOptions is highest probability first. High Risk needs the
+            // lowest still-approved probability from the same verified board;
+            // choosing $opts[0] made its very-safe legs too short to ever form
+            // a genuine high-odds ticket, so no High Risk code was emitted.
+            $risk = $opts[array_key_last($opts)];
+            $legs[] = ['pred' => $p, 'market' => $risk['market'], 'prob' => $risk['prob'], 'odds' => $this->estOdds($risk['prob'])];
         }
 
         usort($legs, fn ($a, $b) => $b['prob'] <=> $a['prob']); // safest legs first

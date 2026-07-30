@@ -60,7 +60,9 @@ class BookingWorkerController extends Controller
             // is still published if the bookmaker blocks the screenshot page.
             'ticket_screenshot' => ['nullable', 'string', 'max:5000000'],
             // Every publishable ticket itself must clear the 2.00 minimum.
-            'total_odds' => ['nullable', 'numeric', 'min:2', 'max:500', 'required_if:status,published'],
+            // Standard tickets cap at 500 in the worker. The explicitly
+            // labelled High Risk desk has a separate 100–1500 odds band.
+            'total_odds' => ['nullable', 'numeric', 'min:2', 'max:1500', 'required_if:status,published'],
             // The browser worker retries transient errors locally. It must
             // never turn an unsuccessful attempt into a user-visible record.
             'status'     => ['nullable', 'in:pending,published,expired'],

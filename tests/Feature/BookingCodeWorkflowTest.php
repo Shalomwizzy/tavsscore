@@ -113,6 +113,23 @@ class BookingCodeWorkflowTest extends TestCase
             ->assertJsonValidationErrors('total_odds');
     }
 
+    public function test_worker_accepts_a_high_risk_booking_code_up_to_1500_odds(): void
+    {
+        config(['services.booking_worker.token' => 'test-worker-token']);
+
+        $this->withHeader('X-Worker-Token', 'test-worker-token')
+            ->postJson('/api/worker/booking-codes', [
+                'platform' => 'sportybet',
+                'code' => 'RISK1500',
+                'slip_ref' => 'high-risk',
+                'total_odds' => 999.99,
+                'status' => 'published',
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('booking_codes', ['code' => 'RISK1500', 'total_odds' => 999.99]);
+    }
+
     public function test_worker_rejects_failed_placeholders(): void
     {
         config(['services.booking_worker.token' => 'test-worker-token']);

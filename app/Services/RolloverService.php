@@ -284,6 +284,12 @@ class RolloverService
             fn ($leg) => "{$leg['prediction']->match?->home_team} vs {$leg['prediction']->match?->away_team} — {$leg['market']} @ {$leg['odds']}",
             $legs,
         );
+        $telegramCardPicks = array_map(fn ($leg) => [
+            'match'      => "{$leg['prediction']->match?->home_team} vs {$leg['prediction']->match?->away_team}",
+            'league'     => LeagueCoverage::formatName($leg['prediction']->match?->league, $leg['prediction']->match?->league_country),
+            'tip'        => "{$leg['market']} @ {$leg['odds']}",
+            'confidence' => 'SAFE',
+        ], $legs);
         $matchLabel  = implode("\n", $legLines);
         $marketLabel = count($legs) > 1
             ? count($legs) . "-leg ticket @ {$combinedOdds} odds"
@@ -303,6 +309,7 @@ class RolloverService
             $potentialReturn,
             $siteUrl,
             $league,
+            $telegramCardPicks,
         );
 
         return $firstPick;

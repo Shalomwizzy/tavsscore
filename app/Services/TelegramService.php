@@ -645,7 +645,8 @@ class TelegramService
         float $stake,
         float $potentialReturn,
         string $siteUrl,
-        string $league = ''
+        string $league = '',
+        array $cardPicks = [],
     ): void {
         $stakeF = number_format($stake, 0);
         $returnF = number_format($potentialReturn, 0);
@@ -665,7 +666,30 @@ class TelegramService
             ."🔗 <a href=\"{$siteUrl}/rollover\">Track the challenge →</a>\n"
             ."\n<i>⚠️ AI picks only. Not financial advice. Bet responsibly.</i>";
 
-        $this->send($msg);
+        // The rollover is a headline product, so its Telegram post gets the
+        // same clear, watermarked image treatment as the daily pick boards.
+        // The full readable ticket remains directly below the photo as its
+        // caption, not as a separate follow-up message.
+        if ($cardPicks !== []) {
+            $imagePath = app(TelegramPickCardService::class)->render("Rollover Challenge — Day {$day}", $cardPicks);
+            if ($imagePath) {
+                try {
+                    if ($this->sendPhoto($imagePath, $msg, [[[
+                        'text' => '🎯 TRACK THE ROLLOVER',
+                        'url' => rtrim($siteUrl, '/').'/rollover',
+                    ]]], fallbackToText: false)) {
+                        return;
+                    }
+                } finally {
+                    Storage::disk('public')->delete($imagePath);
+                }
+            }
+        }
+
+        $this->send($msg, [[[
+            'text' => '🎯 TRACK THE ROLLOVER',
+            'url' => rtrim($siteUrl, '/').'/rollover',
+        ]]]);
     }
 
     public function sendRolloverOutcome(
