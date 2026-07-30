@@ -14,6 +14,9 @@
     .bc-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; margin:1rem 0 1.35rem; }
     .bc-stat { border:1px solid var(--border); background:var(--card); border-radius:13px; padding:.85rem 1rem; }
     .bc-stat b { color:#fff; display:block; font-size:1.12rem; } .bc-stat span { color:var(--text-dim); font-size:.71rem; }
+    .bc-date-nav { display:flex; align-items:center; justify-content:center; gap:.55rem; flex-wrap:wrap; margin:1.05rem 0 1.35rem; }
+    .bc-date-btn { display:inline-flex; min-height:40px; align-items:center; justify-content:center; padding:.55rem .78rem; border:1px solid var(--border); border-radius:10px; background:var(--card); color:#dce8f4; font-size:.74rem; font-weight:850; text-decoration:none; }
+    .bc-date-btn:hover { border-color:rgba(45,212,191,.55); color:#7cf2e2; } .bc-date-picker { min-height:40px; box-sizing:border-box; padding:.45rem .68rem; border:1px solid rgba(45,212,191,.3); border-radius:10px; color:#fff; background:#132333; font:750 .78rem inherit; color-scheme:dark; }
     .bc-heading { display:flex; align-items:end; justify-content:space-between; gap:1rem; margin:1.7rem 0 .8rem; }
     .bc-heading h2 { margin:0; color:#fff; font-size:1.1rem; } .bc-heading p { margin:.25rem 0 0; color:var(--text-dim); font-size:.77rem; }
     .bc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(285px,1fr)); gap:1rem; }
@@ -50,20 +53,26 @@
 <div class="wrap bc-page">
     <section class="bc-hero">
         <div class="bc-kicker">TavsScore booking desk</div>
-        <h1 class="bc-title">Today's tickets, ready to load.</h1>
+        <h1 class="bc-title">{{ $isToday ? "Today's tickets, ready to load." : 'Tickets for '.$selectedDate->format('D, d M Y') }}</h1>
         <p class="bc-intro">Copy a code into the matching sportsbook to load its saved selections. We only publish a ticket from <strong>2.00 total odds</strong>, then track its final outcome here.</p>
         <span class="bc-hero-chip">🎟️ No account details required</span>
     </section>
 
     <div class="bc-stat-grid">
-        <div class="bc-stat"><b>{{ $codes->count() }}</b><span>Available today</span></div>
+        <div class="bc-stat"><b>{{ $codes->count() }}</b><span>{{ $isToday ? 'Available today' : 'Available on this date' }}</span></div>
         <div class="bc-stat"><b>2.00+</b><span>Minimum combined odds</span></div>
         <div class="bc-stat"><b>{{ $settledCount ? number_format(($wonCount / $settledCount) * 100, 0) . '%' : 'N/A' }}</b><span>Verified booking-code win rate</span></div>
     </div>
 
+    <nav class="bc-date-nav" aria-label="Booking-code date navigation">
+        <a class="bc-date-btn" href="{{ route('booking-codes.index', ['date' => $previousDate]) }}">← Previous day</a>
+        <form method="GET" action="{{ route('booking-codes.index') }}"><label for="booking-date" class="sr-only">Choose booking-code date</label><input id="booking-date" class="bc-date-picker" type="date" name="date" value="{{ $selectedDate->toDateString() }}" max="{{ now('Africa/Lagos')->toDateString() }}" onchange="this.form.submit()"></form>
+        @if($nextDate)<a class="bc-date-btn" href="{{ route('booking-codes.index', ['date' => $nextDate]) }}">Next day →</a>@else<span class="bc-date-btn" style="opacity:.45;cursor:not-allowed">Today</span>@endif
+    </nav>
+
     <div class="bc-heading"><div><h2>Live booking codes</h2><p>Check the bookmaker's final prices before you place any ticket.</p></div></div>
     @if($codes->isEmpty())
-        <div class="bc-empty"><div style="font-size:2rem">🎟️</div><b>No code has been published today</b><span>New qualifying tickets appear here as soon as they are ready.</span></div>
+        <div class="bc-empty"><div style="font-size:2rem">🎟️</div><b>No active code for {{ $isToday ? 'today' : $selectedDate->format('d M Y') }}</b><span>Choose another day to review previously published tickets and their outcomes.</span></div>
     @else
         <div class="bc-grid">
             @foreach($codes as $bc)

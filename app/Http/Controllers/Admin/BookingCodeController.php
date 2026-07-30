@@ -14,12 +14,29 @@ use Illuminate\View\View;
 
 class BookingCodeController extends Controller
 {
-    public function index(BookingOutcomeLearningService $learning, BookingCodeGenerationRequest $generationRequests): View
+    public function index(Request $request, BookingOutcomeLearningService $learning, BookingCodeGenerationRequest $generationRequests): View
     {
+        $today = \Carbon\CarbonImmutable::now('Africa/Lagos')->startOfDay();
+        try {
+            $selectedDate = filled($request->query('date'))
+                ? \Carbon\CarbonImmutable::createFromFormat('Y-m-d', (string) $request->query('date'), 'Africa/Lagos')->startOfDay()
+                : $today;
+        } catch (\Throwable) {
+            $selectedDate = $today;
+        }
+        if ($selectedDate->greaterThan($today)) {
+            $selectedDate = $today;
+        }
+
         $history = BookingCode::query()
             ->with('legs')
-            ->latest('created_at')
-            ->limit(50)
+            ->where(function ($q) use ($selectedDate, $today) {
+                $q->whereDate('pick_date', $selectedDate->toDateString());
+                if ($selectedDate->equalTo($today)) {
+                    $q->orWhere(fn ($w) => $w->whereNull('pick_date')->where('created_at', '>=', $today));
+                }
+            })
+            ->orderByDesc('created_at')
             ->get();
 
         $stats = [
@@ -32,8 +49,11 @@ class BookingCodeController extends Controller
         $workerReady = filled(config('services.booking_worker.token'));
         $learningFeedback = $learning->marketFeedback();
         $generationRequest = $generationRequests->pending();
+        $previousDate = $selectedDate->subDay()->toDateString();
+        $nextDate = $selectedDate->lessThan($today) ? $selectedDate->addDay()->toDateString() : null;
+        $isToday = $selectedDate->equalTo($today);
 
-        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady', 'learningFeedback', 'generationRequest'));
+        return view('admin.booking-code.index', compact('history', 'stats', 'workerReady', 'learningFeedback', 'generationRequest', 'selectedDate', 'previousDate', 'nextDate', 'isToday'));
     }
 
     /** Queue a real code-generation run for the authenticated local Mac worker. */

@@ -178,7 +178,7 @@ class BookingCodeWorkflowTest extends TestCase
         ]);
         BookingCode::create([
             'platform' => 'SportyBet', 'code' => 'WON22', 'total_odds' => 2.33,
-            'status' => 'won', 'pick_date' => now('Africa/Lagos')->subDay()->toDateString(), 'settled_at' => now(),
+            'status' => 'won', 'pick_date' => now('Africa/Lagos')->toDateString(), 'settled_at' => now(),
         ]);
 
         BookingCodeLeg::create([
@@ -189,5 +189,23 @@ class BookingCodeWorkflowTest extends TestCase
         ]);
 
         $this->get('/booking-codes')->assertOk()->assertSee('TODAY22')->assertSee('WON22')->assertSee('Lagos FC')->assertSee('Under 3.5 Goals')->assertSee('Booking Codes');
+    }
+
+    public function test_booking_pages_filter_codes_by_the_selected_date(): void
+    {
+        $yesterday = now('Africa/Lagos')->subDay()->toDateString();
+        BookingCode::create([
+            'platform' => 'SportyBet', 'code' => 'YESTERDAY22', 'total_odds' => 2.22,
+            'status' => 'won', 'pick_date' => $yesterday, 'settled_at' => now(),
+        ]);
+        BookingCode::create([
+            'platform' => 'SportyBet', 'code' => 'TODAY33', 'total_odds' => 2.33,
+            'status' => 'published', 'pick_date' => now('Africa/Lagos')->toDateString(),
+        ]);
+
+        $this->get('/booking-codes?date='.$yesterday)
+            ->assertOk()
+            ->assertSee('YESTERDAY22')
+            ->assertDontSee('TODAY33');
     }
 }
