@@ -139,7 +139,15 @@ class BetslipSpecService
         $slips[] = $this->buildRolloverTicket($tz);
 
         // ── High Risk: the model's confident calls stacked into a big-odds acca ──
-        $slips[] = $this->buildHighRisk($preds);
+        $highRisk = $this->buildHighRisk($preds);
+        $tennisRisk = $this->tennisSpecs->highRiskSelections(now($tz)->toDateString());
+        if ($highRisk && $tennisRisk !== []) {
+            $highRisk['title'] = 'High Risk Football + Tennis';
+            $highRisk['market'] = 'High-risk Football + Tennis accumulator';
+            $highRisk['selections'] = array_slice(array_merge($highRisk['selections'], $tennisRisk), 0, self::MAX_LEGS);
+            $highRisk['est_total_odds'] = $this->combinedOdds($highRisk['selections']);
+        }
+        $slips[] = $highRisk;
         $slips[] = $this->tennisSpecs->today(now($tz)->toDateString());
 
         $slips = $this->finalizeSlips($slips, $preds);

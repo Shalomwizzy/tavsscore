@@ -29,4 +29,25 @@ class TennisBetslipSpecService
             })->all(),
         ];
     }
+
+    /**
+     * Extra independent tennis candidates for the mixed Football + Tennis
+     * High Risk ticket. These are intentionally less conservative than the
+     * standalone tennis board, but remain model-backed scheduled fixtures.
+     */
+    public function highRiskSelections(string $date): array
+    {
+        return TennisPrediction::query()->with('match')
+            ->where('confidence', '>=', 55)
+            ->whereHas('match', fn ($q) => $q->where('status', 'scheduled')->whereDate('match_date', $date))
+            ->orderBy('confidence')
+            ->get()->filter(fn (TennisPrediction $p) => $p->match && filled($p->predicted_winner))
+            ->take(12)->map(function (TennisPrediction $p): array {
+                $m = $p->match; $one = $p->predicted_winner === $m->player_one;
+                $prob = $one ? (float) $p->player_one_win_prob : (float) $p->player_two_win_prob;
+                return ['tennis_match_id' => $m->id, 'home' => $m->player_one, 'away' => $m->player_two,
+                    'kickoff' => $m->scheduled_at?->toIso8601String(), 'market' => $one ? 'Player One Win' : 'Player Two Win',
+                    'model_prob' => round($prob, 1), 'est_odds' => round(1 / max(.01, $prob / 100), 2), 'sport' => 'tennis'];
+            })->values()->all();
+    }
 }
