@@ -45,7 +45,7 @@
     .article-body ul, .article-body ol { padding-left:1.5rem; margin-bottom:1.25rem; }
     .article-body li { margin-bottom:.4rem; }
     .article-body a  { color:var(--green); text-decoration:none; }
-    .article-body a:hover { text-decoration:underline; }
+    .article-body a:hover { text-decoration:none; }
     .article-body strong { color:#fff; font-weight:700; }
 
     /* Share bar */

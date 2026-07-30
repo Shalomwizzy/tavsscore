@@ -14,7 +14,7 @@
            onmouseout="this.style.borderColor='rgba(255,255,255,.1)'; this.style.background='rgba(255,255,255,.06)'">
             {{ $aff->logo_emoji }} {{ $aff->platform }}
             @if($aff->promo_text)
-            <span style="font-size:.65rem; color:var(--text-dim); font-weight:400;">— {{ $aff->promo_text }}</span>
+            <span style="font-size:.65rem; color:var(--text-dim); font-weight:400;"> {{ $aff->promo_text }}</span>
             @endif
         </a>
         @endforeach

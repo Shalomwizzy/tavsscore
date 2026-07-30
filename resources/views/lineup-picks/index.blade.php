@@ -173,7 +173,7 @@
             $isFt         = in_array($match?->status, ['FT', 'AET', 'PEN'], true);
             $isLive       = in_array($match?->status, ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'], true);
             $score        = ($isFt || $isLive) && $match && $match->home_score !== null
-                                ? $match->home_score . '–' . ($match->away_score ?? 0)
+                                ? $match->home_score . ':' . ($match->away_score ?? 0)
                                 : null;
             $resultClass  = $isFt ? ($pick->was_correct ? 'result-win' : ($pick->was_correct === false ? 'result-loss' : '')) : '';
             $waText       = urlencode("⚡ TavsScore Lineup Pick\n{$match?->home_team} vs {$match?->away_team}\nTip: {$outcome}" . ($conf ? " ({$conf}%)" : '') . "\nKickoff: {$kickoff}\n🔗 " . url('/lineup-picks'));
@@ -259,7 +259,7 @@
             <div class="lp-empty-icon">⏳</div>
             <div class="lp-empty-title">Lineups Not Confirmed Yet</div>
             <p class="lp-empty-sub">
-                Clubs publish their official starting 11 about 60–75 minutes before kickoff.
+                Clubs publish their official starting 11 about 60 to 75 minutes before kickoff.
                 Once lineups are confirmed, our AI re-analyses each match and the picks appear here automatically.
             </p>
             <div class="lp-empty-timeline">

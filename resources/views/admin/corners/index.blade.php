@@ -84,7 +84,7 @@
         <div style="text-align:center;padding:2rem 1rem;max-width:620px;margin:auto;">
             <div style="font-size:1.7rem;">🚩</div>
             <strong style="display:block;color:#fff;margin:.45rem 0;">No qualified corner picks for this date</strong>
-            <p style="font-size:.78rem;line-height:1.55;color:var(--dim);margin:0;">Each team needs at least three finished fixtures with saved corner statistics. Once both teams qualify, only an Over 8.5–11.5 line that clears the model gate is published. Current ready teams: <strong style="color:#fbbf24;">{{ $readyTeams }}</strong>.</p>
+            <p style="font-size:.78rem;line-height:1.55;color:var(--dim);margin:0;">Each team needs at least three finished fixtures with saved corner statistics. Once both teams qualify, only an Over 8.5 to 11.5 line that clears the model gate is published. Current ready teams: <strong style="color:#fbbf24;">{{ $readyTeams }}</strong>.</p>
         </div>
     @else
         <div class="corner-grid">
@@ -104,9 +104,9 @@
                         <div class="corner-prob">{{ $card['probability'] }}%</div>
                     </div>
                     <div class="corner-meta">
-                        <span>🕒 {{ $match?->match_time?->timezone('Africa/Lagos')->format('H:i') ?? '—' }} Lagos</span>
-                        @if($card['finished'])<span>Final {{ $match?->home_score }}–{{ $match?->away_score }}</span>@endif
-                        @if($card['finished'])<span class="corner-status {{ $card['result'] === true ? 'win' : ($card['result'] === false ? 'loss' : 'pending') }}">{{ $card['result'] === true ? '✓ Won' : ($card['result'] === false ? '✗ Lost' : '⏳ Awaiting corner stats') }}</span>@elseif($isLive)<span class="corner-status live">🔴 Live {{ $match?->home_score ?? 0 }}–{{ $match?->away_score ?? 0 }}</span>@else<span class="corner-status pending">⏳ Upcoming</span>@endif
+                        <span>🕒 {{ $match?->match_time?->timezone('Africa/Lagos')->format('H:i') ?? 'N/A' }} Lagos</span>
+                        @if($card['finished'])<span>Final {{ $match?->home_score }}:{{ $match?->away_score }}</span>@endif
+                        @if($card['finished'])<span class="corner-status {{ $card['result'] === true ? 'win' : ($card['result'] === false ? 'loss' : 'pending') }}">{{ $card['result'] === true ? '✓ Won' : ($card['result'] === false ? '✗ Lost' : '⏳ Awaiting corner stats') }}</span>@elseif($isLive)<span class="corner-status live">🔴 Live {{ $match?->home_score ?? 0 }}:{{ $match?->away_score ?? 0 }}</span>@else<span class="corner-status pending">⏳ Upcoming</span>@endif
                     </div>
                     <details class="corner-reasons"><summary>Why this corner line?</summary><ul>@forelse($card['reasons'] as $reason)<li>{{ $reason }}</li>@empty<li>The projected total-corners line is the strongest qualified market on this fixture’s board.</li>@endforelse</ul></details>
                 </article>

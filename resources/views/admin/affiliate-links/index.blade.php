@@ -120,12 +120,12 @@
                         </td>
                         <td>
                             <a href="{{ $link->register_url }}" target="_blank" rel="noopener"
-                               style="color:#a5b4fc; font-size:.75rem; text-decoration:underline; word-break:break-all;">
+                               style="color:#a5b4fc; font-size:.75rem; text-decoration:none; word-break:break-all;">
                                 {{ Str::limit($link->register_url, 45) }}
                             </a>
                         </td>
                         <td style="font-size:.75rem; color:var(--dim); max-width:160px;">
-                            {{ $link->promo_text ?: '—' }}
+                            {{ $link->promo_text ?: 'N/A' }}
                         </td>
                         <td>
                             @if($link->is_active)

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', "Double Chance Picks 1X & 2X | Daily AI Picks | TavsScore")
-@section('meta_description', 'Free daily AI Double Chance picks — 1X (Home Win or Draw) and 2X (Away Win or Draw). Our model picks the 5 safest double chance bets every day.')
+@section('meta_description', 'Free daily AI Double Chance picks, 1X (Home Win or Draw) and 2X (Away Win or Draw). Our model picks the 5 safest double chance bets every day.')
 @section('og_title', "Double Chance Picks: 1X & 2X Daily AI Predictions")
 @section('og_description', 'AI double chance picks for the 1X and 2X markets. We find the 5 matches where our model is most confident either the home side won\'t lose (1X) or the away side won\'t lose (2X).')
 @section('og_image', asset('images/og-default.jpg'))
@@ -88,7 +88,7 @@
     <div class="wrap">
         <div class="picks-eyebrow">🎯 AI Double Chance Picks</div>
         <h1 class="picks-title">Double Chance: <span class="accent">1X & 2X</span></h1>
-        <p class="picks-subtitle">Our AI finds the 5 safest Double Chance bets daily — matches where a team is very unlikely to lose. <strong>1X</strong> = Home Win or Draw. <strong>2X</strong> = Away Win or Draw.</p>
+        <p class="picks-subtitle">Our AI finds the 5 safest Double Chance bets daily, matches where a team is very unlikely to lose. <strong>1X</strong> = Home Win or Draw. <strong>2X</strong> = Away Win or Draw.</p>
         <div class="picks-meta">
             <span class="picks-badge badge-blue">5 Picks Daily</span>
             <span class="picks-badge badge-blue">AI Powered</span>
@@ -173,7 +173,7 @@
                         <div>
                             <div class="pick-callout-label">Our Pick</div>
                             <div class="pick-callout-value">
-                                {{ $label }} — {{ $winDesc }}
+                                {{ $label }}, {{ $winDesc }}
                             </div>
                         </div>
                         <div style="text-align:right;">
@@ -219,7 +219,7 @@
             <div class="hiw-steps">
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
-                    <div class="hiw-text"><strong>Two markets, two outcomes each.</strong> <strong>1X</strong> covers Home Win or Draw — you lose only if the away team wins. <strong>2X</strong> covers Away Win or Draw — you lose only if the home team wins.</div>
+                    <div class="hiw-text"><strong>Two markets, two outcomes each.</strong> <strong>1X</strong> covers Home Win or Draw, you lose only if the away team wins. <strong>2X</strong> covers Away Win or Draw, you lose only if the home team wins.</div>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>

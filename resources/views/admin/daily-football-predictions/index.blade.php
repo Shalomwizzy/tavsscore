@@ -27,11 +27,11 @@
 @forelse($predictions as $prediction)
     @php($match = $prediction->match)
     <tr>
-        <td style="color:var(--dim);white-space:nowrap;">{{ $match?->match_time?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</td>
+        <td style="color:var(--dim);white-space:nowrap;">{{ $match?->match_time?->timezone(config('app.timezone'))->format('H:i') ?? 'N/A' }}</td>
         <td>@include('admin.partials.fixture-mini', ['match' => $match])</td>
         <td style="color:var(--dim);">{{ \App\Support\LeagueCoverage::formatName($match?->league, $match?->league_country) }}</td>
-        <td style="color:#93c5fd;font-weight:700;">{{ $prediction->predicted_outcome ?? '—' }}</td>
-        <td style="font-weight:700;">{{ $match?->home_score !== null ? $match->home_score.'–'.$match->away_score : '—' }}</td>
+        <td style="color:#93c5fd;font-weight:700;">{{ $prediction->predicted_outcome ?? 'N/A' }}</td>
+        <td style="font-weight:700;">{{ $match?->home_score !== null ? $match->home_score.':'.$match->away_score : 'N/A' }}</td>
         <td>@if($prediction->was_correct === true)<span class="badge badge-green">✓ Won</span>@elseif($prediction->was_correct === false)<span class="badge badge-red">✗ Lost</span>@else<span class="badge badge-gray">⏳ Pending</span>@endif</td>
     </tr>
 @empty

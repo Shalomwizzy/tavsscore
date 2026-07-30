@@ -1,5 +1,5 @@
 @if($telegramUrl)
-{{-- Telegram slide-in — shown once per browser (cookie-gated, 20 s delay) --}}
+{{-- Telegram slide-in, shown once per browser (cookie-gated, 20 s delay) --}}
 <div id="tg-popup" style="
     display:none;
     position:fixed;

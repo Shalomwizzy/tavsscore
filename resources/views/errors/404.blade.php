@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', '404 — Page Not Found | TavsScore')
+@section('title', '404, Page Not Found | TavsScore')
 @section('content')
 <div class="wrap" style="min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:4rem 1rem;">
     <div>

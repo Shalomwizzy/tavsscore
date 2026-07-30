@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('title', 'TavsScore | AI Football Predictions, Live Scores & Daily Picks')
-@section('meta_description', 'AI-powered football predictions across 100+ markets, verified daily. Today\'s pick of the day, live scores, the rollover challenge and goalscorer tips — all on TavsScore.')
-@section('og_title', 'TavsScore — Football, called before kickoff')
+@section('meta_description', 'AI-powered football predictions across 100+ markets, verified daily. Today\'s pick of the day, live scores, the rollover challenge and goalscorer tips, all on TavsScore.')
+@section('og_title', 'TavsScore Football, called before kickoff')
 
 @push('styles')
 <style>
@@ -204,7 +204,7 @@
                 <div>
                     <span class="hm-eyebrow"><span class="hm-pdot"></span> TavsScore Football Intelligence</span>
                     <h1 class="hm-title">Football,<br><span class="g">Read Better.</span></h1>
-                    <p class="hm-sub">Live scores, modelled match signals and verified daily results — one calm, clear football experience.</p>
+                    <p class="hm-sub">Live scores, modelled match signals and verified daily results in one calm, clear football experience.</p>
                     <div class="hm-ctas">
                         <a href="{{ route('predictions.index') }}" class="hm-btn">Explore today’s signals →</a>
                         <a href="{{ route('live.index') }}" class="hm-ghost">See live scores</a>
@@ -245,7 +245,7 @@
                     @else
                         <div class="hm-pick-empty">
                             <div class="i">🌙</div>
-                            <p>Today's picks drop at <strong style="color:var(--ink);">03:00 WAT</strong>. Our AI is still crunching the fixtures — check back shortly.</p>
+                            <p>Today's picks drop at <strong style="color:var(--ink);">03:00 WAT</strong>. Our AI is still crunching the fixtures. Check back shortly.</p>
                             <a href="{{ route('picks.index') }}" class="hm-btn" style="margin-top:.5rem; display:inline-block;">Browse picks →</a>
                         </div>
                     @endif
@@ -254,7 +254,7 @@
 
             {{-- Scoreboard --}}
             <div class="hm-sb">
-                <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) round($winRate ?? 0) }}" data-suffix="%">{{ $winRate !== null ? '0%' : '—' }}</div><div class="hm-sblabel">{{ $last7Acc !== null ? '7-day win rate' : 'Win rate' }}</div></div>
+                <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) round($winRate ?? 0) }}" data-suffix="%">{{ $winRate !== null ? '0%' : 'N/A' }}</div><div class="hm-sblabel">{{ $last7Acc !== null ? '7-day win rate' : 'Win rate' }}</div></div>
                 <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) $liveCount }}">0</div><div class="hm-sblabel">Live now</div></div>
                 <div class="hm-sbcell"><div class="hm-sbnum" data-count="{{ (int) $todayPickCount }}">0</div><div class="hm-sblabel">Picks today</div></div>
                 <div class="hm-sbcell"><div class="hm-sbnum" data-count="103">0</div><div class="hm-sblabel">Markets / match</div></div>
@@ -306,7 +306,7 @@
                 <div>
                     <div class="hm-eye">Verified track record</div>
                     <div class="hm-proofbig">{{ $overallAcc }}% <span style="font-size:.9rem; color:var(--mute); font-family:inherit; font-weight:600;">hit rate</span></div>
-                    <span class="hm-verified">✓ {{ number_format($totalResolved) }} picks graded &amp; scored — nothing hidden</span>
+                    <span class="hm-verified">✓ {{ number_format($totalResolved) }} picks graded &amp; scored. Nothing hidden.</span>
                 </div>
                 <a href="{{ route('track-record.index') }}" class="hm-ghost" style="border:1px solid var(--line2); border-radius:12px;">See the full record →</a>
             </div>
@@ -329,7 +329,7 @@
                 <a href="{{ route('predictions.index') }}" class="hm-prop">
                     <div class="hm-propico">🎯</div>
                     <h3>103 markets a match</h3>
-                    <p>1X2, over/under, BTTS, handicaps, HT/FT, corners &amp; cards — ranked most likely.</p>
+                    <p>1X2, over/under, BTTS, handicaps, HT/FT, corners &amp; cards, ranked most likely.</p>
                     <span class="m">Explore markets →</span>
                 </a>
                 <a href="{{ route('track-record.index') }}" class="hm-prop">
@@ -389,7 +389,7 @@
                 <div>
                     <div class="hm-eye" style="color:var(--mint);">The Rollover Challenge</div>
                     <h2 class="hm-h2" style="margin-top:.5rem;">One carefully-picked leg a day. Ten days.</h2>
-                    <p class="hm-desc">Our safest, highest-conviction selection each day — every leg must clear an 80% model probability with full AI agreement.</p>
+                    <p class="hm-desc">Our safest, highest-conviction selection each day. Every leg must clear an 80% model probability with full AI agreement.</p>
                     <div class="hm-track">
                         @for($d = 1; $d <= 10; $d++)
                             <div class="hm-td {{ $d <= $rolloverWon ? 'won' : ($d === $rolloverDay ? 'today' : '') }}"></div>

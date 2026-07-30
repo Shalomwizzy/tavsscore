@@ -137,7 +137,7 @@
                                 <button type="submit" class="btn-a btn-red" style="padding:2px 8px; font-size:.67rem;">Void</button>
                             </form>
                             @endif
-                            {{-- Override button — all picks --}}
+                            {{-- Override button, all picks --}}
                             <button onclick="toggleOverride('override-{{ $rp->id }}')"
                                     style="background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.35); color:#fcd34d; border-radius:5px; padding:2px 8px; font-size:.67rem; font-weight:700; cursor:pointer;">
                                 ✏️ Override

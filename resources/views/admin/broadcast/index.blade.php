@@ -73,7 +73,7 @@
             {{-- URL path (push only) --}}
             <div id="path-row" style="margin-bottom:1.1rem;">
                 <label style="font-size:.75rem; font-weight:700; color:#fff; display:block; margin-bottom:.35rem;">
-                    Link path <span style="color:var(--dim); font-weight:400;">(push only — where tapping takes users)</span>
+                    Link path <span style="color:var(--dim); font-weight:400;">(push only, where tapping takes users)</span>
                 </label>
                 <div style="display:flex; align-items:center; gap:.4rem;">
                     <span style="font-size:.8rem; color:var(--dim);">{{ config('app.url') }}</span>

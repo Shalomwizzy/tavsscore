@@ -1,7 +1,7 @@
 {{-- Shared, theme-safe single-row pagination (admin + public). --}}
 <div class="pgx-wrap">
     <span class="pgx-meta">
-        Showing <strong>{{ $paginator->firstItem() }}–{{ $paginator->lastItem() }}</strong>
+        Showing <strong>{{ $paginator->firstItem() }}:{{ $paginator->lastItem() }}</strong>
         of <strong>{{ number_format($paginator->total()) }}</strong>
     </span>
 

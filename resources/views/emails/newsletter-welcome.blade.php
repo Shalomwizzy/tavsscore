@@ -90,8 +90,8 @@
                     <tr>
                         <td style="padding:18px 32px; background:#f9fafb; color:#9ca3af; font-size:12px; text-align:center; line-height:1.6;">
                             TavsScore · Football live scores &amp; AI predictions<br>
-                            <a href="{{ $unsubscribeUrl }}" style="color:#6b7280; text-decoration:underline;">Unsubscribe</a> ·
-                            <a href="{{ url('/') }}" style="color:#6b7280; text-decoration:underline;">tavsscore.com</a>
+                            <a href="{{ $unsubscribeUrl }}" style="color:#6b7280; text-decoration:none;">Unsubscribe</a> ·
+                            <a href="{{ url('/') }}" style="color:#6b7280; text-decoration:none;">tavsscore.com</a>
                         </td>
                     </tr>
                 </table>

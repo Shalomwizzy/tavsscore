@@ -22,10 +22,10 @@
     </div>
     <div style="text-align:center;min-width:{{ $compact ? '48px' : '60px' }};">
         @if(in_array($fixture->status, ['1H','2H','HT','ET','BT','P','LIVE']))
-            <div style="font-size:{{ $compact ? '.68rem' : '.78rem' }};font-weight:900;color:#f87171;">{{ $fixture->home_score ?? 0 }}–{{ $fixture->away_score ?? 0 }}</div>
+            <div style="font-size:{{ $compact ? '.68rem' : '.78rem' }};font-weight:900;color:#f87171;">{{ $fixture->home_score ?? 0 }}:{{ $fixture->away_score ?? 0 }}</div>
             <div style="font-size:.57rem;font-weight:800;color:#f87171;letter-spacing:.05em;">LIVE{{ $fixture->elapsed ? ' '.$fixture->elapsed."'" : '' }}</div>
         @elseif(in_array($fixture->status, ['FT','AET','PEN']))
-            <div style="font-size:{{ $compact ? '.68rem' : '.78rem' }};font-weight:900;color:#fff;">{{ $fixture->home_score }}–{{ $fixture->away_score }}</div>
+            <div style="font-size:{{ $compact ? '.68rem' : '.78rem' }};font-weight:900;color:#fff;">{{ $fixture->home_score }}:{{ $fixture->away_score }}</div>
             <div style="font-size:.57rem;font-weight:800;color:var(--text-dim);letter-spacing:.05em;">FT</div>
         @else
             <div style="font-size:{{ $compact ? '.68rem' : '.78rem' }};font-weight:900;color:{{ $accent }};">{{ $fixture->match_time?->setTimezone(config('app.timezone'))->format('H:i') ?? 'TBC' }}</div>

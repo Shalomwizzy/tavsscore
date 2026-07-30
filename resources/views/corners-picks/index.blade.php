@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Corner Picks — Total Corners Predictions | TavsScore')
-@section('meta_description', "Today's safest total-corners picks — the corner line each match is most likely to clear, from our Poisson corners model on team corner averages.")
+@section('title', 'Corner Picks, Total Corners Predictions | TavsScore')
+@section('meta_description', "Today's safest total-corners picks, the corner line each match is most likely to clear, from our Poisson corners model on team corner averages.")
 @section('og_title', 'Corner Picks | TavsScore')
 
 @push('styles')
@@ -31,7 +31,7 @@
 @section('content')
 <div class="wrap cn-wrap">
     <h1 class="cn-title">🚩 Corner Picks</h1>
-    <p class="cn-sub">The total-corners line each match is most likely to clear — our safest corners call per game, from a Poisson model on each team's corner averages. Graded from official post-match stats.</p>
+    <p class="cn-sub">The total-corners line each match is most likely to clear, our safest corners call per game, from a Poisson model on each team's corner averages. Graded from official post-match stats.</p>
 
     @if($accuracy['pct'] !== null)
     <div class="cn-acc">

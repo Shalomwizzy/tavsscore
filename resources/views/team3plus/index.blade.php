@@ -105,7 +105,7 @@
 
         <div class="market-info">
             <p>
-                <strong>What is this market?</strong> "A Team to Score 2 or More Goals" and "A Team to Score 3 or More Goals" are YES/NO markets at Bet365, William Hill, 1xBet, and most bookmakers under <em>Match Goals → A Team to Score 2+/3+</em>. <strong>We only predict NO</strong> — on the team our Poisson model says is least likely to hit the threshold. Each day the AI chooses the safer market between 2+ and 3+ to maximise confidence.
+                <strong>What is this market?</strong> "A Team to Score 2 or More Goals" and "A Team to Score 3 or More Goals" are YES/NO markets at Bet365, William Hill, 1xBet, and most bookmakers under <em>Match Goals → A Team to Score 2+/3+</em>. <strong>We only predict NO</strong>, on the team our Poisson model says is least likely to hit the threshold. Each day the AI chooses the safer market between 2+ and 3+ to maximise confidence.
             </p>
         </div>
 
@@ -180,7 +180,7 @@
                     </div>
                 </div>
 
-                {{-- Per-team probability bars — use market-appropriate probs --}}
+                {{-- Per-team probability bars, use market-appropriate probs --}}
                 @php
                     $homeProb = $market === '2+' ? $pick['home_2plus'] : $pick['home_3plus'];
                     $awayProb = $market === '2+' ? $pick['away_2plus'] : $pick['away_3plus'];
@@ -216,7 +216,7 @@
                 <div style="padding:0 1.75rem; margin-bottom:1.25rem;">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#fca5a5'])</div>
 
                 <div class="pick-card-footer">
-                    <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} {{ $market }} Goals: NO — we win if {{ $pick['team_name'] }} {{ $winDesc }}</span>
+                    <span style="font-size:.7rem; color:var(--text-dim);">🚫 {{ $pick['team_name'] }} {{ $market }} Goals: NO, we win if {{ $pick['team_name'] }} {{ $winDesc }}</span>
                 </div>
             </div>
             @empty

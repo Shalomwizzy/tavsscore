@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Fantasy Best XI — Premier League Dream Team | TavsScore')
-@section('meta_description', "This week's data-driven Fantasy Premier League best XI: optimal squad within £100m, captain pick, and the best-value players to buy — updated weekly from player form.")
+@section('title', 'Fantasy Best XI, Premier League Dream Team | TavsScore')
+@section('meta_description', "This week's data-driven Fantasy Premier League best XI: optimal squad within £100m, captain pick, and the best-value players to buy, updated weekly from player form.")
 @section('og_title', 'Fantasy Best XI | TavsScore')
 
 @push('styles')
@@ -126,7 +126,7 @@
         <div class="fpl-head">
             <div class="fpl-kicker">TavsScore fantasy intelligence</div>
             <h1 class="fpl-title">Your data-led Fantasy Best XI.</h1>
-            <p class="fpl-sub">A weekly Premier League squad built from player form, fixture value and budget efficiency—so every selection has a reason behind it.</p>
+            <p class="fpl-sub">A weekly Premier League squad built from player form, fixture value and budget efficiencyso every selection has a reason behind it.</p>
             <div class="fpl-hero-links"><a href="#best-xi" class="fpl-hero-link">View this week’s XI ↓</a><a href="#players-to-buy" class="fpl-hero-link">Players to buy →</a></div>
         </div>
         <div class="fpl-visual" @if($fantasyHero) style="background-image:url('{{ asset($fantasyHero) }}')" @endif><div class="fpl-visual-copy"><span>Premier League</span><b>Best XI</b></div></div>
@@ -185,7 +185,7 @@
         @if(! empty($squad->transfers_in))
         <div class="buy" id="players-to-buy">
             <div class="buy-hd">📈 Players to buy</div>
-            <div class="buy-sub">Best value outside the XI — high points for their price this week.</div>
+            <div class="buy-sub">Best value outside the XI, high points for their price this week.</div>
             <div class="buy-grid">
                 @foreach($squad->transfers_in as $t)
                 <div class="buy-card">
@@ -205,8 +205,8 @@
         @endif
 
         <div class="fpl-note">
-            💡 <strong>How it's picked:</strong> every Premier League player is scored on their season form — goals (weighted by position), assists, appearances, match rating and goalkeeper saves — then priced by value. We solve for the highest-scoring legal squad (2 GK, 5 DEF, 5 MID, 3 FWD) inside a £100m budget and max 3 per club, choose the best XI + captain, and surface the best-value players to buy. Rebuilt every week as form changes.
-            <div style="margin-top:.6rem; font-size:.72rem;">Last updated {{ optional($squad->built_at)->timezone('Africa/Lagos')->diffForHumans() ?? '—' }} · {{ $squad->gameweek }}</div>
+            💡 <strong>How it's picked:</strong> every Premier League player is scored on their season form, goals (weighted by position), assists, appearances, match rating and goalkeeper saves, then priced by value. We solve for the highest-scoring legal squad (2 GK, 5 DEF, 5 MID, 3 FWD) inside a £100m budget and max 3 per club, choose the best XI + captain, and surface the best-value players to buy. Rebuilt every week as form changes.
+            <div style="margin-top:.6rem; font-size:.72rem;">Last updated {{ optional($squad->built_at)->timezone('Africa/Lagos')->diffForHumans() ?? 'N/A' }} · {{ $squad->gameweek }}</div>
         </div>
     @endif
 </div>

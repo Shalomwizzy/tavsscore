@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', "Today's GG Picks – Both Teams to Score | TavsScore")
+@section('title', "Today's GG Picks, Both Teams to Score | TavsScore")
 @section('meta_description', 'Free daily Both Teams Score (GG) predictions where all three independent AI engines agree. Triple-validated, published every morning. No upsells, free forever.')
 @section('og_title', "Today's GG Picks: Both Teams to Score")
 @section('og_description', 'Three independent AI engines must all predict Both Teams Score for a pick to appear here. Free daily GG predictions from TavsScore.')
@@ -156,7 +156,7 @@
         <div class="picks-eyebrow">⚽ GG Picks</div>
         <h1 class="picks-title">
             @if($dateMeta['is_today'])Today's <span class="accent">GG Picks</span>
-            @else<span class="accent">GG Picks</span> — {{ $dateMeta['pretty'] }}
+            @else<span class="accent">GG Picks</span>, {{ $dateMeta['pretty'] }}
             @endif
         </h1>
         <p class="picks-subtitle">

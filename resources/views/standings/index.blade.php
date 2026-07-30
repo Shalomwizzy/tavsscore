@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', ($leagueName ? $leagueName.' Table' : 'League Standings').' | TavsScore')
-@section('meta_description', 'Live league standings and tables — position, points, form, goals for and against across every league TavsScore covers.')
+@section('meta_description', 'Live league standings and tables, position, points, form, goals for and against across every league TavsScore covers.')
 @section('og_title', 'League Standings | TavsScore')
 
 @push('styles')
@@ -58,7 +58,7 @@
 <div class="wrap ls-wrap">
     <div class="ls-head">
         <h1 class="ls-title">League Standings</h1>
-        <p class="ls-sub">{{ $leagueName ? $leagueName.' — '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
+        <p class="ls-sub">{{ $leagueName ? $leagueName.', '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
     </div>
 
     <div class="ls-controls">
@@ -97,7 +97,7 @@
             <tbody>
                 @foreach($rows as $row)
                 <tr>
-                    <td class="ls-rank">{{ $row->rank ?? '—' }}</td>
+                    <td class="ls-rank">{{ $row->rank ?? 'N/A' }}</td>
                     <td class="col-team">
                         <div class="ls-team">
                             @if($row->team_logo)<img src="{{ $row->team_logo }}" alt="" loading="lazy">@endif
@@ -121,7 +121,7 @@
                                 <b class="form-{{ $r }}">{{ $r }}</b>
                             @endforeach
                         </span>
-                        @else — @endif
+                        @else, @endif
                     </td>
                 </tr>
                 @endforeach

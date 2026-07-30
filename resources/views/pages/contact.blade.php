@@ -130,7 +130,7 @@
         <div style="display:flex; flex-direction:column; gap:.875rem;">
             <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem;">
                 <div style="font-size:.78rem; font-weight:800; color:#fff; margin-bottom:.6rem;">📬 Response Time</div>
-                <p style="font-size:.78rem; color:var(--text-dim); line-height:1.7;">We aim to respond to all messages within <strong style="color:var(--text);">1–2 business days</strong>.</p>
+                <p style="font-size:.78rem; color:var(--text-dim); line-height:1.7;">We aim to respond to all messages within <strong style="color:var(--text);">1 to 2 business days</strong>.</p>
             </div>
 
             <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem;">

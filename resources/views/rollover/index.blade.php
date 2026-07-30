@@ -194,7 +194,7 @@
         <div class="rv-complete-icon">🏆</div>
         <div class="rv-complete-title">Challenge Complete!</div>
         <p style="color:var(--text-dim); font-size:.82rem; margin-bottom:.5rem;">
-            10/10 picks correct. A perfect run — triple-AI validation held strong all 10 days.
+            10/10 picks correct. A perfect run, triple-AI validation held strong all 10 days.
         </p>
         <p style="font-size:.74rem; color:#6ee7b7;">Next challenge starts tomorrow. Come back then!</p>
     </div>
@@ -252,7 +252,7 @@
                         : ($todayLegs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
         $combinedOdds = round($todayLegs->reduce(fn ($c, $l) => $c * max(1.0, (float) $l->implied_odds), 1.0), 2);
         $dayReturn    = (float) $todayLegs->first()->potential_return;
-        $waLines      = $todayLegs->map(fn ($l) => "{$l->match?->home_team} vs {$l->match?->away_team} — {$l->groq_verdict} @ {$l->implied_odds}")->implode("\n");
+        $waLines      = $todayLegs->map(fn ($l) => "{$l->match?->home_team} vs {$l->match?->away_team}, {$l->groq_verdict} @ {$l->implied_odds}")->implode("\n");
         $waText       = urlencode("🎯 TavsScore Rollover Day {$dayNo}/10\n{$waLines}\nTotal odds: {$combinedOdds}\n🔗 " . url('/rollover'));
         $cardExtra    = $ticketStatus === 'won' ? 'rv-result-won' : ($ticketStatus === 'lost' ? 'rv-result-lost' : '');
     @endphp
@@ -263,7 +263,7 @@
         </div>
 
         @if($ticketStatus === 'won')
-        <div class="rv-result-banner won">✅ Ticket Won! — challenge continues to Day {{ $dayNo + 1 }}</div>
+        <div class="rv-result-banner won">✅ Ticket Won!, challenge continues to Day {{ $dayNo + 1 }}</div>
         @elseif($ticketStatus === 'lost')
         <div class="rv-result-banner lost">❌ Ticket Lost. Challenge resets tomorrow</div>
         @endif
@@ -321,7 +321,7 @@
 
     {{-- Disclaimer --}}
     <div class="rv-disclaimer">
-        ⚠️ <strong>For entertainment and educational purposes only.</strong> The Rollover Challenge is a hypothetical prediction tracker — no real money is involved, no transactions take place on this site. AI picks may be wrong. Never bet more than you can afford to lose. If you have a gambling problem, visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener" style="color:#fcd34d; text-decoration:underline;">BeGambleAware.org</a>.
+        ⚠️ <strong>For entertainment and educational purposes only.</strong> The Rollover Challenge is a hypothetical prediction tracker, no real money is involved, no transactions take place on this site. AI picks may be wrong. Never bet more than you can afford to lose. If you have a gambling problem, visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener" style="color:#fcd34d; text-decoration:none;">BeGambleAware.org</a>.
     </div>
 
     @include('partials.affiliate-strip')
@@ -404,7 +404,7 @@
                         : ($legs->contains(fn ($l) => $l->status === 'pending') ? 'pending' : 'won');
         $pcWon   = $pcDays->filter(fn ($legs) => $pcDayStatus($legs) === 'won')->count();
         $pcTotal = $pcDays->count();
-        $pcResult = $pcWon >= 10 ? '🏆 Completed 10/10' : ($pcWon . '/' . $pcTotal . ' days won — bust day ' . ($pcWon + 1));
+        $pcResult = $pcWon >= 10 ? '🏆 Completed 10/10' : ($pcWon . '/' . $pcTotal . ' days won, bust day ' . ($pcWon + 1));
         $pcStart = $pc->started_at instanceof \Carbon\Carbon ? $pc->started_at : \Carbon\Carbon::parse($pc->started_at);
     @endphp
     <details class="rv-table-wrap" style="margin-bottom:1rem;" {{ $loop->first ? 'open' : '' }}>
@@ -477,7 +477,7 @@
             <div style="background:rgba(16,185,129,.05); border:1px solid rgba(16,185,129,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">📈</div>
                 <div style="font-weight:700; color:#6ee7b7; font-size:.8rem; margin-bottom:.25rem;">Compounding Odds</div>
-                <div style="font-size:.74rem; color:var(--text-dim);">Each day's implied odds build on the last. We track the multiplier so you can see exactly how a 10-day winning streak accumulates. Stake whatever you can afford to lose — or nothing at all.</div>
+                <div style="font-size:.74rem; color:var(--text-dim);">Each day's implied odds build on the last. We track the multiplier so you can see exactly how a 10-day winning streak accumulates. Stake whatever you can afford to lose, or nothing at all.</div>
             </div>
             <div style="background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.15); border-radius:10px; padding:.875rem;">
                 <div style="font-size:1.2rem; margin-bottom:.35rem;">🎯</div>

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', "Today's Over 1.5 Goals Picks – AI Powered | TavsScore")
+@section('title', "Today's Over 1.5 Goals Picks, AI Powered | TavsScore")
 @section('meta_description', 'Free daily Over 1.5 Goals predictions backed by Poisson probability modelling. Only matches with 82%+ likelihood of 2 or more goals make the cut. 5 picks daily.')
 @section('og_title', "Today's Over 1.5 Goals Picks")
 @section('og_description', 'AI-powered Over 1.5 Goals picks. Only the highest-probability goal-heavy matches make the daily cut. 5 picks every morning.')

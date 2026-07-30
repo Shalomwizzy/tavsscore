@@ -26,7 +26,7 @@
 {{-- Stats strip --}}
 <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(147,197,253,.10),rgba(147,197,253,.04));border-color:rgba(147,197,253,.25);">
-        <span class="stat-val" style="color:#93c5fd;">@if($accuracy !== null){{ $accuracy }}%@else—@endif</span>
+        <span class="stat-val" style="color:#93c5fd;">@if($accuracy !== null){{ $accuracy }}%@else N/A @endif</span>
         <span class="stat-lbl">⚽ All-time accuracy</span>
     </div>
     <div class="stat-card">
@@ -81,7 +81,7 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -95,7 +95,7 @@
                         @if(($tips[0]['ai_agrees'] ?? null) === true)
                             <span class="badge badge-green">✅ Agreed</span>
                         @else
-                            <span class="badge badge-gray">—</span>
+                            <span class="badge badge-gray"></span>
                         @endif
                     </td>
                     <td>
@@ -168,7 +168,7 @@
                             <td>
                                 @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
-                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                                 @endif
                             </td>
                             <td style="color:#93c5fd; font-weight:700;">O1.5</td>
@@ -199,7 +199,7 @@
     <strong>ℹ️ How Over 1.5 picks work:</strong>
     Over 1.5 picks auto-select at <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">06:00</code> via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">picks:select</code>.
     Picks with the highest Over 1.5 probability are selected each day.
-    Accuracy is tracked using <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">over15_notified=true</code> as the resolved indicator — a pick wins when total home + away goals &ge; 2.
+    Accuracy is tracked using <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">over15_notified=true</code> as the resolved indicator, a pick wins when total home + away goals &ge; 2.
     Outcomes resolve every 5 min via <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;">predictions:check-outcomes</code>, which notifies Telegram + OneSignal.
 </div>
 

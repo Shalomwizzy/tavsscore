@@ -221,13 +221,13 @@
         @endphp
         <div class="big-tile" style="border-color:rgba(245,158,11,.25);background:linear-gradient(135deg,rgba(245,158,11,.08),transparent);text-align:center;">
             <div style="font-size:.7rem;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">🤝 Draw Picks</div>
-            <div class="big-num {{ $dcls }}" style="font-size:2.4rem;">{{ $dpct !== null ? $dpct.'%' : '—' }}</div>
+            <div class="big-num {{ $dcls }}" style="font-size:2.4rem;">{{ $dpct !== null ? $dpct.'%' : 'N/A' }}</div>
             <div class="big-lbl">{{ $drawStat['correct'] }} won · {{ $drawStat['total'] }} resolved</div>
             <a href="{{ route('draw-picks.index') }}" style="display:inline-block;margin-top:.75rem;font-size:.72rem;color:#fcd34d;text-decoration:none;font-weight:700;">Today's picks →</a>
         </div>
         <div class="big-tile" style="border-color:rgba(16,185,129,.25);background:linear-gradient(135deg,rgba(16,185,129,.08),transparent);text-align:center;">
             <div style="font-size:.7rem;font-weight:700;color:#6ee7b7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">⚽ GG Picks</div>
-            <div class="big-num {{ $gcls }}" style="font-size:2.4rem;">{{ $gpct !== null ? $gpct.'%' : '—' }}</div>
+            <div class="big-num {{ $gcls }}" style="font-size:2.4rem;">{{ $gpct !== null ? $gpct.'%' : 'N/A' }}</div>
             <div class="big-lbl">{{ $ggStat['correct'] }} won · {{ $ggStat['total'] }} resolved</div>
             <a href="{{ route('gg-picks.index') }}" style="display:inline-block;margin-top:.75rem;font-size:.72rem;color:#6ee7b7;text-decoration:none;font-weight:700;">Today's picks →</a>
         </div>

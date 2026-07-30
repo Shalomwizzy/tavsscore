@@ -46,7 +46,7 @@
                     <div class="form-group">
                         <label class="form-label" for="excerpt">Excerpt <span style="font-size:.68rem; font-weight:400; color:var(--dim);">- shown on cards and used as meta description</span></label>
                         <textarea id="excerpt" name="excerpt" class="form-textarea" style="min-height:72px;"
-                                  placeholder="1–2 sentences summarising the article. 130–160 characters is ideal for SEO.">{{ old('excerpt') }}</textarea>
+                                  placeholder="1 to 2 sentences summarising the article. 130 to 160 characters is ideal for SEO.">{{ old('excerpt') }}</textarea>
                         <div class="form-hint" id="excerpt-count"></div>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'AI Learning — TavsScore Admin')
+@section('title', 'AI Learning, TavsScore Admin')
 
 @push('styles')
 <style>
@@ -91,21 +91,21 @@
         <div class="al-stat">
             <div class="al-stat-lbl">30-Day Accuracy</div>
             <div class="al-stat-val {{ $state['acc_30d'] !== null ? ($state['acc_30d'] >= 55 ? 'al-stat-ok' : ($state['acc_30d'] >= 45 ? 'al-stat-warn' : 'al-stat-bad')) : '' }}">
-                {{ $state['acc_30d'] !== null ? $state['acc_30d'] . '%' : '—' }}
+                {{ $state['acc_30d'] !== null ? $state['acc_30d'] . '%' : 'N/A' }}
             </div>
             <div class="al-stat-sub">{{ $state['total_30d'] }} picks resolved</div>
         </div>
         <div class="al-stat">
             <div class="al-stat-lbl">90-Day Accuracy</div>
             <div class="al-stat-val {{ $state['acc_90d'] !== null ? ($state['acc_90d'] >= 55 ? 'al-stat-ok' : ($state['acc_90d'] >= 45 ? 'al-stat-warn' : 'al-stat-bad')) : '' }}">
-                {{ $state['acc_90d'] !== null ? $state['acc_90d'] . '%' : '—' }}
+                {{ $state['acc_90d'] !== null ? $state['acc_90d'] . '%' : 'N/A' }}
             </div>
             <div class="al-stat-sub">{{ $state['total_90d'] }} picks resolved</div>
         </div>
         <div class="al-stat">
             <div class="al-stat-lbl">7-Day Accuracy</div>
             <div class="al-stat-val {{ $state['acc_7d'] !== null ? ($state['acc_7d'] >= 55 ? 'al-stat-ok' : ($state['acc_7d'] >= 45 ? 'al-stat-warn' : 'al-stat-bad')) : '' }}">
-                {{ $state['acc_7d'] !== null ? $state['acc_7d'] . '%' : '—' }}
+                {{ $state['acc_7d'] !== null ? $state['acc_7d'] . '%' : 'N/A' }}
             </div>
             <div class="al-stat-sub">
                 @if($state['trend'] === 'improving') 📈 Improving vs 90d avg
@@ -125,14 +125,14 @@
 
     {{-- Learned threshold explanation --}}
     <div class="al-threshold-box">
-        <strong>Current threshold: {{ $state['threshold'] }}%</strong> —
+        <strong>Current threshold: {{ $state['threshold'] }}%</strong>
         {{ $state['threshold_why'] }}.
         @if($state['threshold'] > 65)
             The system raised the bar above the default 65% because lower confidence bands have not been profitable.
         @elseif($state['threshold'] < 65)
-            The system found evidence that confident picks down to {{ $state['threshold'] }}% have been profitable — more picks may be selected.
+            The system found evidence that confident picks down to {{ $state['threshold'] }}% have been profitable, more picks may be selected.
         @else
-            Running at the default 65% threshold — build more history for the system to learn a better value.
+            Running at the default 65% threshold, build more history for the system to learn a better value.
         @endif
     </div>
 
@@ -141,13 +141,13 @@
     <div class="al-cold-alert">
         ❄️ <strong>Cold market streak (last 14 days):</strong>
         {{ implode(', ', $state['cold_markets']) }}.
-        These markets receive an extra 0.60× scoring penalty in daily pick selection — they will only appear if no better alternatives exist.
+        These markets receive an extra 0.60× scoring penalty in daily pick selection, they will only appear if no better alternatives exist.
     </div>
     @endif
 
     {{-- Confidence calibration --}}
     <div class="al-section">
-        <div class="al-section-title">Confidence Calibration — AI says X%, history shows Y%</div>
+        <div class="al-section-title">Confidence Calibration, AI says X%, history shows Y%</div>
         <div class="al-scroll"><table class="al-table">
             <thead>
                 <tr>
@@ -183,7 +183,7 @@
                                 <div class="al-bar-fill {{ $barClass }}" style="width:{{ min(100, $barPct) }}%"></div>
                             </div>
                             <span style="min-width:38px;text-align:right;">
-                                {{ $b['pct'] !== null ? $b['pct'] . '%' : '—' }}
+                                {{ $b['pct'] !== null ? $b['pct'] . '%' : 'N/A' }}
                             </span>
                         </div>
                     </td>
@@ -191,7 +191,7 @@
                         @if($b['gap'] !== null)
                             {{ $b['gap'] > 0 ? '+' : '' }}{{ $b['gap'] }}pp
                         @else
-                            —
+
                         @endif
                     </td>
                     <td><span class="al-pill {{ $statusPill }}">{{ $statusLabel }}</span></td>
@@ -207,9 +207,9 @@
 
     {{-- Market performance --}}
     <div class="al-section">
-        <div class="al-section-title">Market Performance — last 90 days</div>
+        <div class="al-section-title">Market Performance, last 90 days</div>
         @if(empty($state['market_perf']))
-            <p style="color:var(--text-dim);font-size:.8rem;">No resolved picks yet — keep running predictions.</p>
+            <p style="color:var(--text-dim);font-size:.8rem;">No resolved picks yet, keep running predictions.</p>
         @else
         <div class="al-scroll"><table class="al-table">
             <thead>
@@ -238,12 +238,12 @@
                             <div class="al-bar-bg">
                                 <div class="al-bar-fill {{ $barClass }}" style="width:{{ min(100, $barPct) }}%"></div>
                             </div>
-                            <span style="min-width:38px;text-align:right;">{{ $m['pct'] !== null ? $m['pct'] . '%' : '—' }}</span>
+                            <span style="min-width:38px;text-align:right;">{{ $m['pct'] !== null ? $m['pct'] . '%' : 'N/A' }}</span>
                         </div>
                     </td>
                     <td style="color:var(--text-dim);">
                         @if($m['recent_pct'] !== null) {{ $m['recent_pct'] }}% ({{ $m['recent_total'] }})
-                        @else <span style="opacity:.5;">—</span>
+                        @else <span style="opacity:.5;"></span>
                         @endif
                     </td>
                     <td style="font-weight:800;color:{{ $wColor }};">×{{ $wLabel }}</td>
@@ -265,7 +265,7 @@
 
     {{-- League reliability --}}
     <div class="al-section">
-        <div class="al-section-title">League Reliability — last 90 days (≥5 picks)</div>
+        <div class="al-section-title">League Reliability, last 90 days (≥5 picks)</div>
         @if(empty($state['league_perf']))
             <p style="color:var(--text-dim);font-size:.8rem;">Not enough per-league history yet.</p>
         @else
@@ -311,18 +311,18 @@
         @php $h = $state['historical']; @endphp
         <div class="al-section" style="margin-top:2.25rem;">
             <div class="al-section-title" style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
-                <span>5-Season Historical Calibration — Dixon-Coles walk-forward backtest</span>
+                <span>5-Season Historical Calibration, Dixon-Coles walk-forward backtest</span>
                 <span style="display:inline-block; background:linear-gradient(135deg,#10b981,#3b82f6); color:#fff; font-size:.55rem; font-weight:900; padding:2px 7px; border-radius:999px; letter-spacing:.04em;">{{ $h['version'] }}</span>
             </div>
 
             <div class="al-threshold-box" style="background:rgba(16,185,129,.06); border-color:rgba(16,185,129,.20); margin-bottom:1rem;">
                 <strong>{{ number_format($h['total_predictions']) }}</strong> held-out predictions across 5 seasons of the 9 priority European leagues.
-                Overall win rate: <strong>{{ $h['overall_pct'] ?? '—' }}%</strong>.
+                Overall win rate: <strong>{{ $h['overall_pct'] ?? 'N/A' }}%</strong>.
                 @if(! empty($h['advisory_threshold']))
-                    Historical data suggests a threshold at <strong>{{ $h['advisory_threshold'] }}%</strong> — the lowest band where the DC model was profitable over 5 seasons.
+                    Historical data suggests a threshold at <strong>{{ $h['advisory_threshold'] }}%</strong>, the lowest band where the DC model was profitable over 5 seasons.
                     The operational threshold above is set independently from live picks. If the two diverge sharply, it's worth investigating why.
                 @endif
-                <br><span style="color:var(--text-dim); font-size:.7rem;">Advisory only — does not adjust live pick selection. Use <code>/admin/model-metrics</code> for full drill-down.</span>
+                <br><span style="color:var(--text-dim); font-size:.7rem;">Advisory only, does not adjust live pick selection. Use <code>/admin/model-metrics</code> for full drill-down.</span>
             </div>
 
             @foreach($h['by_market'] as $market => $bands)
@@ -359,9 +359,9 @@
                                 <td style="font-weight:700;">{{ $b['band'] }}%</td>
                                 <td style="text-align:right;">{{ number_format($b['total']) }}</td>
                                 <td style="text-align:right;">{{ number_format($b['wins']) }}</td>
-                                <td style="text-align:right;">{{ $b['pct'] !== null ? $b['pct'] . '%' : '—' }}</td>
+                                <td style="text-align:right;">{{ $b['pct'] !== null ? $b['pct'] . '%' : 'N/A' }}</td>
                                 <td style="text-align:right;" @if($b['gap'] !== null) class="{{ $b['gap'] >= 0 ? 'al-gap-positive' : 'al-gap-negative' }}" @endif>
-                                    @if($b['gap'] !== null){{ $b['gap'] >= 0 ? '+' : '' }}{{ $b['gap'] }}pp @else — @endif
+                                    @if($b['gap'] !== null){{ $b['gap'] >= 0 ? '+' : '' }}{{ $b['gap'] }}pp @else, @endif
                                 </td>
                                 <td>
                                     @if($b['trusted'])
@@ -380,7 +380,7 @@
     @endif
 
     <p style="font-size:.68rem;color:var(--text-dim);padding-bottom:2rem;">
-        Operational data (top section) covers resolved daily picks over 90 days. Historical calibration (bottom section) covers the 5-season DC backtest — deeper history, but from the model, not live picks. League and market weights are applied silently during <code>picks:select</code>. Confidence threshold adjusts daily pick selection automatically. Cache refreshes every {{ \App\Services\AdaptiveThresholdService::CACHE_HOURS }}h or on Force Recalibrate.
+        Operational data (top section) covers resolved daily picks over 90 days. Historical calibration (bottom section) covers the 5-season DC backtest, deeper history, but from the model, not live picks. League and market weights are applied silently during <code>picks:select</code>. Confidence threshold adjusts daily pick selection automatically. Cache refreshes every {{ \App\Services\AdaptiveThresholdService::CACHE_HOURS }}h or on Force Recalibrate.
     </p>
 
 </div>

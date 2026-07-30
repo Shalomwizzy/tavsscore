@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', ($leagueName ? $leagueName.' Top Scorers' : 'Top Scorers').' | TavsScore')
-@section('meta_description', 'Top scorers and assist leaders — goals, assists, minutes and match ratings across every league TavsScore covers.')
+@section('meta_description', 'Top scorers and assist leaders, goals, assists, minutes and match ratings across every league TavsScore covers.')
 @section('og_title', 'Top Scorers | TavsScore')
 
 @push('styles')
@@ -50,7 +50,7 @@
 <div class="wrap ts-wrap">
     <div class="ts-head">
         <h1 class="ts-title">{{ $metric === 'assists' ? 'Assist Leaders' : 'Top Scorers' }}</h1>
-        <p class="ts-sub">{{ $leagueName ? $leagueName.' — '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
+        <p class="ts-sub">{{ $leagueName ? $leagueName.', '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
     </div>
 
     <div class="ts-controls">
@@ -104,12 +104,12 @@
                             </span>
                         </div>
                     </td>
-                    <td>{{ $p->position ?? '—' }}</td>
+                    <td>{{ $p->position ?? 'N/A' }}</td>
                     <td class="ts-big">{{ $metric === 'assists' ? $p->assists : $p->goals }}</td>
                     <td>{{ $metric === 'assists' ? $p->goals : $p->assists }}</td>
                     <td>{{ $p->appearances }}</td>
                     <td>{{ $p->minutes }}</td>
-                    <td>{{ $p->rating ? number_format($p->rating, 2) : '—' }}</td>
+                    <td>{{ $p->rating ? number_format($p->rating, 2) : 'N/A' }}</td>
                 </tr>
                 @endforeach
             </tbody>

@@ -73,7 +73,7 @@
     <div class="metric-card"><div class="metric-value" style="color:#6ee7b7">{{ $metrics['won'] }}</div><div class="metric-label">Won</div></div>
     <div class="metric-card"><div class="metric-value" style="color:#fca5a5">{{ $metrics['lost'] }}</div><div class="metric-label">Lost</div></div>
     <div class="metric-card"><div class="metric-value" style="color:#fcd34d">{{ $metrics['pending'] }}</div><div class="metric-label">Pending</div></div>
-    <div class="metric-card"><div class="metric-value" style="color:#93c5fd">{{ $metrics['accuracy'] !== null ? $metrics['accuracy'].'%' : '—' }}</div><div class="metric-label">Accuracy</div></div>
+    <div class="metric-card"><div class="metric-value" style="color:#93c5fd">{{ $metrics['accuracy'] !== null ? $metrics['accuracy'].'%' : 'N/A' }}</div><div class="metric-label">Accuracy</div></div>
 </div>
 
 <div class="a-card">
@@ -174,7 +174,7 @@
                                     @endforeach
                                     </div>
                                 @else
-                                    <div class="pred-detail-empty">No market board yet — regenerates on the next predict:matches run.</div>
+                                    <div class="pred-detail-empty">No market board yet, regenerates on the next predict:matches run.</div>
                                 @endif
                             </div>
                         </div>

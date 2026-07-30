@@ -160,11 +160,11 @@
         <h1 class="pp-title">{{ $match->home_team }} <span style="color:var(--text-dim); font-weight:700;">vs</span> {{ $match->away_team }}</h1>
         <div class="pp-meta">
             @if(in_array($match->status, ['FT','AET','PEN']))
-                Full time · <strong>{{ $match->home_score }}–{{ $match->away_score }}</strong>
+                Full time · <strong>{{ $match->home_score }}:{{ $match->away_score }}</strong>
             @elseif(in_array($match->status, ['1H','2H','HT','ET','BT','P','LIVE']))
                 <span style="color:#ef4444;">● LIVE</span>
                 @if($match->elapsed) {{ $match->elapsed }}' @endif ·
-                <strong>{{ $match->home_score ?? 0 }}–{{ $match->away_score ?? 0 }}</strong>
+                <strong>{{ $match->home_score ?? 0 }}:{{ $match->away_score ?? 0 }}</strong>
             @else
                 Kick-off <strong>{{ $match->match_time?->format('H:i') }}</strong> · {{ $match->match_time?->format('D, M j') }}
             @endif
@@ -206,9 +206,9 @@
                 </div>
 
                 @if($pred->was_correct === true)
-                    <div class="pp-result win">✓ Pick was correct ({{ $match->home_score }}–{{ $match->away_score }})</div>
+                    <div class="pp-result win">✓ Pick was correct ({{ $match->home_score }}:{{ $match->away_score }})</div>
                 @elseif($pred->was_correct === false)
-                    <div class="pp-result loss">✗ Pick missed ({{ $match->home_score }}–{{ $match->away_score }})</div>
+                    <div class="pp-result loss">✗ Pick missed ({{ $match->home_score }}:{{ $match->away_score }})</div>
                 @endif
             </div>
 
@@ -381,9 +381,9 @@
                 <h2>🔎 API-Football Model</h2>
                 <p style="font-size:.78rem; color:var(--text-dim); margin:-.3rem 0 .8rem;">An independent statistical model, shown for comparison.</p>
                 @if($apiPrediction->percent_home || $apiPrediction->percent_draw || $apiPrediction->percent_away)
-                <div class="pp-stat-row"><span>{{ $match->home_team }} win</span><span>{{ $apiPrediction->percent_home ?? '—' }}</span></div>
-                <div class="pp-stat-row"><span>Draw</span><span>{{ $apiPrediction->percent_draw ?? '—' }}</span></div>
-                <div class="pp-stat-row"><span>{{ $match->away_team }} win</span><span>{{ $apiPrediction->percent_away ?? '—' }}</span></div>
+                <div class="pp-stat-row"><span>{{ $match->home_team }} win</span><span>{{ $apiPrediction->percent_home ?? 'N/A' }}</span></div>
+                <div class="pp-stat-row"><span>Draw</span><span>{{ $apiPrediction->percent_draw ?? 'N/A' }}</span></div>
+                <div class="pp-stat-row"><span>{{ $match->away_team }} win</span><span>{{ $apiPrediction->percent_away ?? 'N/A' }}</span></div>
                 @endif
                 @if($apiPrediction->advice)
                 <div class="pp-stat-row"><span>Advice</span><span style="color:#6ee7b7;">{{ $apiPrediction->advice }}</span></div>

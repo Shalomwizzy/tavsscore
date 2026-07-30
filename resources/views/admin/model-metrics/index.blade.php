@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Model Metrics — TavsScore Admin')
+@section('title', 'Model Metrics, TavsScore Admin')
 @section('page-title', 'Model Metrics')
 
 @push('styles')
@@ -49,23 +49,23 @@
     $brierClass = fn (?float $b) => $b === null ? '' : ($b < 0.20 ? 'mm-diag-ok' : ($b < 0.24 ? 'mm-diag-warn' : 'mm-diag-bad'));
     // Delta vs market: negative = beats the market (good). Positive = loses to it.
     $deltaClass = fn (?float $d) => $d === null ? '' : ($d < -0.005 ? 'mm-diag-ok' : ($d < 0.005 ? 'mm-diag-warn' : 'mm-diag-bad'));
-    $fmt = fn (?float $v, int $dp = 3) => $v === null ? '—' : number_format($v, $dp);
-    $pct = fn (?float $v) => $v === null ? '—' : number_format($v * 100, 1) . '%';
-    $signed = fn (?float $v, int $dp = 4) => $v === null ? '—' : ($v >= 0 ? '+' : '') . number_format($v, $dp);
+    $fmt = fn (?float $v, int $dp = 3) => $v === null ? 'N/A' : number_format($v, $dp);
+    $pct = fn (?float $v) => $v === null ? 'N/A' : number_format($v * 100, 1) . '%';
+    $signed = fn (?float $v, int $dp = 4) => $v === null ? 'N/A' : ($v >= 0 ? '+' : '') . number_format($v, $dp);
 @endphp
 
 @section('content')
 
 <div class="mm-note">
-    <strong>Measurement layer — Phase 1.</strong>
+    <strong>Measurement layer, Phase 1.</strong>
     Metrics computed from <code>prediction_logs</code>. Baseline
     <strong>{{ \App\Services\PredictionLogger::VERSION_BASELINE }}</strong> reflects the current pipeline:
     1X2 probabilities come from Groq (LLM); Over 2.5 / BTTS are 50/50 blends of Groq and the internal Poisson;
     Over 1.5 / Over 3.5 are pure Poisson. New engines land here for ship-gate comparison.
-    Comparisons must stay like-for-like — pre-lineup vs pre-lineup, never across stages.
+    Comparisons must stay like-for-like, pre-lineup vs pre-lineup, never across stages.
 </div>
 
-<div class="mm-section-title">Publication readiness — this is the live quality gate</div>
+<div class="mm-section-title">Publication readiness, this is the live quality gate</div>
 <div class="mm-note">
     <strong>Proven</strong> means 100+ settled like-for-like results with no material over-confidence. <strong>Measured</strong> has 30+ settled results and is checked before publishing. <strong>Shadow</strong> remains visible for measurement but does not make a proven-accuracy claim. A candidate is held when its calibrated band is materially over-confident or when captured odds show less than a 3pp model edge.
 </div>
@@ -84,7 +84,7 @@
         <tr>
             <td><span class="mm-tag">{{ $row['model_version'] }}</span></td><td>{{ $row['market'] }}</td><td>{{ str_replace('_', ' ', $row['stage']) }}</td>
             <td class="num">{{ number_format($row['settled_n']) }}</td><td class="num">{{ $pct($row['stated']) }}</td><td class="num">{{ $pct($row['realized']) }}</td>
-            <td class="num {{ $gapClass }}">{{ $gap === null ? '—' : (($gap >= 0 ? '+' : '') . number_format($gap * 100, 1) . 'pp') }}</td>
+            <td class="num {{ $gapClass }}">{{ $gap === null ? 'N/A' : (($gap >= 0 ? '+' : '') . number_format($gap * 100, 1) . 'pp') }}</td>
             <td class="{{ $stateClass }}" style="font-weight:800;text-transform:capitalize">{{ $row['state'] }}</td>
         </tr>
     @endforeach
@@ -92,7 +92,7 @@
 </table></div>
 @endif
 
-<div class="mm-section-title">League-specific readiness — minimum 15 settled rows</div>
+<div class="mm-section-title">League-specific readiness, minimum 15 settled rows</div>
 <div class="mm-note">
     A league with enough evidence can override the global market view. A negative gap worse than 7 percentage points holds that league and market combination, even if the global market looks healthy.
 </div>
@@ -108,7 +108,7 @@
             $stateClass = $row['state'] === 'held' ? 'mm-diag-bad' : 'mm-diag-ok';
         @endphp
         <tr>
-            <td><span class="mm-tag">{{ $row['model_version'] }}</span></td><td>{{ $row['market'] }}</td><td>{{ $row['league_id'] ?? '—' }}</td><td>{{ str_replace('_', ' ', $row['stage']) }}</td>
+            <td><span class="mm-tag">{{ $row['model_version'] }}</span></td><td>{{ $row['market'] }}</td><td>{{ $row['league_id'] ?? 'N/A' }}</td><td>{{ str_replace('_', ' ', $row['stage']) }}</td>
             <td class="num">{{ number_format($row['settled_n']) }}</td><td class="num">{{ $pct($row['stated']) }}</td><td class="num">{{ $pct($row['realized']) }}</td>
             <td class="num {{ $gapClass }}">{{ ($row['gap'] >= 0 ? '+' : '') . number_format($row['gap'] * 100, 1) }}pp</td>
             <td class="{{ $stateClass }}" style="font-weight:800;text-transform:capitalize">{{ $row['state'] }}</td>
@@ -136,7 +136,7 @@
     <label>
         Calibration for version
         <select name="bucket_version">
-            <option value="">—</option>
+            <option value=""></option>
             @foreach($versions as $v)
                 <option value="{{ $v }}" {{ $bucketVersion === $v ? 'selected' : '' }}>{{ $v }}</option>
             @endforeach
@@ -145,7 +145,7 @@
     <label>
         Market
         <select name="bucket_market">
-            <option value="">—</option>
+            <option value=""></option>
             @foreach($markets as $m)
                 <option value="{{ $m }}" {{ $bucketMarket === $m ? 'selected' : '' }}>{{ $m }}</option>
             @endforeach
@@ -182,7 +182,7 @@
 </table></div>
 @endif
 
-<div class="mm-section-title">By market — Brier is primary (lower is better). Δ vs market: negative = beats the bookmaker consensus</div>
+<div class="mm-section-title">By market, Brier is primary (lower is better). Δ vs market: negative = beats the bookmaker consensus</div>
 @if(empty($byMarket))
     <div class="mm-empty">No settled logs yet.</div>
 @else
@@ -219,7 +219,7 @@
 </table></div>
 @endif
 
-<div class="mm-section-title">By league (min 20 settled) — Δ vs market identifies where edge is possible</div>
+<div class="mm-section-title">By league (min 20 settled), Δ vs market identifies where edge is possible</div>
 @if(empty($byLeague))
     <div class="mm-empty">No league has 20+ settled logs yet.</div>
 @else
@@ -240,7 +240,7 @@
         @php $hitRate = $row->settled_n > 0 ? $row->wins / $row->settled_n : null; @endphp
         <tr>
             <td><span class="mm-tag">{{ $row->model_version }}</span></td>
-            <td>{{ $row->league_id ?? '—' }}</td>
+            <td>{{ $row->league_id ?? 'N/A' }}</td>
             <td class="num">{{ number_format($row->settled_n) }}</td>
             <td class="num">{{ $pct($hitRate) }}</td>
             <td class="num {{ $brierClass($row->brier) }}">{{ $fmt($row->brier) }}</td>
@@ -253,7 +253,7 @@
 @endif
 
 @if(!empty($calibration))
-<div class="mm-section-title">Calibration — {{ $bucketVersion }} / {{ $bucketMarket }}</div>
+<div class="mm-section-title">Calibration, {{ $bucketVersion }} / {{ $bucketMarket }}</div>
 <div class="mm-scroll"><table class="mm-table">
     <thead>
         <tr>
@@ -273,7 +273,7 @@
             $gapClass = abs($gap) < 0.03 ? 'mm-diag-ok' : (abs($gap) < 0.07 ? 'mm-diag-warn' : 'mm-diag-bad');
         @endphp
         <tr>
-            <td>{{ $lo }}–{{ $hi }}%</td>
+            <td>{{ $lo }}:{{ $hi }}%</td>
             <td class="num">{{ number_format($b->n) }}</td>
             <td class="num">{{ $pct($b->stated) }}</td>
             <td class="num">{{ $pct($b->realized) }}</td>

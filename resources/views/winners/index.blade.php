@@ -89,7 +89,7 @@
                     @error('username') <span style="color:#ef4444;font-size:.7rem;">{{ $message }}</span> @enderror
                 </div>
                 <div class="f-group">
-                    <label class="f-label">Your Email * <span style="font-weight:400; color:var(--text-dim);">(private — never shown publicly)</span></label>
+                    <label class="f-label">Your Email * <span style="font-weight:400; color:var(--text-dim);">(private, never shown publicly)</span></label>
                     <input type="email" name="email" id="email-input" class="f-input"
                            placeholder="you@example.com" maxlength="150" required
                            value="{{ old('email') }}">
@@ -110,17 +110,17 @@
             <div class="form-row">
                 <div class="f-group">
                     <label class="f-label">Which TavsScore pick did you follow? <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
-                    <input type="text" name="pick_description" class="f-input" placeholder="e.g. Arsenal Home Win – May 13" maxlength="255" value="{{ old('pick_description') }}">
+                    <input type="text" name="pick_description" class="f-input" placeholder="e.g. Arsenal Home Win, May 13" maxlength="255" value="{{ old('pick_description') }}">
                 </div>
                 <div class="f-group">
                     <label class="f-label">Match details <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
-                    <input type="text" name="match_details" class="f-input" placeholder="e.g. Arsenal vs Chelsea – 2:1" maxlength="255" value="{{ old('match_details') }}">
+                    <input type="text" name="match_details" class="f-input" placeholder="e.g. Arsenal vs Chelsea, 2:1" maxlength="255" value="{{ old('match_details') }}">
                     <span class="f-hint">The match the prediction was for.</span>
                 </div>
                 <div class="f-group">
                     <label class="f-label">Betting platform <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
                     <select name="platform" class="f-select">
-                        <option value="">— Select platform —</option>
+                        <option value=""> Select platform </option>
                         <option value="Bet9ja"    {{ old('platform') === 'Bet9ja'    ? 'selected' : '' }}>Bet9ja</option>
                         <option value="SportyBet" {{ old('platform') === 'SportyBet' ? 'selected' : '' }}>SportyBet</option>
                         <option value="1xBet"     {{ old('platform') === '1xBet'     ? 'selected' : '' }}>1xBet</option>
@@ -278,7 +278,7 @@ document.addEventListener('keydown', e => {
                     } else if (data.email_match) {
                         status.innerHTML = '<span style="color:#10b981;">✓ Welcome back! Email matches your previous submission.</span>';
                     } else if (email.length > 0) {
-                        status.innerHTML = '<span style="color:#ef4444;">⚠️ This username belongs to someone else — please use a different one, or check your email.</span>';
+                        status.innerHTML = '<span style="color:#ef4444;">⚠️ This username belongs to someone else, please use a different one, or check your email.</span>';
                     } else {
                         status.innerHTML = '<span style="color:#fbbf24;">⚠️ This username has been used before. Enter your email above to verify it\'s you.</span>';
                     }

@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Edit Winner — ' . $winner->username)
+@section('title', 'Edit Winner, ' . $winner->username)
 @section('page-title', 'Edit Winner')
 
 @section('content')

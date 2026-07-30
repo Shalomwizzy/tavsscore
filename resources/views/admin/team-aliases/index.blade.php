@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Team Aliases — TavsScore Admin')
+@section('title', 'Team Aliases, TavsScore Admin')
 @section('page-title', 'Team Aliases Queue')
 
 @push('styles')
@@ -73,7 +73,7 @@
     <a href="{{ route('admin.team-aliases.index', ['filter' => 'reviewed']) }}" class="ta-filter-btn {{ $filter === 'reviewed' ? 'active' : '' }}">Reviewed</a>
     <a href="{{ route('admin.team-aliases.index', ['filter' => 'all']) }}"     class="ta-filter-btn {{ $filter === 'all' ? 'active' : '' }}">All</a>
 
-    <form method="POST" action="{{ route('admin.team-aliases.bulk-approve-unique') }}" class="ta-bulk" onsubmit="return confirm('Auto-approve every pending alias whose name doesn\'t collide with an existing team? This is safe — only unambiguous names get approved.');">
+    <form method="POST" action="{{ route('admin.team-aliases.bulk-approve-unique') }}" class="ta-bulk" onsubmit="return confirm('Auto-approve every pending alias whose name doesn\'t collide with an existing team? This is safe, only unambiguous names get approved.');">
         @csrf
         <button type="submit" class="ta-btn ta-btn-approve" style="font-size:.72rem; padding:.42rem .75rem;">⚡ Bulk-approve non-colliding</button>
     </form>
@@ -111,7 +111,7 @@
                         </form>
                     @endforeach
                 @else
-                    <span style="color:var(--text-dim); font-size:.7rem;">— no obvious duplicates —</span>
+                    <span style="color:var(--text-dim); font-size:.7rem;"> no obvious duplicates </span>
                 @endif
             </td>
             <td style="text-align:right; color:var(--text-dim); font-size:.7rem; font-variant-numeric:tabular-nums;">

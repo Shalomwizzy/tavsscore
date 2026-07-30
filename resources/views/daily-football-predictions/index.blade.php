@@ -62,12 +62,12 @@
             @foreach($predictions as $prediction)
                 @php($match = $prediction->match)
                 <tr>
-                    <td style="color:var(--text-dim);font-size:.75rem;white-space:nowrap;">{{ $match?->match_time?->timezone(config('app.timezone'))->format('H:i') ?? '—' }}</td>
+                    <td style="color:var(--text-dim);font-size:.75rem;white-space:nowrap;">{{ $match?->match_time?->timezone(config('app.timezone'))->format('H:i') ?? 'N/A' }}</td>
                     <td style="min-width:235px;">
                         <div class="dfp-meta">{{ \App\Support\LeagueCoverage::formatName($match?->league, $match?->league_country) }}</div>
                         @include('partials.fixture-showcase', ['match' => $match, 'accent' => '#93c5fd', 'compact' => true])
                     </td>
-                    <td><span class="dfp-outcome">{{ $prediction->predicted_outcome ?? '—' }}</span></td>
+                    <td><span class="dfp-outcome">{{ $prediction->predicted_outcome ?? 'N/A' }}</span></td>
                     <td>@if($prediction->was_correct === true)<span class="dfp-badge dfp-win">✓ Won</span>@elseif($prediction->was_correct === false)<span class="dfp-badge dfp-loss">✗ Lost</span>@else<span class="dfp-badge dfp-pending">⏳ Pending</span>@endif</td>
                 </tr>
             @endforeach

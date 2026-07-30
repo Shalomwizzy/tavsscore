@@ -306,19 +306,19 @@
     {{-- Summary --}}
     <div class="summary-row">
         <div class="sum-tile">
-            <span class="sum-val" id="cnt-live">–</span>
+            <span class="sum-val" id="cnt-live"> to </span>
             <span class="sum-lbl">🔴 Live</span>
         </div>
         <div class="sum-tile">
-            <span class="sum-val" id="cnt-today">–</span>
+            <span class="sum-val" id="cnt-today"> to </span>
             <span class="sum-lbl">📅 Upcoming</span>
         </div>
         <div class="sum-tile">
-            <span class="sum-val" id="cnt-finished">–</span>
+            <span class="sum-val" id="cnt-finished"> to </span>
             <span class="sum-lbl">✅ Finished</span>
         </div>
         <div class="sum-tile">
-            <span class="sum-val" id="cnt-leagues">–</span>
+            <span class="sum-val" id="cnt-leagues"> to </span>
             <span class="sum-lbl">🏆 Leagues</span>
         </div>
     </div>
@@ -540,7 +540,7 @@
         var html   = '<option value="">All competitions</option>';
         sorted.forEach(function (g) {
             var val   = leagueKey({ league: g.league, league_country: g.country });
-            var label = g.league + (g.country ? ' – ' + g.country : '');
+            var label = g.league + (g.country ? ', ' + g.country : '');
             var star  = TOP_IDS.has(Number(g.id)) ? '★ ' : '';
             html += '<option value="' + esc(val) + '">' + esc(star + label) + '</option>';
         });

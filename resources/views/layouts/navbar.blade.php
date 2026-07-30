@@ -101,7 +101,7 @@
                     </a>
                     <a href="{{ route('high-risk.index') }}" class="nav-drop-item {{ request()->routeIs('high-risk.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🎲</span>
-                        <span><span class="ndi-label">High Risk</span><span class="ndi-sub">Big-odds accas — for fun</span></span>
+                        <span><span class="ndi-label">High Risk</span><span class="ndi-sub">Big-odds accas, for fun</span></span>
                     </a>
                     </div>
                 </div>
@@ -246,7 +246,7 @@
                 <small>10-day challenge</small>
             </span>
         </a>
-        <a href="{{ route('high-risk.index') }}" class="drawer-item {{ request()->routeIs('high-risk.*') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🎲</span><span class="di-text">High Risk<small>Big-odds accas — for fun</small></span></a>
+        <a href="{{ route('high-risk.index') }}" class="drawer-item {{ request()->routeIs('high-risk.*') ? 'active' : '' }}" onclick="closeDrawer()"><span class="di-icon">🎲</span><span class="di-text">High Risk<small>Big-odds accas, for fun</small></span></a>
         <a href="{{ route('booking-codes.index') }}" class="drawer-item {{ request()->routeIs('booking-codes.*') ? 'active' : '' }}" onclick="closeDrawer()">
             <span class="di-icon">🎟️</span>
             <span class="di-text">Booking Codes<small>Load today's pre-built tickets</small></span>

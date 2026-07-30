@@ -103,7 +103,7 @@
                 <div class="res-rank">#{{ $pick['rank'] }}</div>
                 <div class="res-match">
                     <div class="res-match-line1">
-                        {{ $pick['home'] }} <span class="res-match-score">{{ $pick['home_score'] ?? '–' }}–{{ $pick['away_score'] ?? '–' }}</span> {{ $pick['away'] }}
+                        {{ $pick['home'] }} <span class="res-match-score">{{ $pick['home_score'] ?? 'N/A' }}:{{ $pick['away_score'] ?? 'N/A' }}</span> {{ $pick['away'] }}
                     </div>
                     <div class="res-match-line2">{{ $pick['league'] }} · KO {{ $pick['time'] }}</div>
                 </div>

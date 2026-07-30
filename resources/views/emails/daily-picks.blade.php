@@ -131,7 +131,7 @@
                                             @endif
                                             <strong>{{ $y['home'] }} vs {{ $y['away'] }}</strong>
                                             @if($y['home_score'] !== null && $y['away_score'] !== null)
-                                                <span style="color:#6b7280;">({{ $y['home_score'] }}–{{ $y['away_score'] }})</span>
+                                                <span style="color:#6b7280;">({{ $y['home_score'] }}:{{ $y['away_score'] }})</span>
                                             @endif
                                             <span style="color:#6b7280;"> - picked {{ $y['outcome'] }}</span>
                                         </div>
@@ -150,8 +150,8 @@
                     <tr>
                         <td style="padding:18px 30px; background:#f9fafb; color:#6b7280; font-size:12px; text-align:center; line-height:1.7; border-top:1px solid #e5e7eb;">
                             <strong style="color:#374151;">For entertainment only.</strong> Football has variance - even high-confidence picks lose. Don't bet money you can't afford to lose.<br>
-                            <a href="{{ $unsubscribeUrl }}" style="color:#9ca3af; text-decoration:underline;">Unsubscribe</a> ·
-                            <a href="{{ url('/') }}" style="color:#9ca3af; text-decoration:underline;">tavsscore.com</a>
+                            <a href="{{ $unsubscribeUrl }}" style="color:#9ca3af; text-decoration:none;">Unsubscribe</a> ·
+                            <a href="{{ url('/') }}" style="color:#9ca3af; text-decoration:none;">tavsscore.com</a>
                         </td>
                     </tr>
                 </table>

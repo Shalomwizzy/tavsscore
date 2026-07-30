@@ -86,7 +86,7 @@
 </div>
 @empty
 <div class="a-card" style="text-align:center; padding:2rem; color:var(--dim);">
-    No Fantasy squad built yet. Click <strong>Rebuild now</strong> (needs player stats — run <code>stats:fetch-players</code> first).
+    No Fantasy squad built yet. Click <strong>Rebuild now</strong> (needs player stats, run <code>stats:fetch-players</code> first).
 </div>
 @endforelse
 

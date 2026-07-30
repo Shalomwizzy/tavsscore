@@ -23,7 +23,7 @@
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(103,232,249,.1),rgba(59,130,246,.04));border-color:rgba(103,232,249,.25);"><span class="stat-val" style="color:#67e8f9;">{{ $todayCards->count() }}</span><span class="stat-lbl">Today's 90% signals</span></div>
     <div class="stat-card"><span class="stat-val" style="color:#6ee7b7;">{{ $correct }}</span><span class="stat-lbl">✓ Total correct</span></div>
     <div class="stat-card"><span class="stat-val" style="color:#fca5a5;">{{ $total - $correct }}</span><span class="stat-lbl">✗ Total wrong</span></div>
-    <div class="stat-card"><span class="stat-val">{{ $total ? round($correct / $total * 100, 1).'%' : '—' }}</span><span class="stat-lbl">Historical accuracy</span></div>
+    <div class="stat-card"><span class="stat-val">{{ $total ? round($correct / $total * 100, 1).'%' : 'N/A' }}</span><span class="stat-lbl">Historical accuracy</span></div>
 </div>
 
 <section class="a-card" style="margin-bottom:1.25rem;border-color:rgba(103,232,249,.24);">
@@ -45,11 +45,11 @@
             @endphp
             <tr>
                 <td style="font-weight:800;color:#67e8f9;">#{{ $pick->{$config['rank']} }}</td>
-                <td>@include('admin.partials.fixture-mini', ['match' => $match]) @if($finished)<span style="color:var(--dim);font-size:.72rem;margin-left:.35rem;">({{ $match->home_score }}–{{ $match->away_score }})</span>@endif</td>
+                <td>@include('admin.partials.fixture-mini', ['match' => $match]) @if($finished)<span style="color:var(--dim);font-size:.72rem;margin-left:.35rem;">({{ $match->home_score }}:{{ $match->away_score }})</span>@endif</td>
                 <td style="color:var(--dim);font-size:.74rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ \App\Support\LeagueCoverage::formatName($match?->league, $match?->league_country) }}</td>
                 <td style="color:#a5f3fc;font-weight:700;white-space:nowrap;">{{ $card['label'] }} @if($card['european_start'])<small style="color:var(--dim);">({{ $card['european_start'] }} · {{ $card['european_selection'] }})</small>@endif</td>
                 <td style="color:#67e8f9;font-weight:800;">{{ $card['probability'] }}%</td>
-                <td style="color:var(--dim);font-size:.74rem;white-space:nowrap;">{{ $match?->match_time?->timezone('Africa/Lagos')->format('H:i') ?? '—' }}</td>
+                <td style="color:var(--dim);font-size:.74rem;white-space:nowrap;">{{ $match?->match_time?->timezone('Africa/Lagos')->format('H:i') ?? 'N/A' }}</td>
                 <td style="min-width:170px;"><details><summary style="cursor:pointer;color:#a5f3fc;font-size:.72rem;font-weight:700;">View model reason</summary><div style="margin-top:.45rem;display:grid;gap:.35rem;">@forelse($card['reasons'] as $reason)<span style="font-size:.7rem;line-height:1.4;color:var(--dim);">• {{ $reason }}</span>@empty<span style="font-size:.7rem;color:var(--dim);">Exact market reached the 90% confidence gate.</span>@endforelse</div></details></td>
                 <td>@if($finished)<span class="badge {{ $result ? 'badge-green' : 'badge-red' }}">{{ $result ? '✓ Won' : '✗ Lost' }}</span>@elseif($match && in_array($match->status, ['1H','HT','2H','ET','BT','P','LIVE'], true))<span class="badge badge-red">🔴 Live</span>@else<span class="badge badge-gray">⏳ Pending</span>@endif</td>
             </tr>
@@ -71,7 +71,7 @@
                 $finished = $match && in_array($match->status, ['FT', 'AET', 'PEN'], true) && $match->home_score !== null;
                 $result = $finished ? \App\Support\PickHelpers::resolveForMatch($match, $label) : null;
             @endphp
-            <tr><td style="color:var(--dim);font-size:.74rem;white-space:nowrap;">{{ $match?->match_time?->timezone('Africa/Lagos')->format('d M Y') ?? '—' }}</td><td>@include('admin.partials.fixture-mini', ['match' => $match])</td><td style="color:#a5f3fc;font-weight:700;">{{ $label }}</td><td style="color:var(--dim);">@if($finished){{ $match->home_score }}–{{ $match->away_score }}@else—@endif</td><td>@if($finished)<span class="badge {{ $result ? 'badge-green' : 'badge-red' }}">{{ $result ? '✓ Won' : '✗ Lost' }}</span>@else<span class="badge badge-gray">⏳ Pending</span>@endif</td></tr>
+            <tr><td style="color:var(--dim);font-size:.74rem;white-space:nowrap;">{{ $match?->match_time?->timezone('Africa/Lagos')->format('d M Y') ?? 'N/A' }}</td><td>@include('admin.partials.fixture-mini', ['match' => $match])</td><td style="color:#a5f3fc;font-weight:700;">{{ $label }}</td><td style="color:var(--dim);">@if($finished){{ $match->home_score }}:{{ $match->away_score }}@else N/A @endif</td><td>@if($finished)<span class="badge {{ $result ? 'badge-green' : 'badge-red' }}">{{ $result ? '✓ Won' : '✗ Lost' }}</span>@else<span class="badge badge-gray">⏳ Pending</span>@endif</td></tr>
         @endforeach
         </tbody></table></div>
     @endif

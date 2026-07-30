@@ -6,6 +6,7 @@ use App\Models\FootballMatch;
 use App\Models\Prediction;
 use App\Services\PublicationQualityRevalidator;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,11 +22,13 @@ class PublicationQualityRevalidatorTest extends TestCase
         // a fixed clock this test crosses midnight after 21:00 WAT and the
         // revalidator correctly excludes it from its "today" query.
         Carbon::setTestNow(Carbon::parse('2026-07-29 12:00:00', 'Africa/Lagos'));
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-07-29 12:00:00', 'Africa/Lagos'));
     }
 
     protected function tearDown(): void
     {
         Carbon::setTestNow();
+        CarbonImmutable::setTestNow();
 
         parent::tearDown();
     }

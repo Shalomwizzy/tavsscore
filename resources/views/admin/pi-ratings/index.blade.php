@@ -24,7 +24,7 @@
 {{-- Top Overall --}}
 <div class="a-card" style="margin-bottom:1.25rem;">
     <div style="font-weight:700;font-size:.88rem;color:#fff;margin-bottom:.875rem;">
-        🏆 Top 50 Teams — Overall Rating
+        🏆 Top 50 Teams, Overall Rating
         <span style="font-size:.68rem;color:var(--dim);font-weight:400;margin-left:.5rem;">(average of home + away pi-rating)</span>
     </div>
     @if($topOverall->isEmpty())
@@ -59,7 +59,7 @@
                     <td style="color:var(--dim);">{{ number_format($r->pi_away, 3) }}</td>
                     <td style="color:var(--dim);">{{ $r->matches_rated }}</td>
                     <td style="color:var(--dim);font-size:.72rem;">
-                        {{ $r->last_match_at ? \Carbon\Carbon::parse($r->last_match_at)->diffForHumans() : '—' }}
+                        {{ $r->last_match_at ? \Carbon\Carbon::parse($r->last_match_at)->diffForHumans() : 'N/A' }}
                     </td>
                 </tr>
                 @endforeach
@@ -74,7 +74,7 @@
 
     {{-- Top Home --}}
     <div class="a-card">
-        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.75rem;">🏠 Top 20 — Home π</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.75rem;">🏠 Top 20, Home π</div>
         <table class="a-table" style="font-size:.78rem;">
             <thead>
                 <tr><th>#</th><th>Team</th><th>Home π</th><th>Matches</th></tr>
@@ -94,7 +94,7 @@
 
     {{-- Top Away --}}
     <div class="a-card">
-        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.75rem;">✈️ Top 20 — Away π</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.75rem;">✈️ Top 20, Away π</div>
         <table class="a-table" style="font-size:.78rem;">
             <thead>
                 <tr><th>#</th><th>Team</th><th>Away π</th><th>Matches</th></tr>
@@ -120,7 +120,7 @@
     Each team has a separate <em>home</em> and <em>away</em> rating. After every completed match, the rating is updated based on the actual vs expected goal-difference.
     K-factor = 0.075 · max goal-diff capped at 4.
     Positive ratings = team performs above average; negative = below.
-    Source: Constantinou &amp; Fenton (2012) — pi-ratings outperform Elo for football prediction.
+    Source: Constantinou &amp; Fenton (2012), pi-ratings outperform Elo for football prediction.
 </div>
 
 @endsection

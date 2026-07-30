@@ -163,7 +163,7 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -238,7 +238,7 @@
                             <td>
                                 @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
-                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                                 @endif
                             </td>
                             <td style="color:#93c5fd; font-weight:700; white-space:nowrap;">{{ $pick->predicted_outcome ?? '-' }}</td>
@@ -303,7 +303,7 @@
                     </td>
                     <td>
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span class="badge badge-gray">FT {{ $m->home_score }}–{{ $m->away_score }}</span>
+                            <span class="badge badge-gray">FT {{ $m->home_score }}:{{ $m->away_score }}</span>
                         @elseif($m && in_array($m->status, ['1H','HT','2H','ET','BT','P']))
                             <span class="badge" style="background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3);">🔴 LIVE</span>
                         @else
@@ -359,7 +359,7 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -373,7 +373,7 @@
                         @if(($tips[0]['gemini_agrees'] ?? null) === true)
                             <span class="badge badge-green">✅ All 3 agreed</span>
                         @else
-                            <span class="badge badge-gray">—</span>
+                            <span class="badge badge-gray"></span>
                         @endif
                     </td>
                     <td>
@@ -435,7 +435,7 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -450,7 +450,7 @@
                         @if(($tips[0]['gemini_agrees'] ?? null) === true)
                             <span class="badge badge-green">✅ All 3 agreed</span>
                         @else
-                            <span class="badge badge-gray">—</span>
+                            <span class="badge badge-gray"></span>
                         @endif
                     </td>
                     <td>

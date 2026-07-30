@@ -119,7 +119,8 @@
 
         /* Never allow browser-default blue / underlined links to leak into the UI.
            Components that need an accent define their own colour explicitly. */
-        a:not([class]), a:not([class]):visited { color:inherit; text-decoration-color:currentColor; }
+        a, a:visited { text-decoration:none !important; }
+        a:not([class]), a:not([class]):visited { color:inherit; }
         a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline:2px solid #6ee7b7; outline-offset:3px; }
 
         /* ── Topnav ── */
@@ -614,7 +615,7 @@
             .footer-grid { grid-template-columns: 1fr !important; }
         }
 
-        /* ── Mobile nav — handled by drawer in navbar.blade.php ── */
+        /* ── Mobile nav, handled by drawer in navbar.blade.php ── */
         @media (max-width: 960px) {
             .nav-toggle { display: flex; }
             .nav-links  { display: none !important; }
@@ -626,7 +627,7 @@
     {{-- Global mobile overrides: placed after @stack so they win cascade over view-specific CSS --}}
     <style>
     /* Media can never exceed its container; iframes/embeds included.
-       height:auto only on img — svg icons rely on their height attribute. */
+       height:auto only on img, svg icons rely on their height attribute. */
     img { max-width: 100%; height: auto; }
     svg, video, iframe { max-width: 100%; }
     /* Any .wrap child that overflows scrolls internally instead of pushing
@@ -815,8 +816,8 @@
             <div style="font-size:.67rem; color:var(--text-muted); margin-top:.3rem;">Scores &amp; data powered by API-Football.</div>
             <div style="font-size:.65rem; color:var(--text-muted); margin-top:.4rem; line-height:1.6;">
                 🔞 18+ only &middot; For entertainment purposes only &middot; Not financial or betting advice &middot; Never stake money you cannot afford to lose.
-                <a href="{{ route('terms') }}" style="color:inherit; text-decoration:underline; margin-left:.3rem;">Terms</a> &middot;
-                <a href="{{ route('privacy') }}" style="color:inherit; text-decoration:underline;">Privacy</a>
+                <a href="{{ route('terms') }}" style="color:inherit; text-decoration:none; margin-left:.3rem;">Terms</a> &middot;
+                <a href="{{ route('privacy') }}" style="color:inherit; text-decoration:none;">Privacy</a>
             </div>
         </div>
     </footer>
@@ -986,7 +987,7 @@ function declineCookies() {
             });
         });
 
-        // OneSignal handles its own service worker — do not register a competing sw.js
+        // OneSignal handles its own service worker, do not register a competing sw.js
     </script>
 </body>
 </html>

@@ -66,16 +66,16 @@
         <tbody>
             @forelse($standings as $s)
             <tr>
-                <td>{{ $s->rank ?? '—' }}</td>
+                <td>{{ $s->rank ?? 'N/A' }}</td>
                 <td style="font-weight:600;">{{ $s->team_name }}</td>
                 <td>{{ $s->played }}</td><td>{{ $s->win }}</td><td>{{ $s->draw }}</td><td>{{ $s->lose }}</td>
                 <td>{{ $s->goals_for }}</td><td>{{ $s->goals_against }}</td>
                 <td>{{ $s->goals_diff > 0 ? '+' : '' }}{{ $s->goals_diff }}</td>
                 <td style="font-weight:800; color:#fff;">{{ $s->points }}</td>
-                <td style="font-size:.7rem;">{{ $s->form ? substr($s->form, -5) : '—' }}</td>
+                <td style="font-size:.7rem;">{{ $s->form ? substr($s->form, -5) : 'N/A' }}</td>
             </tr>
             @empty
-            <tr><td colspan="11" style="text-align:center; color:var(--dim); padding:1.5rem;">No standings for this league yet — use “Fetch Standings”.</td></tr>
+            <tr><td colspan="11" style="text-align:center; color:var(--dim); padding:1.5rem;">No standings for this league yet, use “Fetch Standings”.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -93,11 +93,11 @@
                 <td>{{ $t->played_total }}</td>
                 <td>{{ $t->wins_total }}-{{ $t->draws_total }}-{{ $t->loses_total }}</td>
                 <td>{{ $t->goals_for_total }}</td><td>{{ $t->goals_against_total }}</td>
-                <td>{{ $t->goals_for_avg ?? '—' }}</td><td>{{ $t->goals_against_avg ?? '—' }}</td>
+                <td>{{ $t->goals_for_avg ?? 'N/A' }}</td><td>{{ $t->goals_against_avg ?? 'N/A' }}</td>
                 <td>{{ $t->clean_sheets_total }}</td><td>{{ $t->failed_to_score_total }}</td>
             </tr>
             @empty
-            <tr><td colspan="9" style="text-align:center; color:var(--dim); padding:1.5rem;">No team stats for this league yet — use “Fetch Team Stats”.</td></tr>
+            <tr><td colspan="9" style="text-align:center; color:var(--dim); padding:1.5rem;">No team stats for this league yet, use “Fetch Team Stats”.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -114,13 +114,13 @@
                 <td>{{ $i + 1 }}</td>
                 <td style="font-weight:600;">{{ $p->player_name }}</td>
                 <td>{{ $p->team_name }}</td>
-                <td>{{ $p->position ?? '—' }}</td>
+                <td>{{ $p->position ?? 'N/A' }}</td>
                 <td style="font-weight:800; color:#fff;">{{ $p->goals }}</td>
                 <td>{{ $p->assists }}</td><td>{{ $p->appearances }}</td><td>{{ $p->minutes }}</td>
-                <td>{{ $p->rating ? number_format($p->rating, 2) : '—' }}</td>
+                <td>{{ $p->rating ? number_format($p->rating, 2) : 'N/A' }}</td>
             </tr>
             @empty
-            <tr><td colspan="9" style="text-align:center; color:var(--dim); padding:1.5rem;">No player stats for this league yet — use “Fetch Player Stats”.</td></tr>
+            <tr><td colspan="9" style="text-align:center; color:var(--dim); padding:1.5rem;">No player stats for this league yet, use “Fetch Player Stats”.</td></tr>
             @endforelse
         </tbody>
     </table>

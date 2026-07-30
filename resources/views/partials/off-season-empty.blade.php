@@ -3,7 +3,7 @@
     <div style="font-size:3rem; margin-bottom:1rem;">🌱</div>
     <div style="font-size:1.25rem; font-weight:800; color:#fff; margin-bottom:.5rem;">Top leagues are between seasons</div>
     <p style="font-size:.88rem; color:var(--text-dim); line-height:1.7; max-width:34rem; margin:0 auto;">
-        No fixtures from our covered leagues are scheduled today — most of Europe is still in pre-season.
+        No fixtures from our covered leagues are scheduled today, most of Europe is still in pre-season.
         @if(!empty($resumeDate))
             Regular predictions resume <strong style="color:var(--text);">{{ $resumeDate }}</strong>.
         @else

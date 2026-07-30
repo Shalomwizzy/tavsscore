@@ -1,7 +1,7 @@
 {{-- Compact, single-row admin pagination --}}
 <div class="pg-wrap">
     <span class="pg-meta">
-        Showing <strong>{{ $paginator->firstItem() }}–{{ $paginator->lastItem() }}</strong>
+        Showing <strong>{{ $paginator->firstItem() }}:{{ $paginator->lastItem() }}</strong>
         of <strong>{{ number_format($paginator->total()) }}</strong>
     </span>
 

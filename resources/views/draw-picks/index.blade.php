@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', "Today's Draw Picks – Triple AI Verified | TavsScore")
+@section('title', "Today's Draw Picks, Triple AI Verified | TavsScore")
 @section('meta_description', 'Free daily draw predictions where all three independent AI engines agree on a draw. Only the strongest draw picks make the cut. Triple-validated, published every morning.')
 @section('og_title', "Today's Draw Picks: Triple AI Agreed")
 @section('og_description', 'Three independent AI engines must all predict a draw for a pick to appear here. Free daily draw predictions from TavsScore.')
@@ -155,7 +155,7 @@
         <div class="picks-eyebrow">🤝 Draw Picks</div>
         <h1 class="picks-title">
             @if($dateMeta['is_today'])Today's <span class="accent">Draw Picks</span>
-            @else<span class="accent">Draw Picks</span> — {{ $dateMeta['pretty'] }}
+            @else<span class="accent">Draw Picks</span>, {{ $dateMeta['pretty'] }}
             @endif
         </h1>
         <p class="picks-subtitle">

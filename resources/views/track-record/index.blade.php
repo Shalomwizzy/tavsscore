@@ -130,14 +130,14 @@
             <span style="color:var(--text-dim); font-size:.72rem;">New statistical engine · shipped {{ optional($dc['last_fit'])->format('M Y') ?? 'recently' }}</span>
         </div>
         <h2 class="tr-dc-title">
-            The Dixon-Coles engine — proven on {{ number_format($dc['total_n']) }} backtested matches
+            The Dixon-Coles engine, proven on {{ number_format($dc['total_n']) }} backtested matches
         </h2>
         <p class="tr-dc-desc">
             Home / Draw / Away predictions are now powered by a bivariate Poisson statistical model, refit weekly
-            per league from the last {{ $dc['leagues_fit'] > 0 ? '5 seasons' : 'several seasons' }} of results. We validated it walk-forward — training on data
+            per league from the last {{ $dc['leagues_fit'] > 0 ? '5 seasons' : 'several seasons' }} of results. We validated it walk-forward, training on data
             strictly before each match, predicting the outcome, then measuring against what actually happened.
             <strong style="color:#fff;">Average hit rate {{ number_format($dc['dc_avg_hr'] * 100, 1) }}%</strong>
-            vs {{ number_format($dc['naive_avg_hr'] * 100, 1) }}% for a naive baseline —
+            vs {{ number_format($dc['naive_avg_hr'] * 100, 1) }}% for a naive baseline
             <strong style="color:#6ee7b7;">+{{ number_format(($dc['dc_avg_hr'] - $dc['naive_avg_hr']) * 100, 1) }}pp</strong> better across all 9 top European leagues.
         </p>
 
@@ -168,7 +168,7 @@
         </div>
 
         <div class="tr-dc-method">
-            <strong style="color:#fff;">Methodology:</strong> monthly walk-forward — refit on all data strictly before each month, predict every match in that month, measure against real results. No cherry-picking, no data leakage. Baseline = per-league historical Home/Draw/Away frequency. Full drill-down available to admin at <code>/admin/model-metrics</code>. Every live prediction is logged, and live performance is measured continuously against the backtest expectations.
+            <strong style="color:#fff;">Methodology:</strong> monthly walk-forward, refit on all data strictly before each month, predict every match in that month, measure against real results. No cherry-picking, no data leakage. Baseline = per-league historical Home/Draw/Away frequency. Full drill-down available to admin at <code>/admin/model-metrics</code>. Every live prediction is logged, and live performance is measured continuously against the backtest expectations.
         </div>
     </div>
     @endif
@@ -190,7 +190,7 @@
         <div class="tr-stat">
             <div class="tr-stat-lbl">Overall Accuracy</div>
             <div class="tr-stat-val {{ $overall !== null ? ($overall >= 55 ? 'tr-stat-green' : ($overall >= 45 ? 'tr-stat-amber' : 'tr-stat-red')) : '' }}">
-                {{ $overall !== null ? $overall . '%' : '—' }}
+                {{ $overall !== null ? $overall . '%' : 'N/A' }}
             </div>
             <div class="tr-stat-sub">{{ $correct }} correct of {{ $total }}</div>
         </div>
@@ -275,13 +275,13 @@
                     </div>
                 </div>
                 <div class="tr-month-pct {{ $m['pct'] !== null ? $pctClass : '' }}">
-                    {{ $m['pct'] !== null ? $m['pct'] . '%' : '—' }}
+                    {{ $m['pct'] !== null ? $m['pct'] . '%' : 'N/A' }}
                 </div>
                 <div class="tr-month-cnt">{{ $m['total'] }} pick{{ $m['total'] !== 1 ? 's' : '' }}</div>
             </div>
             @endforeach
         </div>
-        <p style="font-size:.67rem;color:var(--text-dim);margin-top:.75rem;">Green = ≥ 60% · Amber = 50–59% · Red = &lt; 50% · Minimum 5 picks to qualify as representative.</p>
+        <p style="font-size:.67rem;color:var(--text-dim);margin-top:.75rem;">Green = ≥ 60% · Amber = 50 to 59% · Red = &lt; 50% · Minimum 5 picks to qualify as representative.</p>
         @endif
     </div>
 
@@ -307,7 +307,7 @@
                 <div class="tr-bar-bg">
                     <div class="tr-bar-fill {{ $barClass }}" style="width:{{ min(100, $barPct) }}%"></div>
                 </div>
-                <div class="tr-calib-pct">{{ $b['pct'] !== null ? $b['pct'] . '%' : '—' }}</div>
+                <div class="tr-calib-pct">{{ $b['pct'] !== null ? $b['pct'] . '%' : 'N/A' }}</div>
                 <div class="tr-calib-gap {{ $gapClass }}">
                     @if($b['gap'] !== null)
                         {{ $b['gap'] > 0 ? '+' : '' }}{{ $b['gap'] }}pp gap
@@ -341,7 +341,7 @@
         <div class="tr-snap-timeline">
             @foreach($snapshots as $snap)
             @php
-                $errStr  = $snap->calibration_error_avg !== null ? round($snap->calibration_error_avg, 1) . 'pp' : '—';
+                $errStr  = $snap->calibration_error_avg !== null ? round($snap->calibration_error_avg, 1) . 'pp' : 'N/A';
                 $errSign = (float)($snap->calibration_error_avg ?? 0) >= 0 ? '+' : '';
             @endphp
             <div class="tr-snap-row">

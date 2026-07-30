@@ -30,7 +30,7 @@
 
 <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(59,130,246,.10),rgba(59,130,246,.04));border-color:rgba(59,130,246,.25);">
-        <span class="stat-val" style="color:#93c5fd;">@if($accuracy !== null){{ $accuracy }}%@else—@endif</span>
+        <span class="stat-val" style="color:#93c5fd;">@if($accuracy !== null){{ $accuracy }}%@else N/A @endif</span>
         <span class="stat-lbl">🎯 All-time accuracy</span>
     </div>
     <div class="stat-card">
@@ -93,14 +93,14 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {{ \App\Support\LeagueCoverage::formatName($m?->league, $m?->league_country) }}
                     </td>
                     <td style="font-weight:700; color:#93c5fd; white-space:nowrap;">
-                        {{ $label }} — {{ $desc }}
+                        {{ $label }}, {{ $desc }}
                     </td>
                     <td style="font-weight:700; color:{{ $label === '1X' ? '#93c5fd' : 'var(--dim)' }};">{{ $dc1x }}%</td>
                     <td style="font-weight:700; color:{{ $label === '2X' ? '#93c5fd' : 'var(--dim)' }};">{{ $dc2x }}%</td>
@@ -153,7 +153,7 @@
                             <td>
                                 @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
-                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                                 @endif
                             </td>
                             <td style="color:#93c5fd; font-weight:700;">{{ $label }}</td>

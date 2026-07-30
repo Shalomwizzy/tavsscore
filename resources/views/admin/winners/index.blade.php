@@ -92,10 +92,10 @@
                             @endif
                         @endif
                     </div>
-                    {{-- Email — always shown, copyable --}}
+                    {{-- Email, always shown, copyable --}}
                     <div style="display:flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:6px; padding:.3rem .5rem; margin-bottom:.4rem;">
                         <span style="font-size:.7rem; color:#7dd3fc; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            ✉ {{ $win->email ?? '—' }}
+                            ✉ {{ $win->email ?? 'N/A' }}
                         </span>
                         @if($win->email)
                         <button onclick="navigator.clipboard.writeText('{{ $win->email }}').then(()=>this.textContent='✓').catch(()=>{})" title="Copy email"
@@ -242,16 +242,16 @@
                         @if($s->email)
                             <span style="color:#7dd3fc; cursor:pointer;" onclick="navigator.clipboard.writeText('{{ $s->email }}')" title="Click to copy">{{ $s->email }}</span>
                         @else
-                            <span style="color:rgba(255,255,255,.2);">—</span>
+                            <span style="color:rgba(255,255,255,.2);"></span>
                         @endif
                     </td>
-                    <td style="color:var(--dim);">{{ $s->match_details ?: '—' }}</td>
-                    <td style="color:var(--dim);">{{ $s->platform ?: '—' }}</td>
+                    <td style="color:var(--dim);">{{ $s->match_details ?: 'N/A' }}</td>
+                    <td style="color:var(--dim);">{{ $s->platform ?: 'N/A' }}</td>
                     <td style="color:#10b981; font-weight:600;">
                         @if($s->winning_amount)
                             {{ $s->currency }} {{ number_format($s->winning_amount, 0) }}
                         @else
-                            <span style="color:rgba(255,255,255,.2);">—</span>
+                            <span style="color:rgba(255,255,255,.2);"></span>
                         @endif
                     </td>
                     <td>

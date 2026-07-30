@@ -25,7 +25,7 @@
 
 <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-bottom:1.25rem;">
     <div class="stat-card" style="background:linear-gradient(135deg,rgba(220,38,38,.10),rgba(220,38,38,.04));border-color:rgba(220,38,38,.25);">
-        <span class="stat-val" style="color:#fca5a5;">@if($accuracy !== null){{ $accuracy }}%@else—@endif</span>
+        <span class="stat-val" style="color:#fca5a5;">@if($accuracy !== null){{ $accuracy }}%@else N/A @endif</span>
         <span class="stat-lbl">🎯 All-time accuracy</span>
     </div>
     <div class="stat-card">
@@ -92,7 +92,7 @@
                     <td>
                         @include('admin.partials.fixture-mini', ['match' => $m])
                         @if($m && in_array($m->status, ['FT','AET','PEN']))
-                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                            <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                         @endif
                     </td>
                     <td style="color:var(--dim); font-size:.74rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -167,7 +167,7 @@
                             <td>
                                 @include('admin.partials.fixture-mini', ['match' => $m])
                                 @if($m && in_array($m->status, ['FT','AET','PEN']))
-                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}–{{ $m->away_score }})</span>
+                                    <span style="color:var(--dim); font-size:.72rem; margin-left:.4rem;">({{ $m->home_score }}:{{ $m->away_score }})</span>
                                 @endif
                             </td>
                             <td style="color:#fca5a5; font-weight:700;">🚫 {{ $noTeam }} {{ $market }} NO</td>

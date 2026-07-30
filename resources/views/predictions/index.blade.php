@@ -392,9 +392,9 @@
                 </div>
             </div>
             <div class="pred-health" aria-label="Prediction summary">
-                <div class="pred-health-card"><div class="pred-health-value" id="metric-total">—</div><div class="pred-health-label">Signals today</div></div>
-                <div class="pred-health-card"><div class="pred-health-value" id="metric-high" style="color:#6ee7b7">—</div><div class="pred-health-label">High confidence</div></div>
-                <div class="pred-health-card"><div class="pred-health-value" id="metric-resolved" style="color:#6ee7b7">—</div><div class="pred-health-label">Results verified</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-total"></div><div class="pred-health-label">Signals today</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-high" style="color:#6ee7b7"></div><div class="pred-health-label">High confidence</div></div>
+                <div class="pred-health-card"><div class="pred-health-value" id="metric-resolved" style="color:#6ee7b7"></div><div class="pred-health-label">Results verified</div></div>
             </div>
         </div>
     </section>
@@ -604,14 +604,14 @@
         if (m.status && liveSet.indexOf(m.status) !== -1) {
             liveScore = ' · <span class="pc-live">'
                 + esc(m.home_score != null ? m.home_score : 0)
-                + '–'
+                + 'N/A'
                 + esc(m.away_score != null ? m.away_score : 0)
                 + ' ' + esc(m.display_status || m.status)
                 + '</span>';
         } else if (m.status && finishedSet.indexOf(m.status) !== -1 && m.home_score != null) {
             liveScore = ' · <span class="pc-ft">'
                 + esc(m.home_score)
-                + '–'
+                + 'N/A'
                 + esc(m.away_score != null ? m.away_score : 0)
                 + ' FT</span>';
         }
@@ -783,7 +783,7 @@
 
         var confidence = Math.round(Number(p.confidence || best.value || 0));
         var statusText = m.status && finishedSet.indexOf(m.status) !== -1
-            ? (m.home_score != null ? 'Final score: '+esc(m.home_score)+'–'+esc(m.away_score) : 'Final result')
+            ? (m.home_score != null ? 'Final score: '+esc(m.home_score)+':'+esc(m.away_score) : 'Final result')
             : (m.status && liveSet.indexOf(m.status) !== -1 ? 'Live now' : 'Upcoming match');
 
         return '<article class="signal-card fade-up">'

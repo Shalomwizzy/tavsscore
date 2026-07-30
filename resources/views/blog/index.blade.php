@@ -54,7 +54,7 @@
     <header class="news-hero">
         <div class="news-kicker">TavsScore editorial</div>
         <h1 class="news-title">Football stories worth staying for.</h1>
-        <p class="news-sub">Sharp previews, transfer context and match intelligence—built for supporters who want more than a headline.</p>
+        <p class="news-sub">Sharp previews, transfer context and match intelligencebuilt for supporters who want more than a headline.</p>
         <span class="news-count">{{ $posts->total() }} stories published</span>
     </header>
 

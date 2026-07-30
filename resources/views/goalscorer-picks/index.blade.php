@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Goalscorer Picks — Anytime Scorer Tips | TavsScore')
-@section('meta_description', "Today's most likely goalscorers — anytime scorer probabilities from each player's scoring rate and the opponent's defence.")
+@section('title', 'Goalscorer Picks, Anytime Scorer Tips | TavsScore')
+@section('meta_description', "Today's most likely goalscorers, anytime scorer probabilities from each player's scoring rate and the opponent's defence.")
 @section('og_title', 'Goalscorer Picks | TavsScore')
 
 @push('styles')
@@ -30,10 +30,10 @@
 @section('content')
 <div class="wrap gs-wrap">
     <h1 class="gs-title">⚽ Goalscorer Picks</h1>
-    <p class="gs-sub">Today's most likely anytime goalscorers — ranked by each player's scoring rate against the opponent's defence. {{ $date }}.</p>
+    <p class="gs-sub">Today's most likely anytime goalscorers, ranked by each player's scoring rate against the opponent's defence. {{ $date }}.</p>
 
     <div class="gs-note">
-        These are <strong>anytime scorer</strong> probabilities. Even elite strikers score in only ~50–60% of games, so these are higher-odds, higher-reward picks — not safe bankers. Bet responsibly.
+        These are <strong>anytime scorer</strong> probabilities. Even elite strikers score in only ~50 to 60% of games, so these are higher-odds, higher-reward picks, not safe bankers. Bet responsibly.
     </div>
 
     @if($picks->isEmpty())
