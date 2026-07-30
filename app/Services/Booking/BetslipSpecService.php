@@ -56,7 +56,7 @@ class BetslipSpecService
     // an ID would risk adding the wrong selection to a user's ticket.
     private const MIN_MIXED_MARKETS = 2;
 
-    public function __construct(private readonly BookingOutcomeLearningService $bookingLearning) {}
+    public function __construct(private readonly BookingOutcomeLearningService $bookingLearning, private readonly TennisBetslipSpecService $tennisSpecs) {}
 
     /**
      * Per-market tickets. Each entry: title, floor (min board prob %), and
@@ -140,6 +140,7 @@ class BetslipSpecService
 
         // ── High Risk: the model's confident calls stacked into a big-odds acca ──
         $slips[] = $this->buildHighRisk($preds);
+        $slips[] = $this->tennisSpecs->today(now($tz)->toDateString());
 
         $slips = $this->finalizeSlips($slips, $preds);
         $alreadyPublished = BookingCode::query()

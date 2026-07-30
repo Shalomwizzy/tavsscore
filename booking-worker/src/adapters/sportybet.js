@@ -16,6 +16,7 @@ const SHARE_PATH = '/api/ng/orders/share';
 // 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet, European Handicap,
 // Asian Handicap, Odd/Even
 const MARKET_IDS = '1,18,10,29,11,14,16,26';
+const TENNIS_MARKET_IDS = '1';
 const MAX_PAGES = 12;
 // All tickets in one worker run use the same upcoming-fixture board. Reusing
 // it avoids 12 SportyBet requests per ticket and prevents a late ticket (such
@@ -53,6 +54,8 @@ const MARKET_MAP = {
 
   'Total Goals Odd':        { marketId: '26', outcomeId: '70' },
   'Total Goals Even':       { marketId: '26', outcomeId: '72' },
+  'Player One Win':         { marketId: '1', outcomeId: '1' },
+  'Player Two Win':         { marketId: '1', outcomeId: '3' },
 };
 
 // European Handicap is dynamic: "European Handicap 0:2 - Away" →
@@ -82,7 +85,7 @@ export const sportybet = {
     if (!page.url().includes('sportybet.com')) {
       await page.goto(`${BASE}/ng/sport/football`, { waitUntil: 'domcontentloaded' }).catch(() => {});
     }
-    const events = await loadEvents(page);
+    const events = await loadEvents(page, slip.sport || 'football');
     if (!events.length) throw new Error('SportyBet returned no upcoming events');
 
     const selections = [];
@@ -118,7 +121,7 @@ export const sportybet = {
       }
 
       selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
-      booked.push({ match_id: leg.match_id ?? null, home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
+      booked.push({ match_id: leg.match_id ?? null, sport: leg.sport || slip.sport || 'football', home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
       combined *= odds;
 
       if (booked.length >= 3 && combined >= minOdds) break;
@@ -167,13 +170,16 @@ export const sportybet = {
 // SportyBet's in-page fetch wrapper (which rejects programmatic fetch()).
 const apiHeaders = { accept: 'application/json', referer: `${BASE}/ng/sport/football`, 'x-requested-with': 'XMLHttpRequest' };
 
-async function loadEvents(page) {
-  const cached = eventsByPage.get(page);
+async function loadEvents(page, sport = 'football') {
+  const cachedBySport = eventsByPage.get(page);
+  const cached = cachedBySport?.get(sport);
   if (cached) return cached;
 
   const all = [];
+  const sportId = sport === 'tennis' ? 'sr:sport:5' : 'sr:sport:1';
+  const marketIds = sport === 'tennis' ? TENNIS_MARKET_IDS : MARKET_IDS;
   for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
-    const url = `${BASE}${EVENTS_PATH}?sportId=sr:sport:1&marketId=${MARKET_IDS}&pageSize=100&pageNum=${pageNum}&option=1&_t=${Date.now()}`;
+    const url = `${BASE}${EVENTS_PATH}?sportId=${sportId}&marketId=${marketIds}&pageSize=100&pageNum=${pageNum}&option=1&_t=${Date.now()}`;
     const resp = await page.request.get(url, { headers: apiHeaders });
     if (!resp.ok()) break;
     const body = await resp.json().catch(() => null);
@@ -189,7 +195,11 @@ async function loadEvents(page) {
     const total = Number(body?.data?.totalNum || 0);
     if (total > 0 && pageNum * 100 >= total) break;
   }
-  if (all.length) eventsByPage.set(page, all);
+  if (all.length) {
+    const cache = cachedBySport || new Map();
+    cache.set(sport, all);
+    eventsByPage.set(page, cache);
+  }
   return all;
 }
 

@@ -114,7 +114,7 @@ async function run() {
           slip_ref: slip.ref,
           total_odds: result.total_odds || slip.est_total_odds || null,
           fixtures: (result.booked || legs).map((l) => ({
-            match_id: l.match_id ?? null,
+            match_id: l.sport === 'tennis' ? null : (l.match_id ?? null),
             match: `${l.home} vs ${l.away}`,
             market: l.market,
             model_prob: l.model_prob ?? null,

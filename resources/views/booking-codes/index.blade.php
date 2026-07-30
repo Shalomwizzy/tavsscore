@@ -83,7 +83,7 @@
                     $howTo = $howToMap[$slug] ?? $bc->platform . ' app → Booking Code';
                 @endphp
                 <article class="bc-card">
-                    <div class="bc-top"><div><div class="bc-platform">{{ $bc->platform }}</div><div class="bc-label">{{ $bc->note ?: ($bc->slip_ref ? str_replace('-', ' ', $bc->slip_ref) : 'Today\'s ticket') }}</div></div><div class="bc-odds">{{ number_format((float) $bc->total_odds, 2) }}<small>total odds</small></div></div>
+                    <div class="bc-top"><div><div class="bc-platform">{{ str_starts_with((string) $bc->slip_ref, 'tennis-') ? '🎾 Tennis · ' : '⚽ Football · ' }}{{ $bc->platform }}</div><div class="bc-label">{{ $bc->note ?: ($bc->slip_ref ? str_replace('-', ' ', $bc->slip_ref) : 'Today\'s ticket') }}</div></div><div class="bc-odds">{{ number_format((float) $bc->total_odds, 2) }}<small>total odds</small></div></div>
                     <div class="bc-code-box"><div class="bc-label">Booking code</div><div class="bc-code">{{ strtoupper($bc->code) }}</div></div>
                     <div class="bc-note">How to load: {{ $howTo }} → enter the code.</div>
                     <div class="bc-actions"><button type="button" class="bc-btn bc-copy" onclick="copyBookingCode('{{ strtoupper($bc->code) }}', this)">Copy code</button>@if($bc->link)<a class="bc-btn bc-load" href="{{ $bc->link }}" target="_blank" rel="noopener sponsored">Open ticket ↗</a>@elseif($affiliate)<a class="bc-btn bc-load" href="{{ $affiliate->register_url }}" target="_blank" rel="noopener sponsored">Open {{ $bc->platform }} ↗</a>@endif</div>
