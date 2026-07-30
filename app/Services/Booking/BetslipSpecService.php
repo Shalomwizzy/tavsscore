@@ -26,9 +26,9 @@ class BetslipSpecService
     private const MAX_LEGS       = 30;   // hard cap so we never blow past MAX_TOTAL_ODDS
 
     // High-Risk ticket: a deliberately risky long-shot accumulator. It must
-    // clear 20.00 live odds; anything lower belongs on a regular ticket.
+    // clear 15.00 live odds and can grow only to the 1,500.00 hard ceiling.
     private const HR_FLOOR     = 50.0;
-    private const MIN_HR_ODDS  = 20.0;
+    private const MIN_HR_ODDS  = 15.0;
     private const MAX_HR_ODDS  = 1500.0;
 
     /**
@@ -274,7 +274,7 @@ class BetslipSpecService
     /**
      * High-Risk ticket: one still-model-approved (≥50%) bookable call per game,
      * deliberately favouring the lower-confidence eligible line so the ticket
-     * can honestly reach its 20–1500 odds band. It is separate from the safe
+     * can honestly reach its 15–1500 odds band. It is separate from the safe
      * boards and must never borrow their near-certain selections.
      */
     private function buildHighRisk(Collection $preds): ?array
@@ -301,7 +301,9 @@ class BetslipSpecService
             if ($sel === null) continue;
             $selections[] = $sel;
             $combined *= $leg['odds'];
-            if ($combined >= self::MIN_HR_ODDS && count($selections) >= self::MIN_LEGS) break;
+            // Keep adding independent data-qualified legs while they remain
+            // below the 1,500 ceiling. High Risk should aim upward, not stop
+            // at the first minimum-odds threshold.
         }
 
         if ($combined < self::MIN_HR_ODDS || count($selections) < self::MIN_LEGS) {
@@ -539,6 +541,8 @@ class BetslipSpecService
             'match_id'   => $match->id,
             'home'       => $match->home_team,
             'away'       => $match->away_team,
+            'home_logo'  => $match->home_team_logo,
+            'away_logo'  => $match->away_team_logo,
             'home_norm'  => TeamNameNormalizer::key($match->home_team),
             'away_norm'  => TeamNameNormalizer::key($match->away_team),
             'league'     => $match->league,
