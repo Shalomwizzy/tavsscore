@@ -277,10 +277,11 @@
             $isHandicapMarkets = request()->routeIs('admin.handicap.*','admin.european-handicap.*');
             $isSpecialistPicks = request()->routeIs('admin.correct-score.*','admin.lineup-picks.*','admin.goalscorer-picks.*','admin.corners.*');
             $isRollover = request()->routeIs('admin.booking-code.*','admin.rollover.*');
-            $isData  = request()->routeIs('admin.matches','admin.predictions','admin.daily-football-predictions.*','admin.api-stats.*','admin.fantasy.*');
-            $isModel = request()->routeIs('admin.stats.*','admin.ai-learning.*','admin.shalom-ai.*','admin.pi-ratings.*','admin.model-metrics.*','admin.team-aliases.*');
+            $isData  = request()->routeIs('admin.matches','admin.predictions','admin.fantasy.*');
+            $isModel = request()->routeIs('admin.ai-learning.*','admin.shalom-ai.*','admin.pi-ratings.*','admin.team-aliases.*');
+            $isMoreDesk = request()->routeIs('admin.daily-football-predictions.*','admin.stats.*','admin.api-stats.*','admin.model-metrics.*','admin.winners.*');
             $isContent = request()->routeIs('admin.blog.*');
-            $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*','admin.winners.*');
+            $isEngage  = request()->routeIs('admin.newsletter.*','admin.broadcast.*');
             $isRevenue = request()->routeIs('admin.affiliate-links.*','admin.settings.*');
             $isHomepageMedia = request()->routeIs('admin.homepage-media.*');
         @endphp
@@ -355,8 +356,6 @@
                 <div class="sb-group-body">
                     <a href="{{ route('admin.matches') }}" class="sb-link {{ request()->routeIs('admin.matches') ? 'active' : '' }}"><span class="sb-icon">⚽</span> Matches</a>
                     <a href="{{ route('admin.predictions') }}" class="sb-link {{ request()->routeIs('admin.predictions') ? 'active' : '' }}"><span class="sb-icon">📈</span> Predictions</a>
-                    <a href="{{ route('admin.daily-football-predictions.index') }}" class="sb-link {{ request()->routeIs('admin.daily-football-predictions.*') ? 'active' : '' }}"><span class="sb-icon">📅</span> Daily Results</a>
-                    <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> API Stats</a>
                     <a href="{{ route('admin.fantasy.index') }}" class="sb-link {{ request()->routeIs('admin.fantasy.*') ? 'active' : '' }}"><span class="sb-icon">🏆</span> Fantasy XI</a>
                 </div>
             </details>
@@ -373,12 +372,21 @@
             <details class="sb-group" data-admin-group="model-accuracy" {{ $isModel ? 'open' : '' }}>
                 <summary><span>🧠 Model &amp; Accuracy</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
-                    <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Stats</a>
-                    <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Model Metrics</a>
                     <a href="{{ route('admin.ai-learning.index') }}" class="sb-link {{ request()->routeIs('admin.ai-learning.*') ? 'active' : '' }}"><span class="sb-icon">🧠</span> AI Learning</a>
                     <a href="{{ route('admin.shalom-ai.index') }}" class="sb-link {{ request()->routeIs('admin.shalom-ai.*') ? 'active' : '' }}"><span class="sb-icon">✦</span> Shalom AI Lab</a>
                     <a href="{{ route('admin.pi-ratings.index') }}" class="sb-link {{ request()->routeIs('admin.pi-ratings.*') ? 'active' : '' }}"><span class="sb-icon">⚡</span> Pi-Ratings</a>
                     <a href="{{ route('admin.team-aliases.index') }}" class="sb-link {{ request()->routeIs('admin.team-aliases.*') ? 'active' : '' }}"><span class="sb-icon">🏷️</span> Team Aliases</a>
+                </div>
+            </details>
+
+            <details class="sb-group" data-admin-group="more-proof" {{ $isMoreDesk ? 'open' : '' }}>
+                <summary><span>✨ More &amp; Proof</span><span class="sb-caret">▶</span></summary>
+                <div class="sb-group-body">
+                    <a href="{{ route('admin.daily-football-predictions.index') }}" class="sb-link {{ request()->routeIs('admin.daily-football-predictions.*') ? 'active' : '' }}"><span class="sb-icon">📅</span> Daily Results</a>
+                    <a href="{{ route('admin.stats.index') }}" class="sb-link {{ request()->routeIs('admin.stats.*') ? 'active' : '' }}"><span class="sb-icon">📊</span> Prediction Stats</a>
+                    <a href="{{ route('admin.model-metrics.index') }}" class="sb-link {{ request()->routeIs('admin.model-metrics.*') ? 'active' : '' }}"><span class="sb-icon">📈</span> Model Metrics</a>
+                    <a href="{{ route('admin.api-stats.index') }}" class="sb-link {{ request()->routeIs('admin.api-stats.*') ? 'active' : '' }}"><span class="sb-icon">⚽</span> League Data</a>
+                    <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}"><span class="sb-icon">🏆</span> Winners Wall</a>
                 </div>
             </details>
 
@@ -397,7 +405,6 @@
                 <div class="sb-group-body">
                     <a href="{{ route('admin.newsletter.index') }}" class="sb-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}"><span class="sb-icon">📬</span> Newsletter</a>
                     <a href="{{ route('admin.broadcast.index') }}" class="sb-link {{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}"><span class="sb-icon">📢</span> Broadcast</a>
-                    <a href="{{ route('admin.winners.index') }}" class="sb-link {{ request()->routeIs('admin.winners.*') ? 'active' : '' }}"><span class="sb-icon">🏆</span> Winners Wall</a>
                 </div>
             </details>
 

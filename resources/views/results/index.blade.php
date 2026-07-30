@@ -47,10 +47,11 @@
 
 @section('content')
 <div class="wrap">
-    <header class="res-hero">
-        <h1 class="res-title">📜 Results Archive</h1>
-        <p class="res-sub">Every daily pick from the last 14 days - verified, with the actual match score next to our prediction.</p>
-    </header>
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'Transparent settlement',
+        'moreTitle' => 'Results archive.',
+        'moreDescription' => 'Every published daily pick from the last 14 days, with the actual score and its verified outcome beside it.',
+    ])
 
     <div class="res-summary">
         <div class="res-tile">

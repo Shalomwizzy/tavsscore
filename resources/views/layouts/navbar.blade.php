@@ -113,12 +113,13 @@
             </a>
 
             {{-- More dropdown --}}
-            <div class="nav-drop {{ request()->routeIs('stats.index','track-record.index','results.index','daily-football-predictions.*','winners.*','hall-of-fame.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
+            <div class="nav-drop {{ request()->routeIs('stats.index','standings.index','top-scorers.index','track-record.index','results.index','daily-football-predictions.*','winners.*','hall-of-fame.*','about') ? 'nav-drop-active' : '' }}" id="drop-more">
                 <button class="nav-pill nav-drop-btn" aria-expanded="false" aria-haspopup="true">
                     More
                     <svg class="nav-caret" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M0 0l4 5 4-5z"/></svg>
                 </button>
-                <div class="nav-drop-menu" role="menu">
+                <div class="nav-drop-menu nav-more-menu" role="menu">
+                    <div class="np-head">Data &amp; form</div>
                     <a href="{{ route('stats.index') }}" class="nav-drop-item {{ request()->routeIs('stats.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📊</span>
                         <span><span class="ndi-label">Stats</span><span class="ndi-sub">AI accuracy & records</span></span>
@@ -131,6 +132,7 @@
                         <span class="ndi-icon">⚽</span>
                         <span><span class="ndi-label">Top Scorers</span><span class="ndi-sub">Goals & assist leaders</span></span>
                     </a>
+                    <div class="np-head">Transparency</div>
                     <a href="{{ route('track-record.index') }}" class="nav-drop-item {{ request()->routeIs('track-record.index') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">📈</span>
                         <span><span class="ndi-label">Track Record</span><span class="ndi-sub">Verified results over time</span></span>
@@ -144,6 +146,7 @@
                         <span><span class="ndi-label">Daily Results</span><span class="ndi-sub">Today's and yesterday's picks</span></span>
                     </a>
                     <div class="nav-drop-divider"></div>
+                    <div class="np-head">Community</div>
                     <a href="{{ route('winners.index') }}" class="nav-drop-item {{ request()->routeIs('winners.*') ? 'active' : '' }}" role="menuitem">
                         <span class="ndi-icon">🏆</span>
                         <span><span class="ndi-label">Winners</span><span class="ndi-sub">Submit your win</span></span>
@@ -423,6 +426,8 @@
 .nav-drop.open .nav-drop-menu { display: block; }
 .nav-drop.open .nav-picks-menu { display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:.3rem;padding:.55rem; }
 .nav-picks-menu { min-width:510px; }
+.nav-more-menu { min-width:250px; }
+.nav-drop.open .nav-more-menu { display:block; padding:.55rem; }
 .np-group { min-width:0;padding:.18rem; }
 .np-head { padding:.35rem .5rem .42rem;color:#8fa69a;font-size:.6rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase; }
 .np-group .nav-drop-item { padding:.5rem .55rem; }

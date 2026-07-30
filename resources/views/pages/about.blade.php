@@ -1,133 +1,96 @@
 @extends('layouts.app')
-@section('title', 'About TavsScore - AI Football Predictions After Confirmed Lineups')
-@section('meta_description', 'TavsScore uses triple-AI validation across Groq, Gemini, and Mistral to generate the most accurate football predictions online. Lineup picks, rollover challenge, 8 specialist markets, push alerts.')
+
+@section('title', 'About TavsScore - Football Intelligence, Built Transparently')
+@section('meta_description', 'Learn how TavsScore combines football data, statistical modelling and independent AI checks to publish transparent football predictions, live scores and analysis.')
 @section('canonical', route('about'))
 
+@push('styles')
+<style>
+    .about-page { max-width: 920px; padding-bottom: 3.2rem; }
+    .about-intro { display:grid; grid-template-columns: 1.3fr .7fr; gap:.75rem; margin-bottom:1rem; }
+    .about-intro-card { padding:1rem; border:1px solid var(--border); border-radius:14px; background:var(--card); }
+    .about-intro-card strong { display:block; color:#fff; font-size:1.05rem; letter-spacing:-.03em; }
+    .about-intro-card span { display:block; margin-top:.25rem; color:var(--text-dim); font-size:.71rem; line-height:1.5; }
+    .about-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+    .about-card { padding:1.15rem; border:1px solid var(--border); border-radius:15px; background:linear-gradient(145deg,var(--card),rgba(19,29,48,.7)); }
+    .about-card.wide { grid-column:1 / -1; }
+    .about-card-icon { display:grid; place-items:center; width:31px; height:31px; border-radius:9px; background:rgba(16,185,129,.11); font-size:.94rem; }
+    .about-card h2 { margin:.65rem 0 .42rem; color:#fff; font-size:.92rem; letter-spacing:-.02em; }
+    .about-card p { margin:0; color:var(--text-dim); font-size:.76rem; line-height:1.7; }
+    .about-card p + p { margin-top:.6rem; }
+    .about-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; margin-top:.75rem; }
+    .about-step { padding:.7rem; border:1px solid rgba(255,255,255,.07); border-radius:11px; background:rgba(8,13,26,.3); }
+    .about-step b { display:block; color:#6ee7b7; font-size:.61rem; letter-spacing:.08em; text-transform:uppercase; }
+    .about-step span { display:block; margin-top:.25rem; color:#dbeafe; font-size:.7rem; font-weight:750; line-height:1.35; }
+    .about-markets { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.7rem; }
+    .about-markets span { padding:.28rem .48rem; border:1px solid rgba(148,163,184,.18); border-radius:99px; color:#cbd5e1; background:rgba(255,255,255,.025); font-size:.63rem; font-weight:750; }
+    .about-note { display:flex; gap:.7rem; align-items:flex-start; margin-top:.75rem; padding:.85rem .95rem; border:1px solid rgba(251,113,133,.22); border-radius:12px; background:rgba(127,29,29,.1); color:#fecdd3; font-size:.72rem; line-height:1.58; }
+    .about-note strong { color:#fff; }
+    .about-cta { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.1rem; border:1px solid rgba(16,185,129,.24); border-radius:15px; background:linear-gradient(135deg,rgba(16,185,129,.13),rgba(14,116,144,.09)); }
+    .about-cta h2 { margin:0; color:#fff; font-size:.92rem; }.about-cta p { margin:.22rem 0 0; color:#a7f3d0; font-size:.71rem; }
+    @media(max-width:620px) { .about-intro,.about-grid,.about-steps { grid-template-columns:1fr; }.about-card.wide { grid-column:auto; }.about-cta { align-items:flex-start; flex-direction:column; } }
+</style>
+@endpush
+
 @section('content')
-<div class="wrap" style="max-width:740px; padding-top:2.5rem; padding-bottom:3rem;">
+<div class="wrap about-page">
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'About TavsScore',
+        'moreTitle' => 'Football intelligence, built in public.',
+        'moreDescription' => 'Live match context, statistical modelling and transparent records—made for fans who want more than a scoreline.',
+    ])
 
-    <nav style="font-size:.72rem; color:var(--text-dim); margin-bottom:1.75rem;">
-        <a href="{{ route('home.index') }}" style="color:var(--text-dim); text-decoration:none;">Home</a>
-        <span style="margin:0 .4rem; color:var(--text-muted)">›</span>
-        <span>About</span>
-    </nav>
+    <section class="about-intro">
+        <article class="about-intro-card"><strong>Built for football fans.</strong><span>We make the information behind a match easier to read: live scores, form, performance context and clearly labelled prediction signals.</span></article>
+        <article class="about-intro-card"><strong>Transparency first.</strong><span>Published picks are settled openly. Wins and losses both remain part of the record.</span></article>
+    </section>
 
-    <h1 style="font-size:2rem; font-weight:900; color:#fff; letter-spacing:-.03em; margin-bottom:.5rem;">About TavsScore</h1>
-    <p style="font-size:.95rem; color:var(--text-dim); line-height:1.7; margin-bottom:2.5rem;">Built by a football fan, for football fans. No corporate team, no VC money, just a serious love of the game and a belief that fans deserve better tools.</p>
+    <section class="about-grid">
+        <article class="about-card">
+            <span class="about-card-icon">⚽</span>
+            <h2>Live coverage that has context</h2>
+            <p>TavsScore covers major domestic competitions, UEFA tournaments and selected international football. Fixtures, scores, tables and player data are presented alongside the context that helps explain a match.</p>
+        </article>
+        <article class="about-card">
+            <span class="about-card-icon">🎾</span>
+            <h2>Football and Tennis, kept distinct</h2>
+            <p>Football and tennis use separate prediction boards and data workflows. This keeps the models, performance records and result checks honest for each sport.</p>
+        </article>
 
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Why we built this</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Most football apps are either a nightmare to load, buried in pop-ups, or give you scores three minutes late. We got frustrated with that. So we built TavsScore, fast, clean live scores with actually useful predictions, and real football writing that is not just copied from a press release.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            The name comes from the founder's handle. There is no boardroom behind this. Just a love of the game and a determination to build tools that are genuinely worth using.
-        </p>
-    </div>
+        <article class="about-card wide">
+            <span class="about-card-icon">✦</span>
+            <h2>How a prediction earns a place on the board</h2>
+            <p>A prediction starts with the available match data—not a guess. Statistical probabilities, recent performance, match context and independent model review are used to decide whether a signal is strong enough to publish. If the evidence is weak or stale, the correct result is no pick.</p>
+            <div class="about-steps">
+                <div class="about-step"><b>01 · Data</b><span>Fixtures, form, results and available team context are collected.</span></div>
+                <div class="about-step"><b>02 · Model</b><span>Statistical probabilities and model checks test the proposed outcome.</span></div>
+                <div class="about-step"><b>03 · Publish</b><span>Only qualified signals are shown, then settled against the final score.</span></div>
+            </div>
+        </article>
 
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Live scores and coverage</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Live scores and fixtures from the competitions that matter most, the Premier League, UEFA Champions League, La Liga, Serie A, Bundesliga, Ligue 1, Europa League, Conference League, and around 20 other top-flight competitions worldwide.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We pull real-time data from API-Football. Every score, kickoff time, and match status updates live, including minute-by-minute events for ongoing matches.
-        </p>
-    </div>
+        <article class="about-card">
+            <span class="about-card-icon">📈</span>
+            <h2>Specialist markets have separate rules</h2>
+            <p>Goal lines, double chance, handicap, corners, draw picks, lineups and correct score are not treated as the same type of forecast. Each board has its own qualification and grading logic.</p>
+            <div class="about-markets"><span>Goals</span><span>Handicap</span><span>Corners</span><span>Lineups</span><span>Double chance</span><span>Correct score</span></div>
+        </article>
+        <article class="about-card">
+            <span class="about-card-icon">📜</span>
+            <h2>The record is part of the product</h2>
+            <p>Use the Daily Results, Results Archive and Track Record pages to see what was predicted and how it finished. Performance is useful only when the full sample—not selected wins—is visible.</p>
+        </article>
 
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">How our predictions actually work</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Each day we run up to 50 of the day's most important fixtures through a three-stage AI pipeline that we call triple validation.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            <strong style="color:#fff;">Stage 1, Poisson model.</strong> We calculate expected goals for both sides based on recent attack and defensive records. This produces statistically grounded baseline probabilities for the result, plus goal-line markets like Over 2.5 and both teams to score.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            <strong style="color:#fff;">Stage 2, Groq LLaMA.</strong> The baseline is handed to a large language model running on Groq's infrastructure. It layers in form, head-to-head history, squad strength, and match stakes, then produces a first prediction with rationale.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            <strong style="color:#fff;">Stage 3, Gemini + Mistral cross-check.</strong> The Groq prediction is sent to both Google Gemini and Mistral AI independently. If all three agree, that prediction goes out with high confidence. If they disagree, the prediction is flagged or held back.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            Three AI models, independently validated, before anything reaches you. That is why our confidence scores are meaningful rather than made up.
-        </p>
-    </div>
+        <article class="about-card wide">
+            <span class="about-card-icon">📰</span>
+            <h2>Football news with something to add</h2>
+            <p>Our newsroom covers transfer developments, club news, match build-up and football stories with useful context. Articles are quality-checked for clarity, accuracy and original value before publication.</p>
+            <div class="about-note"><span>⚠</span><span><strong>Predictions are informational and for entertainment only.</strong> Football is unpredictable. A confidence figure or a past record is not a guarantee, and nothing on TavsScore is a promise of profit or a reason to risk money.</span></div>
+        </article>
+    </section>
 
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Lineup Picks, our most accurate predictions</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            The moment a club's official starting 11 is confirmed, usually 60 to 75 minutes before kickoff, our AI re-runs the full analysis with the actual squad data. These are the Lineup Picks, and they are consistently more accurate than the midnight predictions because they account for who is actually playing.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            Up to 10 Lineup Picks per day appear on a dedicated page, updated in real time as lineups are confirmed throughout the day. Past picks show the final result and whether the prediction was correct.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">8 specialist pick markets</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Beyond the main predictions, TavsScore publishes up to 10 specialist picks per market each day. Every market has its own dedicated page with calendar history so you can browse results from any previous date.
-        </p>
-        <ul style="font-size:.88rem; color:var(--text-dim); line-height:1.85; padding-left:1.5rem;">
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Draw Picks</strong>, matches where a draw is the statistically strongest outcome</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">GG Picks (Both Teams to Score)</strong>, matches where both sides are expected to find the net</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Lineup Picks</strong>, confirmed-lineup AI re-analysis, highest accuracy</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Over 1.5 Goals</strong>, matches very likely to produce at least two goals</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Over 2.5 Goals</strong>, higher-scoring matches with three or more goals expected</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Double Chance</strong>, picks covering two outcomes for additional security</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Correct Score</strong>, specific scoreline predictions with percentage likelihood</li>
-            <li style="margin-bottom:.4rem;"><strong style="color:var(--text);">Team Goals 3+</strong>, matches where one team is likely to score three or more</li>
-        </ul>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-top:.875rem;">
-            All picks are verified against actual results after each match finishes, so you can see the track record on any date you browse.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">The Rollover Challenge</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            The Rollover Challenge is a 10-day hypothetical accumulator that starts with a set stake and compounds the returns day by day. Each day the AI selects one pick across the 10 days, and the running total is tracked publicly so you can follow along.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            This is an entertainment feature, the stake amounts are illustrative, not a prompt to bet. It is a way of showing how a disciplined selection process performs over a sustained period, rather than cherry-picking individual wins.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Push notifications and Telegram</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            When Lineup Picks are confirmed for the day, we send a push notification to everyone subscribed through the site. You can opt in with one tap and opt out just as easily, no account required.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We also publish picks, match alerts, and Rollover updates to our Telegram channel. Both channels are free to follow.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">The blog</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:.875rem;">
-            Our blog covers match previews, tactical breakdowns, and the kind of football writing that explains the game rather than just reporting the score. Some articles are written by the editorial team; others are AI-assisted drafts that are reviewed before publishing. AI-generated articles are always labelled clearly.
-        </p>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            We write about what is interesting, not what is trending. If that means a deep-dive into pressing metrics when most sites are running transfer rumours, so be it.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem; margin-bottom:1.25rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">A word on predictions and gambling</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85;">
-            Our predictions are for entertainment and informational purposes only. We are not a betting tipster service and nothing on this site should be used as the basis for placing bets. Football is famously unpredictable, that is part of what makes it brilliant. Use our predictions to enjoy the game more, not to risk money.
-        </p>
-    </div>
-
-    <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.75rem;">
-        <h2 style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:.875rem;">Get in touch</h2>
-        <p style="font-size:.88rem; color:var(--text-dim); line-height:1.85; margin-bottom:1rem;">
-            Found a bug? Got a suggestion? Just want to talk football? We genuinely read every message.
-        </p>
-        <a href="{{ route('contact') }}" class="btn-ts btn-green" style="font-size:.82rem;">Send a message</a>
-    </div>
-
+    <section class="about-cta" style="margin-top:.8rem">
+        <div><h2>Found something we should improve?</h2><p>We read feedback, bug reports and football ideas.</p></div>
+        <a href="{{ route('contact') }}" class="btn-ts btn-green">Send a message →</a>
+    </section>
 </div>
 @endsection

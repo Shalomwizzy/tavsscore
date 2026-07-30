@@ -108,16 +108,11 @@
 
 @section('content')
 <div class="wrap">
-
-    {{-- Hero --}}
-    <div class="tr-hero">
-        <div class="tr-badge">📈 VERIFIED TRACK RECORD</div>
-        <h1 class="tr-title">Our AI Picks: The Real Results</h1>
-        <p class="tr-sub">
-            No cherry-picking. No spin. Every daily pick we've ever made is tracked, resolved, and shown below exactly as it happened.
-            The system learns from every result to get stricter and sharper over time.
-        </p>
-    </div>
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'Verified track record',
+        'moreTitle' => 'The real results, with no cherry-picking.',
+        'moreDescription' => 'Every daily pick is tracked, resolved and kept visible. The model uses this history to become stricter as it learns.',
+    ])
 
     {{-- ══════════════════════════════════════════════════════════════
          DIXON-COLES 2.0 SHIP-GATE PROOF

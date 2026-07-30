@@ -48,8 +48,12 @@
 
 @section('content')
 <div class="wrap ts-wrap">
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'League intelligence',
+        'moreTitle' => $metric === 'assists' ? 'The creators shaping the league.' : 'The scorers shaping the league.',
+        'moreDescription' => 'Explore the players driving each competition, with the latest goal, assist, minutes and rating context in one place.',
+    ])
     <div class="ts-head">
-        <h1 class="ts-title">{{ $metric === 'assists' ? 'Assist Leaders' : 'Top Scorers' }}</h1>
         <p class="ts-sub">{{ $leagueName ? $leagueName.', '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
     </div>
 

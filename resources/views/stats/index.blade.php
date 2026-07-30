@@ -147,17 +147,13 @@
 
 @section('content')
 
-{{-- ── Hero ── --}}
-<section class="stats-hero">
-    <div class="wrap">
-        <div class="stats-eyebrow">📊 Full Transparency</div>
-        <h1 class="stats-title">Our Prediction Track Record</h1>
-        <p class="stats-subtitle">
-            Every result, published openly. No cherry-picking, no hidden losses.
-            This is exactly how our AI has performed on its daily picks.
-        </p>
-    </div>
-</section>
+<div class="wrap">
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'Independent performance record',
+        'moreTitle' => 'Prediction accuracy, shown openly.',
+        'moreDescription' => 'Every settled daily pick feeds this record. Review the evidence, the sample size and the market-by-market results before relying on any signal.',
+    ])
+</div>
 
 <div class="wrap" style="padding-top:2.5rem; padding-bottom:4rem;">
 

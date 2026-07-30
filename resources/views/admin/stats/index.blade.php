@@ -2,12 +2,20 @@
 @section('title', 'Prediction Stats')
 @section('page-title', 'Prediction Stats')
 
+@push('styles')
+<style>
+    .proof-hero { position:relative; overflow:hidden; display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1.15rem; margin-bottom:1rem; border:1px solid rgba(16,185,129,.24); border-radius:15px; background:radial-gradient(circle at 88% 5%,rgba(16,185,129,.18),transparent 28%),linear-gradient(125deg,#102238,#101928); }
+    .proof-hero::after { content:'PROOF'; position:absolute; right:-.2rem; bottom:-1.3rem; color:rgba(255,255,255,.035); font-size:5rem; font-weight:950; letter-spacing:-.09em; pointer-events:none; }.proof-hero > * { position:relative; z-index:1; }.proof-kicker { color:#86efac; font-size:.59rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }.proof-hero h1 { margin:.38rem 0 .26rem; color:#fff; font-size:1.3rem; letter-spacing:-.04em; }.proof-hero p { max-width:620px; margin:0; color:#cbd5e1; font-size:.72rem; line-height:1.55; }
+    @media(max-width:620px) { .proof-hero { display:block; }.proof-hero .btn-a { margin-top:.75rem; } }
+</style>
+@endpush
+
 @section('content')
 
-<div class="page-hd">
-    <span class="page-hd-title">📊 Prediction Statistics</span>
+<section class="proof-hero">
+    <div><div class="proof-kicker">More &amp; proof · performance control room</div><h1>Prediction statistics</h1><p>Review the full resolved sample, market accuracy and league performance before deciding whether a prediction board should keep its current publication standard.</p></div>
     <a href="{{ route('stats.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
-</div>
+</section>
 
 {{-- Overall accuracy --}}
 <div class="stat-grid" style="margin-bottom:1.25rem;">

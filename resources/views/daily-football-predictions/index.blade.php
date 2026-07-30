@@ -33,10 +33,11 @@
 
 @section('content')
 <div class="wrap">
-    <header class="dfp-head">
-        <h1 class="dfp-title">📅 Daily Football Predictions</h1>
-        <p class="dfp-sub">Every football prediction generated for the selected date, with its predicted outcome and verified result.</p>
-    </header>
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'Daily prediction ledger',
+        'moreTitle' => 'Every prediction for every day.',
+        'moreDescription' => 'Browse the full daily board—not only the winners—with the selected outcome and its verified result when the match finishes.',
+    ])
 
     <nav class="dfp-date" aria-label="Prediction date">
         <a href="{{ route('daily-football-predictions.index', ['date' => $meta['previous_iso']]) }}">← Previous</a>

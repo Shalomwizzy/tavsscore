@@ -62,11 +62,11 @@
 
 @section('content')
 <div class="wrap">
-
-    <div class="winners-header">
-        <h1 class="winners-title">🏆 Winners Wall</h1>
-        <p class="winners-sub">Real wins from real TavsScore users - verified and approved before publishing.</p>
-    </div>
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'TavsScore community',
+        'moreTitle' => 'Winners Wall.',
+        'moreDescription' => 'A community showcase of verified winning slips. Submit yours for review, then see it here once it is approved.',
+    ])
 
     @if(session('success'))
         <div style="background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; color:#6ee7b7; font-size:.85rem; font-weight:600;">

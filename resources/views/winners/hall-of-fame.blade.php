@@ -143,16 +143,11 @@
 
 @section('content')
 <div class="wrap">
-
-    {{-- Hero --}}
-    <div class="hof-hero">
-        <div class="hof-badge">🏆 HALL OF FAME</div>
-        <h1 class="hof-title">TavsScore Hall of Fame</h1>
-        <p class="hof-sub">
-            Real winners, verified slips. Every winning submission is reviewed by our team before it counts.
-            Cumulative total across all approved submissions per username.
-        </p>
-    </div>
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'TavsScore community',
+        'moreTitle' => 'Hall of Fame.',
+        'moreDescription' => 'Verified community wins, reviewed before they count. The leaderboard totals every approved submission for each member.',
+    ])
 
     @if($leaderboard->isEmpty())
     <div class="hof-empty">

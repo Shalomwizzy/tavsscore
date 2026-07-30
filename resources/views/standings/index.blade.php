@@ -56,8 +56,12 @@
 
 @section('content')
 <div class="wrap ls-wrap">
+    @include('partials.more-page-hero', [
+        'moreKicker' => 'League intelligence',
+        'moreTitle' => 'Tables, form and the season picture.',
+        'moreDescription' => 'Move from the headline score to the wider league context: position, goal difference and each team’s recent form.',
+    ])
     <div class="ls-head">
-        <h1 class="ls-title">League Standings</h1>
         <p class="ls-sub">{{ $leagueName ? $leagueName.', '.$season.'/'.($season + 1) : 'Season '.$season }}</p>
     </div>
 
