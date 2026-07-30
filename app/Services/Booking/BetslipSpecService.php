@@ -87,30 +87,6 @@ class BetslipSpecService
             },
         ];
 
-        $slips = $this->finalizeSlips($slips, $preds);
-        $alreadyPublished = BookingCode::query()
-            ->whereDate('pick_date', now($tz)->toDateString())
-            ->where('status', 'published')
-            ->whereNotNull('slip_ref')
-            ->get(['platform', 'slip_ref'])
-            ->groupBy('slip_ref')
-            ->map(fn (Collection $codes) => $codes
-                ->pluck('platform')
-                ->map(fn (string $platform) => strtolower(trim($platform)))
-                ->unique()
-                ->values()
-                ->all())
-            ->all();
-
-        // The external worker receives a per-platform completion marker. A
-        // later manual retry then fills only a missing ticket (for example
-        // High Risk) rather than replacing valid codes it already published.
-        $slips = array_map(function (array $slip) use ($alreadyPublished): array {
-            $slip['completed_platforms'] = $alreadyPublished[$slip['ref']] ?? [];
-
-            return $slip;
-        }, $slips);
-
         return [
             'over-1-5'      => ['title' => 'Over 1.5 Goals'] + $single('Over 1.5 Goals', 78),
             'over-2-5'      => ['title' => 'Over 2.5 Goals'] + $single('Over 2.5 Goals', 66),
@@ -164,6 +140,30 @@ class BetslipSpecService
 
         // ── High Risk: the model's confident calls stacked into a big-odds acca ──
         $slips[] = $this->buildHighRisk($preds);
+
+        $slips = $this->finalizeSlips($slips, $preds);
+        $alreadyPublished = BookingCode::query()
+            ->whereDate('pick_date', now($tz)->toDateString())
+            ->where('status', 'published')
+            ->whereNotNull('slip_ref')
+            ->get(['platform', 'slip_ref'])
+            ->groupBy('slip_ref')
+            ->map(fn (Collection $codes) => $codes
+                ->pluck('platform')
+                ->map(fn (string $platform) => strtolower(trim($platform)))
+                ->unique()
+                ->values()
+                ->all())
+            ->all();
+
+        // The external worker receives a per-platform completion marker. A
+        // later manual retry then fills only a missing ticket (for example
+        // High Risk) rather than replacing valid codes it already published.
+        $slips = array_map(function (array $slip) use ($alreadyPublished): array {
+            $slip['completed_platforms'] = $alreadyPublished[$slip['ref']] ?? [];
+
+            return $slip;
+        }, $slips);
 
         return [
             'generated_at'   => now($tz)->toIso8601String(),
