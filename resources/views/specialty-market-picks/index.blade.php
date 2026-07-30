@@ -9,7 +9,7 @@
 @endpush
 
 @section('content')
-<section class="sp-hero"><div class="wrap"><div class="sp-eye">{{ $config['icon'] }} TavsScore specialty market</div><h1 class="sp-title">{{ $config['title'] }} <span>Picks</span></h1><p class="sp-sub">Every published match clears a strict <strong style="color:#a5f3fc;">90% model confidence</strong> gate for that exact market. We show the match, model selection and evidence—not forced predictions.</p><div class="sp-badges"><span class="sp-badge">90% minimum confidence</span><span class="sp-badge">Model-led selection</span><span class="sp-badge">Team crests &amp; reasons</span></div></div></section>
+<section class="sp-hero"><div class="wrap"><div class="sp-eye">{{ $config['icon'] }} TavsScore specialty market</div><h1 class="sp-title">{{ $config['title'] }} <span>Picks</span></h1><p class="sp-sub">Every published match clears a strict <strong style="color:#a5f3fc;">90% model confidence</strong> gate for that exact market. We show the match, model selection and evidencenot forced predictions.</p><div class="sp-badges"><span class="sp-badge">90% minimum confidence</span><span class="sp-badge">Model-led selection</span><span class="sp-badge">Team crests &amp; reasons</span></div></div></section>
 
 <main class="sp-section"><div class="wrap">
     @include('partials.date-nav')
@@ -30,7 +30,7 @@
                     <div class="sp-card-main">
                         <div class="sp-card-top"><span class="sp-rank">{{ $pick['rank'] === 1 ? '👑 Top signal' : '#'.$pick['rank'].' qualified signal' }}</span><span class="sp-league">{{ $pick['match']['league'] ?: 'Football' }}</span></div>
                         @include('partials.fixture-showcase', ['predictionId' => $pick['id'], 'accent' => '#67e8f9'])
-                        <div class="sp-callout"><div><div class="sp-callout-label">Model selection</div><strong>{{ $pick['label'] }}</strong>@if($pick['european_start'])<div class="sp-virtual">Virtual start: {{ $pick['european_start'] }} · Pick: {{ $pick['european_selection'] }}</div>@endif @if($pick['likely_score'])<div class="sp-virtual">Most likely score: {{ $pick['likely_score'] }}</div>@endif</div><div class="sp-prob"><b>{{ $pick['prob'] }}%</b><small>exact market probability</small></div></div>
+                        <div class="sp-callout"><div><div class="sp-callout-label">Model selection</div><strong>@nodash($pick['label'])</strong>@if($pick['european_start'])<div class="sp-virtual">Virtual start: {{ $pick['european_start'] }} · Pick: {{ $pick['european_selection'] }}</div>@endif @if($pick['likely_score'])<div class="sp-virtual">Most likely score: {{ $pick['likely_score'] }}</div>@endif</div><div class="sp-prob"><b>{{ $pick['prob'] }}%</b><small>exact market probability</small></div></div>
                         <div class="sp-reasons">@forelse($pick['reasons'] as $reason)<div class="sp-reason">{{ $reason }}</div>@empty<div class="sp-reason">This selection cleared the strict exact-market confidence threshold using current match data.</div>@endforelse</div>
                     </div>
                     <div class="sp-intel">@include('partials.match-intelligence', ['predictionId' => $pick['id'], 'accent' => '#67e8f9'])</div>
@@ -40,6 +40,6 @@
         </section>
     @endif
 
-    <section class="sp-how"><h2>How this market is selected</h2><p>@if($config['type'] === 'europeanhandicap')<strong>European Handicap:</strong> the displayed virtual score is applied first, then the Home, Draw or Away selection is settled from the adjusted score. @elseif($config['type'] === 'handicap')<strong>Asian Handicap:</strong> half-goal lines mean there is no draw outcome for this market. @else<strong>Goal line:</strong> the final total must remain below the displayed line. @endif The probability shown is for this exact market, not a general match prediction. Predictions are analysis, never a guarantee—gamble responsibly.</p></section>
+    <section class="sp-how"><h2>How this market is selected</h2><p>@if($config['type'] === 'europeanhandicap')<strong>European Handicap:</strong> the displayed virtual score is applied first, then the Home, Draw or Away selection is settled from the adjusted score. @elseif($config['type'] === 'handicap')<strong>Asian Handicap:</strong> half-goal lines mean there is no draw outcome for this market. @else<strong>Goal line:</strong> the final total must remain below the displayed line. @endif The probability shown is for this exact market, not a general match prediction. Predictions are analysis, never a guaranteegamble responsibly.</p></section>
 </div></main>
 @endsection

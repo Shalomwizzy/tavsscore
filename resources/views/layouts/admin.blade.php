@@ -32,6 +32,8 @@
         }
 
         body { font-family:'Inter',system-ui,sans-serif; font-size:14px; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+        a, a:visited, a:hover { text-decoration:none; }
+        a, a:visited { text-decoration:none !important; }
 
         /* Layout */
         .admin-shell { display:flex; min-height:100vh; }

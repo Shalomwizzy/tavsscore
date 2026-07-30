@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'High Risk Picks — Big-Odds Accumulators | TavsScore')
-@section('meta_description', 'TavsScore high-risk football accumulator picks. Big odds, full ticket legs and transparent settled history. Entertainment only — bet responsibly.')
+@section('title', 'High Risk Picks, Big-Odds Accumulators | TavsScore')
+@section('meta_description', 'TavsScore high-risk football accumulator picks. Big odds, full ticket legs and transparent settled history. Entertainment only, bet responsibly.')
 
 @push('styles')
 <style>
@@ -42,8 +42,8 @@
         <div class="risk-metrics">
             <div class="risk-metric"><b>{{ $codes->count() }}</b><span>Live tickets today</span></div>
             <div class="risk-metric"><b>{{ $todayLegs }}</b><span>Legs in play</span></div>
-            <div class="risk-metric"><b>{{ $bestOdds ? number_format((float) $bestOdds, 0).'×' : '—' }}</b><span>Highest live odds</span></div>
-            <div class="risk-metric"><b>{{ $settledCount ? $wonCount.'/'.$settledCount : '—' }}</b><span>Settled ticket wins</span></div>
+            <div class="risk-metric"><b>{{ $bestOdds ? number_format((float) $bestOdds, 0).'×' : 'N/A' }}</b><span>Highest live odds</span></div>
+            <div class="risk-metric"><b>{{ $settledCount ? $wonCount.'/'.$settledCount : 'N/A' }}</b><span>Settled ticket wins</span></div>
         </div>
     </section>
 
@@ -61,7 +61,7 @@
                     <details class="risk-legs" open>
                         <summary>Ticket selections <span>{{ count($legs) }} leg{{ count($legs) === 1 ? '' : 's' }} · tap to hide</span></summary>
                         @forelse($legs as $leg)
-                            <div class="risk-leg"><div class="risk-leg-main"><span>{{ $leg['match'] ?? trim(($leg['home'] ?? 'Home').' vs '.($leg['away'] ?? 'Away')) }}</span>@if(isset($leg['model_prob']))<span class="risk-leg-prob">{{ number_format((float) $leg['model_prob'], 0) }}%</span>@endif</div><div class="risk-leg-market">{{ $leg['market'] ?? 'Model market' }}@if(isset($leg['est_odds'])) · est. {{ number_format((float) $leg['est_odds'], 2) }}@endif</div></div>
+                            <div class="risk-leg"><div class="risk-leg-main"><span>{{ $leg['match'] ?? trim(($leg['home'] ?? 'Home').' vs '.($leg['away'] ?? 'Away')) }}</span>@if(isset($leg['model_prob']))<span class="risk-leg-prob">{{ number_format((float) $leg['model_prob'], 0) }}%</span>@endif</div><div class="risk-leg-market">@nodash($leg['market'] ?? 'Model market')@if(isset($leg['est_odds'])) · est. {{ number_format((float) $leg['est_odds'], 2) }}@endif</div></div>
                         @empty
                             <div class="risk-leg"><div class="risk-leg-market">Ticket details will appear after the booking provider confirms the selections.</div></div>
                         @endforelse
@@ -78,7 +78,7 @@
         <div class="risk-section-head"><div><h2>Settled ticket history</h2><p>Results stay visible. {{ $wonCount }} won from {{ $history->count() }} settled high-risk tickets shown.</p></div></div>
         <div class="risk-history">
             @foreach($history as $ticket)
-                <div class="risk-history-card {{ $ticket->status === 'won' ? 'won' : 'lost' }}"><span class="risk-history-state">{{ $ticket->status === 'won' ? '✓' : '×' }}</span><div><div class="risk-history-code">{{ strtoupper($ticket->code) }}</div><div class="risk-history-meta">{{ $ticket->status === 'won' ? 'Won' : 'Lost' }} · {{ number_format((float) $ticket->total_odds, 0) }}× · {{ $ticket->settled_at?->timezone('Africa/Lagos')?->format('d M') ?? '—' }}</div></div></div>
+                <div class="risk-history-card {{ $ticket->status === 'won' ? 'won' : 'lost' }}"><span class="risk-history-state">{{ $ticket->status === 'won' ? '✓' : '×' }}</span><div><div class="risk-history-code">{{ strtoupper($ticket->code) }}</div><div class="risk-history-meta">{{ $ticket->status === 'won' ? 'Won' : 'Lost' }} · {{ number_format((float) $ticket->total_odds, 0) }}× · {{ $ticket->settled_at?->timezone('Africa/Lagos')?->format('d M') ?? 'N/A' }}</div></div></div>
             @endforeach
         </div>
     @endif

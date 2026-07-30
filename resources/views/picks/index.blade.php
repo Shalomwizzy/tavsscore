@@ -29,11 +29,11 @@ if (! function_exists('stripTip')) {
 
 @extends('layouts.app')
 
-@section('title', ($dateMeta['is_today'] ? "Today's Best Football Picks – {$date}" : "Football Picks Archive – {$dateMeta['pretty']}") . " | TavsScore")
+@section('title', ($dateMeta['is_today'] ? "Today's Best Football Picks, {$date}" : "Football Picks Archive, {$dateMeta['pretty']}") . " | TavsScore")
 @section('meta_description', $dateMeta['is_today']
     ? "Free daily football picks for {$date}. AI-analysed from 50+ matches across the Premier League, Champions League, La Liga, Bundesliga and more."
     : "Browse our football picks archive - see what we predicted on {$dateMeta['pretty']} and how each pick turned out. Full transparency, free forever.")
-@section('og_title', ($dateMeta['is_today'] ? "Today's Best 3 Football Picks" : "Football Picks – {$dateMeta['pretty']}"))
+@section('og_title', ($dateMeta['is_today'] ? "Today's Best 3 Football Picks" : "Football Picks, {$dateMeta['pretty']}"))
 @section('og_description', "Free daily football picks selected by AI from top European leagues.")
 @section('canonical', $dateMeta['is_today'] ? url('/picks') : url('/picks?date=' . $dateMeta['iso']))
 
@@ -522,7 +522,7 @@ if (! function_exists('stripTip')) {
                 @endphp
                 @foreach($recentResolved as $rp)
                 <div class="adot {{ $rp->was_correct ? 'adot-win' : 'adot-loss' }}"
-                     title="{{ $rp->match?->home_team }} vs {{ $rp->match?->away_team }}: {{ $rp->predicted_outcome }}">
+                     title="{{ $rp->match?->home_team }} vs {{ $rp->match?->away_team }}: @nodash($rp->predicted_outcome)">
                     {{ $rp->was_correct ? '✓' : '✗' }}
                 </div>
                 @endforeach
@@ -537,7 +537,7 @@ if (! function_exists('stripTip')) {
                 <div class="picks-empty-icon">🌱</div>
                 <div class="picks-empty-title">Top leagues are between seasons</div>
                 <p class="picks-empty-desc">
-                    No fixtures from our covered leagues are scheduled today — most of Europe is still in pre-season.
+                    No fixtures from our covered leagues are scheduled today, most of Europe is still in pre-season.
                     @if(!empty($emptyState['resume_date']))
                         Regular predictions resume <strong style="color:var(--text);">{{ $emptyState['resume_date'] }}</strong>.
                     @else
@@ -616,7 +616,7 @@ if (! function_exists('stripTip')) {
                     <div class="pick-callout {{ $calloutClass }}">
                         <div>
                             <div class="pick-callout-label">Our Prediction</div>
-                            <div class="pick-callout-value">{{ $pick['pick_emoji'] }} {{ $pick['pick_label'] }}</div>
+                            <div class="pick-callout-value">{{ $pick['pick_emoji'] }} @nodash($pick['pick_label'])</div>
                         </div>
                         <div class="confidence-row">
                             <span class="conf-badge {{ $confClass }}">{{ $pick['confidence'] }} Confidence</span>
@@ -664,7 +664,7 @@ if (! function_exists('stripTip')) {
                                     @endunless
                                 </div>
                                 <div class="pt-band" style="color:{{ $band['color'] }};">
-                                    {{ $band['emoji'] }} {{ $band['label'] }} confidence
+                                    {{ $band['emoji'] }} @nodash($band['label']) confidence
                                 </div>
                                 @if(!empty($headline['rationale']))
                                 <div class="pt-headline-reason">{{ $headline['rationale'] }}</div>
@@ -848,7 +848,7 @@ if (! function_exists('stripTip')) {
             <div class="yesterday-card {{ $yClass }}">
                 <div class="y-league">{{ $pick['match']['league'] }}</div>
                 <div class="y-match">{{ $pick['match']['home'] }} vs {{ $pick['match']['away'] }}</div>
-                <div class="y-pick">{{ $pick['pick_emoji'] }} {{ $pick['pick_label'] }}</div>
+                <div class="y-pick">{{ $pick['pick_emoji'] }} @nodash($pick['pick_label'])</div>
                 <div class="y-result">
                     @if($pick['was_correct'] === true)
                         <span class="result-badge result-win-badge" style="font-size:.72rem;">✓ Won</span>

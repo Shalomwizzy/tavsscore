@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Prediction;
 use App\Models\Setting;
 use App\Observers\PredictionObserver;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -15,6 +16,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Display helper: strip the " - " separator from a label for the UI
+        // without changing the stored value (grading matches the raw key).
+        // e.g. "Draw No Bet - Home" → "Draw No Bet Home".
+        Blade::directive('nodash', fn ($expr) => "<?php echo e(str_replace(' - ', ' ', (string) ($expr))); ?>");
+
         $telegramUrl = 'https://t.me/tavsscore';
         $twitterUrl  = 'https://x.com/tavsscore';
 

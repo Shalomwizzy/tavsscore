@@ -79,9 +79,9 @@
                     <div class="bc-note">How to load: {{ $howTo }} → enter the code.</div>
                     <div class="bc-actions"><button type="button" class="bc-btn bc-copy" onclick="copyBookingCode('{{ strtoupper($bc->code) }}', this)">Copy code</button>@if($bc->link)<a class="bc-btn bc-load" href="{{ $bc->link }}" target="_blank" rel="noopener sponsored">Open ticket ↗</a>@elseif($affiliate)<a class="bc-btn bc-load" href="{{ $affiliate->register_url }}" target="_blank" rel="noopener sponsored">Open {{ $bc->platform }} ↗</a>@endif</div>
                     @if($bc->legs->isNotEmpty())
-                        <details class="bc-fixtures"><summary>⌄ View {{ $bc->legs->count() }} saved selections &amp; results</summary><ul>@foreach($bc->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team ?: 'Home' }} vs {{ $leg->away_team ?: 'Away' }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">@if($leg->home_score !== null){{ $leg->home_score }}:{{ $leg->away_score }}@else Awaiting result @endif</div></li>@endforeach</ul></details>
+                        <details class="bc-fixtures"><summary>⌄ View {{ $bc->legs->count() }} saved selections &amp; results</summary><ul>@foreach($bc->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team ?: 'Home' }} vs {{ $leg->away_team ?: 'Away' }}<br><em>@nodash($leg->market)</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">@if($leg->home_score !== null){{ $leg->home_score }}:{{ $leg->away_score }}@else Awaiting result @endif</div></li>@endforeach</ul></details>
                     @elseif(is_array($bc->fixtures) && count($bc->fixtures))
-                        <details class="bc-fixtures"><summary>⌄ View {{ count($bc->fixtures) }} saved selections</summary><ul>@foreach($bc->fixtures as $leg)<li>{{ $leg['home'] ?? 'Home' }} vs {{ $leg['away'] ?? 'Away' }}<br><em>{{ $leg['market'] ?? 'Selection' }}</em></li>@endforeach</ul></details>
+                        <details class="bc-fixtures"><summary>⌄ View {{ count($bc->fixtures) }} saved selections</summary><ul>@foreach($bc->fixtures as $leg)<li>{{ $leg['home'] ?? 'Home' }} vs {{ $leg['away'] ?? 'Away' }}<br><em>@nodash($leg['market'] ?? 'Selection')</em></li>@endforeach</ul></details>
                     @endif
                     <div class="bc-time">Published {{ $bc->created_at->setTimezone('Africa/Lagos')->diffForHumans() }}</div>
                 </article>
@@ -105,7 +105,7 @@
                     <strong style="color:#fcd34d;font-size:.77rem">{{ number_format((float) $item->total_odds, 2) }}</strong>
                     <time class="bc-history-time" style="color:var(--text-dim);font-size:.68rem">{{ $item->settled_at?->setTimezone('Africa/Lagos')->format('M d, H:i') }}</time>
                 </div>
-                @if($item->legs->isNotEmpty())<details class="bc-fixtures" style="margin:0 .9rem .75rem"><summary>⌄ Match-by-match outcome</summary><ul>@foreach($item->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team }} vs {{ $leg->away_team }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">{{ $leg->home_score !== null ? $leg->home_score.':'.$leg->away_score : 'N/A' }}</div></li>@endforeach</ul></details>@endif
+                @if($item->legs->isNotEmpty())<details class="bc-fixtures" style="margin:0 .9rem .75rem"><summary>⌄ Match-by-match outcome</summary><ul>@foreach($item->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team }} vs {{ $leg->away_team }}<br><em>@nodash($leg->market)</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">{{ $leg->home_score !== null ? $leg->home_score.':'.$leg->away_score : 'N/A' }}</div></li>@endforeach</ul></details>@endif
             @endforeach
         </section>
     @endif
