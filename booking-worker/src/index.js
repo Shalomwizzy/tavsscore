@@ -67,6 +67,11 @@ async function run() {
     for (const slip of slips) {
       const legs = slip.selections || [];
       if (legs.length < 3) continue; // spec already filters, but be safe
+      const completedPlatforms = (slip.completed_platforms || []).map((value) => String(value).toLowerCase());
+      if (completedPlatforms.includes(platform.toLowerCase())) {
+        console.log(`↷ ${platform}/${slip.ref}: already published today — skipping.`);
+        continue;
+      }
 
       try {
         // adapter.buildCode returns { code, link, total_odds, booked } where
