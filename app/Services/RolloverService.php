@@ -315,6 +315,50 @@ class RolloverService
         return $firstPick;
     }
 
+    /** Re-send today's existing rollover as the current image + caption card. */
+    public function resendTodaysPick(): bool
+    {
+        $tz = self::TZ;
+        $challenge = $this->getActiveChallenge();
+        if (! $challenge) {
+            return false;
+        }
+
+        $legs = $challenge->picks()
+            ->with('match')
+            ->where('pick_date', CarbonImmutable::now($tz)->toDateString())
+            ->orderBy('id')
+            ->get();
+        if ($legs->isEmpty()) {
+            return false;
+        }
+
+        $first = $legs->first();
+        $legLines = $legs->map(fn (RolloverPick $leg) => "{$leg->match?->home_team} vs {$leg->match?->away_team} — {$leg->groq_verdict} @ {$leg->implied_odds}");
+        $cardPicks = $legs->map(fn (RolloverPick $leg) => [
+            'match' => "{$leg->match?->home_team} vs {$leg->match?->away_team}",
+            'league' => LeagueCoverage::formatName($leg->match?->league, $leg->match?->league_country),
+            'tip' => "{$leg->groq_verdict} @ {$leg->implied_odds}",
+            'confidence' => 'SAFE',
+        ])->all();
+        $marketLabel = $legs->count() > 1
+            ? $legs->count().'-leg ticket @ '.round($legs->reduce(fn (float $odds, RolloverPick $leg) => $odds * (float) $leg->implied_odds, 1.0), 2).' odds'
+            : (string) $first->groq_verdict;
+
+        $this->telegram->sendRolloverPick(
+            $legLines->implode("\n"),
+            $marketLabel,
+            (int) $first->day_number,
+            (float) $first->stake_amount,
+            (float) $first->potential_return,
+            config('app.url'),
+            $legs->count() === 1 ? LeagueCoverage::formatName($first->match?->league, $first->match?->league_country) : 'Multi-league ticket',
+            $cardPicks,
+        );
+
+        return true;
+    }
+
     /**
      * The safest gradeable leg on a fixture's board: highest-probability market
      * from the ENTIRE board that clears the floor. Uses the same "meaningful

@@ -12,6 +12,10 @@
             @csrf
             <button type="submit" class="btn-a btn-green">🎯 Select Today's Pick</button>
         </form>
+        <form method="POST" action="{{ route('admin.rollover.resend-today') }}">
+            @csrf
+            <button type="submit" class="btn-a btn-gray">🖼️ Send today's image</button>
+        </form>
         <a href="{{ route('rollover.index') }}" target="_blank" class="btn-a btn-blue">↗ View Public Page</a>
     </div>
 </div>

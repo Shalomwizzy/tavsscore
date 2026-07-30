@@ -243,6 +243,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/rollover',                      [\App\Http\Controllers\Admin\RolloverAdminController::class, 'index'])->name('rollover.index');
         Route::post('/rollover/new-challenge',       [\App\Http\Controllers\Admin\RolloverAdminController::class, 'newChallenge'])->name('rollover.new-challenge');
         Route::post('/rollover/select-pick',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'selectPick'])->name('rollover.select-pick');
+        Route::post('/rollover/resend-today',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'resendToday'])->name('rollover.resend-today');
         Route::post('/rollover/rebuild-board',        [\App\Http\Controllers\Admin\RolloverAdminController::class, 'rebuildBoard'])->name('rollover.rebuild-board');
         Route::post('/rollover/{pick}/void',         [\App\Http\Controllers\Admin\RolloverAdminController::class, 'voidPick'])->name('rollover.void-pick');
         Route::post('/rollover/{pick}/override',     [\App\Http\Controllers\Admin\RolloverAdminController::class, 'overridePick'])->name('rollover.override-pick');

@@ -50,6 +50,16 @@ class RolloverAdminController extends Controller
         return back()->with('success', "Today's rollover pick selected: {$pick->match?->home_team} vs {$pick->match?->away_team}.");
     }
 
+    /** Re-send today's active ticket as the current watermarked Telegram card. */
+    public function resendToday(RolloverService $rollover): RedirectResponse
+    {
+        if (! $rollover->resendTodaysPick()) {
+            return back()->with('error', 'There is no rollover ticket for today to send.');
+        }
+
+        return back()->with('success', "Today's rollover card was sent to Telegram.");
+    }
+
     public function rebuildBoard(FootballPredictionBoardRefresher $boardRefresher): RedirectResponse
     {
         try {
