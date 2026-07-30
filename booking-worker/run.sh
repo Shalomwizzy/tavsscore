@@ -7,8 +7,10 @@
 #   npm install
 #   chmod +x run.sh
 #
-# Schedule (crontab -e) — 07:00 daily, after picks + rollover are selected:
-#   0 7 * * * /Users/tavs/Desktop/tavs-score/booking-worker/run.sh
+# Schedule (crontab -e) — 05:00 daily so every code is booked + pushed before
+# 6am (picks are ready ~01:30, rollover 04:30). The built-in retry loop covers a
+# late start if the Mac isn't online yet.
+#   0 5 * * * /Users/tavs/Desktop/tavs-score/booking-worker/run.sh
 #
 # This Mac must be on a Nigerian (residential) IP — SportyBet blocks datacenter
 # and non-NG IPs, so this cannot run on the server or GitHub Actions.

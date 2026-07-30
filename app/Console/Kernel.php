@@ -130,7 +130,7 @@ class Kernel extends ConsoleKernel
 
         // Select today's rollover ticket (1-5 safest legs, ≤2.00 combined odds)
         // at 06:00 Lagos — after the 01:30 selection has stored the market boards.
-        $schedule->command('rollover:select')->dailyAt('06:00')->timezone('Africa/Lagos')->withoutOverlapping();
+        $schedule->command('rollover:select')->dailyAt('04:30')->timezone('Africa/Lagos')->withoutOverlapping();
 
         // Post today's pick results to Telegram at 23:00 Lagos
         $schedule->command('results:send-telegram')->dailyAt('23:00')->timezone('Africa/Lagos')->withoutOverlapping();
