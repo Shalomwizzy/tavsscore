@@ -67,7 +67,7 @@ class TennisPredictionService
         $dog    = $oneProb >= $twoProb ? $match->player_two : $match->player_one;
         $favP   = max($oneProb, $twoProb) / 100;
         $markets = $this->markets($favP, $fav, $dog, (int) ($match->best_of ?: 3));
-        $best    = $markets[0]; // markets() returns them safest-first
+        $best    = $this->featuredMarket($markets); // varied by match profile, not always +1.5
 
         $features = compact('oneRating', 'twoRating', 'eloProbability', 'one', 'two', 'h2h', 'surface');
         $features['markets']     = $markets;
@@ -117,6 +117,40 @@ class TennisPredictionService
 
         usort($markets, fn ($a, $b) => $b['prob'] <=> $a['prob']);
         return array_values($markets);
+    }
+
+    /**
+     * Feature a market that fits the match profile so picks vary across fixtures
+     * instead of always defaulting to the near-certain +1.5 sets: a dominant
+     * favourite → 2-0; a clear favourite → moneyline; a likely-straight match →
+     * under 2.5 sets; a competitive one → over 2.5 sets; otherwise the safe +1.5.
+     *
+     * @param array<int, array{label:string,prob:float,key:string}> $markets
+     * @return array{label:string,prob:float,key:string}
+     */
+    private function featuredMarket(array $markets): array
+    {
+        $by = [];
+        foreach ($markets as $m) {
+            $by[$m['key']] = $m;
+        }
+
+        $priority = [
+            'fav_30'        => 45.0, // BO5 straight 3-0
+            'fav_m15'       => 55.0, // BO3 2-0
+            'fav_ml'        => 66.0, // moneyline
+            'under_25_sets' => 60.0, // straight sets
+            'over_25_sets'  => 55.0, // goes the distance
+        ];
+
+        foreach ($priority as $key => $floor) {
+            if (isset($by[$key]) && $by[$key]['prob'] >= $floor) {
+                return $by[$key];
+            }
+        }
+
+        // Safe fallback — the near-certain "+1.5 sets", or the overall safest.
+        return $by['fav_p15'] ?? $markets[0];
     }
 
     /** Invert the match-win probability to a per-set win probability. */
