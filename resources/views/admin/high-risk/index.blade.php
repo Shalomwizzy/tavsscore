@@ -4,7 +4,62 @@
 
 @push('styles')
 <style>
-    .ahr{max-width:1180px}.ahr-hero{position:relative;overflow:hidden;padding:1.45rem;border:1px solid rgba(251,113,133,.28);border-radius:16px;background:radial-gradient(circle at 85% 0,rgba(244,63,94,.25),transparent 28%),linear-gradient(130deg,#241222,#111b2d)}.ahr-hero:after{content:'HIGH RISK';position:absolute;right:-.3rem;bottom:-1.6rem;color:rgba(255,255,255,.035);font-size:5.4rem;font-weight:900;letter-spacing:-.09em;white-space:nowrap}.ahr-kicker{position:relative;z-index:1;color:#fda4af;font-size:.62rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.ahr-title-row{position:relative;z-index:1;display:flex;align-items:end;justify-content:space-between;gap:1rem}.ahr-title-row h1{margin:.36rem 0 0;color:#fff;font-size:1.55rem;letter-spacing:-.04em}.ahr-title-row p{max-width:700px;margin:.35rem 0 0;color:#cbd5e1;font-size:.76rem;line-height:1.55}.ahr-public{display:inline-flex;align-items:center;gap:.35rem;flex-shrink:0;padding:.52rem .72rem;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(255,255,255,.06);color:#fff;text-decoration:none;font-size:.7rem;font-weight:800}.ahr-public:hover{color:#fff;background:rgba(255,255,255,.11)}.ahr-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;margin:1rem 0}.ahr-stat{padding:.9rem;border:1px solid var(--border);border-radius:12px;background:var(--card)}.ahr-stat b{display:block;color:#fff;font-size:1.35rem;line-height:1}.ahr-stat span{display:block;margin-top:.35rem;color:var(--dim);font-size:.61rem;font-weight:800;letter-spacing:.075em;text-transform:uppercase}.ahr-stat.risk b{color:#fda4af}.ahr-card{margin-top:1rem;padding:1.05rem;border:1px solid var(--border);border-radius:14px;background:var(--card)}.ahr-card-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.85rem}.ahr-card-head h2{margin:0;color:#fff;font-size:.9rem;letter-spacing:-.02em}.ahr-card-head p{margin:.18rem 0 0;color:var(--dim);font-size:.68rem}.ahr-label{display:inline-flex;align-items:center;gap:.3rem;padding:.27rem .5rem;border-radius:999px;background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2);color:#fda4af;font-size:.61rem;font-weight:850;text-transform:uppercase;letter-spacing:.075em}.ahr-ticket{padding:.85rem;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(8,13,26,.35);margin-top:.55rem}.ahr-ticket:first-of-type{margin-top:0}.ahr-ticket-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.ahr-code{color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1rem;font-weight:850;letter-spacing:.1em}.ahr-meta{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;color:var(--dim);font-size:.66rem}.ahr-status{padding:.22rem .42rem;border-radius:999px;font-size:.59rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.ahr-status.published{color:#fef3c7;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.24)}.ahr-status.won{color:#a7f3d0;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)}.ahr-status.lost{color:#fecaca;background:rgba(239,68,68,.11);border:1px solid rgba(239,68,68,.25)}.ahr-legs{margin-top:.68rem;padding-top:.68rem;border-top:1px solid rgba(255,255,255,.06);color:#94a3b8;font-size:.68rem;line-height:1.65}.ahr-legs b{color:#cbd5e1}.ahr-empty{padding:2.2rem 1rem;text-align:center;border:1px dashed rgba(148,163,184,.24);border-radius:12px;color:var(--dim);font-size:.76rem}.ahr-history{width:100%;border-collapse:collapse}.ahr-history th{padding:.55rem .45rem;color:var(--dim);font-size:.59rem;font-weight:850;letter-spacing:.08em;text-align:left;text-transform:uppercase;border-bottom:1px solid var(--border)}.ahr-history td{padding:.65rem .45rem;color:#cbd5e1;font-size:.71rem;border-bottom:1px solid rgba(255,255,255,.045)}.ahr-history tr:last-child td{border-bottom:0}.ahr-copy{border:0;background:transparent;color:#94a3b8;cursor:pointer;font:inherit;font-size:.63rem}.ahr-copy:hover{color:#fff}@media(max-width:760px){.ahr-title-row{align-items:start;flex-direction:column}.ahr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ahr-history thead{display:none}.ahr-history,.ahr-history tbody,.ahr-history tr,.ahr-history td{display:block;width:100%}.ahr-history tr{padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06)}.ahr-history td{display:inline-block;width:auto;padding:.25rem .45rem;border:0}.ahr-history td:first-child{display:block}.ahr-ticket-top{align-items:start;flex-direction:column;gap:.4rem}}
+    .high-risk-desk { max-width: 1180px; }
+    .high-risk-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.25rem; padding: 1.35rem; border: 1px solid rgba(251, 113, 133, .28); border-radius: 18px; background: radial-gradient(circle at 88% 6%, rgba(244, 63, 94, .22), transparent 27%), linear-gradient(125deg, #261020, #121d31); }
+    .high-risk-hero::after { content: 'HIGH RISK'; position: absolute; right: -.2rem; bottom: -1.7rem; color: rgba(255,255,255,.035); font-size: 5.5rem; font-weight: 950; letter-spacing: -.09em; white-space: nowrap; pointer-events: none; }
+    .high-risk-hero-copy, .high-risk-hero-actions { position: relative; z-index: 1; }
+    .high-risk-kicker { display: inline-flex; align-items: center; gap: .4rem; color: #fecdd3; font-size: .62rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    .high-risk-kicker::before { content: ''; width: 7px; height: 7px; border-radius: 99px; background: #fb7185; box-shadow: 0 0 0 4px rgba(251,113,133,.12); }
+    .high-risk-hero h1 { margin: .42rem 0 .36rem; color: #fff; font-size: clamp(1.45rem, 3vw, 2rem); letter-spacing: -.045em; }
+    .high-risk-hero p { max-width: 650px; margin: 0; color: #cbd5e1; font-size: .76rem; line-height: 1.6; }
+    .high-risk-brand { display: flex; align-items: center; gap: .62rem; padding: .48rem .58rem; border: 1px solid rgba(255,255,255,.13); border-radius: 12px; background: rgba(2, 6, 23, .28); color: #e2e8f0; font-size: .68rem; font-weight: 850; white-space: nowrap; }
+    .high-risk-brand img { display: block; width: 31px; height: 31px; object-fit: contain; border-radius: 8px; }
+    .high-risk-open { display: inline-flex; justify-content: center; margin-top: .6rem; padding: .48rem .65rem; border: 1px solid rgba(255,255,255,.15); border-radius: 9px; color: #fff; background: rgba(255,255,255,.06); text-decoration: none; font-size: .66rem; font-weight: 850; }
+    .high-risk-open:hover { color: #fff; background: rgba(255,255,255,.12); }
+    .high-risk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin: 1rem 0; }
+    .high-risk-stat { padding: .88rem .9rem; border: 1px solid var(--border); border-radius: 13px; background: var(--card); }
+    .high-risk-stat strong { display: block; color: #f8fafc; font-size: 1.28rem; line-height: 1; }
+    .high-risk-stat.alert strong { color: #fda4af; }
+    .high-risk-stat span { display: block; margin-top: .34rem; color: var(--dim); font-size: .6rem; font-weight: 850; letter-spacing: .075em; text-transform: uppercase; }
+    .high-risk-panel { margin-top: .9rem; padding: 1rem; border: 1px solid var(--border); border-radius: 15px; background: var(--card); }
+    .high-risk-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .8rem; }
+    .high-risk-panel h2 { margin: 0; color: #f8fafc; font-size: .9rem; letter-spacing: -.02em; }
+    .high-risk-panel p { margin: .2rem 0 0; color: var(--dim); font-size: .68rem; line-height: 1.5; }
+    .high-risk-chip { flex-shrink: 0; padding: .28rem .48rem; border: 1px solid rgba(251,113,133,.24); border-radius: 99px; background: rgba(251,113,133,.1); color: #fda4af; font-size: .58rem; font-weight: 900; letter-spacing: .075em; text-transform: uppercase; }
+    .high-risk-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+    .high-risk-prediction { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; min-height: 57px; padding: .55rem .62rem; border: 1px solid rgba(255,255,255,.075); border-radius: 11px; background: rgba(2, 6, 23, .22); }
+    .high-risk-logos { display: flex; align-items: center; min-width: 28px; }
+    .high-risk-logos img { width: 24px; height: 24px; object-fit: contain; }
+    .high-risk-logos img + img { margin-left: -6px; border-radius: 99px; background: #111827; }
+    .high-risk-tennis { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; background: rgba(251,113,133,.12); font-size: .9rem; }
+    .high-risk-match { overflow: hidden; color: #e2e8f0; font-size: .7rem; font-weight: 850; white-space: nowrap; text-overflow: ellipsis; }
+    .high-risk-market { overflow: hidden; margin-top: .13rem; color: #94a3b8; font-size: .61rem; white-space: nowrap; text-overflow: ellipsis; }
+    .high-risk-probability { color: #fecdd3; font-size: .68rem; font-weight: 900; }
+    .high-risk-more { margin-top: .6rem; color: #94a3b8; font-size: .66rem; text-align: center; }
+    .high-risk-more summary { cursor: pointer; list-style: none; }
+    .high-risk-more summary::-webkit-details-marker { display: none; }
+    .high-risk-ticket { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; padding: .85rem; border: 1px solid rgba(255,255,255,.075); border-radius: 13px; background: rgba(2, 6, 23, .2); }
+    .high-risk-ticket + .high-risk-ticket { margin-top: .55rem; }
+    .high-risk-ticket-label { color: #94a3b8; font-size: .59rem; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+    .high-risk-code { margin-top: .16rem; color: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.05rem; font-weight: 900; letter-spacing: .1em; }
+    .high-risk-ticket-meta { margin-top: .22rem; color: #94a3b8; font-size: .66rem; }
+    .high-risk-ticket-actions { display: flex; align-items: center; gap: .42rem; }
+    .high-risk-status { padding: .3rem .45rem; border-radius: 99px; font-size: .57rem; font-weight: 900; letter-spacing: .075em; text-transform: uppercase; }
+    .high-risk-status.published { color: #fef3c7; border: 1px solid rgba(245,158,11,.25); background: rgba(245,158,11,.1); }
+    .high-risk-status.won { color: #a7f3d0; border: 1px solid rgba(16,185,129,.24); background: rgba(16,185,129,.1); }
+    .high-risk-status.lost { color: #fecaca; border: 1px solid rgba(239,68,68,.24); background: rgba(239,68,68,.1); }
+    .high-risk-copy { border: 0; padding: .35rem .45rem; border-radius: 7px; background: rgba(255,255,255,.07); color: #cbd5e1; font: inherit; font-size: .62rem; font-weight: 800; cursor: pointer; }
+    .high-risk-copy:hover { color: #fff; background: rgba(255,255,255,.13); }
+    .high-risk-empty { padding: 2rem 1rem; border: 1px dashed rgba(148,163,184,.24); border-radius: 12px; color: var(--dim); font-size: .74rem; text-align: center; }
+    .high-risk-history { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; }
+    .high-risk-history-item { display: flex; align-items: center; gap: .55rem; padding: .65rem; border: 1px solid rgba(255,255,255,.065); border-radius: 11px; background: rgba(2, 6, 23, .18); }
+    .high-risk-history-icon { display: grid; place-items: center; flex: 0 0 27px; width: 27px; height: 27px; border-radius: 8px; font-size: .76rem; font-weight: 900; }
+    .high-risk-history-item.won .high-risk-history-icon { color: #6ee7b7; background: rgba(16,185,129,.12); }
+    .high-risk-history-item.lost .high-risk-history-icon { color: #fca5a5; background: rgba(239,68,68,.11); }
+    .high-risk-history-code { color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; font-weight: 850; letter-spacing: .06em; }
+    .high-risk-history-meta { margin-top: .12rem; color: #94a3b8; font-size: .6rem; }
+    @media (max-width: 850px) { .high-risk-history { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 680px) { .high-risk-hero { grid-template-columns: 1fr; } .high-risk-hero-actions { justify-self: start; } .high-risk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .high-risk-board { grid-template-columns: 1fr; } .high-risk-ticket { grid-template-columns: 1fr; } .high-risk-ticket-actions { justify-content: space-between; } .high-risk-history { grid-template-columns: 1fr; } }
 </style>
 @endpush
 
@@ -13,31 +68,155 @@
     $todayLegs = $today_codes->sum(fn ($code) => is_array($code->fixtures) ? count($code->fixtures) : 0);
     $won = $history->where('status', 'won')->count();
     $largest = $today_codes->max('total_odds');
+    $selections = collect($preview['selections'] ?? []);
 @endphp
-<div class="ahr">
-    <section class="ahr-hero"><div class="ahr-kicker">Booking desk · entertainment only</div><div class="ahr-title-row"><div><h1>🎲 High Risk Desk</h1><p>Visibility for the big-odds accumulator board. These are intentionally speculative tickets: review availability, code creation and settlement history here without presenting them as safe picks.</p></div><a class="ahr-public" href="{{ route('high-risk.index') }}" target="_blank" rel="noopener">View user page ↗</a></div></section>
-    <div class="ahr-stats"><div class="ahr-stat risk"><b>{{ $today_codes->count() }}</b><span>Tickets today</span></div><div class="ahr-stat"><b>{{ $todayLegs }}</b><span>Legs today</span></div><div class="ahr-stat risk"><b>{{ $largest ? number_format((float) $largest, 0).'×' : 'N/A' }}</b><span>Highest live odds</span></div><div class="ahr-stat"><b>{{ $history->count() ? $won.'/'.$history->count() : 'N/A' }}</b><span>Settled wins shown</span></div></div>
 
-    @if($preview)<section class="ahr-card"><div class="ahr-card-head"><div><h2>Today’s High Risk prediction board</h2><p>{{ $preview['title'] }}. Strict 15.00 to 1,500.00 odds target; every leg is data-qualified before live SportyBet verification.</p></div><span class="ahr-label">{{ count($preview['selections'] ?? []) }} selections</span></div><div class="ahr-legs"><b>Selections:</b> @foreach(($preview['selections'] ?? []) as $leg)<div style="display:flex;align-items:center;gap:.35rem;padding:.26rem 0">@if(($leg['sport'] ?? 'football') === 'tennis')🎾 @else@if(!empty($leg['home_logo']))<img src="{{ $leg['home_logo'] }}" alt="" style="width:19px;height:19px;object-fit:contain">@endif@endif <span>{{ $leg['home'] }} vs {{ $leg['away'] }} · {{ $leg['market'] }} · {{ number_format((float)($leg['model_prob'] ?? 0),0) }}%</span>@if(($leg['sport'] ?? 'football') === 'football' && !empty($leg['away_logo']))<img src="{{ $leg['away_logo'] }}" alt="" style="width:19px;height:19px;object-fit:contain">@endif</div>@endforeach</div></section>@endif
+<div class="high-risk-desk">
+    <section class="high-risk-hero">
+        <div class="high-risk-hero-copy">
+            <span class="high-risk-kicker">Prediction control room</span>
+            <h1>High Risk Desk</h1>
+            <p>Big-odds accumulator oversight for data-qualified Football and Tennis selections. Keep the board transparent: this market is intentionally speculative and is never presented as a safe pick.</p>
+        </div>
+        <div class="high-risk-hero-actions">
+            <div class="high-risk-brand"><img src="{{ asset('icons/_.jpeg') }}" alt="TavsScore"> TavsScore high odds</div>
+            <a class="high-risk-open" href="{{ route('high-risk.index') }}" target="_blank" rel="noopener">Open user page ↗</a>
+        </div>
+    </section>
 
-    <section class="ahr-card"><div class="ahr-card-head"><div><h2>Today’s ticket queue</h2><p>Published tickets are visible to users; pending or failed entries remain operational records here.</p></div><span class="ahr-label">{{ now('Africa/Lagos')->format('D, d M') }}</span></div>
+    <section class="high-risk-stats" aria-label="High risk overview">
+        <div class="high-risk-stat alert"><strong>{{ $today_codes->count() }}</strong><span>Live tickets today</span></div>
+        <div class="high-risk-stat"><strong>{{ $todayLegs }}</strong><span>Booked selections</span></div>
+        <div class="high-risk-stat alert"><strong>{{ $largest ? number_format((float) $largest, 0).'×' : 'N/A' }}</strong><span>Highest live odds</span></div>
+        <div class="high-risk-stat"><strong>{{ $history->isNotEmpty() ? $won.'/'.$history->count() : 'N/A' }}</strong><span>Settled wins shown</span></div>
+    </section>
+
+    @if($preview)
+        <section class="high-risk-panel">
+            <div class="high-risk-panel-head">
+                <div>
+                    <h2>Today’s prediction board</h2>
+                    <p>{{ $preview['title'] }}. The target is 15.00× to 1,500× only after SportyBet confirms the exact selections.</p>
+                </div>
+                <span class="high-risk-chip">{{ $selections->count() }} selections</span>
+            </div>
+
+            <div class="high-risk-board">
+                @foreach($selections->take(6) as $leg)
+                    <article class="high-risk-prediction">
+                        <div class="high-risk-logos">
+                            @if(($leg['sport'] ?? 'football') === 'tennis')
+                                <span class="high-risk-tennis">🎾</span>
+                            @else
+                                @if(!empty($leg['home_logo']))<img src="{{ $leg['home_logo'] }}" alt="">@endif
+                                @if(!empty($leg['away_logo']))<img src="{{ $leg['away_logo'] }}" alt="">@endif
+                            @endif
+                        </div>
+                        <div style="min-width:0">
+                            <div class="high-risk-match">{{ $leg['home'] }} vs {{ $leg['away'] }}</div>
+                            <div class="high-risk-market">@nodash($leg['market'] ?? 'Model market')</div>
+                        </div>
+                        <span class="high-risk-probability">{{ number_format((float) ($leg['model_prob'] ?? 0), 0) }}%</span>
+                    </article>
+                @endforeach
+            </div>
+
+            @if($selections->count() > 6)
+                <details class="high-risk-more">
+                    <summary>View {{ $selections->count() - 6 }} more model selections</summary>
+                    <div class="high-risk-board" style="margin-top:.55rem">
+                        @foreach($selections->slice(6) as $leg)
+                            <article class="high-risk-prediction">
+                                <div class="high-risk-logos">
+                                    @if(($leg['sport'] ?? 'football') === 'tennis')
+                                        <span class="high-risk-tennis">🎾</span>
+                                    @else
+                                        @if(!empty($leg['home_logo']))<img src="{{ $leg['home_logo'] }}" alt="">@endif
+                                        @if(!empty($leg['away_logo']))<img src="{{ $leg['away_logo'] }}" alt="">@endif
+                                    @endif
+                                </div>
+                                <div style="min-width:0">
+                                    <div class="high-risk-match">{{ $leg['home'] }} vs {{ $leg['away'] }}</div>
+                                    <div class="high-risk-market">@nodash($leg['market'] ?? 'Model market')</div>
+                                </div>
+                                <span class="high-risk-probability">{{ number_format((float) ($leg['model_prob'] ?? 0), 0) }}%</span>
+                            </article>
+                        @endforeach
+                    </div>
+                </details>
+            @endif
+        </section>
+    @endif
+
+    <section class="high-risk-panel">
+        <div class="high-risk-panel-head">
+            <div>
+                <h2>Today’s ticket queue</h2>
+                <p>A booking code appears only after the Mac worker verifies the live SportyBet ticket.</p>
+            </div>
+            <span class="high-risk-chip">{{ now('Africa/Lagos')->format('D, d M') }}</span>
+        </div>
+
         @forelse($today_codes as $code)
             @php $legs = is_array($code->fixtures) ? $code->fixtures : []; @endphp
-            <article class="ahr-ticket"><div class="ahr-ticket-top"><div><div class="ahr-code">{{ strtoupper($code->code) }} <button class="ahr-copy" type="button" data-copy-code="{{ $code->code }}">copy</button></div><div class="ahr-meta">{{ ucfirst($code->platform ?: 'Booking provider') }} · {{ number_format((float) $code->total_odds, 2) }}× odds · {{ count($legs) }} legs · {{ $code->created_at?->timezone('Africa/Lagos')?->format('H:i') ?? 'N/A' }}</div></div><span class="ahr-status {{ $code->status }}">{{ $code->status }}</span></div><div class="ahr-legs"><b>Selections:</b> {{ collect($legs)->map(fn ($leg) => ($leg['match'] ?? trim(($leg['home'] ?? 'Home').' vs '.($leg['away'] ?? 'Away'))).', '.($leg['market'] ?? 'Market'))->implode(' · ') ?: 'Awaiting confirmed ticket details.' }}</div></article>
+            <article class="high-risk-ticket">
+                <div>
+                    <div class="high-risk-ticket-label">{{ ucfirst($code->platform ?: 'Booking provider') }} booking code</div>
+                    <div class="high-risk-code">{{ strtoupper($code->code) }}</div>
+                    <div class="high-risk-ticket-meta">{{ number_format((float) $code->total_odds, 2) }}× odds · {{ count($legs) }} selections · {{ $code->created_at?->timezone('Africa/Lagos')?->format('H:i') ?? 'N/A' }}</div>
+                </div>
+                <div class="high-risk-ticket-actions">
+                    <span class="high-risk-status {{ $code->status }}">{{ $code->status }}</span>
+                    <button class="high-risk-copy" type="button" data-copy-code="{{ $code->code }}">Copy code</button>
+                </div>
+            </article>
         @empty
-            <div class="ahr-empty">No high-risk ticket has been created today. It will appear only when the booking workflow returns a valid code.</div>
+            <div class="high-risk-empty">No live high-risk ticket has been created today. The model board can still show candidates while it waits for SportyBet to confirm a valid code.</div>
         @endforelse
     </section>
 
-    <section class="ahr-card"><div class="ahr-card-head"><div><h2>Transparent settled history</h2><p>{{ $won }} won from {{ $history->count() }} settled high-risk tickets listed below.</p></div><span class="ahr-label">Last 30</span></div>
+    <section class="high-risk-panel">
+        <div class="high-risk-panel-head">
+            <div>
+                <h2>Settled history</h2>
+                <p>{{ $won }} won from {{ $history->count() }} settled high-risk tickets shown. Results stay visible for review.</p>
+            </div>
+            <span class="high-risk-chip">Last 30</span>
+        </div>
+
         @if($history->isNotEmpty())
-            <table class="ahr-history"><thead><tr><th>Code</th><th>Result</th><th>Odds</th><th>Legs</th><th>Settled</th></tr></thead><tbody>@foreach($history as $code)<tr><td><span class="ahr-code">{{ strtoupper($code->code) }}</span></td><td><span class="ahr-status {{ $code->status }}">{{ $code->status === 'won' ? 'Won' : 'Lost' }}</span></td><td>{{ number_format((float) $code->total_odds, 2) }}×</td><td>{{ is_array($code->fixtures) ? count($code->fixtures) : 0 }}</td><td>{{ $code->settled_at?->timezone('Africa/Lagos')?->format('d M Y · H:i') ?? 'N/A' }}</td></tr>@endforeach</tbody></table>
+            <div class="high-risk-history">
+                @foreach($history as $code)
+                    <article class="high-risk-history-item {{ $code->status }}">
+                        <span class="high-risk-history-icon">{{ $code->status === 'won' ? '✓' : '×' }}</span>
+                        <div>
+                            <div class="high-risk-history-code">{{ strtoupper($code->code) }}</div>
+                            <div class="high-risk-history-meta">{{ $code->status === 'won' ? 'Won' : 'Lost' }} · {{ number_format((float) $code->total_odds, 2) }}× · {{ $code->settled_at?->timezone('Africa/Lagos')?->format('d M') ?? 'N/A' }}</div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
         @else
-            <div class="ahr-empty">No settled high-risk tickets yet. Results will appear here automatically after grading.</div>
+            <div class="high-risk-empty">No high-risk ticket has settled yet. Settlements will appear here automatically.</div>
         @endif
     </section>
 </div>
-@push('scripts')
-<script>document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy-code]');if(!b)return;const o=b.textContent;try{await navigator.clipboard.writeText(b.dataset.copyCode);b.textContent='copied ✓'}catch(_){b.textContent=b.dataset.copyCode}setTimeout(()=>b.textContent=o,1600)});</script>
-@endpush
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-copy-code]');
+    if (!button) return;
+
+    const original = button.textContent;
+    try {
+        await navigator.clipboard.writeText(button.dataset.copyCode);
+        button.textContent = 'Copied ✓';
+    } catch (_) {
+        button.textContent = button.dataset.copyCode;
+    }
+    setTimeout(() => button.textContent = original, 1800);
+});
+</script>
+@endpush
