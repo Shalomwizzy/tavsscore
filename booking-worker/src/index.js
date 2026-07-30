@@ -82,6 +82,10 @@ async function run() {
             if (result && result.code) break;
           } catch (err) {
             lastErr = err;
+            // Retrying can help an odds refresh or a transient SportyBet
+            // response, but cannot make a fixture that is absent from the
+            // sportsbook appear eight times in a row.
+            if (err?.permanent) break;
           }
           if (attempt < maxSlipAttempts && page) {
             await page.waitForTimeout(Math.min(15000, 2000 * attempt));

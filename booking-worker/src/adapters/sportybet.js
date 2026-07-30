@@ -83,22 +83,35 @@ export const sportybet = {
 
     const selections = [];
     const booked = [];
+    const skipped = { unsupported: [], fixture: [], market: [], odds: [] };
     let combined = 1.0;
     const maxOdds = slip.max_total_odds ?? 500;
     const minOdds = slip.min_total_odds ?? 2;
 
     for (const leg of slip.selections) {
       const mapped = resolveMarket(leg.market);
-      if (!mapped) continue; // market we don't book on SportyBet — skip the leg
+      if (!mapped) {
+        skipped.unsupported.push(describeLeg(leg));
+        continue; // market we don't book on SportyBet — skip the leg
+      }
 
       const ev = matchEvent(events, leg);
-      if (!ev) continue;
+      if (!ev) {
+        skipped.fixture.push(describeLeg(leg));
+        continue;
+      }
 
       const hit = findOutcome(ev, mapped);
-      if (!hit) continue;
+      if (!hit) {
+        skipped.market.push(describeLeg(leg));
+        continue;
+      }
 
       const odds = parseFloat(hit.odds) || leg.est_odds || 1.0;
-      if (combined * odds > maxOdds) continue; // would blow the band — try the next leg
+      if (combined * odds > maxOdds) {
+        skipped.odds.push(describeLeg(leg));
+        continue; // would blow the band — try the next leg
+      }
 
       selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
       booked.push({ match_id: leg.match_id ?? null, home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
@@ -108,7 +121,12 @@ export const sportybet = {
     }
 
     if (selections.length < 3) {
-      throw new Error(`only ${selections.length} legs matched on SportyBet (need 3)`);
+      const error = new Error(`only ${selections.length} legs matched on SportyBet (need 3). ${formatCoverage(events.length, skipped)}`);
+      // A missing fixture/market is not a transient network or odds-refresh
+      // problem. The orchestrator should report it once instead of blindly
+      // doing the same browser request eight times.
+      error.permanent = true;
+      throw error;
     }
     if (combined < minOdds) {
       throw new Error(`combined odds ${combined.toFixed(2)} below ${minOdds} minimum`);
@@ -156,7 +174,13 @@ async function loadEvents(page) {
     const events = tournaments.flatMap((t) => t.events || []);
     if (!events.length) break;
     all.push(...events);
-    if (events.length < 100) break;
+    // SportyBet groups this endpoint by tournament. A page can contain fewer
+    // than pageSize events while many later pages still exist (e.g. page 1
+    // currently has 59 events but the API advertises 1,100+). Stopping on the
+    // event count made the worker search only the first page and falsely say
+    // every TavsScore ticket had zero matching legs.
+    const total = Number(body?.data?.totalNum || 0);
+    if (total > 0 && pageNum * 100 >= total) break;
   }
   return all;
 }
@@ -282,6 +306,26 @@ function matchEvent(events, leg) {
     if (total > bestScore) { bestScore = total; best = ev; }
   }
   return best;
+}
+
+function describeLeg(leg) {
+  return `${leg.home} vs ${leg.away} (${leg.market})`;
+}
+
+function formatCoverage(eventCount, skipped) {
+  const parts = [`SportyBet scan: ${eventCount} upcoming fixtures`];
+  for (const [kind, label] of [
+    ['fixture', 'fixture not listed'],
+    ['market', 'market unavailable'],
+    ['unsupported', 'unsupported TavsScore market'],
+    ['odds', 'outside ticket odds limit'],
+  ]) {
+    const legs = skipped[kind];
+    if (!legs.length) continue;
+    const sample = legs.slice(0, 3).join('; ');
+    parts.push(`${label}: ${legs.length}${sample ? ` [${sample}${legs.length > 3 ? '; …' : ''}]` : ''}`);
+  }
+  return parts.join('. ');
 }
 
 // Normalise a team name to comparable tokens (drop accents, punctuation and
