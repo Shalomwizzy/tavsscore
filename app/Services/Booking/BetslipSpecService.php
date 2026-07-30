@@ -25,11 +25,10 @@ class BetslipSpecService
     private const MIN_LEGS       = 3;
     private const MAX_LEGS       = 30;   // hard cap so we never blow past MAX_TOTAL_ODDS
 
-    // High-Risk ticket: a deliberately risky, but still realistically bookable,
-    // long-shot accumulator. SportyBet's live prices showed that a 100.00 floor
-    // left the desk empty even with eleven approved legs.
+    // High-Risk ticket: a deliberately risky long-shot accumulator. It must
+    // clear 20.00 live odds; anything lower belongs on a regular ticket.
     private const HR_FLOOR     = 50.0;
-    private const MIN_HR_ODDS  = 10.0;
+    private const MIN_HR_ODDS  = 20.0;
     private const MAX_HR_ODDS  = 1500.0;
 
     /**
@@ -267,7 +266,7 @@ class BetslipSpecService
     /**
      * High-Risk ticket: one still-model-approved (≥50%) bookable call per game,
      * deliberately favouring the lower-confidence eligible line so the ticket
-     * can honestly reach its 10–1500 odds band. It is separate from the safe
+     * can honestly reach its 20–1500 odds band. It is separate from the safe
      * boards and must never borrow their near-certain selections.
      */
     private function buildHighRisk(Collection $preds): ?array
