@@ -72,12 +72,15 @@ class BookingCodeLedgerService
 
             $result = PickHelpers::resolveForMatch($match, $leg->market);
             if ($result === null) {
+                // Push/void on a finished match (e.g. Draw No Bet on a draw): the
+                // leg drops out of the accumulator at odds 1.0 — it neither wins
+                // nor loses and must not keep the ticket pending.
                 $leg->update([
-                    'status' => 'unresolved',
+                    'status' => 'void',
                     'home_score' => $match->home_score,
                     'away_score' => $match->away_score,
+                    'settled_at' => $leg->settled_at ?? now(),
                 ]);
-                $pending = true;
                 continue;
             }
 

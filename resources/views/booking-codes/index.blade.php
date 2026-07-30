@@ -32,7 +32,7 @@
     .bc-fixtures { margin-top:.75rem; } .bc-fixtures summary { cursor:pointer; list-style:none; color:#aebed0; font-size:.73rem; font-weight:750; } .bc-fixtures summary::-webkit-details-marker { display:none; }
     .bc-fixtures ul { list-style:none; padding:0; margin:.55rem 0 0; border-top:1px solid var(--border); } .bc-fixtures li { padding:.42rem 0; border-bottom:1px solid var(--border); color:#aebed0; font-size:.71rem; line-height:1.35; }
     .bc-fixtures em { color:#77e5d8; font-style:normal; font-weight:750; }
-    .bc-leg { display:grid;grid-template-columns:1fr auto;gap:.45rem;align-items:center; } .bc-leg-score { color:#fff;font-weight:850;font-size:.7rem;text-align:right; } .bc-leg-status { display:inline-flex;margin-top:.2rem;border-radius:999px;padding:.13rem .34rem;font-size:.58rem;font-weight:900;text-transform:uppercase; } .bc-leg-status.won { color:#74f4c7;background:rgba(52,211,153,.12); } .bc-leg-status.lost { color:#fda4af;background:rgba(251,113,133,.12); } .bc-leg-status.pending,.bc-leg-status.unresolved { color:#f8cf72;background:rgba(245,158,11,.11); }
+    .bc-leg { display:grid;grid-template-columns:1fr auto;gap:.45rem;align-items:center; } .bc-leg-score { color:#fff;font-weight:850;font-size:.7rem;text-align:right; } .bc-leg-status { display:inline-flex;margin-top:.2rem;border-radius:999px;padding:.13rem .34rem;font-size:.58rem;font-weight:900;text-transform:uppercase; } .bc-leg-status.won { color:#74f4c7;background:rgba(52,211,153,.12); } .bc-leg-status.lost { color:#fda4af;background:rgba(251,113,133,.12); } .bc-leg-status.pending,.bc-leg-status.unresolved { color:#f8cf72;background:rgba(245,158,11,.11); } .bc-leg-status.void { color:#9ca3af;background:rgba(156,163,175,.13); }
     .bc-time { margin-top:.85rem; color:var(--text-dim); font-size:.67rem; }
     .bc-empty { border:1px dashed var(--border); border-radius:15px; padding:2.5rem 1rem; text-align:center; color:var(--text-dim); }
     .bc-empty b { display:block; color:#fff; margin:.5rem 0 .25rem; }
@@ -58,7 +58,7 @@
     <div class="bc-stat-grid">
         <div class="bc-stat"><b>{{ $codes->count() }}</b><span>Available today</span></div>
         <div class="bc-stat"><b>2.00+</b><span>Minimum combined odds</span></div>
-        <div class="bc-stat"><b>{{ $settledCount ? number_format(($wonCount / $settledCount) * 100, 0) . '%' : '—' }}</b><span>Verified booking-code win rate</span></div>
+        <div class="bc-stat"><b>{{ $settledCount ? number_format(($wonCount / $settledCount) * 100, 0) . '%' : 'N/A' }}</b><span>Verified booking-code win rate</span></div>
     </div>
 
     <div class="bc-heading"><div><h2>Live booking codes</h2><p>Check the bookmaker's final prices before you place any ticket.</p></div></div>
@@ -79,7 +79,7 @@
                     <div class="bc-note">How to load: {{ $howTo }} → enter the code.</div>
                     <div class="bc-actions"><button type="button" class="bc-btn bc-copy" onclick="copyBookingCode('{{ strtoupper($bc->code) }}', this)">Copy code</button>@if($bc->link)<a class="bc-btn bc-load" href="{{ $bc->link }}" target="_blank" rel="noopener sponsored">Open ticket ↗</a>@elseif($affiliate)<a class="bc-btn bc-load" href="{{ $affiliate->register_url }}" target="_blank" rel="noopener sponsored">Open {{ $bc->platform }} ↗</a>@endif</div>
                     @if($bc->legs->isNotEmpty())
-                        <details class="bc-fixtures"><summary>⌄ View {{ $bc->legs->count() }} saved selections &amp; results</summary><ul>@foreach($bc->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team ?: 'Home' }} vs {{ $leg->away_team ?: 'Away' }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">@if($leg->home_score !== null){{ $leg->home_score }}–{{ $leg->away_score }}@else Awaiting result @endif</div></li>@endforeach</ul></details>
+                        <details class="bc-fixtures"><summary>⌄ View {{ $bc->legs->count() }} saved selections &amp; results</summary><ul>@foreach($bc->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team ?: 'Home' }} vs {{ $leg->away_team ?: 'Away' }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">@if($leg->home_score !== null){{ $leg->home_score }}:{{ $leg->away_score }}@else Awaiting result @endif</div></li>@endforeach</ul></details>
                     @elseif(is_array($bc->fixtures) && count($bc->fixtures))
                         <details class="bc-fixtures"><summary>⌄ View {{ count($bc->fixtures) }} saved selections</summary><ul>@foreach($bc->fixtures as $leg)<li>{{ $leg['home'] ?? 'Home' }} vs {{ $leg['away'] ?? 'Away' }}<br><em>{{ $leg['market'] ?? 'Selection' }}</em></li>@endforeach</ul></details>
                     @endif
@@ -105,7 +105,7 @@
                     <strong style="color:#fcd34d;font-size:.77rem">{{ number_format((float) $item->total_odds, 2) }}</strong>
                     <time class="bc-history-time" style="color:var(--text-dim);font-size:.68rem">{{ $item->settled_at?->setTimezone('Africa/Lagos')->format('M d, H:i') }}</time>
                 </div>
-                @if($item->legs->isNotEmpty())<details class="bc-fixtures" style="margin:0 .9rem .75rem"><summary>⌄ Match-by-match outcome</summary><ul>@foreach($item->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team }} vs {{ $leg->away_team }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">{{ $leg->home_score !== null ? $leg->home_score.'–'.$leg->away_score : '—' }}</div></li>@endforeach</ul></details>@endif
+                @if($item->legs->isNotEmpty())<details class="bc-fixtures" style="margin:0 .9rem .75rem"><summary>⌄ Match-by-match outcome</summary><ul>@foreach($item->legs as $leg)<li class="bc-leg"><div>{{ $leg->home_team }} vs {{ $leg->away_team }}<br><em>{{ $leg->market }}</em><br><span class="bc-leg-status {{ $leg->status }}">{{ $leg->status }}</span></div><div class="bc-leg-score">{{ $leg->home_score !== null ? $leg->home_score.':'.$leg->away_score : 'N/A' }}</div></li>@endforeach</ul></details>@endif
             @endforeach
         </section>
     @endif
