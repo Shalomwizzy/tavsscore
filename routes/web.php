@@ -125,6 +125,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         /* Matches */
         Route::get('/matches',        [Admin\MatchAdminController::class, 'index'])->name('matches');
         Route::post('/matches/fetch', [Admin\MatchAdminController::class, 'fetch'])->name('matches.fetch');
+        Route::post('/matches/check-past-results', [Admin\MatchAdminController::class, 'checkPastResults'])->name('matches.check-past-results');
 
         /* Predictions */
         Route::get('/predictions',          [Admin\PredictionAdminController::class, 'index'])->name('predictions');

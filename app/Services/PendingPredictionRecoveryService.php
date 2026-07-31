@@ -19,8 +19,31 @@ class PendingPredictionRecoveryService
     /** @return array{football_settled:int, tennis_settled:int, football_pending:int, tennis_pending:int, warnings:list<string>} */
     public function recover(): array
     {
-        $footballBefore = $this->pendingFootball(self::HISTORY_DAYS);
+        $football = $this->recoverFootball();
         $tennisBefore = $this->pendingTennis();
+        $warnings = $football['warnings'];
+
+        try {
+            Artisan::call('tennis:settle-results');
+        } catch (\Throwable $exception) {
+            $warnings[] = 'Tennis recovery could not complete. It will retry automatically.';
+        }
+
+        $tennisAfter = $this->pendingTennis();
+
+        return [
+            'football_settled' => $football['settled'],
+            'tennis_settled' => max(0, $tennisBefore - $tennisAfter),
+            'football_pending' => $football['pending'],
+            'tennis_pending' => $tennisAfter,
+            'warnings' => $warnings,
+        ];
+    }
+
+    /** @return array{settled:int, pending:int, warnings:list<string>} */
+    public function recoverFootball(): array
+    {
+        $before = $this->pendingFootball(self::HISTORY_DAYS);
         $warnings = [];
 
         try {
@@ -41,20 +64,11 @@ class PendingPredictionRecoveryService
             $warnings[] = 'Football recovery could not complete every source. It will retry automatically.';
         }
 
-        try {
-            Artisan::call('tennis:settle-results');
-        } catch (\Throwable $exception) {
-            $warnings[] = 'Tennis recovery could not complete. It will retry automatically.';
-        }
-
-        $footballAfter = $this->pendingFootball(self::HISTORY_DAYS);
-        $tennisAfter = $this->pendingTennis();
+        $after = $this->pendingFootball(self::HISTORY_DAYS);
 
         return [
-            'football_settled' => max(0, $footballBefore - $footballAfter),
-            'tennis_settled' => max(0, $tennisBefore - $tennisAfter),
-            'football_pending' => $footballAfter,
-            'tennis_pending' => $tennisAfter,
+            'settled' => max(0, $before - $after),
+            'pending' => $after,
             'warnings' => $warnings,
         ];
     }

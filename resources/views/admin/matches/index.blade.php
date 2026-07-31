@@ -6,10 +6,16 @@
 
 <div class="page-hd">
     <span class="page-hd-title">⚽ Matches Database</span>
-    <form method="POST" action="{{ route('admin.matches.fetch') }}">
-        @csrf
-        <button type="submit" class="btn-a btn-blue">🔄 Fetch from API-Football</button>
-    </form>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <form method="POST" action="{{ route('admin.matches.check-past-results') }}" onsubmit="return confirm('Check and settle every past Football prediction using verified results? Any match without a confirmed final score will remain pending.');">
+            @csrf
+            <button type="submit" class="btn-a btn-green">✓ Check past Football results</button>
+        </form>
+        <form method="POST" action="{{ route('admin.matches.fetch') }}">
+            @csrf
+            <button type="submit" class="btn-a btn-blue">🔄 Fetch from API-Football</button>
+        </form>
+    </div>
 </div>
 
 <div class="a-card">
