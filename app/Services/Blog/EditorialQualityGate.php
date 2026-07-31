@@ -42,19 +42,25 @@ Editorial rules:
 - Avoid keyword stuffing, clickbait, fake certainty, betting guarantees, sensational claims and generic filler.
 - Use descriptive headings, short readable paragraphs, and specific details from the briefing. Do not repeat the same point merely to make the article longer.
 - Do not use links, citations you cannot verify, images, scripts, tables, markdown, or HTML outside p, h2, h3, ul, ol, li, strong, em and blockquote.
-- Never use em dashes. Do not use the phrases: "it is worth noting", "furthermore", "in conclusion", "delve", "it remains to be seen", or "tapestry".
+- Never use em dashes or en dashes, including — and –. Use commas, colons or full stops instead. Do not use the phrases: "it is worth noting", "furthermore", "in conclusion", "delve", "it remains to be seen", or "tapestry".
 - Return only valid JSON with exactly two keys: "title" and "content". No markdown or code fences.
 PROMPT;
     }
 
     public function sanitise(string $html): string
     {
+        $html = BlogPost::normaliseTypography($html) ?? '';
         $html = preg_replace('/<(script|style|iframe|object|embed)\b[^>]*>.*?<\/\1\s*>/is', '', $html) ?? $html;
         $html = preg_replace('/<\/?(?:script|style|iframe|object|embed)[^>]*>/i', '', $html) ?? $html;
         $html = preg_replace('/<img[^>]*>/i', '', $html) ?? $html;
         $html = preg_replace('/<a\b[^>]*>(.*?)<\/a>/is', '$1', $html) ?? $html;
 
         return trim(strip_tags($html, self::ALLOWED_TAGS));
+    }
+
+    public function containsEditorialDash(string $text): bool
+    {
+        return (bool) preg_match('/[—–]/u', $text);
     }
 
     /** @return list<string> */
@@ -64,6 +70,10 @@ PROMPT;
         $plain = preg_replace('/\s+/', ' ', trim(strip_tags($html))) ?? '';
         $words = str_word_count($plain);
         $titleLength = mb_strlen(trim($title));
+
+        if ($this->containsEditorialDash($title.$html)) {
+            $issues[] = 'Article contains an em dash or en dash.';
+        }
 
         if ($titleLength < 35 || $titleLength > 85) {
             $issues[] = 'Title must be a clear, descriptive 35-85 characters.';

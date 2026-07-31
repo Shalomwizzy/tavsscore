@@ -28,4 +28,17 @@ class EditorialQualityGateTest extends TestCase
 
         $this->assertSame('<p>Useful football analysis.</p>Fake source', $content);
     }
+
+    public function test_it_rejects_long_dashes_and_normalises_them_out_of_stored_html(): void
+    {
+        $gate = app(EditorialQualityGate::class);
+
+        $issues = $gate->issues(
+            'A descriptive football headline with an em dash — today',
+            '<p>Transfer news — and a tactical update – from the club.</p>',
+        );
+
+        $this->assertContains('Article contains an em dash or en dash.', $issues);
+        $this->assertSame('<p>Transfer news, and a tactical update to from the club.</p>', $gate->sanitise('<p>Transfer news — and a tactical update – from the club.</p>'));
+    }
 }

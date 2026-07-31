@@ -403,7 +403,7 @@ class AutoBlogPost extends Command
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $article = $writer->writeArticle(
                 $quality->systemPrompt(),
-                $userPrompt . $revisionNote . "\n\nRequired output quality: write at least 750 useful words, use at least three H2 headings and five substantive paragraphs. Every claim must come from the supplied briefing.",
+                $userPrompt . $revisionNote . "\n\nRequired output quality: write at least 750 useful words, use at least three H2 headings and five substantive paragraphs. Every claim must come from the supplied briefing. Never use an em dash (—) or en dash (–); use commas, colons or full stops instead.",
             );
             $content = $quality->sanitise($article['content']);
             $issues = $quality->issues($article['title'], $content);

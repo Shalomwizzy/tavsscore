@@ -106,7 +106,7 @@ class AuditBlogEditorialQuality extends Command
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             $article = $writer->writeArticle(
                 $quality->systemPrompt(),
-                "Improve the published TavsScore article below. It is the only factual briefing available, so preserve confirmed facts, remove unsupported claims, and do not add new facts, quotes, statistics or sources. Write an original reader-first article of at least 750 useful words, with at least three H2 headings and five substantive paragraphs.\n\nCURRENT TITLE: {$post->title}\n\nCURRENT ARTICLE HTML:\n{$post->content}{$revisionNote}",
+                "Improve the published TavsScore article below. It is the only factual briefing available, so preserve confirmed facts, remove unsupported claims, and do not add new facts, quotes, statistics or sources. Write an original reader-first article of at least 750 useful words, with at least three H2 headings and five substantive paragraphs. Never use em dashes or en dashes; use commas, colons or full stops instead.\n\nCURRENT TITLE: {$post->title}\n\nCURRENT ARTICLE HTML:\n{$post->content}{$revisionNote}",
             );
             $content = $quality->sanitise($article['content']);
             $issues = $quality->issues($article['title'], $content, $post->id);

@@ -44,6 +44,49 @@ class BlogPost extends Model
         return $count > 0 ? $slug.'-'.($count + 1) : $slug;
     }
 
+    /** Keep every stored article consistent with TavsScore's no long-dash style. */
+    public static function normaliseTypography(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace(['—', '–'], [', ', ' to '], $value);
+        $value = preg_replace('/\s+([,.;:!?])/u', '$1', $value) ?? $value;
+
+        return preg_replace('/[ \t]{2,}/u', ' ', $value) ?? $value;
+    }
+
+    public function setTitleAttribute(?string $value): void
+    {
+        $this->attributes['title'] = self::normaliseTypography($value);
+    }
+
+    public function setExcerptAttribute(?string $value): void
+    {
+        $this->attributes['excerpt'] = self::normaliseTypography($value);
+    }
+
+    public function setContentAttribute(?string $value): void
+    {
+        $this->attributes['content'] = self::normaliseTypography($value);
+    }
+
+    public function setContentPidginAttribute(?string $value): void
+    {
+        $this->attributes['content_pidgin'] = self::normaliseTypography($value);
+    }
+
+    public function setContentSwahiliAttribute(?string $value): void
+    {
+        $this->attributes['content_swahili'] = self::normaliseTypography($value);
+    }
+
+    public function setContentFrenchAttribute(?string $value): void
+    {
+        $this->attributes['content_french'] = self::normaliseTypography($value);
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true)

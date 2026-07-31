@@ -122,6 +122,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/blog/{blog}/regenerate-article', [Admin\BlogController::class, 'regenerateArticle'])->name('blog.regenerate-article');
         Route::delete('/blog/{blog}',      [Admin\BlogController::class, 'destroy'])->name('blog.destroy');
         Route::post('/blog/auto-generate', [Admin\BlogController::class, 'autoGenerate'])->name('blog.auto-generate');
+        Route::post('/blog/normalise-typography', [Admin\BlogController::class, 'normaliseTypography'])->name('blog.normalise-typography');
 
         /* Matches */
         Route::get('/matches',        [Admin\MatchAdminController::class, 'index'])->name('matches');

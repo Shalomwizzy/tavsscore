@@ -138,6 +138,30 @@ class BlogController extends Controller
             ->with('success', 'AI blog post generated and published successfully!');
     }
 
+    /** Remove long dashes from existing posts without rewriting their facts. */
+    public function normaliseTypography(): RedirectResponse
+    {
+        $changed = 0;
+
+        BlogPost::query()->orderBy('id')->each(function (BlogPost $post) use (&$changed): void {
+            $fields = ['title', 'excerpt', 'content', 'content_pidgin', 'content_swahili', 'content_french'];
+            $updates = [];
+            foreach ($fields as $field) {
+                $normalised = BlogPost::normaliseTypography($post->getRawOriginal($field));
+                if ($normalised !== $post->getRawOriginal($field)) {
+                    $updates[$field] = $normalised;
+                }
+            }
+
+            if ($updates !== []) {
+                $post->update($updates);
+                $changed++;
+            }
+        });
+
+        return back()->with('success', "Typography cleaned on {$changed} blog post(s). Em and en dashes were removed.");
+    }
+
     /** Replace the text only, leaving the existing image untouched. */
     public function regenerateArticle(BlogPost $blog, BlogArticleWriter $writer, EditorialQualityGate $quality): RedirectResponse
     {
@@ -150,8 +174,12 @@ class BlogController extends Controller
                 $quality->systemPrompt(),
                 "Regenerate this TavsScore football article. The current article below is the only factual briefing available. Preserve confirmed facts, remove unsupported claims, improve the reader value and structure, and do not invent new facts. Write at least 750 useful words, with at least three H2 headings and five substantive paragraphs.\n\nCURRENT TITLE: {$blog->title}\n\nCURRENT ARTICLE HTML:\n{$blog->content}",
             );
+            $containsEditorialDash = $quality->containsEditorialDash($article['title'].$article['content']);
             $content = $quality->sanitise($article['content']);
             $issues = $quality->issues($article['title'], $content, $blog->id);
+            if ($containsEditorialDash) {
+                $issues[] = 'Article contains an em dash or en dash.';
+            }
 
             if ($issues !== []) {
                 throw new \RuntimeException('Regenerated article failed editorial review: ' . implode(' ', $issues));

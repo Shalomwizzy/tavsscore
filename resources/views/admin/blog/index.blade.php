@@ -13,6 +13,10 @@
                 🤖 AI Auto-Generate
             </button>
         </form>
+        <form method="POST" action="{{ route('admin.blog.normalise-typography') }}" onsubmit="return confirm('Remove every em dash and en dash from all existing blog posts?')">
+            @csrf
+            <button type="submit" class="btn-a btn-gray">✦ Clean blog punctuation</button>
+        </form>
         <a href="{{ route('admin.blog.create') }}" class="btn-a btn-green">✏️ New Post</a>
     </div>
 </div>
