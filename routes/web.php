@@ -131,6 +131,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/predictions/generate',[Admin\PredictionAdminController::class, 'generate'])->name('predictions.generate');
         Route::post('/predictions/rebuild',[Admin\PredictionAdminController::class, 'rebuild'])->name('predictions.rebuild');
         Route::get('/daily-football-predictions', [Admin\DailyFootballPredictionsAdminController::class, 'index'])->name('daily-football-predictions.index');
+        Route::post('/daily-football-predictions/settle-past', [Admin\DailyFootballPredictionsAdminController::class, 'settlePast'])->name('daily-football-predictions.settle-past');
 
         /* Tennis (isolated from football) */
         Route::get('/tennis', [Admin\TennisAdminController::class, 'index'])->name('tennis.index');
