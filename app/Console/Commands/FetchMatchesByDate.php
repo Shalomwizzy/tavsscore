@@ -72,14 +72,20 @@ class FetchMatchesByDate extends Command
             }
         }
 
-        // Force any matches for this date still stuck in a live status to FT
-        $forced = FootballMatch::query()
+        // A stale live label alone is never proof that a fixture finished. The
+        // old behaviour turned scoreless rows into FT, which then excluded them
+        // from the free-source recovery query forever. Only close a match when
+        // both final score fields are already present; otherwise leave it open
+        // for API-Football, football-data.org or ESPN to verify later.
+        $confirmed = FootballMatch::query()
             ->whereIn('status', ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'])
             ->whereDate('match_time', $date)
             ->where('match_time', '<=', now()->subHours(3))
+            ->whereNotNull('home_score')
+            ->whereNotNull('away_score')
             ->update(['status' => 'FT']);
 
-        $this->info("Updated {$updated} fixtures. Force-expired {$forced} stale live matches to FT.");
+        $this->info("Updated {$updated} fixtures. Marked {$confirmed} stale live match(es) FT only where final scores were already present.");
         $this->info("Run 'php artisan predictions:check-outcomes' next to resolve pending picks.");
 
         return self::SUCCESS;
