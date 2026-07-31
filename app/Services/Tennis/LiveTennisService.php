@@ -42,24 +42,83 @@ class LiveTennisService
     public function settleTracked(): array
     {
         $checked = $settled = 0;
-        $matches = TennisMatch::query()->where('source', 'live_tennis')
+        // Do not limit this to the last few hours. A provider outage, a quota
+        // interruption, or a delayed scheduler run used to make older Tennis
+        // fixtures invisible forever. Restrict to actual unsettled predictions
+        // with a saved Live Tennis ID, then retry every past tracked match.
+        $matches = TennisMatch::query()
+            ->where('source', 'live_tennis')
             ->whereIn('status', ['scheduled', 'live'])
-            ->whereNotNull('scheduled_at')->whereBetween('scheduled_at', [now()->subHours(18), now()->addMinutes(30)])
-            ->orderBy('scheduled_at')->get();
+            ->whereDate('match_date', '<=', now('Africa/Lagos')->toDateString())
+            ->whereHas('prediction', fn ($query) => $query->whereNull('was_correct'))
+            ->orderByRaw('scheduled_at is null')
+            ->orderBy('scheduled_at')
+            ->get();
         foreach ($matches as $match) {
             $checked++;
-            try { $item = $this->get('/matches/' . $match->source_key); } catch (\Throwable) { continue; }
+            try { $item = $this->get('/matches/' . $match->source_key); } catch (\Throwable) {
+                if ($this->settleFromImportedHistory($match)) {
+                    $settled++;
+                }
+                continue;
+            }
             $status = strtolower((string) ($item['status'] ?? ''));
             if ($status === 'completed' && in_array((int) ($item['winner'] ?? 0), [1, 2], true)) {
-                $winner = (int) $item['winner'] === 1 ? $match->player_one : $match->player_two;
-                $match->update(['status' => 'completed', 'winner' => $winner, 'score' => $this->score($item['score'] ?? null), 'stats' => array_merge($match->stats ?? [], ['last_live_score' => $item['score'] ?? null])]);
-                if ($match->prediction) $match->prediction->update(['was_correct' => $match->prediction->predicted_winner === $winner]);
+                $this->settleMatch(
+                    $match,
+                    (int) $item['winner'] === 1 ? $match->player_one : $match->player_two,
+                    $this->score($item['score'] ?? null),
+                    ['last_live_score' => $item['score'] ?? null, 'result_source' => 'live_tennis'],
+                );
                 $settled++;
             } elseif ($status === 'live') {
                 $match->update(['status' => 'live', 'stats' => array_merge($match->stats ?? [], ['last_live_score' => $item['score'] ?? null])]);
+            } elseif ($match->match_date?->lt(now('Africa/Lagos')->startOfDay()) && $this->settleFromImportedHistory($match)) {
+                // Some Live Tennis plans retain live/current match detail but
+                // not older completed resources. Match our separately imported
+                // verified result by date and the exact two players instead.
+                $settled++;
             }
         }
         return compact('checked', 'settled');
+    }
+
+    private function settleFromImportedHistory(TennisMatch $match): bool
+    {
+        $historical = TennisMatch::query()
+            ->where('source', 'tennisdata')
+            ->where('status', 'completed')
+            ->whereDate('match_date', $match->match_date?->toDateString())
+            ->where(fn ($query) => $query
+                ->where(fn ($same) => $same->where('player_one', $match->player_one)->where('player_two', $match->player_two))
+                ->orWhere(fn ($reversed) => $reversed->where('player_one', $match->player_two)->where('player_two', $match->player_one)))
+            ->latest('id')
+            ->first();
+
+        if (! $historical?->winner || ! in_array($historical->winner, [$match->player_one, $match->player_two], true)) {
+            return false;
+        }
+
+        $this->settleMatch($match, $historical->winner, $historical->score, [
+            'result_source' => 'tennisdata',
+            'result_match_id' => $historical->id,
+        ]);
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $extraStats */
+    private function settleMatch(TennisMatch $match, string $winner, ?string $score, array $extraStats): void
+    {
+        $match->update([
+            'status' => 'completed',
+            'winner' => $winner,
+            'score' => $score,
+            'stats' => array_merge($match->stats ?? [], $extraStats),
+        ]);
+        if ($match->prediction) {
+            $match->prediction->update(['was_correct' => $match->prediction->predicted_winner === $winner]);
+        }
     }
 
     private function get(string $path, array $query = []): array
