@@ -93,6 +93,9 @@ return [
                 ? array_map('trim', explode(',', (string) env('ESPN_SOCCER_LEAGUES')))
                 : [],
         )))),
+        // Separate endpoint: tennis has its own public scoreboard and is used
+        // only to verify a final result when Live Tennis has aged it out.
+        'tennis_url' => env('ESPN_TENNIS_URL', 'https://site.api.espn.com/apis/site/v2/sports'),
     ],
 
     'gemini' => [

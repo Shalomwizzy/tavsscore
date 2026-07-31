@@ -364,6 +364,7 @@
                 <summary><span>🎾 Tennis Data</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.tennis.index') }}" class="sb-link {{ request()->routeIs('admin.tennis.*') ? 'active' : '' }}"><span class="sb-icon">🎾</span> Tennis Predictions</a>
+                    <a href="{{ route('admin.tennis.results') }}" class="sb-link {{ request()->routeIs('admin.tennis.results') ? 'active' : '' }}"><span class="sb-icon">📊</span> Tennis Record</a>
                     <a href="{{ route('admin.tennis.media') }}" class="sb-link {{ request()->routeIs('admin.tennis.media') ? 'active' : '' }}"><span class="sb-icon">🖼️</span> Tennis Page Image</a>
                 </div>
             </details>

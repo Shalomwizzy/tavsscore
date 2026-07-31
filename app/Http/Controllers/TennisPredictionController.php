@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Models\TennisPrediction;
 use App\Models\Setting;
+use App\Services\Tennis\TennisPerformanceService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -51,5 +52,12 @@ class TennisPredictionController extends Controller
 
         $tennisPrediction->load('match');
         return view('tennis.show', ['prediction' => $tennisPrediction, 'match' => $tennisPrediction->match, 'heroImage' => Setting::get('tennis_page_hero_image')]);
+    }
+
+    public function results(TennisPerformanceService $performance): View
+    {
+        $report = $performance->report();
+
+        return view('tennis.results', $report);
     }
 }

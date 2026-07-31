@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Concerns\ResolvesDateNav;
 use App\Http\Controllers\Controller;
 use App\Models\TennisPrediction;
+use App\Services\Tennis\TennisPerformanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -49,5 +50,10 @@ class TennisAdminController extends Controller
     {
         Artisan::call('tennis:settle-results');
         return back()->with('success', trim(Artisan::output()) ?: 'Tennis results checked.');
+    }
+
+    public function results(TennisPerformanceService $performance): View
+    {
+        return view('admin.tennis.results', $performance->report());
     }
 }

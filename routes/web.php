@@ -33,6 +33,7 @@ Route::get('/live',        [LiveScoreController::class, 'index'])->name('live.in
 Route::get('/predictions',         [PredictionPageController::class, 'index'])->name('predictions.index');
 Route::get('/predictions/{slug}',  [PredictionPageController::class, 'show'])->name('predictions.show')->where('slug', '[A-Za-z0-9-]+');
 Route::get('/tennis', [App\Http\Controllers\TennisPredictionController::class, 'index'])->name('tennis.index');
+Route::get('/tennis/results', [App\Http\Controllers\TennisPredictionController::class, 'results'])->name('tennis.results');
 Route::get('/tennis/predictions/{tennisPrediction}', [App\Http\Controllers\TennisPredictionController::class, 'show'])->name('tennis.show');
 Route::get('/picks',        [DailyPickController::class, 'index'])->name('picks.index');
 Route::get('/daily-football-predictions', [DailyFootballPredictionsController::class, 'index'])->name('daily-football-predictions.index');
@@ -139,6 +140,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/tennis/fetch-fixtures', [Admin\TennisAdminController::class, 'fetchFixtures'])->name('tennis.fetch');
         Route::post('/tennis/generate', [Admin\TennisAdminController::class, 'generatePredictions'])->name('tennis.generate');
         Route::post('/tennis/settle', [Admin\TennisAdminController::class, 'settleResults'])->name('tennis.settle');
+        Route::get('/tennis/results', [Admin\TennisAdminController::class, 'results'])->name('tennis.results');
         Route::get('/tennis/images', [Admin\SettingsController::class, 'tennisMedia'])->name('tennis.media');
 
         /* Analytics */

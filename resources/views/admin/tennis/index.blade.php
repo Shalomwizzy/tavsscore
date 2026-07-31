@@ -2,7 +2,7 @@
 @section('title','Tennis Predictions')
 @section('page-title','Tennis Predictions')
 @section('content')
-<div class="page-hd"><span class="page-hd-title">🎾 Tennis Predictions</span><div style="display:flex;gap:.5rem;flex-wrap:wrap"><form method="POST" action="{{ route('admin.tennis.fetch') }}">@csrf<button class="btn-a btn-blue">📥 Fetch Fixtures</button></form><form method="POST" action="{{ route('admin.tennis.generate') }}">@csrf<button class="btn-a btn-green">🤖 Generate</button></form><form method="POST" action="{{ route('admin.tennis.settle') }}">@csrf<button class="btn-a btn-gray">✓ Check Results</button></form></div></div>
+<div class="page-hd"><span class="page-hd-title">🎾 Tennis Predictions</span><div style="display:flex;gap:.5rem;flex-wrap:wrap"><a href="{{ route('admin.tennis.results') }}" class="btn-a btn-gray">📊 Tennis record</a><form method="POST" action="{{ route('admin.tennis.fetch') }}">@csrf<button class="btn-a btn-blue">📥 Fetch Fixtures</button></form><form method="POST" action="{{ route('admin.tennis.generate') }}">@csrf<button class="btn-a btn-green">🤖 Generate</button></form><form method="POST" action="{{ route('admin.tennis.settle') }}">@csrf<button class="btn-a btn-gray">✓ Check Results</button></form></div></div>
 <div class="a-card" style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
     <div style="display:flex;gap:.4rem;align-items:center;">
         <a href="{{ route('admin.tennis.index',['date'=>$dateMeta['prev_iso']]) }}" class="btn-a btn-gray">‹</a>
