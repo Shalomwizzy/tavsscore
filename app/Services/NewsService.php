@@ -71,16 +71,23 @@ class NewsService
             ? $desk
             : 'football';
 
-        return Cache::remember("news_editorial_desk_{$desk}", now()->addMinutes(45), function () use ($desk) {
+        // Rotate the featured league by day so the blog isn't perpetually
+        // Premier-League/Arsenal-heavy — Google News over-indexes the big clubs
+        // for generic "football" queries.
+        $leagues = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'];
+        $today   = $leagues[now(config('app.timezone'))->dayOfYear % count($leagues)];
+        $other   = 'La Liga OR Serie A OR Bundesliga OR Ligue 1';
+
+        return Cache::remember("news_editorial_desk_{$desk}_{$today}", now()->addMinutes(45), function () use ($desk, $today, $other) {
             $queries = match ($desk) {
                 'transfers' => [
-                    'football transfer news when:2d',
-                    'Premier League transfer news when:2d',
+                    "{$today} transfer news when:2d",
+                    "{$other} transfer news when:2d",
                     'European football transfer rumours when:2d',
                 ],
                 'club' => [
-                    'football club team news injuries manager when:2d',
-                    'Premier League club news when:2d',
+                    "{$today} club team news injuries manager when:2d",
+                    "{$other} club news when:2d",
                     'Champions League team news when:2d',
                 ],
                 'controversy' => [
@@ -89,9 +96,9 @@ class NewsService
                     'football manager player dispute news when:2d',
                 ],
                 default => [
-                    'latest football news when:2d',
-                    'football transfer team news when:2d',
-                    'European football news when:2d',
+                    "{$today} football news when:2d",
+                    "{$other} football news when:2d",
+                    'Champions League OR Europa League news when:2d',
                 ],
             };
 

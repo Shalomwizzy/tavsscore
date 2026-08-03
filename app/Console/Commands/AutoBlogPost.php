@@ -56,11 +56,16 @@ class AutoBlogPost extends Command
         }
 
         $dateStr = $today->format('l, F j Y');
+        // Avoid repeating stories across the last 6 days, not just today — the
+        // blog was rewriting the same clubs day after day.
         $publishedToday = BlogPost::query()->whereDate('published_at', $today->toDateString())
             ->where('is_published', true)->pluck('title')->all();
-        $avoidPublished = empty($publishedToday)
+        $recentTitles = BlogPost::query()
+            ->where('published_at', '>=', $today->subDays(6)->toDateString())
+            ->where('is_published', true)->orderByDesc('published_at')->limit(30)->pluck('title')->all();
+        $avoidPublished = empty($recentTitles)
             ? ''
-            : "\n\nALREADY PUBLISHED TODAY — choose a materially different subject and angle; do not rewrite these stories:\n- " . implode("\n- ", $publishedToday);
+            : "\n\nRECENTLY PUBLISHED (last 6 days) — choose a materially different subject, club and angle; do NOT rewrite or echo any of these:\n- " . implode("\n- ", $recentTitles);
 
         if ($desk !== 'match') {
             $storedContext   = $this->buildGeneralNewsContext();
