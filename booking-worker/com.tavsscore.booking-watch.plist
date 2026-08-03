@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps the admin "Generate codes" listener (watch.js) running on this Mac so the
+  admin button works without opening a terminal. Install once:
+
+    cp booking-worker/com.tavsscore.booking-watch.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.tavsscore.booking-watch.plist
+
+  Check / stop:
+    launchctl list | grep tavsscore
+    launchctl unload ~/Library/LaunchAgents/com.tavsscore.booking-watch.plist
+
+  RunAtLoad starts it at login; KeepAlive restarts it if it ever exits.
+  (Update the paths below if the project isn't at /Users/tavs/Desktop/tavs-score.)
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tavsscore.booking-watch</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tavs/Desktop/tavs-score/booking-worker/watch.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker/watch.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker/watch.err.log</string>
+</dict>
+</plist>
