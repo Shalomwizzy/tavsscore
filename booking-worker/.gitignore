@@ -6,3 +6,6 @@ capture.log.json
 capture-bet.log.json
 booking-worker.log
 .sporty-profile/
+.generated-*
+*.out.log
+*.err.log

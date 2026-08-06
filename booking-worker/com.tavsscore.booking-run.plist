@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Runs run.sh every 60 seconds so booking + high-risk + rollover codes generate
+  and publish automatically — no terminal, no manual npm start. run.sh no-ops
+  once today's codes are posted, and retries every minute until then, so it works
+  the moment this Mac is online. Install once:
+
+    cp booking-worker/com.tavsscore.booking-run.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.tavsscore.booking-run.plist
+
+  Stop / check:
+    launchctl unload ~/Library/LaunchAgents/com.tavsscore.booking-run.plist
+    launchctl list | grep tavsscore
+
+  (Update the paths if the project isn't at /Users/tavs/Desktop/tavs-score.)
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tavsscore.booking-run</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tavs/Desktop/tavs-score/booking-worker/run.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker</string>
+    <key>StartInterval</key>
+    <integer>60</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker/run.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/tavs/Desktop/tavs-score/booking-worker/run.err.log</string>
+</dict>
+</plist>

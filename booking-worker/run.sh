@@ -1,55 +1,44 @@
 #!/usr/bin/env bash
-# Daily SportyBet booking-code run, for a local cron/launchd schedule.
+# SportyBet booking-code generation, designed to run EVERY MINUTE via launchd
+# (com.tavsscore.booking-run.plist). It retries every minute until it succeeds,
+# then no-ops for the rest of the day — so the moment the Mac is online after
+# 01:30 (picks) / 04:30 (rollover), the codes generate and publish on their own.
 #
 # Setup (once):
-#   cd booking-worker
-#   cp .env.example .env      # then edit .env with your real values
-#   npm install
-#   chmod +x run.sh
+#   cd booking-worker && cp .env.example .env   # fill in real values
+#   npm install && chmod +x run.sh
+#   cp com.tavsscore.booking-run.plist ~/Library/LaunchAgents/
+#   launchctl load ~/Library/LaunchAgents/com.tavsscore.booking-run.plist
 #
-# Schedule (crontab -e) — first run at 05:00 so every code is booked + pushed
-# before 6am (picks ready ~01:30, rollover 04:30), then retry through the day so
-# anything that missed the morning still gets generated. Safe to repeat: codes
-# are idempotent per platform+slip+day and already-notified codes never re-send.
-#   0 5,8,11,14,17,20 * * * /Users/tavs/Desktop/tavs-score/booking-worker/run.sh
-#
-# This Mac must be on a Nigerian (residential) IP — SportyBet blocks datacenter
-# and non-NG IPs, so this cannot run on the server or GitHub Actions.
-#
-# Retries built in: if the Mac isn't online yet (or SportyBet is briefly
-# unreachable) keep retrying until the codes are created. Re-runs are safe —
-# the post-back is idempotent per platform+slip+day, so it fills in / updates
-# rather than duplicating. Set BOOKING_MAX_ATTEMPTS to a positive number only
-# when you explicitly want a finite retry limit.
+# Must run on a Nigerian residential IP — SportyBet blocks datacenter/non-NG IPs.
 cd "$(dirname "$0")"
-export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"   # so cron finds node/npm
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"   # so launchd/cron find node/npm
 set -a; [ -f .env ] && . ./.env; set +a
 
-ATTEMPTS="${BOOKING_MAX_ATTEMPTS:-0}" # 0 = retry until successful
-DELAY="${BOOKING_RETRY_DELAY:-900}"   # 15 minutes between retry attempts
 LOG=booking-worker.log
+MARKER=".generated-$(date +%F)"
 
-online() { curl -sf -m 15 -o /dev/null "https://www.sportybet.com/ng/sport/football"; }
+# Already generated today → nothing to do (this runs every minute).
+[ -f "$MARKER" ] && exit 0
 
-i=0
-while :; do
-  i=$((i + 1))
-  limit_label="∞"
-  [ "$ATTEMPTS" -gt 0 ] && limit_label="$ATTEMPTS"
-  echo "=== booking run $(date) — attempt $i/$limit_label ===" >> "$LOG"
-  if ! online; then
-    echo "offline / SportyBet unreachable; waiting ${DELAY}s" >> "$LOG"
-  elif npm start >> "$LOG" 2>&1; then
-    echo "success on attempt $i" >> "$LOG"
-    exit 0
-  else
-    echo "attempt $i failed; retrying in ${DELAY}s" >> "$LOG"
-  fi
+# Tidy old day markers so they don't pile up.
+find . -maxdepth 1 -name '.generated-*' -mtime +2 -delete 2>/dev/null || true
 
-  if [ "$ATTEMPTS" -gt 0 ] && [ "$i" -ge "$ATTEMPTS" ]; then
-    echo "gave up after $ATTEMPTS attempts $(date)" >> "$LOG"
-    exit 1
-  fi
+# Skip cheaply (no browser launch) if offline / SportyBet unreachable — retry next minute.
+if ! curl -sf -m 15 -o /dev/null "https://www.sportybet.com/ng/sport/football"; then
+  echo "$(date '+%F %T') offline / SportyBet unreachable — will retry next minute" >> "$LOG"
+  exit 0
+fi
 
-  sleep "$DELAY"
-done
+echo "=== booking run $(date '+%F %T') ===" >> "$LOG"
+OUT="$(npm start 2>&1)" || true
+echo "$OUT" >> "$LOG"
+
+# Mark done only once at least one code actually posted (✓). Otherwise the spec
+# may not be ready yet (predictions still generating) — keep retrying.
+if printf '%s' "$OUT" | grep -q "✓"; then
+  touch "$MARKER"
+  echo "$(date '+%F %T') success — codes posted, done for today" >> "$LOG"
+else
+  echo "$(date '+%F %T') no code posted yet — will retry next minute" >> "$LOG"
+fi
