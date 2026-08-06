@@ -12,10 +12,27 @@ class TelegramService
 
     private string $channelId;
 
+    // Only SportyBet booking codes + tennis picks post to Telegram now. Every
+    // other send() is suppressed (content still shows on the website). The
+    // whitelisted methods flip this flag around their own send() call.
+    private bool $essential = false;
+
     public function __construct()
     {
         $this->token = config('services.telegram.bot_token', '');
         $this->channelId = config('services.telegram.channel_id', '');
+    }
+
+    /** Run $fn with Telegram sending temporarily allowed (booking + tennis only). */
+    private function asEssential(callable $fn): void
+    {
+        $previous = $this->essential;
+        $this->essential = true;
+        try {
+            $fn();
+        } finally {
+            $this->essential = $previous;
+        }
     }
 
     public function isConfigured(): bool
@@ -26,6 +43,10 @@ class TelegramService
     /** @param array<int, array<int, array{text: string, url: string}>>|null $inlineKeyboard */
     public function send(string $message, ?array $inlineKeyboard = null): void
     {
+        if (! $this->essential) {
+            return; // Telegram is limited to booking codes + tennis picks.
+        }
+
         if (! $this->isConfigured()) {
             Log::info('Telegram not configured - skipping message.');
 
@@ -1127,6 +1148,7 @@ class TelegramService
             return;
         }
 
+        $this->asEssential(function () use ($predictions, $siteUrl) {
         $cardPicks = array_map(fn (array $pick) => [
             'match' => $pick['match'] ?? '',
             'tip' => $pick['winner'] ?? 'Model selection',
@@ -1158,6 +1180,7 @@ class TelegramService
         $lines[] = "\n<i>⚠️ Tennis is high-variance. Bet responsibly.</i>";
 
         $this->send(implode("\n", $lines));
+        });
     }
 
     public function sendWinnerUploadReminder(string $siteUrl): void
@@ -1174,6 +1197,7 @@ class TelegramService
 
     public function sendBookingCode(string $platform, string $code, string $note, string $siteUrl, ?string $affiliateUrl = null, ?string $ticketUrl = null, ?string $ticketImagePath = null, ?float $totalOdds = null): void
     {
+        $this->asEssential(function () use ($platform, $code, $note, $siteUrl, $affiliateUrl, $ticketUrl, $ticketImagePath, $totalOdds) {
         $notePart = $note ? "\n📋 Picks: <b>{$this->escape($note)}</b>" : '';
         $safeCode = $this->escape($code);
         $howTo = match (strtolower($platform)) {
@@ -1224,11 +1248,16 @@ class TelegramService
         }
 
         $this->send($msg, $keyboard);
+        });
     }
 
     /** Send an authenticated worker screenshot as a Telegram photo + caption. */
     private function sendPhoto(string $path, string $caption, array $inlineKeyboard, bool $fallbackToText = true): bool
     {
+        if (! $this->essential) {
+            return false; // Telegram is limited to booking codes + tennis picks.
+        }
+
         if (! $this->isConfigured()) {
             return false;
         }
@@ -1268,6 +1297,7 @@ class TelegramService
     /** Result of a settled booking code (all legs won, or one leg lost). */
     public function sendBookingOutcome(string $platform, string $code, string $note, bool $won, string $siteUrl, ?string $ticketImagePath = null, ?float $totalOdds = null): void
     {
+        $this->asEssential(function () use ($platform, $code, $note, $won, $siteUrl, $ticketImagePath, $totalOdds) {
         $head     = $won ? '✅ <b>BOOKING CODE WON</b>' : '❌ <b>BOOKING CODE LOST</b>';
         $safeCode = $this->escape($code);
         $notePart = $note ? "\n📋 ".$this->escape($note) : '';
@@ -1303,5 +1333,6 @@ class TelegramService
         }
 
         $this->send($msg, $keyboard);
+        });
     }
 }
