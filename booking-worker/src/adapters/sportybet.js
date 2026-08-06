@@ -14,8 +14,8 @@ const BASE = 'https://www.sportybet.com';
 const EVENTS_PATH = '/api/ng/factsCenter/pcUpcomingEvents';
 const SHARE_PATH = '/api/ng/orders/share';
 // 1X2, Over/Under, Double Chance, GG/NG, Draw No Bet, European Handicap,
-// Asian Handicap, Odd/Even
-const MARKET_IDS = '1,18,10,29,11,14,16,26';
+// Asian Handicap, Odd/Even, 1st-5-min 1X2 (900069), 1st-10-min 1X2 (105)
+const MARKET_IDS = '1,18,10,29,11,14,16,26,900069,105';
 const TENNIS_MARKET_IDS = '1';
 const MAX_PAGES = 12;
 // All tickets in one worker run use the same upcoming-fixture board. Reusing
@@ -56,6 +56,11 @@ const MARKET_MAP = {
   'Total Goals Even':       { marketId: '26', outcomeId: '72' },
   'Player One Win':         { marketId: '1', outcomeId: '1' },
   'Player Two Win':         { marketId: '1', outcomeId: '3' },
+
+  // First-minutes draw (1X2 → Draw). Near-certain, near-1.0 odds; used for the
+  // unlimited-leg minute-draw tickets.
+  'First 5 Min Draw':       { marketId: '900069', outcomeId: '2', specifier: 'minute=5' },
+  'First 10 Min Draw':      { marketId: '105', outcomeId: '2', specifier: 'from=1|to=10' },
 };
 
 // European Handicap is dynamic: "European Handicap 0:2 - Away" →
@@ -94,8 +99,13 @@ export const sportybet = {
     let combined = 1.0;
     const maxOdds = slip.max_total_odds ?? 500;
     const minOdds = slip.min_total_odds ?? 2;
+    // Unlimited-leg tickets (e.g. minute-draw): take every matching fixture up
+    // to SportyBet's selection limit, no odds band and no early stop.
+    const allLegs = slip.all_legs === true;
+    const legCap = allLegs ? 40 : Infinity;
 
     for (const leg of slip.selections) {
+      if (selections.length >= legCap) break;
       const mapped = resolveMarket(leg.market);
       if (!mapped) {
         skipped.unsupported.push(describeLeg(leg));
@@ -115,7 +125,7 @@ export const sportybet = {
       }
 
       const odds = parseFloat(hit.odds) || leg.est_odds || 1.0;
-      if (combined * odds > maxOdds) {
+      if (!allLegs && combined * odds > maxOdds) {
         skipped.odds.push(describeLeg(leg));
         continue; // would blow the band — try the next leg
       }
@@ -124,7 +134,7 @@ export const sportybet = {
       booked.push({ match_id: leg.match_id ?? null, sport: leg.sport || slip.sport || 'football', home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
       combined *= odds;
 
-      if (booked.length >= 3 && combined >= minOdds) break;
+      if (!allLegs && booked.length >= 3 && combined >= minOdds) break;
     }
 
     if (selections.length < 3) {
@@ -135,7 +145,7 @@ export const sportybet = {
       error.permanent = true;
       throw error;
     }
-    if (combined < minOdds) {
+    if (!allLegs && combined < minOdds) {
       throw new Error(`combined odds ${combined.toFixed(2)} below ${minOdds} minimum`);
     }
 

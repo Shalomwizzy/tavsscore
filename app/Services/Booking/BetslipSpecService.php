@@ -150,6 +150,10 @@ class BetslipSpecService
         $slips[] = $highRisk;
         $slips[] = $this->tennisSpecs->today(now($tz)->toDateString());
 
+        // Minute-draw bankers: every fixture, 1st 5 / 10 minutes to be a draw.
+        $slips[] = $this->buildMinuteDrawTicket($preds, 'five-min-draw', 'First 5 Minutes Draw', 'First 5 Min Draw', 1.13);
+        $slips[] = $this->buildMinuteDrawTicket($preds, 'ten-min-draw', 'First 10 Minutes Draw', 'First 10 Min Draw', 1.22);
+
         $slips = $this->finalizeSlips($slips, $preds);
         $alreadyPublished = BookingCode::query()
             ->whereDate('pick_date', now($tz)->toDateString())
@@ -440,12 +444,47 @@ class BetslipSpecService
         $out = [];
         foreach ($slips as $s) {
             if (! $s) continue;
-            $s['selections'] = $this->ensureMinOdds($s['selections'] ?? [], $preds);
+            // Unlimited-leg tickets (minute-draw) keep every leg — never top up
+            // with other markets to hit the 2.0 floor.
+            if (! ($s['all_legs'] ?? false)) {
+                $s['selections'] = $this->ensureMinOdds($s['selections'] ?? [], $preds);
+            }
             if (count($s['selections']) < self::MIN_LEGS) continue;
             $s['est_total_odds'] = $this->combinedOdds($s['selections']);
             $out[] = $s;
         }
         return array_values($out);
+    }
+
+    /**
+     * Minute-draw banker: every today fixture, backing the 1st 5 / 10 minutes
+     * to end level. Unlimited legs (the worker caps at SportyBet's selection
+     * limit). Not board-modelled — the minute markets are near-certain and
+     * priced ~1.1-1.2, so include every fixture rather than a floored subset.
+     */
+    private function buildMinuteDrawTicket(Collection $preds, string $ref, string $title, string $market, float $estOdds): ?array
+    {
+        $selections = [];
+        foreach ($preds as $p) {
+            $sel = $this->selectionFromMatch($p->match, $market, null, $estOdds);
+            if ($sel !== null) {
+                $selections[] = $sel;
+            }
+        }
+        if (count($selections) < self::MIN_LEGS) {
+            return null;
+        }
+
+        return [
+            'ref'            => $ref,
+            'title'          => $title,
+            'market'         => $market,
+            'all_legs'       => true,
+            'min_total_odds' => 1.0,
+            'max_total_odds' => 1000000.0,
+            'est_total_odds' => $this->combinedOdds($selections),
+            'selections'     => $selections,
+        ];
     }
 
     /** All bookable markets on this board clearing the floor, safest first. */
