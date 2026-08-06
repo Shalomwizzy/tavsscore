@@ -30,9 +30,48 @@ class XServiceTest extends TestCase
         }
         Http::fake(['api.x.com/*' => Http::response(['data' => ['id' => '1']], 201)]);
 
+        Setting::set('telegram_url', 'https://t.me/tavsscore');
+
         app(XService::class)->postBookingOutcome('sportybet', 'ABC123', 'First 5 Minutes Draw', true, 'https://tavsscore.com', 12.5);
 
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'api.x.com/2/tweets')
-            && str_contains((string) $request->header('Authorization')[0], 'oauth_signature'));
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'api.x.com/2/tweets')) {
+                return false;
+            }
+            $text = json_decode($request->body(), true)['text'] ?? '';
+
+            return str_contains((string) $request->header('Authorization')[0], 'oauth_signature')
+                && str_contains($text, 'More free predictions')
+                && str_contains($text, 't.me/tavsscore');
+        });
+    }
+
+    public function test_only_the_days_highest_odds_code_is_tweeted(): void
+    {
+        config(['services.booking_worker.token' => 'test-worker-token']);
+        foreach (['x_api_key' => 'k', 'x_api_secret' => 's', 'x_access_token' => 't', 'x_access_secret' => 'ts'] as $key => $val) {
+            Setting::set($key, Crypt::encryptString($val));
+        }
+        Http::fake(['api.x.com/*' => Http::response(['data' => ['id' => '1']], 201)]);
+        $today = now('Africa/Lagos')->toDateString();
+
+        $post = fn (string $code, float $odds) => $this->withHeader('X-Worker-Token', 'test-worker-token')
+            ->postJson('/api/worker/booking-codes', [
+                'platform' => 'sportybet', 'code' => $code, 'slip_ref' => 'daily-acca',
+                'total_odds' => $odds, 'status' => 'published', 'pick_date' => $today,
+            ])->assertCreated();
+
+        $post('LOWODDS', 5.0);
+        $post('HIGHODDS', 800.0);
+
+        // Both arrivals are record-highs at their moment, so each tweets once; a
+        // later lower-odds code must not tweet.
+        $post('MIDODDS', 50.0);
+
+        $this->assertNotNull(\App\Models\BookingCode::where('code', 'HIGHODDS')->value('x_posted_at'));
+        $this->assertNull(\App\Models\BookingCode::where('code', 'MIDODDS')->value('x_posted_at'));
+
+        $tweets = Http::recorded(fn ($request) => str_contains($request->url(), 'api.x.com/2/tweets'));
+        $this->assertCount(2, $tweets);
     }
 }

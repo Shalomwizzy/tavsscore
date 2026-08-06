@@ -68,9 +68,8 @@ class XService
             ."🔥 {$code} 🔥"
             .$odds
             .$picks
-            ."\n\n⚠️ Verify odds before placing. 18+\n"
-            .'👉 '.rtrim($siteUrl, '/')."/booking-codes\n"
-            .'#'.strtolower($platform).' #bookingcode #freebettingtips';
+            ."\n\n⚠️ Verify odds before placing. 18+"
+            .$this->callToAction($siteUrl);
 
         $this->tweet($text, $ticketImagePath);
     }
@@ -88,10 +87,22 @@ class XService
             ."🔥 {$code} 🔥"
             .$odds
             .$picks
-            ."\n\n👉 ".rtrim($siteUrl, '/')."/booking-codes\n"
-            .'#'.strtolower($platform).($won ? ' #winning #freebettingtips' : ' #freebettingtips');
+            .$this->callToAction($siteUrl);
 
         $this->tweet($text, $ticketImagePath);
+    }
+
+    /** Standard footer: more predictions on the site + join the Telegram channel. */
+    private function callToAction(string $siteUrl): string
+    {
+        $cta = "\n\n⚡ More free predictions 👉 ".rtrim($siteUrl, '/');
+
+        $telegram = Setting::get('telegram_url') ?: config('services.telegram.channel_url');
+        if (filled($telegram)) {
+            $cta .= "\n📢 Join our Telegram 👉 ".$telegram;
+        }
+
+        return $cta;
     }
 
     /** Post a tweet, attaching the ticket image when one is available (best effort). */

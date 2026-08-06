@@ -142,15 +142,30 @@ class BookingWorkerController extends Controller
             report($e);
         }
 
+        // X quota is tight, so only the day's highest-odds code is tweeted. Post
+        // when this code beats the best odds already tweeted today; the record
+        // that wins ends up posted regardless of the order codes arrive in.
         try {
-            app(\App\Services\XService::class)->postBookingCode(
-                $code->platform,
-                strtoupper($code->code),
-                (string) ($code->note ?? ''),
-                config('app.url'),
-                $code->total_odds,
-                $code->ticket_image_path,
-            );
+            $x = app(\App\Services\XService::class);
+            if ($x->isConfigured() && $code->total_odds) {
+                $day = ($code->pick_date ?: now('Africa/Lagos'))->toDateString();
+                $tweetedMax = (float) BookingCode::query()
+                    ->whereDate('pick_date', $day)
+                    ->whereNotNull('x_posted_at')
+                    ->max('total_odds');
+
+                if ((float) $code->total_odds > $tweetedMax) {
+                    $x->postBookingCode(
+                        $code->platform,
+                        strtoupper($code->code),
+                        (string) ($code->note ?? ''),
+                        config('app.url'),
+                        $code->total_odds,
+                        $code->ticket_image_path,
+                    );
+                    $code->forceFill(['x_posted_at' => now()])->save();
+                }
+            }
         } catch (\Throwable $e) {
             report($e);
         }

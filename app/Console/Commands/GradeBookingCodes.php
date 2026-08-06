@@ -69,18 +69,22 @@ class GradeBookingCodes extends Command
             report($e);
         }
 
-        try {
-            app(\App\Services\XService::class)->postBookingOutcome(
-                $code->platform,
-                strtoupper($code->code),
-                (string) ($code->note ?? ''),
-                $won,
-                config('app.url'),
-                $code->total_odds,
-                $code->ticket_image_path,
-            );
-        } catch (\Throwable $e) {
-            report($e);
+        // Only report the outcome on X for a code we actually tweeted (the day's
+        // highest-odds one), so results stay in step with what X followers saw.
+        if ($code->x_posted_at) {
+            try {
+                app(\App\Services\XService::class)->postBookingOutcome(
+                    $code->platform,
+                    strtoupper($code->code),
+                    (string) ($code->note ?? ''),
+                    $won,
+                    config('app.url'),
+                    $code->total_odds,
+                    $code->ticket_image_path,
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         try {
