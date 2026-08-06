@@ -47,7 +47,21 @@ class SettingsController extends Controller
             'homepage_tennis_image'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'fantasy_feature_image'   => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'tennis_page_hero_image'  => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'x_api_key'       => ['nullable', 'string', 'max:200'],
+            'x_api_secret'    => ['nullable', 'string', 'max:200'],
+            'x_access_token'  => ['nullable', 'string', 'max:200'],
+            'x_access_secret' => ['nullable', 'string', 'max:200'],
         ]);
+
+        // X credentials are secrets: encrypt at rest, and a blank field keeps the
+        // saved value rather than wiping it.
+        foreach (['x_api_key', 'x_api_secret', 'x_access_token', 'x_access_secret'] as $secretKey) {
+            $incoming = trim((string) ($data[$secretKey] ?? ''));
+            if ($incoming !== '') {
+                Setting::set($secretKey, \Illuminate\Support\Facades\Crypt::encryptString($incoming));
+            }
+            unset($data[$secretKey]);
+        }
 
         foreach ($data as $key => $value) {
             if ($value instanceof \Illuminate\Http\UploadedFile) continue;

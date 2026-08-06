@@ -132,4 +132,11 @@ return [
         'card_font'  => env('TELEGRAM_CARD_FONT_PATH'),
     ],
 
+    'x' => [
+        'api_key'       => env('X_API_KEY'),
+        'api_secret'    => env('X_API_SECRET'),
+        'access_token'  => env('X_ACCESS_TOKEN'),
+        'access_secret' => env('X_ACCESS_SECRET'),
+    ],
+
 ];

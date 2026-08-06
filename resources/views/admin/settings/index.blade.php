@@ -116,6 +116,39 @@
             </div>
         </div>
 
+        @php
+            $xKeys = ['x_api_key','x_api_secret','x_access_token','x_access_secret'];
+            $xConnected = collect($xKeys)->every(fn ($k) => filled($settings[$k]->value ?? null));
+        @endphp
+        <h2 style="font-size:1rem; font-weight:700; margin:2rem 0 .5rem;">🐦 X (Twitter) Auto-Posting</h2>
+        <p style="font-size:.75rem; color:var(--dim); margin:0 0 1rem;">
+            Every booking code — and its win/lose result — auto-posts to your X account, the same way it goes to Telegram.
+            Paste the 4 keys from
+            <a href="https://developer.x.com" target="_blank" rel="noopener" style="color:var(--accent);">developer.x.com</a>
+            → your app → <b>Keys and tokens</b> (the access token/secret must have <b>Read and write</b> permission).
+            Leave a field blank to keep the saved value. Secrets are encrypted at rest.
+            <br>
+            <span style="display:inline-block;margin-top:.5rem;font-weight:700;color:{{ $xConnected ? '#10b981' : '#f59e0b' }};">
+                {{ $xConnected ? '● Connected — auto-posting is active' : '○ Not connected — add all 4 keys to activate' }}
+            </span>
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem;">
+            @foreach([
+                'x_api_key' => 'API Key (Consumer Key)',
+                'x_api_secret' => 'API Key Secret (Consumer Secret)',
+                'x_access_token' => 'Access Token',
+                'x_access_secret' => 'Access Token Secret',
+            ] as $field => $label)
+                <div>
+                    <label style="display:block; font-size:.78rem; font-weight:600; color:var(--dim); margin-bottom:.4rem;">{{ $label }}</label>
+                    <input type="password" name="{{ $field }}" autocomplete="new-password"
+                           placeholder="{{ filled($settings[$field]->value ?? null) ? '•••••••••• saved' : 'Paste value' }}"
+                           style="width:100%; padding:.55rem .75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.85rem; box-sizing:border-box;">
+                    @error($field)<p style="color:#f87171; font-size:.75rem; margin:.3rem 0 0;">{{ $message }}</p>@enderror
+                </div>
+            @endforeach
+        </div>
+
         <div style="margin-top:1.25rem;">
             <button type="submit"
                     style="background:var(--accent); color:#fff; border:none; border-radius:7px; padding:.6rem 1.4rem; font-size:.85rem; font-weight:600; cursor:pointer;">

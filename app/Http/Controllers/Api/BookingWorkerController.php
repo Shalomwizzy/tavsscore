@@ -143,6 +143,19 @@ class BookingWorkerController extends Controller
         }
 
         try {
+            app(\App\Services\XService::class)->postBookingCode(
+                $code->platform,
+                strtoupper($code->code),
+                (string) ($code->note ?? ''),
+                config('app.url'),
+                $code->total_odds,
+                $code->ticket_image_path,
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
             $oneSignal->sendMatchAlert(
                 '🎟️ '.$label.' — '.strtoupper($code->platform),
                 'Booking code '.strtoupper($code->code).$odds.' — tap for today’s codes.',

@@ -70,6 +70,20 @@ class GradeBookingCodes extends Command
         }
 
         try {
+            app(\App\Services\XService::class)->postBookingOutcome(
+                $code->platform,
+                strtoupper($code->code),
+                (string) ($code->note ?? ''),
+                $won,
+                config('app.url'),
+                $code->total_odds,
+                $code->ticket_image_path,
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
             $oneSignal->sendMatchAlert(
                 $won ? '✅ Booking Code Won' : '❌ Booking Code Lost',
                 $label.' ('.strtoupper($code->code).') '.($won ? 'won! 🎉' : 'lost.').' Tap for history.',
