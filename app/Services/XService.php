@@ -105,6 +105,16 @@ class XService
         return $cta;
     }
 
+    /** Post an arbitrary text tweet (football growth posts). No-ops if unconfigured. */
+    public function postText(string $text, ?string $imagePath = null): void
+    {
+        if (! $this->isConfigured()) {
+            return;
+        }
+
+        $this->tweet($text, $imagePath);
+    }
+
     /** Post a tweet, attaching the ticket image when one is available (best effort). */
     private function tweet(string $text, ?string $imagePath = null): void
     {

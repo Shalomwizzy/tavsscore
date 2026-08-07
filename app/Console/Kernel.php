@@ -22,6 +22,11 @@ class Kernel extends ConsoleKernel
             Cache::put('scheduler_last_run', now()->timestamp, now()->addDays(2));
         })->everyMinute()->name('scheduler-heartbeat');
 
+        // X growth: 4 data-driven football posts/day (predictions, results, stats).
+        foreach (['09:00', '13:00', '17:00', '20:00'] as $t) {
+            $schedule->command('x:post-football')->dailyAt($t)->timezone('Africa/Lagos')->withoutOverlapping();
+        }
+
         // Live matches: every minute for near-real-time goal alerts.
         // No live matches: every 15 min to conserve API quota.
         $schedule->command('fetch:matches')
