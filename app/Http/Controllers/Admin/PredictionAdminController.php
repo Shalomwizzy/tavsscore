@@ -9,6 +9,7 @@ use App\Services\PredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 
 class PredictionAdminController extends Controller
@@ -19,6 +20,12 @@ class PredictionAdminController extends Controller
 
     public function rebuild(): RedirectResponse
     {
+        // These pull fixtures + run the AI slate, which takes minutes — longer
+        // than LiteSpeed's default web timeout, so lift the PHP limit and keep
+        // running even if the admin closes the tab.
+        @set_time_limit(0);
+        ignore_user_abort(true);
+
         try {
             app(FootballPredictionBoardRefresher::class)->refreshFixturesAndBoards();
             return redirect()->route('admin.predictions')->with('success', 'Latest fixtures were pulled and every prediction board was rebuilt.');
@@ -62,10 +69,21 @@ class PredictionAdminController extends Controller
 
     public function generate(): RedirectResponse
     {
+        @set_time_limit(0);
+        ignore_user_abort(true);
+
+        // Pull today's fixtures FIRST — otherwise, on a day whose matches have not
+        // been fetched yet, there is nothing upcoming to predict and this returns 0.
+        try {
+            Artisan::call('fetch:matches');
+        } catch (\Throwable $exception) {
+            return redirect()->route('admin.predictions')->with('error', 'Could not fetch fixtures: '.$exception->getMessage());
+        }
+
         $predictions = $this->predictionService->generateForUpcomingMatches();
 
         return redirect()->route('admin.predictions')
-            ->with('success', "Generated {$predictions->count()} predictions.");
+            ->with('success', "Fetched fixtures and generated {$predictions->count()} predictions.");
     }
 
     private function resolveDate(?string $raw, CarbonImmutable $today, string $timezone): CarbonImmutable

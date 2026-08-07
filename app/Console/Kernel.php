@@ -70,6 +70,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(30)
             ->runInBackground();
 
+        // Then keep retrying every hour through the day so nothing stays pending
+        // if a score arrived late or the 01:05 pass ran while the quota was capped.
+        $schedule->command('results:catch-up --days=14')
+            ->hourlyAt(7)
+            ->timezone('Africa/Lagos')
+            ->withoutOverlapping(30)
+            ->runInBackground();
+
         // 01:27 — generate predictions (after standings + intel at 01:25).
         $schedule->command('predict:matches')->dailyAt('01:27')->timezone('Africa/Lagos')->withoutOverlapping(15);
 

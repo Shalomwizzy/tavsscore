@@ -18,6 +18,11 @@ class DailyFootballPredictionsAdminController extends Controller
 
     public function settlePast(PendingPredictionRecoveryService $recovery): RedirectResponse
     {
+        // Recovery re-fetches missed scores across a wide window; give it the time
+        // the CLI has so LiteSpeed's web timeout can't kill it mid-run.
+        @set_time_limit(0);
+        ignore_user_abort(true);
+
         $result = $recovery->recover();
         $settled = $result['football_settled'] + $result['tennis_settled'];
         $remaining = $result['football_pending'] + $result['tennis_pending'];
