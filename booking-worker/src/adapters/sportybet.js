@@ -115,8 +115,16 @@ export const sportybet = {
         error.permanent = true;
         throw error;
       }
+      // Today's fixtures only — SportyBet's upcoming feed spans many days, so
+      // without this the minute-draw ticket pulls next-week (and stale) matches.
+      const tz = 'Africa/Lagos';
+      const todayStr = slip.pick_date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      const now = Date.now();
       for (const ev of events) {
         if (selections.length >= legCap) break;
+        const start = Number(ev.estimateStartTime || ev.startTime || 0);
+        if (!start || start <= now) continue; // already kicked off / no time
+        if (new Date(start).toLocaleDateString('en-CA', { timeZone: tz }) !== todayStr) continue;
         const hit = findOutcome(ev, mapped);
         if (!hit) continue;
         const odds = parseFloat(hit.odds) || 1.0;
