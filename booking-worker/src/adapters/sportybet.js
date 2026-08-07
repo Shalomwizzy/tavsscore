@@ -104,37 +104,59 @@ export const sportybet = {
     const allLegs = slip.all_legs === true;
     const legCap = allLegs ? 40 : Infinity;
 
-    for (const leg of slip.selections) {
-      if (selections.length >= legCap) break;
-      const mapped = resolveMarket(leg.market);
+    if (allLegs) {
+      // Unlimited minute-draw ticket: ignore the (prediction-limited) slip legs
+      // and book EVERY upcoming SportyBet fixture that offers this one market, so
+      // it packs as many games as possible (the user's intent) and clears the
+      // 2.0 floor naturally rather than settling for ~7 legs.
+      const mapped = resolveMarket(slip.market);
       if (!mapped) {
-        skipped.unsupported.push(describeLeg(leg));
-        continue; // market we don't book on SportyBet — skip the leg
+        const error = new Error(`unsupported all-legs market: ${slip.market}`);
+        error.permanent = true;
+        throw error;
       }
-
-      const ev = matchEvent(events, leg);
-      if (!ev) {
-        skipped.fixture.push(describeLeg(leg));
-        continue;
+      for (const ev of events) {
+        if (selections.length >= legCap) break;
+        const hit = findOutcome(ev, mapped);
+        if (!hit) continue;
+        const odds = parseFloat(hit.odds) || 1.0;
+        selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
+        booked.push({ match_id: null, sport: slip.sport || 'football', home: ev.homeTeamName, away: ev.awayTeamName, market: slip.market, model_prob: null, est_odds: odds });
+        combined *= odds;
       }
+    } else {
+      for (const leg of slip.selections) {
+        if (selections.length >= legCap) break;
+        const mapped = resolveMarket(leg.market);
+        if (!mapped) {
+          skipped.unsupported.push(describeLeg(leg));
+          continue; // market we don't book on SportyBet — skip the leg
+        }
 
-      const hit = findOutcome(ev, mapped);
-      if (!hit) {
-        skipped.market.push(describeLeg(leg));
-        continue;
+        const ev = matchEvent(events, leg);
+        if (!ev) {
+          skipped.fixture.push(describeLeg(leg));
+          continue;
+        }
+
+        const hit = findOutcome(ev, mapped);
+        if (!hit) {
+          skipped.market.push(describeLeg(leg));
+          continue;
+        }
+
+        const odds = parseFloat(hit.odds) || leg.est_odds || 1.0;
+        if (combined * odds > maxOdds) {
+          skipped.odds.push(describeLeg(leg));
+          continue; // would blow the band — try the next leg
+        }
+
+        selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
+        booked.push({ match_id: leg.match_id ?? null, sport: leg.sport || slip.sport || 'football', home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
+        combined *= odds;
+
+        if (booked.length >= 3 && combined >= minOdds) break;
       }
-
-      const odds = parseFloat(hit.odds) || leg.est_odds || 1.0;
-      if (!allLegs && combined * odds > maxOdds) {
-        skipped.odds.push(describeLeg(leg));
-        continue; // would blow the band — try the next leg
-      }
-
-      selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
-      booked.push({ match_id: leg.match_id ?? null, sport: leg.sport || slip.sport || 'football', home: leg.home, away: leg.away, market: leg.market, model_prob: leg.model_prob ?? null, est_odds: odds });
-      combined *= odds;
-
-      if (!allLegs && booked.length >= 3 && combined >= minOdds) break;
     }
 
     if (selections.length < 3) {
