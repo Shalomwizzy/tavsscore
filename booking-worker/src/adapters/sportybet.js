@@ -105,10 +105,11 @@ export const sportybet = {
     const legCap = allLegs ? 40 : Infinity;
 
     if (allLegs) {
-      // Unlimited minute-draw ticket: ignore the (prediction-limited) slip legs
-      // and book EVERY upcoming SportyBet fixture that offers this one market, so
-      // it packs as many games as possible (the user's intent) and clears the
-      // 2.0 floor naturally rather than settling for ~7 legs.
+      // Data-driven minute-draw ticket. It considers every today fixture that
+      // offers the market, but is NOT blind: each fixture is kept only when
+      // SportyBet's own price implies a high chance of an early draw (i.e. low
+      // early-goal risk), and the legs are ordered safest-first. Shoot-outs and
+      // early-goal-prone games are dropped, not booked.
       const mapped = resolveMarket(slip.market);
       if (!mapped) {
         const error = new Error(`unsupported all-legs market: ${slip.market}`);
@@ -120,17 +121,28 @@ export const sportybet = {
       const tz = 'Africa/Lagos';
       const todayStr = slip.pick_date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
       const now = Date.now();
+      const SAFETY_FLOOR = 0.70; // bookmaker-implied P(early draw); drops risky games
+
+      const candidates = [];
       for (const ev of events) {
-        if (selections.length >= legCap) break;
         const start = Number(ev.estimateStartTime || ev.startTime || 0);
         if (!start || start <= now) continue; // already kicked off / no time
         if (new Date(start).toLocaleDateString('en-CA', { timeZone: tz }) !== todayStr) continue;
         const hit = findOutcome(ev, mapped);
         if (!hit) continue;
         const odds = parseFloat(hit.odds) || 1.0;
-        selections.push({ eventId: ev.eventId, marketId: mapped.marketId, specifier: hit.specifier || null, outcomeId: mapped.outcomeId });
-        booked.push({ match_id: null, sport: slip.sport || 'football', home: ev.homeTeamName, away: ev.awayTeamName, market: slip.market, model_prob: null, est_odds: odds });
-        combined *= odds;
+        const implied = odds > 1 ? 1 / odds : 1; // SportyBet's own probability
+        if (implied < SAFETY_FLOOR) continue; // early-goal risk too high — skip
+        candidates.push({ ev, hit, odds, implied });
+      }
+      // Safest first: highest implied probability of an early draw.
+      candidates.sort((a, b) => b.implied - a.implied);
+
+      for (const c of candidates) {
+        if (selections.length >= legCap) break;
+        selections.push({ eventId: c.ev.eventId, marketId: mapped.marketId, specifier: c.hit.specifier || null, outcomeId: mapped.outcomeId });
+        booked.push({ match_id: null, sport: slip.sport || 'football', home: c.ev.homeTeamName, away: c.ev.awayTeamName, market: slip.market, model_prob: Math.round(c.implied * 100), est_odds: c.odds });
+        combined *= c.odds;
       }
     } else {
       for (const leg of slip.selections) {
