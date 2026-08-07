@@ -457,6 +457,19 @@
         </header>
 
         <main class="admin-content">
+            @php
+                $schedulerLastRun = \Illuminate\Support\Facades\Cache::get('scheduler_last_run');
+                $schedulerStaleMin = $schedulerLastRun ? (int) floor((now()->timestamp - $schedulerLastRun) / 60) : null;
+                $schedulerDown = $schedulerLastRun === null || $schedulerStaleMin > 10;
+            @endphp
+            @if($schedulerDown)
+                <div style="background:#7f1d1d;border:1px solid #ef4444;color:#fee2e2;padding:.85rem 1.1rem;border-radius:8px;margin-bottom:1rem;font-size:.85rem;line-height:1.45;">
+                    <b>⚠️ Scheduler is not running{{ $schedulerLastRun ? " (last ran {$schedulerStaleMin} min ago)" : '' }}.</b>
+                    The Hostinger cron that runs <code>schedule:run</code> every minute appears to be down, so predictions won’t generate, results won’t settle, and booking outcomes won’t post until it’s fixed.
+                    Add this cron in hPanel → Cron Jobs (every minute):
+                    <code style="display:block;margin-top:.4rem;background:#450a0a;padding:.4rem .6rem;border-radius:5px;overflow-x:auto;">* * * * * /opt/alt/php84/usr/bin/php /home/USERNAME/domains/tavsscore.com/public_html/artisan schedule:run >> /dev/null 2>&1</code>
+                </div>
+            @endif
             @if(session('success'))
                 <div class="alert alert-green">✓ {{ session('success') }}</div>
             @endif

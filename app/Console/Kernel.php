@@ -16,6 +16,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Heartbeat: proves the cron is actually invoking schedule:run. The admin
+        // dashboard warns when this timestamp goes stale (cron down).
+        $schedule->call(function () {
+            Cache::put('scheduler_last_run', now()->timestamp, now()->addDays(2));
+        })->everyMinute()->name('scheduler-heartbeat');
+
         // Live matches: every minute for near-real-time goal alerts.
         // No live matches: every 15 min to conserve API quota.
         $schedule->command('fetch:matches')
