@@ -17,15 +17,25 @@ class XController extends Controller
     {
         $connected = $x->isConfigured();
         $growthEnabled = $x->growthEnabled();
-        $posts = XPost::query()->latest()->limit(60)->get();
-        $stats = [
-            'total'  => XPost::count(),
-            'posted' => XPost::where('status', 'posted')->count(),
-            'failed' => XPost::where('status', 'failed')->count(),
-            'today'  => XPost::whereDate('created_at', now('Africa/Lagos')->toDateString())->count(),
-        ];
 
-        return view('admin.x.index', compact('connected', 'growthEnabled', 'posts', 'stats'));
+        // Degrade gracefully if the x_posts migration hasn't run on this server —
+        // the panel still loads (status/toggle work) instead of throwing a 500.
+        $needsMigration = false;
+        try {
+            $posts = XPost::query()->latest()->limit(60)->get();
+            $stats = [
+                'total'  => XPost::count(),
+                'posted' => XPost::where('status', 'posted')->count(),
+                'failed' => XPost::where('status', 'failed')->count(),
+                'today'  => XPost::whereDate('created_at', now('Africa/Lagos')->toDateString())->count(),
+            ];
+        } catch (\Throwable $e) {
+            $needsMigration = true;
+            $posts = collect();
+            $stats = ['total' => 0, 'posted' => 0, 'failed' => 0, 'today' => 0];
+        }
+
+        return view('admin.x.index', compact('connected', 'growthEnabled', 'posts', 'stats', 'needsMigration'));
     }
 
     public function toggle(Request $request): RedirectResponse

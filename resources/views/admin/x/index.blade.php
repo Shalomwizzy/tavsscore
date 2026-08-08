@@ -6,6 +6,13 @@
 @section('content')
 <div style="max-width:900px;">
 
+    @if($needsMigration)
+        <div style="background:#7f1d1d;border:1px solid #ef4444;color:#fee2e2;padding:.85rem 1.1rem;border-radius:8px;margin-bottom:1.25rem;font-size:.85rem;line-height:1.45;">
+            <b>⚠️ Database update needed.</b> The X post-log table isn’t created on this server yet. Run this once on the server, then reload:
+            <code style="display:block;margin-top:.4rem;background:#450a0a;padding:.4rem .6rem;border-radius:5px;overflow-x:auto;">php artisan migrate --force</code>
+        </div>
+    @endif
+
     {{-- Connection status --}}
     <div style="background:var(--card);border:1px solid {{ $connected ? 'rgba(16,185,129,.4)' : 'rgba(245,158,11,.4)' }};border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
         <div>
