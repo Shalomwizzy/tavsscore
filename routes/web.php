@@ -293,6 +293,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/settings',        [Admin\SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings',       [Admin\SettingsController::class, 'update'])->name('settings.update');
 
+        Route::get('/x',           [Admin\XController::class, 'index'])->name('x.index');
+        Route::post('/x/toggle',   [Admin\XController::class, 'toggle'])->name('x.toggle');
+        Route::post('/x/post-now', [Admin\XController::class, 'postNow'])->name('x.post-now');
+
         Route::get('/pi-ratings',         [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'index'])->name('pi-ratings.index');
         Route::post('/pi-ratings/rebuild', [\App\Http\Controllers\Admin\PiRatingsAdminController::class, 'rebuild'])->name('pi-ratings.rebuild');
 

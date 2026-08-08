@@ -414,6 +414,7 @@
                 <summary><span>💰 Revenue &amp; Settings</span><span class="sb-caret">▶</span></summary>
                 <div class="sb-group-body">
                     <a href="{{ route('admin.affiliate-links.index') }}" class="sb-link {{ request()->routeIs('admin.affiliate-links.*') ? 'active' : '' }}"><span class="sb-icon">💰</span> Affiliate Links</a>
+                    <a href="{{ route('admin.x.index') }}" class="sb-link {{ request()->routeIs('admin.x.*') ? 'active' : '' }}"><span class="sb-icon">🐦</span> X (Twitter)</a>
                     <a href="{{ route('admin.settings.index') }}" class="sb-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><span class="sb-icon">⚙️</span> Settings</a>
                 </div>
             </details>

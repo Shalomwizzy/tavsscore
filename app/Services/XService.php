@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Models\XPost;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -71,7 +72,7 @@ class XService
             ."\n\n⚠️ Verify odds before placing. 18+"
             .$this->callToAction($siteUrl);
 
-        $this->tweet($text, $ticketImagePath);
+        $this->tweet($text, $ticketImagePath, 'booking_code');
     }
 
     public function postBookingOutcome(string $platform, string $code, string $note, bool $won, string $siteUrl, ?float $totalOdds = null, ?string $ticketImagePath = null): void
@@ -89,7 +90,7 @@ class XService
             .$picks
             .$this->callToAction($siteUrl);
 
-        $this->tweet($text, $ticketImagePath);
+        $this->tweet($text, $ticketImagePath, 'booking_outcome');
     }
 
     /** Standard footer: more predictions on the site + join the Telegram channel. */
@@ -105,18 +106,30 @@ class XService
         return $cta;
     }
 
-    /** Post an arbitrary text tweet (football growth posts). No-ops if unconfigured. */
-    public function postText(string $text, ?string $imagePath = null): void
+    /** Growth posts are admin-toggleable; booking posts always go out. */
+    public function growthEnabled(): bool
+    {
+        return Setting::get('x_growth_enabled', '1') !== '0';
+    }
+
+    /**
+     * Post an arbitrary text tweet (football growth posts). No-ops if unconfigured
+     * or (for growth kind) if growth posting is switched off in admin.
+     */
+    public function postText(string $text, ?string $imagePath = null, string $kind = 'growth'): void
     {
         if (! $this->isConfigured()) {
             return;
         }
+        if ($kind === 'growth' && ! $this->growthEnabled()) {
+            return;
+        }
 
-        $this->tweet($text, $imagePath);
+        $this->tweet($text, $imagePath, $kind);
     }
 
     /** Post a tweet, attaching the ticket image when one is available (best effort). */
-    private function tweet(string $text, ?string $imagePath = null): void
+    private function tweet(string $text, ?string $imagePath = null, string $kind = 'manual'): void
     {
         try {
             $payload = ['text' => $text];
@@ -133,7 +146,29 @@ class XService
 
             if ($res->failed()) {
                 report(new \RuntimeException('X tweet failed: '.$res->status().' '.$res->body()));
+                $this->log($kind, $text, null, 'failed', $res->status().' '.$res->body());
+
+                return;
             }
+
+            $this->log($kind, $text, $res->json('data.id'), 'posted', null);
+        } catch (\Throwable $e) {
+            report($e);
+            $this->log($kind, $text, null, 'failed', $e->getMessage());
+        }
+    }
+
+    /** Record every post attempt so the admin X panel shows a full history. */
+    private function log(string $kind, string $text, ?string $tweetId, string $status, ?string $error): void
+    {
+        try {
+            XPost::create([
+                'kind'     => $kind,
+                'text'     => mb_substr($text, 0, 500),
+                'tweet_id' => $tweetId,
+                'status'   => $status,
+                'error'    => $error ? mb_substr($error, 0, 500) : null,
+            ]);
         } catch (\Throwable $e) {
             report($e);
         }
