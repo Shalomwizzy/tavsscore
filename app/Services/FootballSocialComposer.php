@@ -22,10 +22,26 @@ class FootballSocialComposer
 
     public function compose(): ?string
     {
-        $builders = ['predictionTeaser', 'resultRecap', 'matchdayQuestion', 'topScorer', 'standingsLeader', 'blogTeaser'];
-        shuffle($builders);
+        // Weighted toward what grows a tips account: prediction teasers, "we
+        // called it" social proof, and match-day questions (replies rank highest
+        // in the algorithm). Stats/blog are lighter filler. Weighted-random each
+        // call so the feed stays varied instead of a fixed rotation.
+        $weights = [
+            'predictionTeaser' => 5,
+            'resultRecap'      => 5,
+            'matchdayQuestion' => 4,
+            'blogTeaser'       => 2,
+            'topScorer'        => 2,
+            'standingsLeader'  => 1,
+        ];
 
-        foreach ($builders as $builder) {
+        $order = [];
+        foreach ($weights as $builder => $weight) {
+            $order[$builder] = $weight * (mt_rand(1, 1000) / 1000);
+        }
+        arsort($order);
+
+        foreach (array_keys($order) as $builder) {
             $text = $this->{$builder}();
             if ($text) {
                 return $this->withCallToAction($text);
@@ -33,6 +49,14 @@ class FootballSocialComposer
         }
 
         return null;
+    }
+
+    /** Turn a team/player name into a bare #Hashtag for discovery. */
+    private function tag(string $name): string
+    {
+        $clean = preg_replace('/[^A-Za-z0-9]/', '', ucwords($name));
+
+        return $clean !== '' ? '#'.$clean : '';
     }
 
     private function predictionTeaser(): ?string
@@ -55,7 +79,9 @@ class FootballSocialComposer
             return null;
         }
 
-        return "🔮 Today's AI pick\n{$p->match->home_team} vs {$p->match->away_team}\n✅ {$pick} ({$p->confidence}% confidence)";
+        $tags = trim($this->tag($p->match->home_team).' '.$this->tag($p->match->away_team));
+
+        return "🔮 Today's AI pick\n{$p->match->home_team} vs {$p->match->away_team}\n✅ {$pick} ({$p->confidence}% confidence)\n{$tags} #FootballTips";
     }
 
     private function resultRecap(): ?string
@@ -75,7 +101,7 @@ class FootballSocialComposer
 
         $m = $p->match;
 
-        return "✅ Called it!\n{$m->home_team} {$m->home_score}-{$m->away_score} {$m->away_team}\nAnother AI pick landed. 🎯";
+        return "✅ Called it!\n{$m->home_team} {$m->home_score}-{$m->away_score} {$m->away_team}\nAnother AI pick landed. 🎯\n#FootballTips #Winning";
     }
 
     private function matchdayQuestion(): ?string
@@ -91,7 +117,9 @@ class FootballSocialComposer
             return null;
         }
 
-        return "🔥 {$m->home_team} vs {$m->away_team} today.\nWho's winning? Drop your score 👇";
+        $tags = trim($this->tag($m->home_team).' '.$this->tag($m->away_team));
+
+        return "🔥 {$m->home_team} vs {$m->away_team} today.\nWho's winning? Drop your score 👇\n{$tags}";
     }
 
     private function topScorer(): ?string
@@ -101,7 +129,7 @@ class FootballSocialComposer
             return null;
         }
 
-        return "🥇 {$s->player_name} ({$s->team_name}) — {$s->goals} goals this season. Unstoppable. 🔥";
+        return "🥇 {$s->player_name} ({$s->team_name}) — {$s->goals} goals this season. Unstoppable. 🔥\n".trim($this->tag($s->team_name).' #Football');
     }
 
     private function standingsLeader(): ?string
@@ -111,7 +139,7 @@ class FootballSocialComposer
             return null;
         }
 
-        return "📊 {$s->team_name} top of the table with {$s->points} pts. Can anyone catch them?";
+        return "📊 {$s->team_name} top of the table with {$s->points} pts. Can anyone catch them?\n".trim($this->tag($s->team_name).' #Football');
     }
 
     private function blogTeaser(): ?string
@@ -121,7 +149,7 @@ class FootballSocialComposer
             return null;
         }
 
-        return "📰 {$b->title}";
+        return "📰 {$b->title}\n#Football #FootballNews";
     }
 
     /** Append the website (always) and Telegram (sometimes) so posts drive traffic. */

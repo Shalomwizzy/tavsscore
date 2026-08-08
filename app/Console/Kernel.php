@@ -22,8 +22,9 @@ class Kernel extends ConsoleKernel
             Cache::put('scheduler_last_run', now()->timestamp, now()->addDays(2));
         })->everyMinute()->name('scheduler-heartbeat');
 
-        // X growth: 4 data-driven football posts/day (predictions, results, stats).
-        foreach (['09:00', '13:00', '17:00', '20:00'] as $t) {
+        // X growth: 4 data-driven football posts/day, weighted to football
+        // prime-time (morning build-up, pre-match afternoon, evening peak).
+        foreach (['10:00', '15:00', '18:30', '21:00'] as $t) {
             $schedule->command('x:post-football')->dailyAt($t)->timezone('Africa/Lagos')->withoutOverlapping();
         }
 
