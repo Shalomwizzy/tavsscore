@@ -27,7 +27,13 @@
                 @endif
             </div>
         </div>
-        <a href="{{ route('admin.settings.index') }}" class="btn-a" style="background:var(--accent);color:#fff;padding:.5rem 1rem;border-radius:7px;font-size:.82rem;font-weight:600;">Manage X account</a>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+            <form method="POST" action="{{ route('admin.x.test') }}">
+                @csrf
+                <button type="submit" style="background:#1d4ed8;color:#fff;border:none;padding:.5rem 1rem;border-radius:7px;font-size:.82rem;font-weight:600;cursor:pointer;">Test connection</button>
+            </form>
+            <a href="{{ route('admin.settings.index') }}" class="btn-a" style="background:var(--accent);color:#fff;padding:.5rem 1rem;border-radius:7px;font-size:.82rem;font-weight:600;">Manage X account</a>
+        </div>
     </div>
 
     {{-- Stats --}}

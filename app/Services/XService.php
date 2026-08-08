@@ -106,6 +106,36 @@ class XService
         return $cta;
     }
 
+    /**
+     * Ask X what the saved token can actually do. The `x-access-level` response
+     * header reports "read" vs "read-write" — the definitive answer to a 403
+     * "oauth1 app permissions" error.
+     *
+     * @return array{configured:bool,status?:int,access_level?:?string,username?:?string,error?:string}
+     */
+    public function diagnostics(): array
+    {
+        if (! $this->isConfigured()) {
+            return ['configured' => false];
+        }
+
+        $url = 'https://api.x.com/2/users/me';
+        try {
+            $auth = $this->authHeader('GET', $url, []);
+            $res = Http::withHeaders(['Authorization' => $auth])->get($url);
+
+            return [
+                'configured'   => true,
+                'status'       => $res->status(),
+                'access_level' => $res->header('x-access-level'),
+                'username'     => $res->json('data.username'),
+                'error'        => $res->failed() ? mb_substr($res->body(), 0, 300) : null,
+            ];
+        } catch (\Throwable $e) {
+            return ['configured' => true, 'error' => $e->getMessage()];
+        }
+    }
+
     /** Growth posts are admin-toggleable; booking posts always go out. */
     public function growthEnabled(): bool
     {

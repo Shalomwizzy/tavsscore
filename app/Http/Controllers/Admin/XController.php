@@ -46,6 +46,27 @@ class XController extends Controller
         return back()->with('success', 'Football growth posts '.($enabled ? 'enabled' : 'disabled').'.');
     }
 
+    public function test(XService $x): RedirectResponse
+    {
+        $d = $x->diagnostics();
+
+        if (! ($d['configured'] ?? false)) {
+            return back()->with('error', 'No X credentials saved yet (Settings → X Auto-Posting).');
+        }
+        if (! empty($d['error']) && blank($d['access_level'] ?? null)) {
+            return back()->with('error', 'X test failed: '.$d['error']);
+        }
+
+        $level = $d['access_level'] ?? 'unknown';
+        $user = $d['username'] ? '@'.$d['username'] : 'your account';
+
+        if (str_contains((string) $level, 'write')) {
+            return back()->with('success', "✓ Connected as {$user} with WRITE access (level: {$level}). Posting will work.");
+        }
+
+        return back()->with('error', "Connected as {$user}, but the token is READ-ONLY (level: {$level}). Set the app to Read+Write, REGENERATE the Access Token & Secret, then paste the new ones here.");
+    }
+
     public function postNow(XService $x): RedirectResponse
     {
         if (! $x->isConfigured()) {
